@@ -85,7 +85,7 @@ const Navbar = () => {
                 </div>
               )}
 
-              {/* Desktop User Links (visible on desktop) */}
+              {/* Desktop User Links (visible for regular users) */}
               {user.role === 'user' && (
                 <div className="hidden md:flex items-center gap-4">
                   <Link
@@ -168,9 +168,15 @@ const Navbar = () => {
                 </div>
               )}
 
-              {/* Mobile Logout for regular users (non‑admin) */}
+              {/* Mobile Links for regular users (non‑admin) */}
               {user.role === 'user' && (
-                <div className="md:hidden">
+                <div className="md:hidden flex items-center gap-3">
+                  <Link
+                    to="/account"
+                    className="text-gray-600 hover:text-leaf-green transition-colors p-1"
+                  >
+                    <User className="w-5 h-5" />
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="text-red-500 hover:text-red-700 transition-colors p-1"

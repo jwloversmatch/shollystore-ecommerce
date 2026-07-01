@@ -21,6 +21,11 @@ interface OrderItem {
   status: string;
   createdAt: string;
   paymentMethod?: string;
+  orderItems: Array<{
+    name: string;
+    qty: number;
+    price: number;
+  }>;
 }
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -252,6 +257,7 @@ const Orders = () => {
             <thead className="bg-gray-50/50">
               <tr>
                 <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">User</th>
+                <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Items</th>
                 <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Total</th>
                 <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Date</th>
                 <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Payment</th>
@@ -268,6 +274,18 @@ const Orders = () => {
                   className="transition-colors"
                 >
                   <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm">{order.user?.email}</td>
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm">
+                    {order.orderItems && order.orderItems.length > 0 ? (
+                      order.orderItems.map((item, idx) => (
+                        <span key={idx}>
+                          {item.qty}x {item.name}
+                          {idx < order.orderItems.length - 1 ? ', ' : ''}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
                   <td className="px-4 sm:px-6 py-3 sm:py-4 font-medium text-xs sm:text-sm text-gray-800">
                     ₦{order.totalPrice.toLocaleString()}
                   </td>
