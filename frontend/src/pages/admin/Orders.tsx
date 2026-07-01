@@ -21,11 +21,13 @@ interface OrderItem {
   status: string;
   createdAt: string;
   paymentMethod?: string;
-  orderItems: Array<{
-    name: string;
-    qty: number;
-    price: number;
-  }>;
+  orderItems: Array<{ name: string; qty: number; price: number }>;
+  shippingAddress?: {
+    address: string;
+    city: string;
+    postalCode?: string;
+    country?: string;
+  };
 }
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -134,7 +136,7 @@ const Orders = () => {
         </button>
       </div>
 
-      {/* Stats Cards – stacked on mobile */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
           <div className="p-2 sm:p-3 bg-blue-100 rounded-xl shrink-0">
@@ -250,7 +252,7 @@ const Orders = () => {
         </motion.div>
       )}
 
-      {/* Orders Table – mobile friendly */}
+      {/* Orders Table – now includes Address column */}
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -261,6 +263,7 @@ const Orders = () => {
                 <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Total</th>
                 <th className="hidden sm:table-cell px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Date</th>
                 <th className="hidden sm:table-cell px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Payment</th>
+                <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider min-w-[150px]">Address</th>
                 <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Status</th>
               </tr>
             </thead>
@@ -294,6 +297,15 @@ const Orders = () => {
                   </td>
                   <td className="hidden sm:table-cell px-6 py-4 text-xs font-medium text-gray-600 capitalize">
                     {PAYMENT_METHOD_LABELS[order.paymentMethod || ''] || '—'}
+                  </td>
+                  <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">
+                    {order.shippingAddress ? (
+                      <>
+                        {order.shippingAddress.address}, {order.shippingAddress.city}
+                      </>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
                   </td>
                   <td className="px-3 sm:px-6 py-2 sm:py-4">
                     <select
