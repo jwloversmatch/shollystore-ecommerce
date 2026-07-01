@@ -16,7 +16,7 @@ const Footer = () => {
     >
       <div className="max-w-7xl mx-auto px-6 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
-          {/* Brand */}
+          {/* Brand - Updated to beverage-only description */}
           <div className="space-y-4">
             <Link
               to="/"
@@ -25,8 +25,8 @@ const Footer = () => {
               Lotce<span className="text-leaf-green">Wieth</span>
             </Link>
             <p className="text-sm text-gray-400 leading-relaxed max-w-xs">
-              Bringing the freshest organic fruits, vegetables, and juices to
-              your doorstep across Nigeria. Taste the difference of nature.
+              Bringing the coldest, most refreshing beverages straight to your
+              doorstep across Nigeria. Stay refreshed, stay chilled.
             </p>
             <div className="flex gap-3 pt-2">
               <SocialIcon

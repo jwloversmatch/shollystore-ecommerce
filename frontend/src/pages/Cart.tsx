@@ -121,46 +121,56 @@ const Cart = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className="group bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/40 p-4 md:p-6 flex flex-col sm:flex-row items-center gap-4 hover:shadow-xl transition-shadow w-full"
+                  className="group bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/40 p-4 md:p-6 hover:shadow-xl transition-shadow w-full flex flex-row items-center gap-4"
                 >
-                  <div className="relative shrink-0">
+                  {/* Left side: item details */}
+                  <div className="flex flex-1 flex-col sm:flex-row items-start sm:items-center gap-4 min-w-0">
                     <img
                       src={item.image || 'https://via.placeholder.com/100'}
                       alt={item.name}
-                      className="w-20 h-20 md:w-24 md:h-24 rounded-xl object-cover border border-gray-200 group-hover:border-leaf-green/30 transition-colors"
+                      className="w-16 h-16 md:w-20 md:h-20 rounded-xl object-cover border border-gray-200 group-hover:border-leaf-green/30 transition-colors shrink-0"
                     />
+                    <div className="flex flex-col min-w-0">
+                      <h3 className="font-bold text-base md:text-lg text-gray-800 group-hover:text-leaf-green transition-colors truncate">
+                        {item.name}
+                      </h3>
+                      <p className="text-leaf-green font-semibold text-base md:text-lg">
+                        ₦{item.price.toLocaleString()}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 w-full">
-                    <h3 className="font-bold text-lg text-gray-800 group-hover:text-leaf-green transition-colors">
-                      {item.name}
-                    </h3>
-                    <p className="text-leaf-green font-semibold text-lg">
-                      ₦{item.price.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
+
+                  {/* Right side: quantity controls + delete */}
+                  <div className="flex flex-row items-center gap-2 sm:gap-3 shrink-0">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <button
+                        onClick={() => handleQty(item._id, item.qty, -1, item.stock)}
+                        disabled={item.qty <= 1}
+                        className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="font-semibold w-5 sm:w-6 text-center text-sm sm:text-base">
+                        {item.qty}
+                      </span>
+                      <button
+                        onClick={() => handleQty(item._id, item.qty, 1, item.stock)}
+                        disabled={item.qty >= item.stock}
+                        className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    {/* ✅ Informative delete button */}
                     <button
-                      onClick={() => handleQty(item._id, item.qty, -1, item.stock)}
-                      disabled={item.qty <= 1}
-                      className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                      onClick={() => dispatch(removeFromCart(item._id))}
+                      className="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 rounded-lg transition-colors ml-1 sm:ml-2 group-hover:scale-105 transition-transform"
                     >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="font-semibold w-6 text-center">{item.qty}</span>
-                    <button
-                      onClick={() => handleQty(item._id, item.qty, 1, item.stock)}
-                      disabled={item.qty >= item.stock}
-                      className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <Plus className="w-3 h-3" />
+                      <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="hidden sm:inline text-xs sm:text-sm font-medium">Remove</span>
                     </button>
                   </div>
-                  <button
-                    onClick={() => dispatch(removeFromCart(item._id))}
-                    className="text-gray-300 hover:text-red-600 transition-colors ml-2 shrink-0 group-hover:scale-110 transition-transform"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
                 </motion.div>
               ))}
             </AnimatePresence>

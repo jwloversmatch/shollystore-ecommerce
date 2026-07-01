@@ -108,10 +108,10 @@ const Home = () => {
             <span className="text-leaf-green">Beverages</span>
           </h1>
           <p className="text-gray-600 text-base md:text-lg mb-8 max-w-md">
-            Your favorite drinks — from Fanta and Coke to refreshing Malt and pure water. Stocked fresh and delivered ice-cold to your doorstep.
+            Your one-stop beverage superstore. From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in bulk packs. Stocked fresh, delivered ice-cold, and ready to stock your home or event.
           </p>
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="bg-blob-orange text-white px-8 md:px-10 py-3 md:py-4 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all">
-            Grab a Drink
+            Explore Our Range
           </motion.button>
         </motion.div>
 
