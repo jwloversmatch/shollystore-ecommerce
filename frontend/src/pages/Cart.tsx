@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
-import toast from 'react-hot-toast'; // ✅ Import toast
+import toast from 'react-hot-toast';
 import { RootState } from '../store';
 import {
   removeFromCart,
@@ -16,6 +16,7 @@ import {
   Plus,
   ArrowLeft,
   AlertCircle,
+  CreditCard,
 } from 'lucide-react';
 
 const Cart = () => {
@@ -30,7 +31,7 @@ const Cart = () => {
 
   const handleCheckout = () => {
     if (!user) {
-      toast.error('Please login to checkout'); // ✅ Replaced alert with toast
+      toast.error('Please login to checkout');
       navigate('/login');
       return;
     }
@@ -85,7 +86,7 @@ const Cart = () => {
       <div className="max-w-7xl w-full">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8 md:mb-12">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 md:mb-12">
           <div className="flex items-center gap-4 flex-wrap">
             <button
               onClick={() => navigate('/')}
@@ -99,10 +100,10 @@ const Cart = () => {
           
           <button
             onClick={handleClearCart}
-            className="flex items-center gap-2 text-red-500 hover:text-red-700 hover:bg-red-50 px-5 py-2.5 rounded-xl transition-all bg-white/70 backdrop-blur-sm shadow-sm border border-white/40"
+            className="flex items-center gap-2 text-red-500 hover:text-red-700 hover:bg-red-50 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl transition-all bg-white/70 backdrop-blur-sm shadow-sm border border-white/40 text-sm font-medium"
           >
             <Trash2 className="w-4 h-4" />
-            <span className="text-sm font-medium">Clear All</span>
+            <span className="hidden sm:inline">Clear All</span>
           </button>
         </div>
 
@@ -120,15 +121,19 @@ const Cart = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/40 p-4 md:p-6 flex flex-col sm:flex-row items-center gap-4 hover:shadow-xl transition-shadow w-full"
+                  className="group bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/40 p-4 md:p-6 flex flex-col sm:flex-row items-center gap-4 hover:shadow-xl transition-shadow w-full"
                 >
-                  <img
-                    src={item.image || 'https://via.placeholder.com/100'}
-                    alt={item.name}
-                    className="w-20 h-20 md:w-24 md:h-24 rounded-xl object-cover flex-shrink-0"
-                  />
+                  <div className="relative shrink-0">
+                    <img
+                      src={item.image || 'https://via.placeholder.com/100'}
+                      alt={item.name}
+                      className="w-20 h-20 md:w-24 md:h-24 rounded-xl object-cover border border-gray-200 group-hover:border-leaf-green/30 transition-colors"
+                    />
+                  </div>
                   <div className="flex-1 w-full">
-                    <h3 className="font-bold text-lg text-gray-800">{item.name}</h3>
+                    <h3 className="font-bold text-lg text-gray-800 group-hover:text-leaf-green transition-colors">
+                      {item.name}
+                    </h3>
                     <p className="text-leaf-green font-semibold text-lg">
                       ₦{item.price.toLocaleString()}
                     </p>
@@ -152,9 +157,9 @@ const Cart = () => {
                   </div>
                   <button
                     onClick={() => dispatch(removeFromCart(item._id))}
-                    className="text-gray-400 hover:text-red-600 transition-colors ml-2 shrink-0 group"
+                    className="text-gray-300 hover:text-red-600 transition-colors ml-2 shrink-0 group-hover:scale-110 transition-transform"
                   >
-                    <Trash2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    <Trash2 className="w-5 h-5" />
                   </button>
                 </motion.div>
               ))}
@@ -188,8 +193,9 @@ const Cart = () => {
 
               <button
                 onClick={handleCheckout}
-                className="w-full mt-6 bg-leaf-green text-white py-4 rounded-xl font-bold shadow-lg shadow-leaf-green/30 hover:shadow-leaf-green/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full mt-6 bg-leaf-green text-white py-4 rounded-xl font-bold shadow-lg shadow-leaf-green/30 hover:shadow-leaf-green/50 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
               >
+                <CreditCard className="w-5 h-5" />
                 Proceed to Checkout
               </button>
 
