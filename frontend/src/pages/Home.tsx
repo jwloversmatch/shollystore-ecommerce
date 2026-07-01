@@ -101,14 +101,14 @@ const Home = () => {
         {/* Left side: Text */}
         <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}>
           <span className="bg-white/40 px-4 py-1.5 rounded-full text-sm font-medium text-blob-orange inline-block mb-4 backdrop-blur-sm border border-white/60">
-            🧊 Ice Cold & Organic
+            📦 Bulk Beverage Store
           </span>
           <h1 className="text-4xl md:text-7xl font-bold text-gray-900 leading-[1.1] mb-6">
-            Premium <br /> 
-            <span className="text-leaf-green">Beverages</span>
+            Your Everyday <br /> 
+            <span className="text-leaf-green">Drink Superstore</span>
           </h1>
           <p className="text-gray-600 text-base md:text-lg mb-8 max-w-md">
-            Your one-stop beverage superstore. From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in bulk packs. Stocked fresh, delivered ice-cold, and ready to stock your home or event.
+            From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in convenient packs. Perfect for stocking your home, office, or event.
           </p>
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="bg-blob-orange text-white px-8 md:px-10 py-3 md:py-4 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all">
             Explore Our Range
