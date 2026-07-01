@@ -7,7 +7,7 @@ import {
 } from '../features/api/apiSlice';
 import ProductCard from '../components/ProductCard';
 import Footer from './Footer';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Package, Truck, CreditCard, Star } from 'lucide-react';
 
 interface ProductItem {
   _id: string;
@@ -97,8 +97,8 @@ const Home = () => {
     <div className="min-h-screen relative overflow-x-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-pastel-pink via-pastel-green to-white -z-10" />
       
+      {/* --- 1. Hero Section --- */}
       <section className="max-w-7xl mx-auto px-6 pt-20 md:pt-24 pb-16 md:pb-20 grid md:grid-cols-2 items-center gap-12">
-        {/* Left side: Text */}
         <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}>
           <span className="bg-white/40 px-4 py-1.5 rounded-full text-sm font-medium text-blob-orange inline-block mb-4 backdrop-blur-sm border border-white/60">
             📦 Bulk Beverage Store
@@ -110,12 +110,17 @@ const Home = () => {
           <p className="text-gray-600 text-base md:text-lg mb-8 max-w-md">
             From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in convenient packs. Perfect for stocking your home, office, or event.
           </p>
-          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="bg-blob-orange text-white px-8 md:px-10 py-3 md:py-4 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all">
+          <motion.button 
+            whileHover={{ scale: 1.05 }} 
+            whileTap={{ scale: 0.95 }} 
+            onClick={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })}
+            className="bg-blob-orange text-white px-8 md:px-10 py-3 md:py-4 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all cursor-pointer"
+          >
             Explore Our Range
           </motion.button>
         </motion.div>
 
-        {/* Right side: Carousel without text overlay */}
+        {/* Right side: Carousel */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.9, y: 30 }}
           whileInView={{ opacity: 1, scale: 1, y: 0 }}
@@ -174,10 +179,78 @@ const Home = () => {
         </motion.div>
       </section>
 
-      {/* Products section */}
+      {/* --- 2. Why Choose Us Section --- */}
+      <section className="max-w-7xl mx-auto px-4 md:px-6 py-12 md:py-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"
+        >
+          {[
+            { icon: <Package className="w-8 h-8 text-leaf-green" />, title: 'Bulk Packs', desc: 'Stock your home, office, or event with ease.' },
+            { icon: <Truck className="w-8 h-8 text-blob-orange" />, title: 'Fast Delivery', desc: 'Reliable delivery across Nigeria.' },
+            { icon: <CreditCard className="w-8 h-8 text-blue-600" />, title: 'Secure Payments', desc: 'Paystack, Bank Transfer & WhatsApp.' },
+            { icon: <Star className="w-8 h-8 text-yellow-500" />, title: 'Authentic Brands', desc: '100% trusted and genuine products.' },
+          ].map((item, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: idx * 0.1 }}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition-all text-center"
+            >
+              <div className="bg-pastel-pink/30 rounded-full p-4 w-16 h-16 mx-auto flex items-center justify-center mb-3">
+                {item.icon}
+              </div>
+              <h3 className="font-bold text-gray-800">{item.title}</h3>
+              <p className="text-sm text-gray-500 mt-1">{item.desc}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
+      {/* --- 3. Shop by Category Section --- */}
       <section className="max-w-7xl mx-auto px-4 md:px-6 mt-4 md:mt-10">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 md:mb-10 gap-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Our Best Sellers</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Shop by Category</h2>
+          {selectedCategory !== 'All' && (
+            <button 
+              onClick={() => setSelectedCategory('All')}
+              className="text-sm text-gray-500 hover:text-leaf-green transition-colors underline"
+            >
+              Clear filter
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+          {categoryList.filter(cat => cat !== 'All').map((cat) => (
+            <motion.button
+              key={cat}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setSelectedCategory(cat)}
+              className={`bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border p-4 md:p-6 hover:shadow-md transition-all flex flex-col items-center justify-center gap-2 ${
+                selectedCategory === cat ? 'border-leaf-green ring-2 ring-leaf-green/20' : 'border-gray-100'
+              }`}
+            >
+              <div className="w-12 h-12 rounded-full bg-pastel-pink/30 flex items-center justify-center text-2xl">
+                🍹
+              </div>
+              <span className="font-medium text-gray-700 text-sm md:text-base">{cat}</span>
+            </motion.button>
+          ))}
+        </div>
+      </section>
+
+      {/* --- 4. Best Sellers / Products Section --- */}
+      <section id="products-grid" className="max-w-7xl mx-auto px-4 md:px-6 mt-8 md:mt-12">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 md:mb-10 gap-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
+            {selectedCategory === 'All' ? 'Our Best Sellers' : selectedCategory}
+          </h2>
           <div className="flex gap-2 overflow-x-auto pb-2 w-full md:w-auto scrollbar-hide no-scrollbar">
             {categoryList.map((cat) => (
               <button
@@ -212,6 +285,27 @@ const Home = () => {
             </AnimatePresence>
           </motion.div>
         )}
+      </section>
+
+      {/* --- 5. Special Offers Banner --- */}
+      <section className="max-w-7xl mx-auto px-4 md:px-6 mt-12 md:mt-16">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          className="bg-gradient-to-r from-blob-orange/20 to-leaf-green/20 rounded-3xl p-8 md:p-12 text-center border border-white/40 backdrop-blur-sm"
+        >
+          <h2 className="text-2xl md:text-4xl font-bold text-gray-800 mb-4">Stock Up & Save</h2>
+          <p className="text-gray-600 mb-6 max-w-lg mx-auto">
+            Get <span className="font-bold text-leaf-green">₦500 off</span> your first bulk order of ₦10,000 or more. Use code <span className="font-bold text-leaf-green">FIRST500</span>
+          </p>
+          <button
+            onClick={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })}
+            className="bg-leaf-green text-white px-8 py-3 rounded-full font-bold hover:bg-green-700 transition shadow-lg hover:shadow-xl"
+          >
+            Shop Now
+          </button>
+        </motion.div>
       </section>
 
       <Footer />
