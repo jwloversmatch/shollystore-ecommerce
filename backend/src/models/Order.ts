@@ -3,10 +3,15 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IOrder extends Document {
   user: mongoose.Types.ObjectId;
   orderItems: { name: string; qty: number; price: number; product: mongoose.Types.ObjectId }[];
+  shippingAddress: {
+    address: string;
+    city: string;
+    postalCode?: string;
+    country?: string;
+  };
   totalPrice: number;
   status: 'Pending' | 'Paid' | 'Shipped' | 'Delivered';
   paymentResult?: { id: string; status: string; update_time: string };
-  // ✅ New fields for multiple payment methods
   paymentMethod?: 'paystack' | 'bank_transfer' | 'whatsapp';
   paymentDetails?: {
     accountNumber?: string;
@@ -23,10 +28,15 @@ const OrderSchema: Schema = new Schema({
     price: { type: Number, required: true },
     product: { type: Schema.Types.ObjectId, ref: 'Product', required: true }
   }],
+  shippingAddress: { // ✅ ADD THIS
+    address: { type: String, required: true },
+    city: { type: String, required: true },
+    postalCode: String,
+    country: String,
+  },
   totalPrice: { type: Number, required: true },
   status: { type: String, enum: ['Pending', 'Paid', 'Shipped', 'Delivered'], default: 'Pending' },
   paymentResult: { id: String, status: String, update_time: String },
-  // ✅ New schema fields
   paymentMethod: { type: String, enum: ['paystack', 'bank_transfer', 'whatsapp'] },
   paymentDetails: {
     accountNumber: String,
