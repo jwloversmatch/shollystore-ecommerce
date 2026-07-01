@@ -10,7 +10,7 @@ import {
   LayoutDashboard,
   Settings,
   Image,
-  Tag,                 // ✅ Added for Categories
+  Tag,
   AlignRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -71,7 +71,7 @@ const Navbar = () => {
                     <Image className="w-4 h-4" /> Hero Slides
                   </Link>
                   <Link
-                    to="/admin/categories"          // ✅ New Categories Link
+                    to="/admin/categories"
                     className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-leaf-green transition-colors"
                   >
                     <Tag className="w-4 h-4" /> Categories
@@ -93,7 +93,7 @@ const Navbar = () => {
                 <LogOut className="w-4 h-4" /> Logout
               </button>
 
-              {/* Mobile Hamburger (AlignRight) - pointing left towards the logo */}
+              {/* Mobile Hamburger (only for admins) */}
               {user.role === 'admin' && (
                 <div className="md:hidden relative">
                   <button
@@ -127,7 +127,7 @@ const Navbar = () => {
                           <Image className="w-4 h-4" /> Hero Slides
                         </Link>
                         <Link
-                          to="/admin/categories"          // ✅ New Categories Link
+                          to="/admin/categories"
                           onClick={() => setMobileMenuOpen(false)}
                           className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-leaf-green/10 hover:text-leaf-green rounded-xl transition-colors"
                         >
@@ -153,6 +153,18 @@ const Navbar = () => {
                       </motion.div>
                     )}
                   </AnimatePresence>
+                </div>
+              )}
+
+              {/* Mobile Logout for regular users (non‑admin) */}
+              {user.role === 'user' && (
+                <div className="md:hidden">
+                  <button
+                    onClick={handleLogout}
+                    className="text-red-500 hover:text-red-700 transition-colors p-1"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
                 </div>
               )}
             </>
