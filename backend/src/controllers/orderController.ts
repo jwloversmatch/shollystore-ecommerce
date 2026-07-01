@@ -148,3 +148,13 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
     res.status(500).send('Webhook processing failed');
   }
 };
+
+export const getMyOrders = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const orders = await Order.find({ user: req.user!._id })
+      .sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

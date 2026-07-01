@@ -19,7 +19,8 @@ const Products = React.lazy(() => import('./pages/admin/Products'));
 const Orders = React.lazy(() => import('./pages/admin/Orders'));
 const VerifyEmail = React.lazy(() => import('./pages/VerifyEmail'));
 const HeroSlides = React.lazy(() => import('./pages/admin/HeroSlides'));
-const Categories = React.lazy(() => import('./pages/admin/Categories')); // ✅ imported
+const Categories = React.lazy(() => import('./pages/admin/Categories'));
+const Account = React.lazy(() => import('./pages/Account'));
 
 import Settings from './pages/admin/Settings';
 
@@ -44,6 +45,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/account" element={<Account />} />
 
           {/* Protected Admin Routes */}
           <Route element={<AdminRoute />}>

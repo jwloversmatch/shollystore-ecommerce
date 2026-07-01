@@ -85,7 +85,19 @@ const Navbar = () => {
                 </div>
               )}
 
-              {/* Desktop Logout */}
+              {/* Desktop User Links (visible on desktop) */}
+              {user.role === 'user' && (
+                <div className="hidden md:flex items-center gap-4">
+                  <Link
+                    to="/account"
+                    className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-leaf-green transition-colors"
+                  >
+                    <User className="w-4 h-4" /> Account
+                  </Link>
+                </div>
+              )}
+
+              {/* Desktop Logout (visible for all users) */}
               <button
                 onClick={handleLogout}
                 className="hidden md:flex items-center gap-1 text-sm font-medium text-red-500 hover:text-red-700 transition-colors"

@@ -88,7 +88,7 @@ export const apiSlice = createApi({
         method: "PUT",
         body: { status },
       }),
-      invalidatesTags: ["Order"],
+      invalidatesTags: ["Order", 'Product'],
     }),
 
     uploadImage: builder.mutation({
