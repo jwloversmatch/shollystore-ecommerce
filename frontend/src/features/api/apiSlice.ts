@@ -26,6 +26,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["Order"],
     }),
 
+    // ✅ Updated to /admin/orders/all to avoid conflict with getAdminStats
     getAllOrders: builder.query({
       query: ({
         page = 1,
@@ -36,7 +37,6 @@ export const apiSlice = createApi({
         startDate,
         endDate,
       }) => {
-        // Build query string
         const params = new URLSearchParams();
         params.append("page", page.toString());
         params.append("limit", limit.toString());
@@ -46,11 +46,12 @@ export const apiSlice = createApi({
         if (search) params.append("search", search);
         if (startDate) params.append("startDate", startDate);
         if (endDate) params.append("endDate", endDate);
-        return `/admin/orders?${params.toString()}`;
+        return `/admin/orders/all?${params.toString()}`; // ✅ changed to /all
       },
       providesTags: ["Order"],
     }),
 
+    // ✅ This stays unchanged – returns stats for dashboard
     getAdminStats: builder.query({
       query: () => "/admin/orders",
       providesTags: ["Order"],
@@ -88,7 +89,7 @@ export const apiSlice = createApi({
         method: "PUT",
         body: { status },
       }),
-      invalidatesTags: ["Order", 'Product'],
+      invalidatesTags: ["Order", "Product"],
     }),
 
     uploadImage: builder.mutation({
@@ -152,7 +153,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["Product"],
     }),
 
-    // ✅ New settings endpoints
+    // Settings endpoints
     getSettings: builder.query({
       query: () => "/admin/settings",
       providesTags: ["Settings"],
@@ -203,13 +204,11 @@ export const apiSlice = createApi({
       invalidatesTags: ["HeroSlide"],
     }),
 
-    // Public: get categories
     getCategories: builder.query({
       query: () => "/categories",
       providesTags: ["Category"],
     }),
 
-    // Admin: create category
     createCategory: builder.mutation({
       query: (data) => ({
         url: "/admin/categories",
@@ -219,7 +218,6 @@ export const apiSlice = createApi({
       invalidatesTags: ["Category"],
     }),
 
-    // Admin: update category
     updateCategory: builder.mutation({
       query: ({ id, ...data }) => ({
         url: `/admin/categories/${id}`,
@@ -229,7 +227,6 @@ export const apiSlice = createApi({
       invalidatesTags: ["Category"],
     }),
 
-    // Admin: delete category
     deleteCategory: builder.mutation({
       query: (id) => ({
         url: `/admin/categories/${id}`,
@@ -239,8 +236,8 @@ export const apiSlice = createApi({
     }),
 
     getOrderCustomerCount: builder.query({
-  query: () => '/admin/orders/analytics/order-customers',
-}),
+      query: () => '/admin/orders/analytics/order-customers',
+    }),
   }),
 });
 
