@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Order } from '../models/Order';
-import { Product } from '../models/Product'; // ✅ Added import
+import { Product } from '../models/Product';
 import { User } from '../models/User';
 
 // Helper to reduce stock when order transitions from Pending
@@ -12,6 +12,33 @@ const reduceStockForOrder = async (order: any) => {
       const newStock = Math.max(0, product.stock - item.qty);
       await Product.findByIdAndUpdate(item.product, { stock: newStock });
     }
+  }
+};
+
+// @desc    Get admin dashboard stats (excludes Pending orders from revenue)
+// @route   GET /api/admin/orders
+export const getAdminStats = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Type assertion to bypass strict Mongoose typing for the $ne filter
+    const filter = { status: { $ne: 'Pending' } } as any;
+
+    const [orders, totalRevenue] = await Promise.all([
+      Order.find(filter)
+        .populate('user', 'email')
+        .sort({ createdAt: -1 })
+        .limit(5),
+      Order.aggregate([
+        { $match: filter },
+        { $group: { _id: null, total: { $sum: '$totalPrice' } } }
+      ]),
+    ]);
+
+    res.json({
+      orders,
+      totalRevenue: totalRevenue[0]?.total || 0,
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 };
 

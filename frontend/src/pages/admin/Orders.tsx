@@ -114,7 +114,7 @@ const Orders = () => {
       animate={{ opacity: 1, y: 0 }}
       className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-4 md:space-y-6"
     >
-      {/* Header – always a row, button on the right */}
+      {/* Header */}
       <div className="flex flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button
@@ -123,7 +123,7 @@ const Orders = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">All Orders</h1>
+          <h1 className="text-xl md:text-3xl font-bold text-gray-800">All Orders</h1>
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
@@ -134,31 +134,31 @@ const Orders = () => {
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 sm:gap-4">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-          <div className="p-2 sm:p-3 bg-blue-100 rounded-xl">
+      {/* Stats Cards – stacked on mobile */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
+          <div className="p-2 sm:p-3 bg-blue-100 rounded-xl shrink-0">
             <ShoppingBag className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600" />
           </div>
-          <div className="text-center sm:text-left">
+          <div>
             <p className="text-[10px] sm:text-sm text-gray-500">Total</p>
             <p className="text-base sm:text-xl font-bold text-gray-800">{stats.total}</p>
           </div>
         </div>
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-          <div className="p-2 sm:p-3 bg-green-100 rounded-xl">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
+          <div className="p-2 sm:p-3 bg-green-100 rounded-xl shrink-0">
             <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
           </div>
-          <div className="text-center sm:text-left">
+          <div>
             <p className="text-[10px] sm:text-sm text-gray-500">Paid</p>
             <p className="text-base sm:text-xl font-bold text-green-600">{stats.paid}</p>
           </div>
         </div>
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-          <div className="p-2 sm:p-3 bg-yellow-100 rounded-xl">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
+          <div className="p-2 sm:p-3 bg-yellow-100 rounded-xl shrink-0">
             <Clock className="w-4 h-4 sm:w-6 sm:h-6 text-yellow-600" />
           </div>
-          <div className="text-center sm:text-left">
+          <div>
             <p className="text-[10px] sm:text-sm text-gray-500">Pending</p>
             <p className="text-base sm:text-xl font-bold text-yellow-600">{stats.pending}</p>
           </div>
@@ -250,18 +250,18 @@ const Orders = () => {
         </motion.div>
       )}
 
-      {/* Orders Table */}
+      {/* Orders Table – mobile friendly */}
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-gray-50/50">
               <tr>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">User</th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Items</th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Total</th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Date</th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Payment</th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider min-w-[100px]">User</th>
+                <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider min-w-[120px]">Items</th>
+                <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Total</th>
+                <th className="hidden sm:table-cell px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                <th className="hidden sm:table-cell px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Payment</th>
+                <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -273,8 +273,8 @@ const Orders = () => {
                   whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
                   className="transition-colors"
                 >
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm">{order.user?.email}</td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm">
+                  <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">{order.user?.email}</td>
+                  <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">
                     {order.orderItems && order.orderItems.length > 0 ? (
                       order.orderItems.map((item, idx) => (
                         <span key={idx}>
@@ -286,16 +286,16 @@ const Orders = () => {
                       <span className="text-gray-400">—</span>
                     )}
                   </td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 font-medium text-xs sm:text-sm text-gray-800">
+                  <td className="px-3 sm:px-6 py-2 sm:py-4 font-medium text-xs sm:text-sm text-gray-800">
                     ₦{order.totalPrice.toLocaleString()}
                   </td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm text-gray-500">
+                  <td className="hidden sm:table-cell px-6 py-4 text-sm text-gray-500">
                     {new Date(order.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-xs font-medium text-gray-600 capitalize">
+                  <td className="hidden sm:table-cell px-6 py-4 text-xs font-medium text-gray-600 capitalize">
                     {PAYMENT_METHOD_LABELS[order.paymentMethod || ''] || '—'}
                   </td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4">
+                  <td className="px-3 sm:px-6 py-2 sm:py-4">
                     <select
                       value={order.status}
                       onChange={(e) => handleStatusChange(order._id, e.target.value)}
@@ -315,7 +315,7 @@ const Orders = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row justify-between items-center px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-100 gap-2">
+          <div className="flex flex-col sm:flex-row justify-between items-center px-3 sm:px-6 py-2 sm:py-4 border-t border-gray-100 gap-2">
             <span className="text-xs sm:text-sm text-gray-500">
               Page {page} of {totalPages}
             </span>
