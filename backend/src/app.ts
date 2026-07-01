@@ -26,7 +26,8 @@ const app: Application = express();
 
 // Security & Middleware
 app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_URL || "*" }));
+// Allow all origins (simple, works for cron jobs)
+app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 
@@ -48,9 +49,19 @@ app.use('/api/hero-slides', heroSlideRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/admin/categories', adminCategoryRoutes);
 
-// Health Check
+// Health Check (public)
 app.get("/api/health", (req: Request, res: Response) => {
   res.status(200).json({ status: "OK", message: "Server is running" });
+});
+
+// Ping endpoints for cron jobs to keep Render alive
+app.get("/api/ping", (req: Request, res: Response) => {
+  res.status(200).json({ status: "pong" });
+});
+
+// Extra root-level ping in case cron job omits /api
+app.get("/ping", (req: Request, res: Response) => {
+  res.status(200).json({ status: "pong" });
 });
 
 export default app;
