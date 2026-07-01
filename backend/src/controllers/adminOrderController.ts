@@ -15,29 +15,30 @@ const reduceStockForOrder = async (order: any) => {
   }
 };
 
-// ✅ UPDATED: Excludes Pending orders from revenue
+// @desc    Get admin dashboard stats (recent orders + revenue excluding Pending)
+// @route   GET /api/admin/orders
 export const getAdminStats = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
-    // Only count orders that are NOT 'Pending'
-    const filter = { status: { $ne: "Pending" } } as any;
+    // 1. Get the 5 most recent orders (all statuses)
+    const recentOrders = await Order.find()
+      .populate("user", "email")
+      .sort({ createdAt: -1 })
+      .limit(5);
 
-    const [orders, totalRevenue] = await Promise.all([
-      Order.find(filter)
-        .populate("user", "email")
-        .sort({ createdAt: -1 })
-        .limit(5),
-      Order.aggregate([
-        { $match: filter },
-        { $group: { _id: null, total: { $sum: "$totalPrice" } } },
-      ]),
+    // 2. Compute total revenue from orders that are NOT 'Pending'
+    const revenueResult = await Order.aggregate([
+      { $match: { status: { $ne: "Pending" } } },
+      { $group: { _id: null, total: { $sum: "$totalPrice" } } },
     ]);
 
+    const totalRevenue = revenueResult[0]?.total || 0;
+
     res.json({
-      orders,
-      totalRevenue: totalRevenue[0]?.total || 0,
+      orders: recentOrders,
+      totalRevenue,
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
