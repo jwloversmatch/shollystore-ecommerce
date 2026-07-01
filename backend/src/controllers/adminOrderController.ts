@@ -1,6 +1,19 @@
 import { Request, Response } from 'express';
 import { Order } from '../models/Order';
-import { User } from '../models/User'; 
+import { Product } from '../models/Product'; // ✅ Added import
+import { User } from '../models/User';
+
+// Helper to reduce stock when order transitions from Pending
+const reduceStockForOrder = async (order: any) => {
+  for (const item of order.orderItems) {
+    const product = await Product.findById(item.product);
+    if (product) {
+      // Ensure stock doesn't go below 0
+      const newStock = Math.max(0, product.stock - item.qty);
+      await Product.findByIdAndUpdate(item.product, { stock: newStock });
+    }
+  }
+};
 
 export const getAllOrders = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -24,8 +37,6 @@ export const getAllOrders = async (req: Request, res: Response): Promise<void> =
     // Search by user email (case-insensitive)
     if (req.query.search) {
       const searchRegex = new RegExp(req.query.search as string, 'i');
-      // We'll populate user and then filter; but we need to use $lookup or a separate query.
-      // Simpler: find users with matching email, then filter orders by userId.
       const users = await User.find({ email: searchRegex }).select('_id');
       const userIds = users.map(u => u._id);
       filter.user = { $in: userIds };
@@ -68,21 +79,31 @@ export const getAllOrders = async (req: Request, res: Response): Promise<void> =
 
 export const updateOrderStatus = async (req: Request, res: Response): Promise<void> => {
   try {
+    const { id } = req.params;
     const { status } = req.body;
-    const order = await Order.findById(req.params.id);
+
+    const order = await Order.findById(id);
     if (!order) {
       res.status(404).json({ message: 'Order not found' });
       return;
     }
+
+    // Only reduce stock if:
+    // 1. Current status is 'Pending'
+    // 2. New status is NOT 'Pending'
+    if (order.status === 'Pending' && status !== 'Pending') {
+      await reduceStockForOrder(order);
+    }
+
     order.status = status;
     await order.save();
+
     res.json({ success: true, order });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Add this function to your existing adminOrderController.ts
 export const getSalesAnalytics = async (req: Request, res: Response): Promise<void> => {
   try {
     // 1. Get Total Stats
@@ -124,8 +145,6 @@ export const getSalesAnalytics = async (req: Request, res: Response): Promise<vo
   }
 };
 
-// @desc    Get top 10 selling products by quantity sold
-// @route   GET /api/admin/analytics/top-products
 export const getTopProducts = async (req: Request, res: Response): Promise<void> => {
   try {
     const topProducts = await Order.aggregate([
@@ -166,8 +185,6 @@ export const getTopProducts = async (req: Request, res: Response): Promise<void>
   }
 };
 
-// @desc    Get total unique customer count
-// @route   GET /api/admin/analytics/customers
 export const getCustomerCount = async (req: Request, res: Response): Promise<void> => {
   try {
     const count = await User.countDocuments({ role: 'user' });

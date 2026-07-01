@@ -18,7 +18,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
-    // 1. Check stock availability for all items
+    // 1. Check stock availability for all items (no reduction yet)
     for (const item of orderItems) {
       const product = await Product.findById(item._id);
       if (!product) {
@@ -56,10 +56,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 
     const createdOrder = await order.save();
 
-    // 3. Reduce stock for all items (regardless of payment method)
-    for (const item of orderItems) {
-      await Product.findByIdAndUpdate(item._id, { $inc: { stock: -item.qty } });
-    }
+    // 3. Stock NOT reduced here – it will be reduced when the order leaves 'Pending' (via webhook or admin update)
 
     // 4. Handle payment flow
     if (paymentMethod === 'paystack') {
@@ -115,6 +112,13 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
         return;
       }
 
+      // Only reduce stock if order was Pending (first time it's being confirmed)
+      if (order.status === 'Pending') {
+        for (const item of order.orderItems) {
+          await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.qty } });
+        }
+      }
+
       order.status = 'Paid';
       order.paymentResult = {
         id: event.data.id,
@@ -123,10 +127,7 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
       };
       await order.save();
 
-      // Stock already reduced at order creation, so no need to do it again.
-      // (We keep the webhook for status updates and email)
-
-      // Send email
+      // Send email confirmation
       try {
         const user = await User.findById(order.user);
         if (user) {
