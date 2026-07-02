@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   useGetProductsQuery,
@@ -7,8 +7,9 @@ import {
 } from '../features/api/apiSlice';
 import ProductCard from '../components/ProductCard';
 import Footer from './Footer';
-import { ChevronLeft, ChevronRight, Package, Truck, CreditCard, Star, ImageOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Package, Truck, CreditCard, Star } from 'lucide-react';
 
+// Interfaces unchanged...
 interface ProductItem {
   _id: string;
   name: string;
@@ -33,6 +34,8 @@ interface CategoryItem {
   slug: string;
 }
 
+const PLACEHOLDER = 'https://via.placeholder.com/600x600?text=No+Image';
+
 const Home = () => {
   const { data: products, isLoading } = useGetProductsQuery({});
   const { data: heroSlides, isLoading: slidesLoading } = useGetHeroSlidesQuery({});
@@ -44,20 +47,6 @@ const Home = () => {
   // Carousel state
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
-
-  // Track which slide index has loaded / errored (no effect needed)
-  const [loadedIndex, setLoadedIndex] = useState<number | null>(null);
-  const [errorIndex, setErrorIndex] = useState<number | null>(null);
-
-  const handleImageLoad = useCallback(() => {
-    setLoadedIndex(currentIndex);
-    setErrorIndex(null);
-  }, [currentIndex]);
-
-  const handleImageError = useCallback(() => {
-    setErrorIndex(currentIndex);
-    setLoadedIndex(null);
-  }, [currentIndex]);
 
   // Auto‑slide every 5 seconds
   useEffect(() => {
@@ -81,7 +70,7 @@ const Home = () => {
     setCurrentIndex((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
   };
 
-  // Slide animation variants
+  // Slide animation variants – simple crossfade + slide
   const slideVariants = {
     enter: (dir: number) => ({
       x: dir > 0 ? '100%' : '-100%',
@@ -97,19 +86,19 @@ const Home = () => {
     }),
   };
 
-  // Build category list: "All" + fetched category names
+  // Build category list
   const categoryList = useMemo(() => {
     const names = categories.map((c: CategoryItem) => c.name);
     return ['All', ...names];
   }, [categories]);
 
-  // Filter products by selected category
+  // Filter products
   const filteredProducts = useMemo(() => {
     if (selectedCategory === 'All') return displayProducts;
     return displayProducts.filter((p: ProductItem) => p.category === selectedCategory);
   }, [displayProducts, selectedCategory]);
 
-  // Loading state
+  // Loading state for the whole page
   if (isLoading || slidesLoading || categoriesLoading) {
     return (
       <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-pastel-pink via-pastel-green to-white">
@@ -124,11 +113,13 @@ const Home = () => {
 
       {/* --- 1. Hero Section --- */}
       <section className="max-w-7xl mx-auto px-6 pt-20 md:pt-24 pb-16 md:pb-20 grid md:grid-cols-2 items-center gap-12">
+        {/* Left column unchanged */}
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
         >
+          {/* ... same text and button ... */}
           <span className="bg-white/40 px-4 py-1.5 rounded-full text-sm font-medium text-blob-orange inline-block mb-4 backdrop-blur-sm border border-white/60">
             📦 Bulk Beverage Store
           </span>
@@ -149,7 +140,7 @@ const Home = () => {
           </motion.button>
         </motion.div>
 
-        {/* Right side: Sliding Carousel */}
+        {/* --- Right side: Beautiful Sliding Carousel (no lazy loading, no shimmer) --- */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -161,41 +152,22 @@ const Home = () => {
             {heroSlides && heroSlides.length > 0 ? (
               <>
                 <AnimatePresence initial={false} custom={direction} mode="wait">
-                  <motion.div
+                  <motion.img
                     key={currentIndex}
                     custom={direction}
                     variants={slideVariants}
                     initial="enter"
                     animate="center"
                     exit="exit"
-                    transition={{ type: 'tween', duration: 0.4, ease: 'easeInOut' }}
-                    className="absolute inset-0 flex items-center justify-center"
-                  >
-                    {/* Shimmer placeholder while loading */}
-                    {loadedIndex !== currentIndex && errorIndex !== currentIndex && (
-                      <div className="absolute inset-0 bg-gray-100 animate-pulse rounded-3xl" />
-                    )}
-
-                    {/* Fallback when image fails to load */}
-                    {errorIndex === currentIndex ? (
-                      <div className="flex flex-col items-center justify-center text-gray-400 p-4">
-                        <ImageOff className="w-12 h-12 mb-2" />
-                        <span className="text-sm">Image not available</span>
-                      </div>
-                    ) : (
-                      <img
-                        src={heroSlides[currentIndex].imageUrl}
-                        alt={heroSlides[currentIndex].title || 'Hero slide'}
-                        loading="lazy"
-                        decoding="async"
-                        onLoad={handleImageLoad}
-                        onError={handleImageError}
-                        className={`w-full h-full object-contain drop-shadow-2xl transition-opacity duration-300 ${
-                          loadedIndex === currentIndex ? 'opacity-100' : 'opacity-0'
-                        }`}
-                      />
-                    )}
-                  </motion.div>
+                    transition={{ type: 'tween', duration: 0.5, ease: 'easeInOut' }}
+                    src={heroSlides[currentIndex].imageUrl}
+                    alt={heroSlides[currentIndex].title || 'Hero slide'}
+                    // No loading="lazy" – eager load for instant display
+                    onError={(e) => {
+                      e.currentTarget.src = PLACEHOLDER;
+                    }}
+                    className="w-full h-full object-contain drop-shadow-2xl absolute inset-0"
+                  />
                 </AnimatePresence>
 
                 {/* Navigation arrows */}
