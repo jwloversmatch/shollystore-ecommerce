@@ -19,6 +19,7 @@ import {
   CreditCard,
   Sparkles,
 } from 'lucide-react';
+import { CartItemSkeleton } from '../components/Skeletons';
 
 // ---------- Animation Variants ----------
 const containerVariants = {
@@ -38,6 +39,13 @@ const itemFadeUp = {
   },
 };
 
+interface PersistState {
+  _persist: {
+    version: number;
+    rehydrated: boolean;
+  };
+}
+
 const Cart = () => {
   const [showClearModal, setShowClearModal] = useState(false);
   const navigate = useNavigate();
@@ -46,6 +54,10 @@ const Cart = () => {
   const { cartItems } = useSelector((state: RootState) => state.cart);
   const { user } = useSelector((state: RootState) => state.auth);
 
+  // Check if Redux Persist has finished rehydrating
+  const isRehydrated = useSelector(
+  (state: RootState & PersistState) => state._persist?.rehydrated
+);
   const totalItems = cartItems.reduce((acc, item) => acc + item.qty, 0);
   const totalPrice = cartItems.reduce((acc, item) => acc + item.price * item.qty, 0);
 
@@ -74,6 +86,19 @@ const Cart = () => {
     dispatch(clearCart());
     setShowClearModal(false);
   };
+
+  // ---------- Rehydration loading state ----------
+  if (isRehydrated === false) {
+    return (
+      <div className="min-h-screen pt-16 md:pt-24 pb-16 px-4 md:px-8 flex flex-col items-center">
+        <div className="max-w-7xl w-full space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <CartItemSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // ---------- Empty Cart ----------
   if (cartItems.length === 0) {
@@ -204,7 +229,7 @@ const Cart = () => {
                     <p className="text-leaf-green font-semibold text-base md:text-lg mt-1">
                       ₦{item.price.toLocaleString()}
                     </p>
-                    {/* Quantity & Remove – align right on mobile */}
+                    {/* Quantity & Remove */}
                     <div className="flex items-center justify-between mt-3 sm:mt-0 sm:ml-auto sm:w-auto">
                       <div className="flex items-center gap-2">
                         <motion.button

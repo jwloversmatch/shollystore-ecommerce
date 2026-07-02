@@ -82,9 +82,11 @@ const slideVariants = {
 
 // ---------- Component ----------
 const Home = () => {
-  const { data: products, isLoading } = useGetProductsQuery({});
-  const { data: heroSlides, isLoading: slidesLoading } = useGetHeroSlidesQuery({});
-  const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery({});
+  const { data: products, isLoading: productsLoading } = useGetProductsQuery({});
+const { data: heroSlides, isLoading: slidesLoading } = useGetHeroSlidesQuery({});
+const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery({});
+
+const isPageLoading = productsLoading || slidesLoading || categoriesLoading;
 
   const displayProducts = useMemo<ProductItem[]>(() => products || [], [products]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -133,17 +135,17 @@ const Home = () => {
     return displayProducts.filter((p) => p.category === selectedCategory);
   }, [displayProducts, selectedCategory]);
 
-  if (isLoading || slidesLoading || categoriesLoading) {
-    return (
-      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-pastel-pink via-pastel-green to-white">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-          className="rounded-full h-16 w-16 border-4 border-leaf-green border-t-transparent"
-        />
-      </div>
-    );
-  }
+  if (isPageLoading) {
+  return (
+    <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-pastel-pink via-pastel-green to-white">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+        className="rounded-full h-16 w-16 border-4 border-leaf-green border-t-transparent"
+      />
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen relative overflow-x-hidden">

@@ -22,6 +22,7 @@ import {
   Calendar,
   Package,
 } from 'lucide-react';
+import { StatsCardSkeleton, OrderRowSkeleton } from '../../components/Skeletons';
 
 // ---------- Types (user object now includes name & phone) ----------
 interface OrderItem {
@@ -134,18 +135,22 @@ const Orders = () => {
     return { total, paid, pending };
   }, [orders]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex justify-center items-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-          className="rounded-full h-12 w-12 border-4 border-leaf-green/30 border-t-leaf-green"
-        />
+ if (isLoading) {
+  return (
+    <div className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <StatsCardSkeleton key={i} />
+        ))}
       </div>
-    );
-  }
-
+      <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-100">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <OrderRowSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+  );
+}
   return (
     <motion.div
       variants={containerVariants}

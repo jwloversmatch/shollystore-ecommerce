@@ -11,4 +11,7 @@ const CategorySchema: Schema = new Schema({
   slug: { type: String, required: true, unique: true },
 }, { timestamps: true });
 
+// ---------- Index ----------
+CategorySchema.index({ name: 1 });   // alphabetical listing & filtering
+
 export const Category = mongoose.model<ICategory>('Category', CategorySchema);

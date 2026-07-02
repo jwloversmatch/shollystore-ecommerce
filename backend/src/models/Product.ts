@@ -22,4 +22,10 @@ const ProductSchema: Schema = new Schema({
   isFeatured: { type: Boolean, default: false }
 }, { timestamps: true });
 
+// ---------- Indexes ----------
+ProductSchema.index({ name: 'text' });                // full‑text search (supports $text queries)
+ProductSchema.index({ category: 1 });                 // filter by category
+ProductSchema.index({ stock: 1 });                    // low‑stock filter
+ProductSchema.index({ createdAt: -1 });               // newest products first
+
 export const Product = mongoose.model<IProduct>('Product', ProductSchema);

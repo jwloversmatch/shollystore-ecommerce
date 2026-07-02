@@ -2,8 +2,8 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IOrder extends Document {
   user: mongoose.Types.ObjectId;
-  name?: string;             // customer name at time of order
-  phone?: string;            // customer phone at time of order
+  name?: string;
+  phone?: string;
   orderItems: { name: string; qty: number; price: number; product: mongoose.Types.ObjectId }[];
   shippingAddress: {
     address: string;
@@ -24,7 +24,7 @@ export interface IOrder extends Document {
 
 const OrderSchema: Schema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  name: { type: String },            // optional, but you can make it required if needed
+  name: { type: String },
   phone: { type: String },
   orderItems: [{
     name: { type: String, required: true },
@@ -48,5 +48,11 @@ const OrderSchema: Schema = new Schema({
     whatsappNumber: String,
   }
 }, { timestamps: true });
+
+// ---------- Indexes ----------
+OrderSchema.index({ user: 1, createdAt: -1 });        // getMyOrders – user's orders sorted by date
+OrderSchema.index({ status: 1, createdAt: -1 });      // admin orders filtered by status
+OrderSchema.index({ createdAt: -1 });                 // recent orders dashboard
+OrderSchema.index({ 'orderItems.product': 1 });       // top products aggregation
 
 export const Order = mongoose.model<IOrder>('Order', OrderSchema);

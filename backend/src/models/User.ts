@@ -5,7 +5,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   name?: string;
-  phone?: string;               // optional phone number
+  phone?: string;
   role: 'user' | 'admin';
   createdAt: Date;
   isVerified: boolean;
@@ -17,12 +17,16 @@ const UserSchema: Schema = new Schema({
   email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true },
   name: { type: String, default: '' },
-  phone: { type: String, default: '' },   // new field
+  phone: { type: String, default: '' },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   createdAt: { type: Date, default: Date.now },
   isVerified: { type: Boolean, default: false },
   verificationToken: { type: String, default: null },
 });
+
+// ---------- Indexes ----------
+UserSchema.index({ role: 1 });                     // filter by role in admin
+UserSchema.index({ createdAt: -1 });              // sort users by newest
 
 // Hash password before saving
 UserSchema.pre<IUser>('save', async function (this: IUser) {
