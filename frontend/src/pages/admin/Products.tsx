@@ -72,7 +72,7 @@ const Products = () => {
     data: products = [],
     isLoading,
   } = useGetProductsQuery({});
-  const { data: categories = [] } = useGetCategoriesQuery({}); // ✅ removed unused categoriesLoading
+  const { data: categories = [] } = useGetCategoriesQuery({});
   const [deleteProduct] = useDeleteProductMutation();
   const [createProduct] = useCreateProductMutation();
   const [updateProduct] = useUpdateProductMutation();
@@ -82,6 +82,7 @@ const Products = () => {
   // ---------- UI State ----------
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
+  const [showLowStock, setShowLowStock] = useState(false); // ✅ New filter
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
@@ -116,21 +117,31 @@ const Products = () => {
     return ['All', ...Array.from(new Set(all))];
   }, [products]);
 
-  // ---------- Filtered & Searched Products (Sorted Newest First) ----------
+  // ---------- Filtered & Searched Products (with Low Stock filter) ----------
   const filteredProducts = useMemo(() => {
     let filtered = products;
+
+    // Category filter
     if (categoryFilter !== 'All') {
       filtered = filtered.filter((p: ProductItem) => p.category === categoryFilter);
     }
+
+    // Search filter
     if (searchTerm) {
       filtered = filtered.filter((p: ProductItem) =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
+
+    // ✅ Low Stock filter (stock < 5)
+    if (showLowStock) {
+      filtered = filtered.filter((p: ProductItem) => p.stock < 5);
+    }
+
     return filtered.slice().sort((a: ProductItem, b: ProductItem) => 
       b._id.localeCompare(a._id)
     );
-  }, [products, searchTerm, categoryFilter]);
+  }, [products, searchTerm, categoryFilter, showLowStock]);
 
   // ---------- Pagination ----------
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
@@ -263,7 +274,7 @@ const Products = () => {
           </div>
         </div>
         
-        {/* Button container – always right-aligned, prevents stretching */}
+        {/* Add Product button – always right-aligned */}
         <div className="flex justify-end w-full sm:w-auto">
           <button
             onClick={() => handleOpenDrawer()}
@@ -298,6 +309,17 @@ const Products = () => {
             </option>
           ))}
         </select>
+        {/* ✅ Low Stock filter toggle */}
+        <button
+          onClick={() => setShowLowStock(!showLowStock)}
+          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap border ${
+            showLowStock
+              ? 'bg-red-100 text-red-700 border-red-300 ring-2 ring-red-200'
+              : 'bg-white text-gray-600 border-gray-200 hover:border-red-300'
+          }`}
+        >
+          {showLowStock ? 'Showing Low Stock' : 'Low Stock'}
+        </button>
       </div>
 
       {/* --- Product Table --- */}
@@ -557,7 +579,6 @@ const Products = () => {
                     {...register('category')}
                     className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green bg-white"
                   >
-                    {/* No default option – validation requires selection */}
                     {categories.map((cat: CategoryItem) => (
                       <option key={cat._id} value={cat.name}>
                         {cat.name}
