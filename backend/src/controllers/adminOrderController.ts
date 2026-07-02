@@ -4,7 +4,7 @@ import { Product } from '../models/Product';
 import { User } from '../models/User';
 import {
   sendAdminOrderNotification,
-  sendOrderStatusUpdateEmail, // ✅ added
+  sendOrderStatusUpdateEmail,
 } from '../services/email.service';
 
 // Helper to reduce stock when order transitions from Pending
@@ -105,18 +105,18 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
     const { id } = req.params;
     const { status } = req.body;
 
-    const order = await Order.findById(id).populate('user', 'email'); // ✅ populate user
+    // ✅ Populate user and cast to the correct type
+    const order = await Order.findById(id).populate('user', 'email') as any;
     if (!order) {
       res.status(404).json({ message: 'Order not found' });
       return;
     }
 
-    const oldStatus = order.status;
-
     if (order.status === 'Pending' && status !== 'Pending') {
       await reduceStockForOrder(order);
     }
 
+    const oldStatus = order.status;
     order.status = status;
     await order.save();
 
