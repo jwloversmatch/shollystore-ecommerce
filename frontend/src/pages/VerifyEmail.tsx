@@ -11,6 +11,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import SEO from '../components/SEO';
 
 // ---------- Animation variants (with literal types) ----------
 const containerVariants = {
@@ -119,6 +120,11 @@ const VerifyEmail = () => {
       setIsResending(false);
     }
   };
+
+  <SEO
+  title="Verify Your Email"
+  description="Verify your email address to activate your LotceWieth account."
+/>
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative bg-gradient-to-br from-leaf-green/5 via-pastel-pink/30 to-blob-orange/10 overflow-hidden">

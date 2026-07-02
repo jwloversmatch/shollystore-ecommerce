@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { HelmetProvider } from 'react-helmet-async';
 
 // Import Navbar and AdminRoute synchronously
 import Navbar from './components/Navbar';
@@ -24,7 +25,7 @@ const Account = React.lazy(() => import('./pages/Account'));
 
 import Settings from './pages/admin/Settings';
 
-// A beautiful fallback loading spinner
+// A beautiful fallback loading skeleton
 const LoadingFallback = () => (
   <div className="min-h-[60vh] flex justify-center items-center">
     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-leaf-green"></div>
@@ -33,32 +34,33 @@ const LoadingFallback = () => (
 
 function App() {
   return (
-    <Router>
-      <Toaster position="top-center" reverseOrder={false} />
-      <Navbar />
-      
-      <Suspense fallback={<LoadingFallback />}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/account" element={<Account />} />
+    <HelmetProvider>
+      <Router>
+        <Toaster position="top-center" reverseOrder={false} />
+        <Navbar />
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/account" element={<Account />} />
 
-          {/* Protected Admin Routes */}
-          <Route element={<AdminRoute />}>
-            <Route path="/admin" element={<Dashboard />} />
-            <Route path="/admin/products" element={<Products />} />
-            <Route path="/admin/settings" element={<Settings />} />
-            <Route path="/admin/orders" element={<Orders />} />
-            <Route path="/admin/hero-slides" element={<HeroSlides />} />
-            <Route path="/admin/categories" element={<Categories />} />  
-          </Route>
-        </Routes>
-      </Suspense>
-    </Router>
+            {/* Protected Admin Routes */}
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<Dashboard />} />
+              <Route path="/admin/products" element={<Products />} />
+              <Route path="/admin/settings" element={<Settings />} />
+              <Route path="/admin/orders" element={<Orders />} />
+              <Route path="/admin/hero-slides" element={<HeroSlides />} />
+              <Route path="/admin/categories" element={<Categories />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </Router>
+    </HelmetProvider>
   );
 }
 

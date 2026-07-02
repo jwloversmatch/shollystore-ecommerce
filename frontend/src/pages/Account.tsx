@@ -23,6 +23,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { OrderRowSkeleton } from "../components/Skeletons";
+import SEO from '../components/SEO';
 
 // ---------- Types ----------
 interface OrderItemDetail {
@@ -175,6 +176,11 @@ const Account = () => {
       </div>
     );
   }
+
+  <SEO
+  title="My Account"
+  description="Manage your orders and profile settings."
+/>
 
   return (
     <motion.div

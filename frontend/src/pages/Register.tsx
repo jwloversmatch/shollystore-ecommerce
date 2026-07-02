@@ -20,6 +20,7 @@ import {
   GlassWater,
   Loader2,
 } from "lucide-react";
+import SEO from '../components/SEO';
 
 // ---------- Zod Schema ----------
 const registerSchema = z.object({
@@ -107,6 +108,11 @@ const Register = () => {
   };
 
   const errorMessage = (error as { data?: { message: string } })?.data?.message;
+
+  <SEO
+  title="Create an Account"
+  description="Join LotceWieth and start shopping for your favourite beverages with free delivery across Nigeria."
+/>
 
   // ---------- Success screen ----------
   if (registrationSuccess) {

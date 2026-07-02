@@ -20,6 +20,7 @@ import {
   Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import SEO from '../components/SEO';
 
 // ---------- Zod Schema ----------
 const loginSchema = z.object({
@@ -100,6 +101,11 @@ const Login = () => {
   };
 
   const errorMessage = (error as { data?: { message: string } })?.data?.message;
+
+  <SEO
+  title="Sign In"
+  description="Log in to your LotceWieth account to manage orders and track deliveries."
+/>
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative bg-gradient-to-br from-leaf-green/5 via-pastel-pink/30 to-blob-orange/10 overflow-hidden">

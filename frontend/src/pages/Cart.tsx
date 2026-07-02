@@ -20,6 +20,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { CartItemSkeleton } from '../components/Skeletons';
+import SEO from '../components/SEO';
 
 // ---------- Animation Variants ----------
 const containerVariants = {
@@ -99,6 +100,11 @@ const Cart = () => {
       </div>
     );
   }
+
+  <SEO
+  title="Your Cart"
+  description="Review your items and proceed to secure checkout."
+/>
 
   // ---------- Empty Cart ----------
   if (cartItems.length === 0) {

@@ -42,6 +42,7 @@ import {
   Legend,
 } from "recharts";
 import ConfirmationModal from "../../components/ConfirmationModal";
+import SEO from '../../components/SEO';
 
 // ---------- Interfaces ----------
 interface OrderItem {
@@ -248,6 +249,11 @@ const Dashboard = () => {
       </div>
     );
   }
+
+  <SEO
+  title="Admin Dashboard"
+  description="Manage your store, track sales, oversee orders & users."
+/>
 
   return (
     <motion.div

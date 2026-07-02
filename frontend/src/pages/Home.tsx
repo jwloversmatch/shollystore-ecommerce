@@ -17,6 +17,7 @@ import {
   Sparkles,
   ArrowRight,
 } from 'lucide-react';
+import SEO from '../components/SEO';
 
 // ---------- Interfaces ----------
 interface ProductItem {
@@ -146,6 +147,12 @@ const isPageLoading = productsLoading || slidesLoading || categoriesLoading;
     </div>
   );
 }
+
+<SEO
+  title="Your Everyday Drink Superstore"
+  description="LotceWieth brings the coldest, most refreshing beverages straight to your doorstep across Nigeria. From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in convenient packs."
+  canonicalUrl="hhttps://shollystore-ecommerce.vercel.app"
+/>
 
   return (
     <div className="min-h-screen relative overflow-x-hidden">
