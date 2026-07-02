@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -22,6 +22,7 @@ import {
 const Cart = () => {
   const [showClearModal, setShowClearModal] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { cartItems } = useSelector((state: RootState) => state.cart);
   const { user } = useSelector((state: RootState) => state.auth);
@@ -32,7 +33,8 @@ const Cart = () => {
   const handleCheckout = () => {
     if (!user) {
       toast.error('Please login to checkout');
-      navigate('/login');
+      // ✅ Pass the current path so login can redirect back
+      navigate('/login', { state: { from: location.pathname } });
       return;
     }
     navigate('/checkout');
@@ -85,25 +87,25 @@ const Cart = () => {
     <div className="min-h-screen bg-gradient-to-br from-pastel-pink via-pastel-green to-white pt-16 md:pt-20 pb-16 px-4 md:px-8 flex flex-col items-center relative">
       <div className="max-w-7xl w-full">
         
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 md:mb-12">
-          <div className="flex items-center gap-4 flex-wrap">
+        {/* Header – mobile-friendly */}
+        <div className="flex items-center justify-between w-full gap-3 mb-6 md:mb-10">
+          <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
             <button
               onClick={() => navigate('/')}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors bg-white/70 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border border-white/40"
+              className="flex items-center gap-1.5 text-gray-600 hover:text-gray-800 transition-colors bg-white/70 backdrop-blur-sm px-2.5 py-1.5 md:px-4 md:py-2 rounded-xl shadow-sm border border-white/40 shrink-0"
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm font-medium">Continue Shopping</span>
+              <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
+              <span className="text-xs md:text-sm font-medium whitespace-nowrap hidden sm:inline">Continue Shopping</span>
             </button>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">My Cart</h1>
+            <h1 className="text-xl md:text-3xl font-bold text-gray-800 truncate">My Cart</h1>
           </div>
-          
+
           <button
             onClick={handleClearCart}
-            className="flex items-center gap-2 text-red-500 hover:text-red-700 hover:bg-red-50 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl transition-all bg-white/70 backdrop-blur-sm shadow-sm border border-white/40 text-sm font-medium"
+            className="flex items-center gap-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 md:px-4 md:py-2 rounded-xl transition-all bg-white/70 backdrop-blur-sm shadow-sm border border-white/40 shrink-0"
           >
-            <Trash2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Clear All</span>
+            <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+            <span className="hidden sm:inline text-xs md:text-sm font-medium">Clear All</span>
           </button>
         </div>
 
@@ -162,7 +164,6 @@ const Cart = () => {
                       </button>
                     </div>
 
-                    {/* ✅ Informative delete button */}
                     <button
                       onClick={() => dispatch(removeFromCart(item._id))}
                       className="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 rounded-lg transition-colors ml-1 sm:ml-2 group-hover:scale-105 transition-transform"

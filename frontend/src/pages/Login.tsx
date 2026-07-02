@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
@@ -8,6 +8,7 @@ import { z } from "zod";
 import { useLoginMutation } from "../features/api/apiSlice";
 import { setCredentials } from "../features/auth/authSlice";
 import { Mail, Lock, AlertCircle, Eye, EyeOff } from "lucide-react";
+import toast from "react-hot-toast";
 
 // Zod Validation Schema
 const loginSchema = z.object({
@@ -20,8 +21,12 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const [login, { isLoading, error }] = useLoginMutation();
+
+  // Get the redirect path from state, default to home if not set
+  const from = (location.state as { from?: string })?.from || "/";
 
   const {
     register,
@@ -35,11 +40,14 @@ const Login = () => {
     try {
       const userData = await login({ email: data.email, password: data.password }).unwrap();
       dispatch(setCredentials(userData));
+      toast.success("Login successful!");
+      
+      // Redirect admin to dashboard, others to the page they came from
       if (userData.role === "admin") navigate("/admin");
-      else navigate("/");
+      else navigate(from);
     } catch (err) {
-      // Keep the API error handling for invalid credentials
       console.error("Login error:", err);
+      toast.error("Login failed. Please check your credentials.");
     }
   };
 
@@ -65,7 +73,7 @@ const Login = () => {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="relative z-10 w-full max-w-5xl bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/40 grid md:grid-cols-2 min-h-[550px]"
       >
-        {/* Left Side - Visuals */}
+        {/* Left Side - Visuals (Beverage Store Theme) */}
         <div className="relative hidden md:flex flex-col justify-center items-center p-12 bg-gradient-to-br from-leaf-green/20 via-pastel-pink/30 to-white/30 border-r border-white/40">
           <motion.div
             animate={{ y: [0, -15, 0] }}
@@ -73,13 +81,13 @@ const Login = () => {
             className="relative z-10"
           >
             <img
-              src="https://images.unsplash.com/photo-1625772299848-391b6a87d7b3?auto=format&fit=crop&w=600&q=80"
-              alt="Premium Citrus Juice"
+              src="https://images.unsplash.com/photo-1622483767020-b3e0f38c2fec?auto=format&fit=crop&w=600&q=80"
+              alt="Fresh Beverage Selection"
               className="w-64 h-auto rounded-2xl shadow-xl border-4 border-white/50 object-cover"
             />
           </motion.div>
           <h2 className="mt-6 text-3xl font-bold text-gray-800 z-10 tracking-tight">LotceWieth</h2>
-          <p className="text-gray-600 text-center mt-2 z-10 max-w-[200px]">Organic. Refreshing. Delivered.</p>
+          <p className="text-gray-600 text-center mt-2 z-10 max-w-[200px]">Your everyday drink superstore.</p>
           <div className="absolute top-10 right-10 w-24 h-24 bg-blob-orange/20 rounded-full blur-3xl"></div>
         </div>
 

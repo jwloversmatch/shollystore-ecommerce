@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
-import toast from 'react-hot-toast'; // ✅ Import toast
+import toast from 'react-hot-toast';
 import { RootState } from '../store';
 import { useCreateOrderMutation, useGetPublicSettingsQuery } from '../features/api/apiSlice';
 import { clearCart } from '../features/cart/cartSlice';
@@ -24,6 +24,7 @@ interface OrderResponse {
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { cartItems } = useSelector((state: RootState) => state.cart);
   const { user } = useSelector((state: RootState) => state.auth);
@@ -43,8 +44,9 @@ const Checkout = () => {
 
   const onSubmit = async (data: CheckoutFormData) => {
     if (!user) {
-      toast.error('Please login to checkout'); // ✅ Replaced alert with toast
-      navigate('/login');
+      toast.error('Please login to checkout');
+      // ✅ Pass the current path so login can redirect back
+      navigate('/login', { state: { from: location.pathname } });
       return;
     }
 
@@ -66,7 +68,7 @@ const Checkout = () => {
       }
     } catch (error) {
       console.error('Checkout failed:', error);
-      toast.error('Failed to place order. Please try again.'); // ✅ Replaced alert with toast
+      toast.error('Failed to place order. Please try again.');
     }
   };
 
