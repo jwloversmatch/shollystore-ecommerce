@@ -22,9 +22,9 @@ const reduceStockForOrder = async (order: any) => {
 // @route   GET /api/admin/orders
 export const getAdminStats = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Populate user email and name for the dashboard
+    // ✅ Populate user email, name, AND phone
     const recentOrders = await Order.find()
-      .populate('user', 'email name')
+      .populate('user', 'email name phone')
       .sort({ createdAt: -1 })
       .limit(5);
 
@@ -76,7 +76,7 @@ export const getAllOrders = async (req: Request, res: Response): Promise<void> =
 
     const [orders, total] = await Promise.all([
       Order.find(filter)
-        .populate('user', 'email name') // now includes name
+        .populate('user', 'email name phone')   // ✅ now includes phone
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -102,7 +102,8 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
     const { id } = req.params;
     const { status } = req.body;
 
-    const order = await Order.findById(id).populate('user', 'email name');
+    // ✅ Populate user with phone as well
+    const order = await Order.findById(id).populate('user', 'email name phone');
     if (!order) {
       res.status(404).json({ message: 'Order not found' });
       return;
@@ -119,14 +120,14 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
 
     // Notify user (if email exists)
     if (['Shipped', 'Delivered'].includes(status)) {
-      // Safely cast user to populated shape
-      const populatedUser = order.user as unknown as { email?: string; name?: string } | null;
+      const populatedUser = order.user as unknown as { email?: string; name?: string; phone?: string } | null;
       if (populatedUser?.email) {
         await sendOrderStatusUpdateEmail(
           populatedUser.email,
           order._id.toString(),
           status,
           order.totalPrice,
+          populatedUser.name,   // optional: pass name for greeting
         );
       }
     }
