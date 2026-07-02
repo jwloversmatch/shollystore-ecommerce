@@ -65,6 +65,24 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>;
 
+// ---------- Animation Variants ----------
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
+  },
+};
+
+const itemFadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring' as const, stiffness: 300, damping: 25 },
+  },
+};
+
 // ---------- Component ----------
 const Products = () => {
   const navigate = useNavigate();
@@ -117,7 +135,7 @@ const Products = () => {
     return ['All', ...Array.from(new Set(all))];
   }, [products]);
 
-  // ---------- Filtered & Searched Products (with Low Stock filter) ----------
+  // ---------- Filtered & Searched Products ----------
   const filteredProducts = useMemo(() => {
     let filtered = products;
 
@@ -239,12 +257,29 @@ const Products = () => {
     }
   };
 
-  // Placeholder image for broken or missing images
   const placeholderImage = 'https://via.placeholder.com/150';
+
+  // ---------- Loading state ----------
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex justify-center items-center">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+          className="rounded-full h-12 w-12 border-4 border-leaf-green/30 border-t-leaf-green"
+        />
+      </div>
+    );
+  }
 
   // ---------- Render ----------
   return (
-    <div className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-4 md:space-y-6">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6 md:space-y-8"
+    >
       {/* --- Confirmation Modal --- */}
       <ConfirmationModal
         isOpen={modalOpen}
@@ -257,8 +292,8 @@ const Products = () => {
         type="danger"
       />
 
-      {/* --- Header with Back Button --- */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* --- Header --- */}
+      <motion.div variants={itemFadeUp} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/admin')}
@@ -274,18 +309,23 @@ const Products = () => {
         </div>
 
         <div className="flex justify-end w-full sm:w-auto">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => handleOpenDrawer()}
-            className="flex items-center gap-1 sm:gap-2 bg-leaf-green text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl font-medium shadow-lg hover:shadow-leaf-green/30 transition-all text-xs sm:text-sm whitespace-nowrap"
+            className="flex items-center gap-2 bg-leaf-green text-white px-4 py-2.5 rounded-xl font-medium shadow-lg hover:shadow-leaf-green/30 transition-all text-sm"
           >
-            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span>Add</span>
-          </button>
+            <Plus className="w-4 h-4" />
+            Add Product
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* --- Filters & Search --- */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 bg-white/80 backdrop-blur-sm p-3 sm:p-4 rounded-2xl shadow-sm border border-gray-100">
+      <motion.div
+        variants={itemFadeUp}
+        className="flex flex-col sm:flex-row gap-3 sm:gap-4 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-4"
+      >
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
@@ -293,13 +333,13 @@ const Products = () => {
             placeholder="Search products..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent text-sm"
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-leaf-green text-sm bg-white/70"
           />
         </div>
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-leaf-green bg-white text-sm"
+          className="px-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-leaf-green bg-white text-sm"
         >
           {filterCategories.map((cat) => (
             <option key={cat} value={cat}>
@@ -309,7 +349,7 @@ const Products = () => {
         </select>
         <button
           onClick={() => setShowLowStock(!showLowStock)}
-          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap border ${
+          className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap border ${
             showLowStock
               ? 'bg-red-100 text-red-700 border-red-300 ring-2 ring-red-200'
               : 'bg-white text-gray-600 border-gray-200 hover:border-red-300'
@@ -317,57 +357,43 @@ const Products = () => {
         >
           {showLowStock ? 'Showing Low Stock' : 'Low Stock'}
         </button>
-      </div>
+      </motion.div>
 
       {/* --- Product Table --- */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
+      <motion.div
+        variants={itemFadeUp}
+        className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-gray-50/50">
               <tr>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                  Image
-                </th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                  Price
-                </th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                  Stock
-                </th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider text-right">
-                  Actions
-                </th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Image</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Name</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Price</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Stock</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Category</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {isLoading ? (
+              {paginatedProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 sm:px-6 py-4 sm:py-8 text-center text-gray-500 text-sm">
-                    Loading products...
-                  </td>
-                </tr>
-              ) : paginatedProducts.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 sm:px-6 py-4 sm:py-8 text-center text-gray-500 text-sm">
+                  <td colSpan={6} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
                     No products found.
                   </td>
                 </tr>
               ) : (
-                paginatedProducts.map((product: ProductItem) => (
+                paginatedProducts.map((product: ProductItem, idx: number) => (
                   <motion.tr
                     key={product._id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2, delay: idx * 0.03 }}
                     whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
                     className="transition-colors"
                   >
-                    <td className="px-4 sm:px-6 py-3 sm:py-4">
+                    <td className="px-4 sm:px-6 py-3">
                       <img
                         src={product.images?.[0] || placeholderImage}
                         alt={product.name}
@@ -375,64 +401,62 @@ const Products = () => {
                         onError={(e) => {
                           e.currentTarget.src = placeholderImage;
                         }}
-                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-gray-200"
+                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-gray-200 shadow-sm"
                       />
                     </td>
-                    <td className="px-4 sm:px-6 py-3 sm:py-4 font-medium text-xs sm:text-sm text-gray-800">
+                    <td className="px-4 sm:px-6 py-3 font-medium text-xs sm:text-sm text-gray-800">
                       {product.name}
                     </td>
-                    <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-700">
+                    <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm text-gray-700">
                       ₦{product.price.toLocaleString()}
                     </td>
-                    <td className="px-4 sm:px-6 py-3 sm:py-4">
+                    <td className="px-4 sm:px-6 py-3">
                       <div className="flex items-center gap-1 sm:gap-2">
-                        <button
-                          onClick={() =>
-                            handleQuickStock(product._id, product.stock, -1)
-                          }
-                          className="p-1 rounded hover:bg-red-50 text-red-500 transition"
+                        <motion.button
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleQuickStock(product._id, product.stock, -1)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition"
                         >
-                          <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
-                        </button>
+                          <Minus className="w-3.5 h-3.5" />
+                        </motion.button>
                         <span
-                          className={`font-semibold text-xs sm:text-sm ${
+                          className={`font-semibold text-sm ${
                             product.stock < 5 ? 'text-red-600' : 'text-gray-700'
                           }`}
                         >
                           {product.stock}
                         </span>
-                        <button
-                          onClick={() =>
-                            handleQuickStock(product._id, product.stock, 1)
-                          }
-                          className="p-1 rounded hover:bg-leaf-green/10 text-leaf-green transition"
+                        <motion.button
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleQuickStock(product._id, product.stock, 1)}
+                          className="p-1.5 rounded-lg hover:bg-leaf-green/10 text-leaf-green transition"
                         >
-                          <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-                        </button>
+                          <Plus className="w-3.5 h-3.5" />
+                        </motion.button>
                         {product.stock < 5 && (
-                          <span className="text-[8px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 bg-red-100 text-red-600 rounded-full font-bold ml-1 sm:ml-2">
+                          <span className="text-[10px] px-2 py-0.5 bg-red-100 text-red-600 rounded-full font-bold">
                             Low
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 sm:px-6 py-3 sm:py-4">
-                      <span className="text-[8px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 bg-pastel-green text-leaf-green rounded-full font-bold uppercase tracking-wider">
+                    <td className="px-4 sm:px-6 py-3">
+                      <span className="text-[10px] px-2 py-0.5 bg-pastel-green text-leaf-green rounded-full font-bold uppercase tracking-wider">
                         {product.category}
                       </span>
                     </td>
-                    <td className="px-4 sm:px-6 py-3 sm:py-4 text-right space-x-1 sm:space-x-2">
+                    <td className="px-4 sm:px-6 py-3 text-right">
                       <button
                         onClick={() => handleOpenDrawer(product)}
-                        className="text-blue-600 hover:text-blue-800 transition"
+                        className="text-blue-600 hover:text-blue-800 transition p-1.5 rounded-lg hover:bg-blue-50"
                       >
-                        <Edit2 className="w-3 h-3 sm:w-4 sm:h-4 inline-block" />
+                        <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteClick(product._id)}
-                        className="text-gray-400 hover:text-red-600 transition"
+                        className="text-gray-400 hover:text-red-600 transition p-1.5 rounded-lg hover:bg-red-50 ml-1"
                       >
-                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 inline-block" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
                   </motion.tr>
@@ -442,9 +466,9 @@ const Products = () => {
           </table>
         </div>
 
-        {/* --- Pagination --- */}
+        {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row justify-between items-center px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-100 gap-2">
+          <div className="flex flex-col sm:flex-row justify-between items-center px-4 sm:px-6 py-3 border-t border-gray-100 gap-2">
             <span className="text-xs sm:text-sm text-gray-500">
               Showing {startIndex + 1} –{' '}
               {Math.min(startIndex + itemsPerPage, filteredProducts.length)} of{' '}
@@ -459,9 +483,7 @@ const Products = () => {
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
                 className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-40 transition"
               >
@@ -470,13 +492,12 @@ const Products = () => {
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* --- Slide‑in Drawer (Add/Edit) --- */}
       <AnimatePresence>
         {isDrawerOpen && (
           <>
-            {/* Overlay */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -484,13 +505,12 @@ const Products = () => {
               className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
               onClick={handleCloseDrawer}
             />
-            {/* Drawer */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed right-0 top-0 h-full w-full max-w-full sm:max-w-xl bg-white/90 backdrop-blur-xl shadow-2xl z-50 overflow-y-auto p-6"
+              className="fixed right-0 top-0 h-full w-full max-w-full sm:max-w-xl bg-white/95 backdrop-blur-xl shadow-2xl z-50 overflow-y-auto p-6"
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">
@@ -507,9 +527,7 @@ const Products = () => {
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 {/* Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Product Name
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
                   <input
                     {...register('name')}
                     className={`w-full border ${
@@ -525,12 +543,10 @@ const Products = () => {
                   )}
                 </div>
 
-                {/* Price & Stock (2 columns) */}
+                {/* Price & Stock */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Price (₦)
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Price (₦)</label>
                     <input
                       type="number"
                       min="0"
@@ -549,9 +565,7 @@ const Products = () => {
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Stock
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
                     <input
                       type="number"
                       min="0"
@@ -571,11 +585,9 @@ const Products = () => {
                   </div>
                 </div>
 
-                {/* Category - dynamic from backend */}
+                {/* Category */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Category
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                   <select
                     {...register('category')}
                     className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green bg-white"
@@ -596,9 +608,7 @@ const Products = () => {
 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                   <textarea
                     {...register('description')}
                     rows={3}
@@ -607,11 +617,9 @@ const Products = () => {
                   />
                 </div>
 
-                {/* Image Upload Section with Preview */}
+                {/* Image Upload */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Product Image
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
                   <div className="flex flex-col gap-3">
                     <input
                       type="file"
@@ -625,8 +633,6 @@ const Products = () => {
                         Uploading...
                       </div>
                     )}
-
-                    {/* New image preview when a file is selected */}
                     {file && (
                       <div className="mt-2">
                         <span className="text-xs text-gray-500">New image preview:</span>
@@ -637,8 +643,6 @@ const Products = () => {
                         />
                       </div>
                     )}
-
-                    {/* Existing image preview if editing and no new file selected */}
                     {editingProduct?.images?.[0] && !file && (
                       <div className="mt-2">
                         <span className="text-xs text-gray-500">Current image:</span>
@@ -665,9 +669,11 @@ const Products = () => {
                   >
                     Cancel
                   </button>
-                  <button
+                  <motion.button
                     type="submit"
                     disabled={isSubmitting || uploading}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     className="px-4 py-2 bg-leaf-green text-white rounded-xl font-medium shadow-lg hover:shadow-leaf-green/30 transition disabled:opacity-60"
                   >
                     {isSubmitting || uploading
@@ -675,14 +681,14 @@ const Products = () => {
                       : editingProduct
                       ? 'Update Product'
                       : 'Save Product'}
-                  </button>
+                  </motion.button>
                 </div>
               </form>
             </motion.div>
           </>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 };
 
