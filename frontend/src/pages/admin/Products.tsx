@@ -13,6 +13,7 @@ import {
   useUploadImageMutation,
   useUpdateStockMutation,
   useGetCategoriesQuery,
+  useSendMarketingEmailMutation,
 } from '../../features/api/apiSlice';
 import {
   Search,
@@ -24,6 +25,7 @@ import {
   AlertCircle,
   ArrowLeft,
   Minus,
+  Mail,
 } from 'lucide-react';
 import ConfirmationModal from '../../components/ConfirmationModal';
 
@@ -94,6 +96,7 @@ const Products = () => {
   const [updateProduct] = useUpdateProductMutation();
   const [uploadImage] = useUploadImageMutation();
   const [updateStock] = useUpdateStockMutation();
+  const [sendMarketingEmail, { isLoading: isSendingMarketing }] = useSendMarketingEmailMutation();
 
   // ---------- UI State ----------
   const [searchTerm, setSearchTerm] = useState('');
@@ -112,6 +115,15 @@ const Products = () => {
     type: 'delete';
     id: string;
   } | null>(null);
+
+  // ---------- Marketing Modal State ----------
+  const [marketingModalOpen, setMarketingModalOpen] = useState(false);
+  const [selectedProductForMarketing, setSelectedProductForMarketing] = useState<ProductItem | null>(null);
+  const [marketingType, setMarketingType] = useState<'new_arrival' | 'back_in_stock'>('new_arrival');
+  const [customMessage, setCustomMessage] = useState('');
+
+  // ✅ New arrival notification checkbox (only for new product)
+  const [notifyCustomers, setNotifyCustomers] = useState(false);
 
   // ---------- React Hook Form ----------
   const {
@@ -166,6 +178,7 @@ const Products = () => {
         description: product.description || '',
       });
       setFile(null);
+      setNotifyCustomers(false); // not used when editing
     } else {
       setEditingProduct(null);
       reset({
@@ -176,6 +189,7 @@ const Products = () => {
         description: '',
       });
       setFile(null);
+      setNotifyCustomers(false);
     }
     setIsDrawerOpen(true);
   };
@@ -184,6 +198,7 @@ const Products = () => {
     setIsDrawerOpen(false);
     setEditingProduct(null);
     setFile(null);
+    setNotifyCustomers(false);
   };
 
   const handleDeleteClick = (id: string) => {
@@ -234,7 +249,8 @@ const Products = () => {
           ...productData,
         }).unwrap();
       } else {
-        await createProduct(productData).unwrap();
+        // ✅ Include notifyCustomers flag when creating a new product
+        await createProduct({ ...productData, notifyCustomers }).unwrap();
       }
 
       handleCloseDrawer();
@@ -242,6 +258,30 @@ const Products = () => {
       const error = err as { data?: { message: string } };
       console.error('Failed to save product:', error.data?.message || error);
       toast.error('Error saving product. Please try again.');
+    }
+  };
+
+  // ✅ Marketing email handlers
+  const openMarketingModal = (product: ProductItem, type: 'new_arrival' | 'back_in_stock') => {
+    setSelectedProductForMarketing(product);
+    setMarketingType(type);
+    setCustomMessage('');
+    setMarketingModalOpen(true);
+  };
+
+  const handleSendMarketing = async () => {
+    if (!selectedProductForMarketing) return;
+    try {
+      await sendMarketingEmail({
+        type: marketingType,
+        productId: selectedProductForMarketing._id,
+        customMessage: marketingType === 'new_arrival' ? customMessage : undefined,
+      }).unwrap();
+      toast.success('Emails sent to customers!');
+      setMarketingModalOpen(false);
+    } catch (error: unknown) {
+      const err = error as { data?: { message?: string } };
+      toast.error(err?.data?.message || 'Failed to send emails');
     }
   };
 
@@ -440,6 +480,13 @@ const Products = () => {
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
+                      <button
+                        onClick={() => openMarketingModal(product, product.stock > 0 ? 'new_arrival' : 'back_in_stock')}
+                        className="text-leaf-green hover:text-green-700 transition p-1.5 rounded-lg hover:bg-leaf-green/10 ml-1"
+                        title="Notify customers"
+                      >
+                        <Mail className="w-4 h-4" />
+                      </button>
                     </td>
                   </motion.tr>
                 ))
@@ -447,7 +494,6 @@ const Products = () => {
             </tbody>
           </table>
         </div>
-        {/* No pagination controls – all filtered products shown in scrollable area */}
       </motion.div>
 
       {/* --- Slide‑in Drawer (Add/Edit) --- */}
@@ -601,6 +647,22 @@ const Products = () => {
                   </div>
                 </div>
 
+                {/* ✅ Checkbox – only for new product */}
+                {!editingProduct && (
+                  <div className="flex items-center gap-2 mt-4">
+                    <input
+                      type="checkbox"
+                      id="notifyCustomers"
+                      checked={notifyCustomers}
+                      onChange={(e) => setNotifyCustomers(e.target.checked)}
+                      className="w-4 h-4 text-leaf-green focus:ring-leaf-green rounded"
+                    />
+                    <label htmlFor="notifyCustomers" className="text-sm text-gray-700 font-medium">
+                      Notify customers of new arrival
+                    </label>
+                  </div>
+                )}
+
                 {/* Actions */}
                 <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
                   <button
@@ -625,6 +687,82 @@ const Products = () => {
                   </motion.button>
                 </div>
               </form>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* --- Marketing Email Modal --- */}
+      <AnimatePresence>
+        {marketingModalOpen && selectedProductForMarketing && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+              onClick={() => setMarketingModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-gray-800">Notify Customers</h2>
+                  <button onClick={() => setMarketingModalOpen(false)} className="p-1 rounded-lg hover:bg-gray-100">
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  You are about to send an email about <strong>{selectedProductForMarketing.name}</strong> to all customers.
+                </p>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <select
+                      value={marketingType}
+                      onChange={(e) => setMarketingType(e.target.value as 'new_arrival' | 'back_in_stock')}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                    >
+                      <option value="new_arrival">New Arrival</option>
+                      <option value="back_in_stock">Back in Stock</option>
+                    </select>
+                  </div>
+
+                  {marketingType === 'new_arrival' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Custom Message (optional)</label>
+                      <textarea
+                        value={customMessage}
+                        onChange={(e) => setCustomMessage(e.target.value)}
+                        rows={3}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                        placeholder="Write a short message..."
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <button
+                      onClick={() => setMarketingModalOpen(false)}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSendMarketing}
+                      disabled={isSendingMarketing}
+                      className="px-4 py-2 bg-leaf-green text-white rounded-xl font-medium shadow-md hover:bg-green-700 transition disabled:opacity-60 text-sm flex items-center gap-2"
+                    >
+                      {isSendingMarketing ? 'Sending...' : 'Send Emails'}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </motion.div>
           </>
         )}

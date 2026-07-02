@@ -26,7 +26,6 @@ export const apiSlice = createApi({
       invalidatesTags: ["Order"],
     }),
 
-    // ✅ Updated to /admin/orders/all to avoid conflict with getAdminStats
     getAllOrders: builder.query({
       query: ({
         page = 1,
@@ -46,12 +45,11 @@ export const apiSlice = createApi({
         if (search) params.append("search", search);
         if (startDate) params.append("startDate", startDate);
         if (endDate) params.append("endDate", endDate);
-        return `/admin/orders/all?${params.toString()}`; 
+        return `/admin/orders/all?${params.toString()}`;
       },
       providesTags: ["Order"],
     }),
 
-    // ✅ This stays unchanged – returns stats for dashboard
     getAdminStats: builder.query({
       query: () => "/admin/orders",
       providesTags: ["Order"],
@@ -153,7 +151,6 @@ export const apiSlice = createApi({
       invalidatesTags: ["Product"],
     }),
 
-    // Settings endpoints
     getSettings: builder.query({
       query: () => "/admin/settings",
       providesTags: ["Settings"],
@@ -246,6 +243,15 @@ export const apiSlice = createApi({
         body,
       }),
     }),
+
+    // ✅ New: Send marketing email (new arrival / back-in-stock)
+    sendMarketingEmail: builder.mutation({
+      query: (data) => ({
+        url: "/admin/marketing/send",
+        method: "POST",
+        body: data,
+      }),
+    }),
   }),
 });
 
@@ -281,4 +287,5 @@ export const {
   useDeleteCategoryMutation,
   useGetOrderCustomerCountQuery,
   useUpdateProfileMutation,
+  useSendMarketingEmailMutation,  
 } = apiSlice;
