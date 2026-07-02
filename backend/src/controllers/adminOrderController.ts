@@ -22,7 +22,6 @@ const reduceStockForOrder = async (order: any) => {
 // @route   GET /api/admin/orders
 export const getAdminStats = async (req: Request, res: Response): Promise<void> => {
   try {
-    // ✅ Populate user email, name, AND phone
     const recentOrders = await Order.find()
       .populate('user', 'email name phone')
       .sort({ createdAt: -1 })
@@ -76,7 +75,7 @@ export const getAllOrders = async (req: Request, res: Response): Promise<void> =
 
     const [orders, total] = await Promise.all([
       Order.find(filter)
-        .populate('user', 'email name phone')   // ✅ now includes phone
+        .populate('user', 'email name phone')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -102,23 +101,28 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
     const { id } = req.params;
     const { status } = req.body;
 
-    // ✅ Populate user with phone as well
+    // 1. Fetch the order (with populated user for email notifications)
     const order = await Order.findById(id).populate('user', 'email name phone');
     if (!order) {
       res.status(404).json({ message: 'Order not found' });
       return;
     }
 
+    // 2. Reduce stock if transitioning from Pending
     if (order.status === 'Pending' && status !== 'Pending') {
       await reduceStockForOrder(order);
     }
 
-    order.status = status;
-    await order.save();
+    // 3. Update only the status field – bypasses full document validation
+    await Order.updateOne({ _id: order._id }, { $set: { status } });
 
+    // 4. Update the in‑memory object for the rest of the function
+    order.status = status;
+
+    // 5. Send admin notification (now has the new status)
     await sendAdminOrderNotification(order, 'updated', status);
 
-    // Notify user (if email exists)
+    // 6. Notify the customer if shipped/delivered
     if (['Shipped', 'Delivered'].includes(status)) {
       const populatedUser = order.user as unknown as { email?: string; name?: string; phone?: string } | null;
       if (populatedUser?.email) {
@@ -127,11 +131,12 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
           order._id.toString(),
           status,
           order.totalPrice,
-          populatedUser.name,   // optional: pass name for greeting
+          populatedUser.name,
         );
       }
     }
 
+    // 7. Return the updated order
     res.json({ success: true, order });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
