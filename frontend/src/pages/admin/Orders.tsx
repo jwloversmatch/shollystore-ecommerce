@@ -23,11 +23,11 @@ import {
   Package,
 } from 'lucide-react';
 
-// ---------- Types (updated: user object includes phone) ----------
+// ---------- Types (user object now includes name & phone) ----------
 interface OrderItem {
   _id: string;
-  user: { email: string; phone?: string };   // 👈 phone from populated user
-  name?: string;                              // order snapshot name
+  user: { email: string; name?: string; phone?: string }; // 👈 profile name & phone
+  name?: string;                              // order snapshot name (fallback)
   phone?: string;                             // order snapshot phone (fallback)
   totalPrice: number;
   status: string;
@@ -303,9 +303,12 @@ const Orders = () => {
                 >
                   <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm">
                     <div className="flex flex-col">
-                      {order.name && <span className="font-medium text-gray-800">{order.name}</span>}
+                      {/* Show current name from user profile if available, else order snapshot */}
+                      <span className="font-medium text-gray-800">
+                        {order.user?.name || order.name || 'N/A'}
+                      </span>
                       <span className="text-gray-600">{order.user?.email}</span>
-                      {/* Show current phone from populated user if available, else order snapshot */}
+                      {/* Show current phone from user profile if available, else order snapshot */}
                       {(order.user?.phone || order.phone) && (
                         <span className="text-gray-400 flex items-center gap-1 mt-0.5">
                           <Phone className="w-3 h-3" />
@@ -438,10 +441,12 @@ const Orders = () => {
                     )}
                   </div>
 
-                  {/* Customer info */}
+                  {/* Customer info (updated with user name) */}
                   <div className="bg-gray-50 rounded-xl p-4">
                     <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Customer</p>
-                    <p className="font-medium text-gray-800">{selectedOrder.name || 'N/A'}</p>
+                    <p className="font-medium text-gray-800">
+                      {selectedOrder.user?.name || selectedOrder.name || 'N/A'}
+                    </p>
                     <p className="text-sm text-gray-600">{selectedOrder.user?.email}</p>
                     {(selectedOrder.user?.phone || selectedOrder.phone) && (
                       <p className="text-sm text-gray-600 flex items-center gap-1">
