@@ -14,22 +14,13 @@ interface ProductProps {
   stock?: number;
 }
 
-// ---------- Animation Variants (with literal types) ----------
+// ---------- Animation Variants ----------
 const cardVariants = {
   hidden: { opacity: 0, y: 30 },
   visible: {
     opacity: 1,
     y: 0,
     transition: { type: 'spring' as const, stiffness: 300, damping: 25 },
-  },
-};
-
-const overlayVariants = {
-  rest: { opacity: 0, y: 20 },
-  hover: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3, ease: 'easeOut' as const },
   },
 };
 
@@ -87,6 +78,7 @@ const ProductCard = ({
     >
       {/* Image container */}
       <div className="relative w-full aspect-[4/3] bg-gray-100 overflow-hidden shrink-0">
+        {/* Skeleton / Error handling */}
         {!imageLoaded && !imageError && (
           <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%]" />
         )}
@@ -109,8 +101,6 @@ const ProductCard = ({
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
           />
         )}
-
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 pointer-events-none" />
 
         {/* Category badge */}
         <motion.span
@@ -176,14 +166,13 @@ const ProductCard = ({
           </motion.p>
         </motion.div>
 
-        {/* Add to Cart button */}
-        {!isOutOfStock && (
-          <motion.div
-            variants={overlayVariants}
-            initial="rest"
-            whileHover="hover"
-            className="relative mt-3 md:mt-4"
-          >
+        {/* Add to Cart button – always visible, but retains animation on interaction */}
+        <div className="mt-3 md:mt-4">
+          {isOutOfStock ? (
+            <div className="w-full bg-red-50 text-red-600 py-2.5 md:py-3 rounded-xl text-center text-sm font-medium">
+              Unavailable
+            </div>
+          ) : (
             <motion.button
               onClick={handleAddToCart}
               whileHover={{ scale: 1.02 }}
@@ -201,14 +190,8 @@ const ProductCard = ({
                 {added ? 'Added ✓' : 'Add to Cart'}
               </span>
             </motion.button>
-          </motion.div>
-        )}
-
-        {isOutOfStock && (
-          <div className="mt-3 md:mt-4 w-full bg-red-50 text-red-600 py-2.5 md:py-3 rounded-xl text-center text-sm font-medium">
-            Unavailable
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </motion.div>
   );
