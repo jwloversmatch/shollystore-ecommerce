@@ -75,21 +75,21 @@ const Cart = () => {
     setShowClearModal(false);
   };
 
-  // Empty state
+  // ---------- Empty Cart ----------
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pastel-pink/40 via-pastel-green/40 to-white overflow-hidden">
-        {/* Background blobs */}
-        <div className="absolute inset-0 -z-10 pointer-events-none">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pastel-pink/40 via-pastel-green/40 to-white overflow-hidden relative">
+        {/* Fixed background blobs – no overflow */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <motion.div
-            animate={{ x: ['-10%', '10%', '-10%'], y: ['-5%', '5%', '-5%'] }}
-            transition={{ repeat: Infinity, duration: 25, ease: 'linear' }}
-            className="absolute top-10 -left-20 w-72 h-72 bg-leaf-green/20 rounded-full blur-3xl"
+            animate={{ scale: [1, 1.1, 1], x: ['-5%', '5%', '-5%'] }}
+            transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
+            className="absolute -top-32 -left-32 w-80 h-80 bg-leaf-green/20 rounded-full blur-3xl"
           />
           <motion.div
-            animate={{ x: ['10%', '-10%', '10%'], y: ['5%', '-5%', '5%'] }}
-            transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
-            className="absolute bottom-10 -right-20 w-96 h-96 bg-blob-orange/20 rounded-full blur-3xl"
+            animate={{ scale: [1, 1.15, 1], x: ['5%', '-5%', '5%'] }}
+            transition={{ repeat: Infinity, duration: 25, ease: 'linear' }}
+            className="absolute -bottom-32 -right-32 w-96 h-96 bg-blob-orange/20 rounded-full blur-3xl"
           />
         </div>
 
@@ -97,7 +97,7 @@ const Cart = () => {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="bg-white/80 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-white/50 max-w-md w-full mx-4 text-center"
+          className="relative bg-white/80 backdrop-blur-xl p-8 sm:p-10 rounded-3xl shadow-2xl border border-white/50 max-w-sm w-full mx-4 text-center"
         >
           <motion.div
             initial={{ scale: 0 }}
@@ -128,34 +128,35 @@ const Cart = () => {
     );
   }
 
+  // ---------- Cart with Items ----------
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="min-h-screen bg-gradient-to-br from-pastel-pink/40 via-pastel-green/40 to-white pt-16 md:pt-24 pb-16 px-4 md:px-8 flex flex-col items-center relative overflow-hidden"
+      className="min-h-screen bg-gradient-to-br from-pastel-pink/40 via-pastel-green/40 to-white pt-16 md:pt-24 pb-16 px-4 md:px-8 flex flex-col items-center relative overflow-x-hidden"
     >
       {/* Background blobs */}
-      <div className="absolute inset-0 -z-10 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <motion.div
-          animate={{ x: ['-10%', '10%', '-10%'], y: ['-5%', '5%', '-5%'] }}
+          animate={{ scale: [1, 1.05, 1], x: ['-5%', '5%', '-5%'] }}
           transition={{ repeat: Infinity, duration: 25, ease: 'linear' }}
-          className="absolute top-10 -left-20 w-72 h-72 bg-leaf-green/20 rounded-full blur-3xl"
+          className="absolute -top-32 -left-32 w-80 h-80 bg-leaf-green/20 rounded-full blur-3xl"
         />
         <motion.div
-          animate={{ x: ['10%', '-10%', '10%'], y: ['5%', '-5%', '5%'] }}
+          animate={{ scale: [1, 1.1, 1], x: ['5%', '-5%', '5%'] }}
           transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
-          className="absolute bottom-10 -right-20 w-96 h-96 bg-blob-orange/20 rounded-full blur-3xl"
+          className="absolute -bottom-32 -right-32 w-96 h-96 bg-blob-orange/20 rounded-full blur-3xl"
         />
       </div>
 
       <div className="max-w-7xl w-full">
         {/* Header */}
-        <motion.div variants={itemFadeUp} className="flex items-center justify-between w-full gap-3 mb-6 md:mb-10">
+        <motion.div variants={itemFadeUp} className="flex items-center justify-between gap-3 mb-6 md:mb-10">
           <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
             <button
               onClick={() => navigate('/')}
-              className="flex items-center gap-1.5 text-gray-600 hover:text-gray-800 transition-colors bg-white/70 backdrop-blur-sm px-2.5 py-1.5 md:px-4 md:py-2 rounded-xl shadow-sm border border-white/40 shrink-0"
+              className="flex items-center gap-1.5 text-gray-600 hover:text-gray-800 transition-colors bg-white/70 backdrop-blur-sm px-3 py-2 md:px-4 md:py-2 rounded-xl shadow-sm border border-white/40 shrink-0"
             >
               <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
               <span className="text-xs md:text-sm font-medium whitespace-nowrap hidden sm:inline">
@@ -166,7 +167,7 @@ const Cart = () => {
           </div>
           <button
             onClick={handleClearCart}
-            className="flex items-center gap-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 md:px-4 md:py-2 rounded-xl transition-all bg-white/70 backdrop-blur-sm shadow-sm border border-white/40 shrink-0"
+            className="flex items-center gap-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 md:px-4 md:py-2 rounded-xl transition-all bg-white/70 backdrop-blur-sm shadow-sm border border-white/40 shrink-0"
           >
             <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
             <span className="hidden sm:inline text-xs md:text-sm font-medium">Clear All</span>
@@ -186,56 +187,54 @@ const Cart = () => {
                   initial="hidden"
                   animate="visible"
                   exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-                  className="group bg-white/80 backdrop-blur-md rounded-2xl shadow-md border border-gray-100 p-4 md:p-6 hover:shadow-xl transition-shadow w-full flex flex-row items-center gap-4"
+                  className="group bg-white/80 backdrop-blur-md rounded-2xl shadow-md border border-gray-100 p-4 md:p-5 hover:shadow-xl transition-shadow w-full flex flex-col sm:flex-row items-start sm:items-center gap-4"
                 >
                   {/* Image */}
                   <motion.img
                     whileHover={{ scale: 1.05 }}
                     src={item.image || 'https://via.placeholder.com/100'}
                     alt={item.name}
-                    className="w-16 h-16 md:w-20 md:h-20 rounded-xl object-cover border border-gray-200 group-hover:border-leaf-green/30 transition-colors shrink-0"
+                    className="w-20 h-20 rounded-xl object-cover border border-gray-200 group-hover:border-leaf-green/30 transition-colors shrink-0"
                   />
                   {/* Info */}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 w-full sm:w-auto">
                     <h3 className="font-bold text-base md:text-lg text-gray-800 group-hover:text-leaf-green transition-colors truncate">
                       {item.name}
                     </h3>
-                    <p className="text-leaf-green font-semibold text-base md:text-lg">
+                    <p className="text-leaf-green font-semibold text-base md:text-lg mt-1">
                       ₦{item.price.toLocaleString()}
                     </p>
-                  </div>
-                  {/* Quantity & Remove */}
-                  <div className="flex flex-row items-center gap-2 sm:gap-3 shrink-0">
-                    <div className="flex items-center gap-1 sm:gap-2">
+                    {/* Quantity & Remove – align right on mobile */}
+                    <div className="flex items-center justify-between mt-3 sm:mt-0 sm:ml-auto sm:w-auto">
+                      <div className="flex items-center gap-2">
+                        <motion.button
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleQty(item._id, item.qty, -1, item.stock)}
+                          disabled={item.qty <= 1}
+                          className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </motion.button>
+                        <span className="font-semibold w-6 text-center text-sm">{item.qty}</span>
+                        <motion.button
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleQty(item._id, item.qty, 1, item.stock)}
+                          disabled={item.qty >= item.stock}
+                          className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </motion.button>
+                      </div>
                       <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleQty(item._id, item.qty, -1, item.stock)}
-                        disabled={item.qty <= 1}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => dispatch(removeFromCart(item._id))}
+                        className="ml-3 flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 rounded-lg transition-colors"
                       >
-                        <Minus className="w-3.5 h-3.5" />
-                      </motion.button>
-                      <span className="font-semibold w-6 text-center text-sm">
-                        {item.qty}
-                      </span>
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => handleQty(item._id, item.qty, 1, item.stock)}
-                        disabled={item.qty >= item.stock}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
+                        <span className="text-xs font-medium hidden sm:inline">Remove</span>
                       </motion.button>
                     </div>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => dispatch(removeFromCart(item._id))}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                      <span className="hidden sm:inline text-xs font-medium">Remove</span>
-                    </motion.button>
                   </div>
                 </motion.div>
               ))}
@@ -244,7 +243,7 @@ const Cart = () => {
 
           {/* Right: Order Summary */}
           <motion.div variants={itemFadeUp} className="lg:col-span-1">
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-6 md:p-8 sticky top-6 w-full h-fit">
+            <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-6 md:p-8 sticky top-6 w-full">
               <h2 className="text-xl font-bold text-gray-800 mb-6 border-b border-gray-200 pb-4">
                 Order Summary
               </h2>
