@@ -13,7 +13,7 @@ export const apiSlice = createApi({
   tagTypes: ["Product", "Order", "User", "Settings", "HeroSlide", "Category"],
   endpoints: (builder) => ({
     getProducts: builder.query({
-      query: () => "/products",
+      query: () => "/products?limit=9999",
       providesTags: ["Product"],
     }),
 

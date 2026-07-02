@@ -22,8 +22,6 @@ import {
   X,
   UploadCloud,
   AlertCircle,
-  ChevronLeft,
-  ChevronRight,
   ArrowLeft,
   Minus,
 } from 'lucide-react';
@@ -101,8 +99,6 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [showLowStock, setShowLowStock] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
 
   // ---------- Modal / Drawer State ----------
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -157,14 +153,6 @@ const Products = () => {
       b._id.localeCompare(a._id)
     );
   }, [products, searchTerm, categoryFilter, showLowStock]);
-
-  // ---------- Pagination ----------
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedProducts = filteredProducts.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
 
   // ---------- Handlers ----------
   const handleOpenDrawer = (product?: ProductItem) => {
@@ -359,14 +347,14 @@ const Products = () => {
         </button>
       </motion.div>
 
-      {/* --- Product Table --- */}
+      {/* --- Product Table (scrollable, no pagination) --- */}
       <motion.div
         variants={itemFadeUp}
         className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
       >
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
           <table className="w-full text-left">
-            <thead className="bg-gray-50/50">
+            <thead className="bg-gray-50/50 sticky top-0 z-10">
               <tr>
                 <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Image</th>
                 <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Name</th>
@@ -377,14 +365,14 @@ const Products = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {paginatedProducts.length === 0 ? (
+              {filteredProducts.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
                     No products found.
                   </td>
                 </tr>
               ) : (
-                paginatedProducts.map((product: ProductItem, idx: number) => (
+                filteredProducts.map((product: ProductItem, idx: number) => (
                   <motion.tr
                     key={product._id}
                     initial={{ opacity: 0 }}
@@ -398,9 +386,7 @@ const Products = () => {
                         src={product.images?.[0] || placeholderImage}
                         alt={product.name}
                         loading="lazy"
-                        onError={(e) => {
-                          e.currentTarget.src = placeholderImage;
-                        }}
+                        onError={(e) => { e.currentTarget.src = placeholderImage; }}
                         className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-gray-200 shadow-sm"
                       />
                     </td>
@@ -419,11 +405,7 @@ const Products = () => {
                         >
                           <Minus className="w-3.5 h-3.5" />
                         </motion.button>
-                        <span
-                          className={`font-semibold text-sm ${
-                            product.stock < 5 ? 'text-red-600' : 'text-gray-700'
-                          }`}
-                        >
+                        <span className={`font-semibold text-sm ${product.stock < 5 ? 'text-red-600' : 'text-gray-700'}`}>
                           {product.stock}
                         </span>
                         <motion.button
@@ -465,33 +447,7 @@ const Products = () => {
             </tbody>
           </table>
         </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row justify-between items-center px-4 sm:px-6 py-3 border-t border-gray-100 gap-2">
-            <span className="text-xs sm:text-sm text-gray-500">
-              Showing {startIndex + 1} –{' '}
-              {Math.min(startIndex + itemsPerPage, filteredProducts.length)} of{' '}
-              {filteredProducts.length}
-            </span>
-            <div className="flex gap-1">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-40 transition"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-40 transition"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
+        {/* No pagination controls – all filtered products shown in scrollable area */}
       </motion.div>
 
       {/* --- Slide‑in Drawer (Add/Edit) --- */}
@@ -516,10 +472,7 @@ const Products = () => {
                 <h2 className="text-2xl font-bold text-gray-800">
                   {editingProduct ? 'Edit Product' : 'Add New Product'}
                 </h2>
-                <button
-                  onClick={handleCloseDrawer}
-                  className="p-2 rounded-full hover:bg-gray-100 transition"
-                >
+                <button onClick={handleCloseDrawer} className="p-2 rounded-full hover:bg-gray-100 transition">
                   <X className="w-5 h-5 text-gray-500" />
                 </button>
               </div>
@@ -530,15 +483,12 @@ const Products = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
                   <input
                     {...register('name')}
-                    className={`w-full border ${
-                      errors.name ? 'border-red-500' : 'border-gray-200'
-                    } rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent`}
+                    className={`w-full border ${errors.name ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent`}
                     placeholder="e.g. Organic Apple Juice"
                   />
                   {errors.name && (
                     <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      {errors.name.message}
+                      <AlertCircle className="w-3 h-3" /> {errors.name.message}
                     </p>
                   )}
                 </div>
@@ -552,15 +502,12 @@ const Products = () => {
                       min="0"
                       step="1"
                       {...register('price')}
-                      className={`w-full border ${
-                        errors.price ? 'border-red-500' : 'border-gray-200'
-                      } rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent`}
+                      className={`w-full border ${errors.price ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent`}
                       placeholder="2500"
                     />
                     {errors.price && (
                       <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        {errors.price.message}
+                        <AlertCircle className="w-3 h-3" /> {errors.price.message}
                       </p>
                     )}
                   </div>
@@ -571,15 +518,12 @@ const Products = () => {
                       min="0"
                       step="1"
                       {...register('stock')}
-                      className={`w-full border ${
-                        errors.stock ? 'border-red-500' : 'border-gray-200'
-                      } rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent`}
+                      className={`w-full border ${errors.stock ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent`}
                       placeholder="20"
                     />
                     {errors.stock && (
                       <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        {errors.stock.message}
+                        <AlertCircle className="w-3 h-3" /> {errors.stock.message}
                       </p>
                     )}
                   </div>
@@ -600,8 +544,7 @@ const Products = () => {
                   </select>
                   {errors.category && (
                     <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      {errors.category.message}
+                      <AlertCircle className="w-3 h-3" /> {errors.category.message}
                     </p>
                   )}
                 </div>
@@ -650,9 +593,7 @@ const Products = () => {
                           src={editingProduct.images[0]}
                           alt="Current"
                           loading="lazy"
-                          onError={(e) => {
-                            e.currentTarget.src = placeholderImage;
-                          }}
+                          onError={(e) => { e.currentTarget.src = placeholderImage; }}
                           className="mt-1 w-20 h-20 rounded-lg object-cover border border-gray-200"
                         />
                       </div>
