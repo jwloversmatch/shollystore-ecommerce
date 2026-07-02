@@ -4,7 +4,10 @@ import { Order } from '../models/Order';
 import { Product } from '../models/Product';
 import { User } from '../models/User';
 import { initializePayment } from '../services/paystack.service';
-import { sendOrderConfirmation } from '../services/email.service';
+import {
+  sendOrderConfirmation,
+  sendAdminOrderNotification, // ✅ added
+} from '../services/email.service';
 import { AuthRequest } from '../middleware/auth';
 
 // @desc    Create Order (supports multiple payment methods)
@@ -28,7 +31,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       if (product.stock < item.qty) {
         res.status(400).json({
           success: false,
-          message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.qty}`
+          message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.qty}`,
         });
         return;
       }
@@ -46,15 +49,23 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       totalPrice,
       status: 'Pending',
       paymentMethod,
-      paymentDetails: paymentMethod === 'bank_transfer' ? {
-        accountNumber: process.env.BANK_ACCOUNT_NUMBER || '0123456789',
-        bankName: process.env.BANK_NAME || 'GTBank',
-      } : paymentMethod === 'whatsapp' ? {
-        whatsappNumber: process.env.WHATSAPP_NUMBER || '+2348000000000',
-      } : undefined,
+      paymentDetails:
+        paymentMethod === 'bank_transfer'
+          ? {
+              accountNumber: process.env.BANK_ACCOUNT_NUMBER || '0123456789',
+              bankName: process.env.BANK_NAME || 'GTBank',
+            }
+          : paymentMethod === 'whatsapp'
+          ? {
+              whatsappNumber: process.env.WHATSAPP_NUMBER || '+2348000000000',
+            }
+          : undefined,
     });
 
     const createdOrder = await order.save();
+
+    // ✅ Notify admin about new order
+    await sendAdminOrderNotification(createdOrder, 'created');
 
     // 3. Stock NOT reduced here – it will be reduced when the order leaves 'Pending' (via webhook or admin update)
 
@@ -63,7 +74,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       const paymentData = await initializePayment(
         req.user!.email,
         totalPrice,
-        (createdOrder._id as unknown as string)
+        (createdOrder._id as unknown as string),
       );
       if (!paymentData.status) {
         res.status(400).json({ success: false, message: 'Paystack error' });
@@ -119,6 +130,7 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
         }
       }
 
+      const oldStatus = order.status;
       order.status = 'Paid';
       order.paymentResult = {
         id: event.data.id,
@@ -127,15 +139,14 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
       };
       await order.save();
 
-      // Send email confirmation
+      // ✅ Notify admin about status change
+      await sendAdminOrderNotification(order, 'updated', 'Paid');
+
+      // Send email confirmation to user (already exists)
       try {
         const user = await User.findById(order.user);
         if (user) {
-          await sendOrderConfirmation(
-            user.email,
-            order._id.toString(),
-            order.totalPrice
-          );
+          await sendOrderConfirmation(user.email, order._id.toString(), order.totalPrice);
         }
       } catch (emailError) {
         console.error('Failed to send order confirmation email:', emailError);
@@ -151,8 +162,7 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
 
 export const getMyOrders = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const orders = await Order.find({ user: req.user!._id })
-      .sort({ createdAt: -1 });
+    const orders = await Order.find({ user: req.user!._id }).sort({ createdAt: -1 });
     res.json(orders);
   } catch (error: any) {
     res.status(500).json({ message: error.message });

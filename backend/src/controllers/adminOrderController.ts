@@ -1,7 +1,11 @@
-import { Request, Response } from "express";
-import { Order } from "../models/Order";
-import { Product } from "../models/Product";
-import { User } from "../models/User";
+import { Request, Response } from 'express';
+import { Order } from '../models/Order';
+import { Product } from '../models/Product';
+import { User } from '../models/User';
+import {
+  sendAdminOrderNotification,
+  sendOrderStatusUpdateEmail, // ✅ added
+} from '../services/email.service';
 
 // Helper to reduce stock when order transitions from Pending
 const reduceStockForOrder = async (order: any) => {
@@ -17,21 +21,18 @@ const reduceStockForOrder = async (order: any) => {
 
 // @desc    Get admin dashboard stats (recent orders + revenue excluding Pending)
 // @route   GET /api/admin/orders
-export const getAdminStats = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
+export const getAdminStats = async (req: Request, res: Response): Promise<void> => {
   try {
     // 1. Get the 5 most recent orders (all statuses)
     const recentOrders = await Order.find()
-      .populate("user", "email")
+      .populate('user', 'email')
       .sort({ createdAt: -1 })
       .limit(5);
 
     // 2. Compute total revenue from orders that are NOT 'Pending'
     const revenueResult = await Order.aggregate([
-      { $match: { status: { $ne: "Pending" } } },
-      { $group: { _id: null, total: { $sum: "$totalPrice" } } },
+      { $match: { status: { $ne: 'Pending' } } },
+      { $group: { _id: null, total: { $sum: '$totalPrice' } } },
     ]);
 
     const totalRevenue = revenueResult[0]?.total || 0;
@@ -45,10 +46,7 @@ export const getAdminStats = async (
   }
 };
 
-export const getAllOrders = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
+export const getAllOrders = async (req: Request, res: Response): Promise<void> => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -57,15 +55,15 @@ export const getAllOrders = async (
     // Build filter object
     const filter: any = {};
 
-    if (req.query.status && req.query.status !== "All") {
+    if (req.query.status && req.query.status !== 'All') {
       filter.status = req.query.status;
     }
-    if (req.query.paymentMethod && req.query.paymentMethod !== "All") {
+    if (req.query.paymentMethod && req.query.paymentMethod !== 'All') {
       filter.paymentMethod = req.query.paymentMethod;
     }
     if (req.query.search) {
-      const searchRegex = new RegExp(req.query.search as string, "i");
-      const users = await User.find({ email: searchRegex }).select("_id");
+      const searchRegex = new RegExp(req.query.search as string, 'i');
+      const users = await User.find({ email: searchRegex }).select('_id');
       const userIds = users.map((u) => u._id);
       filter.user = { $in: userIds };
     }
@@ -81,17 +79,14 @@ export const getAllOrders = async (
 
     const [orders, total] = await Promise.all([
       Order.find(filter)
-        .populate("user", "email")
+        .populate('user', 'email')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
       Order.countDocuments(filter),
     ]);
 
-    const totalRevenue = orders.reduce(
-      (sum, order) => sum + order.totalPrice,
-      0,
-    );
+    const totalRevenue = orders.reduce((sum, order) => sum + order.totalPrice, 0);
 
     res.json({
       orders,
@@ -105,26 +100,38 @@ export const getAllOrders = async (
   }
 };
 
-export const updateOrderStatus = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
+export const updateOrderStatus = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    const order = await Order.findById(id);
+    const order = await Order.findById(id).populate('user', 'email'); // ✅ populate user
     if (!order) {
-      res.status(404).json({ message: "Order not found" });
+      res.status(404).json({ message: 'Order not found' });
       return;
     }
 
-    if (order.status === "Pending" && status !== "Pending") {
+    const oldStatus = order.status;
+
+    if (order.status === 'Pending' && status !== 'Pending') {
       await reduceStockForOrder(order);
     }
 
     order.status = status;
     await order.save();
+
+    // ✅ Notify admin about status change
+    await sendAdminOrderNotification(order, 'updated', status);
+
+    // ✅ If shipped or delivered, notify the user
+    if (['Shipped', 'Delivered'].includes(status) && order.user?.email) {
+      await sendOrderStatusUpdateEmail(
+        order.user.email,
+        order._id.toString(),
+        status,
+        order.totalPrice,
+      );
+    }
 
     res.json({ success: true, order });
   } catch (error: any) {
@@ -132,40 +139,37 @@ export const updateOrderStatus = async (
   }
 };
 
-export const getSalesAnalytics = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
+export const getSalesAnalytics = async (req: Request, res: Response): Promise<void> => {
   try {
     const totalStats = await Order.aggregate([
-      { $match: { status: "Paid" } },
+      { $match: { status: 'Paid' } },
       {
         $group: {
           _id: null,
-          totalRevenue: { $sum: "$totalPrice" },
+          totalRevenue: { $sum: '$totalPrice' },
           totalOrders: { $sum: 1 },
         },
       },
     ]);
 
     const categorySales = await Order.aggregate([
-      { $match: { status: "Paid" } },
-      { $unwind: "$orderItems" },
+      { $match: { status: 'Paid' } },
+      { $unwind: '$orderItems' },
       {
         $lookup: {
-          from: "products",
-          localField: "orderItems.product",
-          foreignField: "_id",
-          as: "productInfo",
+          from: 'products',
+          localField: 'orderItems.product',
+          foreignField: '_id',
+          as: 'productInfo',
         },
       },
-      { $unwind: "$productInfo" },
+      { $unwind: '$productInfo' },
       {
         $group: {
-          _id: "$productInfo.category",
-          totalSales: { $sum: "$orderItems.qty" },
+          _id: '$productInfo.category',
+          totalSales: { $sum: '$orderItems.qty' },
           revenue: {
-            $sum: { $multiply: ["$orderItems.qty", "$orderItems.price"] },
+            $sum: { $multiply: ['$orderItems.qty', '$orderItems.price'] },
           },
         },
       },
@@ -182,20 +186,17 @@ export const getSalesAnalytics = async (
   }
 };
 
-export const getTopProducts = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
+export const getTopProducts = async (req: Request, res: Response): Promise<void> => {
   try {
     const topProducts = await Order.aggregate([
-      { $match: { status: "Paid" } },
-      { $unwind: "$orderItems" },
+      { $match: { status: 'Paid' } },
+      { $unwind: '$orderItems' },
       {
         $group: {
-          _id: "$orderItems.product",
-          totalQuantity: { $sum: "$orderItems.qty" },
+          _id: '$orderItems.product',
+          totalQuantity: { $sum: '$orderItems.qty' },
           totalRevenue: {
-            $sum: { $multiply: ["$orderItems.qty", "$orderItems.price"] },
+            $sum: { $multiply: ['$orderItems.qty', '$orderItems.price'] },
           },
         },
       },
@@ -203,19 +204,19 @@ export const getTopProducts = async (
       { $limit: 10 },
       {
         $lookup: {
-          from: "products",
-          localField: "_id",
-          foreignField: "_id",
-          as: "productInfo",
+          from: 'products',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'productInfo',
         },
       },
-      { $unwind: "$productInfo" },
+      { $unwind: '$productInfo' },
       {
         $project: {
-          _id: "$productInfo._id",
-          name: "$productInfo.name",
-          images: "$productInfo.images",
-          price: "$productInfo.price",
+          _id: '$productInfo._id',
+          name: '$productInfo.name',
+          images: '$productInfo.images',
+          price: '$productInfo.price',
           totalQuantity: 1,
           totalRevenue: 1,
         },
@@ -227,24 +228,18 @@ export const getTopProducts = async (
   }
 };
 
-export const getCustomerCount = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
+export const getCustomerCount = async (req: Request, res: Response): Promise<void> => {
   try {
-    const count = await User.countDocuments({ role: "user" });
+    const count = await User.countDocuments({ role: 'user' });
     res.json({ count });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
 
-export const getUniqueOrderCustomers = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
+export const getUniqueOrderCustomers = async (req: Request, res: Response): Promise<void> => {
   try {
-    const customers = await Order.distinct("user");
+    const customers = await Order.distinct('user');
     res.json({ count: customers.length });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
