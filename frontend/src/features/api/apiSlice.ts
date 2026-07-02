@@ -46,7 +46,7 @@ export const apiSlice = createApi({
         if (search) params.append("search", search);
         if (startDate) params.append("startDate", startDate);
         if (endDate) params.append("endDate", endDate);
-        return `/admin/orders/all?${params.toString()}`; // ✅ changed to /all
+        return `/admin/orders/all?${params.toString()}`; 
       },
       providesTags: ["Order"],
     }),
@@ -236,7 +236,15 @@ export const apiSlice = createApi({
     }),
 
     getOrderCustomerCount: builder.query({
-      query: () => '/admin/orders/analytics/order-customers',
+      query: () => "/admin/orders/analytics/order-customers",
+    }),
+
+    updateProfile: builder.mutation({
+      query: (body) => ({
+        url: "/auth/profile",
+        method: "PUT",
+        body,
+      }),
     }),
   }),
 });
@@ -272,4 +280,5 @@ export const {
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
   useGetOrderCustomerCountQuery,
+  useUpdateProfileMutation,
 } = apiSlice;

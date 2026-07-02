@@ -3,12 +3,13 @@ import crypto from 'crypto';
 import { User, IUser } from '../models/User';
 import { generateToken } from '../utils/generateToken';
 import { sendVerificationEmail } from '../services/email.service';
+import { AuthRequest } from '../middleware/auth'; // <-- added
 
 // @desc    Register a new user (with email verification)
 // @route   POST /api/auth/register
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, name, phone } = req.body;   // ✅ accept phone
+    const { email, password, name, phone } = req.body;
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -22,7 +23,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
       email,
       password,
       name: name || '',
-      phone: phone || '',        // ✅ store phone
+      phone: phone || '',
       verificationToken,
       isVerified: false,
     });
@@ -112,16 +113,43 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // ✅ Include phone in response
     res.json({
       success: true,
       _id: user._id,
       email: user.email,
       name: user.name,
-      phone: user.phone,             // added
+      phone: user.phone,
       role: user.role,
       createdAt: user.createdAt,
       token: generateToken(user._id.toString()),
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Update user profile (name, phone)
+// @route   PUT /api/auth/profile
+export const updateProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const user = await User.findById(req.user!._id);
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    user.name = req.body.name || user.name;
+    user.phone = req.body.phone || user.phone;
+    const updatedUser = await user.save();
+
+    res.json({
+      success: true,
+      _id: updatedUser._id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      phone: updatedUser.phone,
+      role: updatedUser.role,
+      createdAt: updatedUser.createdAt,
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

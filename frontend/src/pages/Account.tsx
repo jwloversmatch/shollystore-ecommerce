@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import { motion, AnimatePresence } from 'framer-motion';
+import { updateProfile } from '../features/auth/authSlice';
+import { useUpdateProfileMutation } from '../features/api/apiSlice';
 import toast from 'react-hot-toast';
 import {
   ShoppingBag,
@@ -11,6 +13,7 @@ import {
   Truck,
   Package,
   Mail,
+  User,
   Phone,
   Eye,
   X,
@@ -40,11 +43,10 @@ interface Order {
     country?: string;
   };
   paymentMethod?: string;
-  name?: string;   // customer name if available
+  name?: string;
   phone?: string;
 }
 
-// ---------- Status helpers ----------
 const getStatusInfo = (status: string): { icon: React.ReactNode; color: string; label: string } => {
   const map: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
     Paid: { icon: <CheckCircle className="w-4 h-4" />, color: 'bg-green-100 text-green-700', label: 'Paid' },
@@ -63,12 +65,19 @@ const paymentLabels: Record<string, string> = {
 
 const Account = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'orders' | 'profile'>('orders');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  // Profile editing state
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [updateProfileApi, { isLoading: isUpdating }] = useUpdateProfileMutation();
 
   useEffect(() => {
     if (!user) {
@@ -96,6 +105,28 @@ const Account = () => {
     fetchOrders();
   }, [user, navigate]);
 
+  const startEditing = () => {
+    setEditName(user?.name || '');
+    setEditPhone(user?.phone || '');
+    setEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setEditing(false);
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const updatedUser = await updateProfileApi({ name: editName, phone: editPhone }).unwrap();
+      dispatch(updateProfile(updatedUser));
+      toast.success('Profile updated!');
+      setEditing(false);
+    } catch {
+      toast.error('Failed to update profile');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-pastel-pink via-pastel-green to-white">
@@ -110,7 +141,7 @@ const Account = () => {
       animate={{ opacity: 1, y: 0 }}
       className="p-4 md:p-6 pt-20 md:pt-24 max-w-6xl mx-auto space-y-8"
     >
-      {/* ---------- Profile Header (no logout) ---------- */}
+      {/* Profile Header */}
       <motion.div
         initial={{ opacity: 0, x: -30 }}
         animate={{ opacity: 1, x: 0 }}
@@ -137,14 +168,12 @@ const Account = () => {
         </div>
       </motion.div>
 
-      {/* ---------- Tabs ---------- */}
+      {/* Tabs */}
       <div className="flex gap-4 border-b border-gray-200">
         <button
           onClick={() => setActiveTab('orders')}
           className={`pb-3 px-1 text-sm font-semibold transition-colors border-b-2 ${
-            activeTab === 'orders'
-              ? 'border-leaf-green text-leaf-green'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+            activeTab === 'orders' ? 'border-leaf-green text-leaf-green' : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
           🧾 My Orders
@@ -152,33 +181,23 @@ const Account = () => {
         <button
           onClick={() => setActiveTab('profile')}
           className={`pb-3 px-1 text-sm font-semibold transition-colors border-b-2 ${
-            activeTab === 'profile'
-              ? 'border-leaf-green text-leaf-green'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+            activeTab === 'profile' ? 'border-leaf-green text-leaf-green' : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
           👤 Profile Settings
         </button>
       </div>
 
-      {/* ---------- Tab Content ---------- */}
+      {/* Tab Content */}
       <AnimatePresence mode="wait">
         {activeTab === 'orders' ? (
-          <motion.div
-            key="orders"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-4"
-          >
+          <motion.div key="orders" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="space-y-4">
             {error && (
               <div className="bg-red-50 text-red-700 rounded-xl p-4 flex items-center gap-3">
                 <AlertCircle className="w-5 h-5" />
                 <span>{error}</span>
               </div>
             )}
-
             {!error && orders.length === 0 && (
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-10 text-center">
                 <ShoppingBag className="w-16 h-16 mx-auto text-gray-300 mb-4" />
@@ -194,8 +213,6 @@ const Account = () => {
                 </motion.button>
               </div>
             )}
-
-            {/* Compact Order List */}
             <div className="space-y-3">
               {orders.map((order, idx) => {
                 const { icon, color, label } = getStatusInfo(order.status);
@@ -211,19 +228,13 @@ const Account = () => {
                       <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
                         <div>
                           <p className="text-xs text-gray-500 uppercase tracking-wider">Order #</p>
-                          <p className="font-medium text-gray-800 text-sm mt-0.5">
-                            {order._id.slice(-8).toUpperCase()}
-                          </p>
+                          <p className="font-medium text-gray-800 text-sm mt-0.5">{order._id.slice(-8).toUpperCase()}</p>
                         </div>
                         <div className="hidden sm:block">
                           <p className="text-xs text-gray-500 uppercase tracking-wider">Date</p>
                           <p className="font-medium text-gray-800 text-sm mt-0.5 flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                            {new Date(order.createdAt).toLocaleDateString('en-NG', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                            })}
+                            {new Date(order.createdAt).toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' })}
                           </p>
                         </div>
                         <div>
@@ -235,9 +246,7 @@ const Account = () => {
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 uppercase tracking-wider">Total</p>
-                          <p className="font-bold text-leaf-green text-sm mt-0.5">
-                            ₦{order.totalPrice.toLocaleString()}
-                          </p>
+                          <p className="font-bold text-leaf-green text-sm mt-0.5">₦{order.totalPrice.toLocaleString()}</p>
                         </div>
                       </div>
                       <button
@@ -248,15 +257,10 @@ const Account = () => {
                         View Details
                       </button>
                     </div>
-                    {/* Mobile date shown only on small screens */}
                     <div className="sm:hidden px-4 pb-3">
                       <p className="text-xs text-gray-500 flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5" />
-                        {new Date(order.createdAt).toLocaleDateString('en-NG', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
+                        {new Date(order.createdAt).toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' })}
                       </p>
                     </div>
                   </motion.div>
@@ -265,7 +269,6 @@ const Account = () => {
             </div>
           </motion.div>
         ) : (
-          /* Profile Settings Tab – enhanced layout */
           <motion.div
             key="profile"
             initial={{ opacity: 0, y: 10 }}
@@ -274,64 +277,103 @@ const Account = () => {
             transition={{ duration: 0.3 }}
             className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-6"
           >
-            <div className="flex items-center gap-5">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-leaf-green to-emerald-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                {user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold text-gray-800">{user?.name || 'User'}</h3>
-                <p className="text-gray-500 flex items-center gap-1 mt-1">
-                  <Mail className="w-4 h-4" />
-                  {user?.email}
-                </p>
-                {user?.phone && (
-                  <p className="text-gray-500 flex items-center gap-1 mt-0.5">
-                    <Phone className="w-4 h-4" />
-                    {user.phone}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-leaf-green/10 flex items-center justify-center text-2xl">
+                  <User className="w-8 h-8 text-leaf-green" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-800">{user?.name || 'User'}</h3>
+                  <p className="text-gray-500 flex items-center gap-1">
+                    <Mail className="w-4 h-4" />
+                    {user?.email}
                   </p>
-                )}
+                </div>
               </div>
+              {!editing ? (
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={startEditing}
+                  className="px-4 py-2 bg-leaf-green text-white rounded-xl font-medium text-sm shadow-md hover:bg-green-700 transition"
+                >
+                  Edit Profile
+                </motion.button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={cancelEditing}
+                  className="text-gray-500 hover:text-gray-700 text-sm"
+                >
+                  Cancel
+                </button>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="bg-gray-50/60 rounded-xl p-4">
-                <p className="text-xs text-gray-500 uppercase tracking-wider">Full Name</p>
-                <p className="font-medium text-gray-800 mt-1">{user?.name || 'Not set'}</p>
+            {editing ? (
+              <form onSubmit={handleSaveProfile} className="space-y-4 mt-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green"
+                    placeholder="Your name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green"
+                    placeholder="Your phone number"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <motion.button
+                    type="submit"
+                    disabled={isUpdating}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="px-6 py-2.5 bg-leaf-green text-white rounded-xl font-medium shadow-md hover:bg-green-700 transition disabled:opacity-60"
+                  >
+                    {isUpdating ? 'Saving...' : 'Save Changes'}
+                  </motion.button>
+                </div>
+              </form>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4 mt-6">
+                <div className="bg-gray-50/60 rounded-xl p-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">Full Name</p>
+                  <p className="font-medium text-gray-800 mt-1">{user?.name || 'Not set'}</p>
+                </div>
+                <div className="bg-gray-50/60 rounded-xl p-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">Phone Number</p>
+                  <p className="font-medium text-gray-800 mt-1">{user?.phone || 'Not set'}</p>
+                </div>
+                <div className="bg-gray-50/60 rounded-xl p-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">Email Address</p>
+                  <p className="font-medium text-gray-800 mt-1 break-all">{user?.email}</p>
+                </div>
+                <div className="bg-gray-50/60 rounded-xl p-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">Member Since</p>
+                  <p className="font-medium text-gray-800 mt-1">
+                    {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}
+                  </p>
+                </div>
               </div>
-              <div className="bg-gray-50/60 rounded-xl p-4">
-                <p className="text-xs text-gray-500 uppercase tracking-wider">Email Address</p>
-                <p className="font-medium text-gray-800 mt-1 break-all">{user?.email}</p>
-              </div>
-              <div className="bg-gray-50/60 rounded-xl p-4">
-                <p className="text-xs text-gray-500 uppercase tracking-wider">Phone</p>
-                <p className="font-medium text-gray-800 mt-1">{user?.phone || 'Not set'}</p>
-              </div>
-              <div className="bg-gray-50/60 rounded-xl p-4">
-                <p className="text-xs text-gray-500 uppercase tracking-wider">Member Since</p>
-                <p className="font-medium text-gray-800 mt-1">
-                  {user?.createdAt
-                    ? new Date(user.createdAt).toLocaleDateString('en-NG', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })
-                    : 'N/A'}
-                </p>
-              </div>
-            </div>
-
-            <p className="text-sm text-gray-400">
-              Profile editing coming soon. For now, enjoy your shopping experience!
-            </p>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ---------- Order Details Modal ---------- */}
+      {/* Order Details Modal (unchanged) */}
       <AnimatePresence>
         {selectedOrder && (
           <>
-            {/* Overlay */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -339,7 +381,6 @@ const Account = () => {
               className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
               onClick={() => setSelectedOrder(null)}
             />
-            {/* Modal */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -348,19 +389,12 @@ const Account = () => {
             >
               <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto border border-white/40">
                 <div className="sticky top-0 bg-white/90 backdrop-blur-md p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center">
-                  <h2 className="text-xl font-bold text-gray-800">
-                    Order #{selectedOrder._id.slice(-8).toUpperCase()}
-                  </h2>
-                  <button
-                    onClick={() => setSelectedOrder(null)}
-                    className="p-2 rounded-xl hover:bg-gray-100 transition"
-                  >
+                  <h2 className="text-xl font-bold text-gray-800">Order #{selectedOrder._id.slice(-8).toUpperCase()}</h2>
+                  <button onClick={() => setSelectedOrder(null)} className="p-2 rounded-xl hover:bg-gray-100 transition">
                     <X className="w-5 h-5 text-gray-600" />
                   </button>
                 </div>
-
                 <div className="p-4 sm:p-6 space-y-6">
-                  {/* Status badge & date */}
                   <div className="flex flex-wrap gap-3 items-center">
                     {(() => {
                       const { icon, color, label } = getStatusInfo(selectedOrder.status);
@@ -373,11 +407,7 @@ const Account = () => {
                     })()}
                     <span className="text-sm text-gray-500 flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      {new Date(selectedOrder.createdAt).toLocaleDateString('en-NG', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
+                      {new Date(selectedOrder.createdAt).toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </span>
                     {selectedOrder.paymentMethod && (
                       <span className="text-sm text-gray-500 flex items-center gap-1">
@@ -386,8 +416,6 @@ const Account = () => {
                       </span>
                     )}
                   </div>
-
-                  {/* Shipping address if present */}
                   {selectedOrder.shippingAddress && (
                     <div className="bg-gray-50 rounded-xl p-4">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Shipping Address</p>
@@ -399,28 +427,20 @@ const Account = () => {
                       </p>
                     </div>
                   )}
-
-                  {/* Order Items Table */}
                   <div>
                     <h3 className="font-semibold text-gray-800 mb-3">Items</h3>
                     <div className="space-y-2">
                       {selectedOrder.orderItems.map((item, i) => (
                         <div key={i} className="flex justify-between items-center text-sm bg-gray-50 rounded-lg p-3">
                           <span className="text-gray-700 font-medium">{item.name}</span>
-                          <span className="text-gray-500">
-                            {item.qty} × ₦{item.price.toLocaleString()}
-                          </span>
+                          <span className="text-gray-500">{item.qty} × ₦{item.price.toLocaleString()}</span>
                         </div>
                       ))}
                     </div>
                   </div>
-
-                  {/* Total */}
                   <div className="flex justify-between items-center pt-4 border-t border-gray-100">
                     <span className="text-gray-800 font-semibold text-lg">Total</span>
-                    <span className="text-2xl font-bold text-leaf-green">
-                      ₦{selectedOrder.totalPrice.toLocaleString()}
-                    </span>
+                    <span className="text-2xl font-bold text-leaf-green">₦{selectedOrder.totalPrice.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
