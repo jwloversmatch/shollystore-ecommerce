@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   useGetAllHeroSlidesQuery,
   useCreateHeroSlideMutation,
@@ -8,7 +8,19 @@ import {
   useDeleteHeroSlideMutation,
   useUploadImageMutation,
 } from '../../features/api/apiSlice';
-import { ArrowLeft, Plus, Trash2, Edit, ArrowUp, ArrowDown } from 'lucide-react';
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Edit,
+  ArrowUp,
+  ArrowDown,
+  X,
+  UploadCloud,
+  Loader2,
+  ToggleLeft,
+  ToggleRight,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../../components/ConfirmationModal';
 
@@ -22,6 +34,24 @@ interface HeroSlide {
 }
 
 const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/150';
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
+  },
+};
+
+const itemFadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring' as const, stiffness: 300, damping: 25 },
+  },
+};
 
 const HeroSlides = () => {
   const navigate = useNavigate();
@@ -96,8 +126,7 @@ const HeroSlides = () => {
       }
       refetch();
       handleCloseModal();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
+    } catch {
       toast.error('Failed to save slide.');
     }
   };
@@ -131,13 +160,24 @@ const HeroSlides = () => {
     refetch();
   };
 
-  if (isLoading) return <div className="p-6">Loading slides...</div>;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex justify-center items-center">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+          className="rounded-full h-12 w-12 border-4 border-leaf-green/30 border-t-leaf-green"
+        />
+      </div>
+    );
+  }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="p-6 pt-20 md:pt-24 max-w-7xl mx-auto"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6"
     >
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
@@ -151,7 +191,8 @@ const HeroSlides = () => {
         type="danger"
       />
 
-      <div className="flex justify-between items-center mb-6">
+      {/* Header */}
+      <motion.div variants={itemFadeUp} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/admin')}
@@ -159,34 +200,47 @@ const HeroSlides = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-3xl font-bold text-gray-800">Hero Slides</h1>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Hero Slides</h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Manage homepage hero carousel slides</p>
+          </div>
         </div>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
           onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 bg-leaf-green text-white px-4 py-2 rounded-xl font-medium"
+          className="flex items-center gap-2 bg-leaf-green text-white px-4 py-2.5 rounded-xl font-medium shadow-lg hover:shadow-leaf-green/30 transition-all text-sm"
         >
           <Plus className="w-4 h-4" />
           Add Slide
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
 
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Table */}
+      <motion.div variants={itemFadeUp} className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-gray-50/50">
               <tr>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Image</th>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Title</th>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Subtitle</th>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Active</th>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Order</th>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-right">Actions</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Image</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Title</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Subtitle</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Active</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Order</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {slides.map((slide: HeroSlide) => (
-                <tr key={slide._id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
+              {slides.map((slide: HeroSlide, idx: number) => (
+                <motion.tr
+                  key={slide._id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2, delay: idx * 0.05 }}
+                  whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
+                  className="transition-colors"
+                >
+                  <td className="px-4 sm:px-6 py-3">
                     <img
                       src={slide.imageUrl || PLACEHOLDER_IMAGE}
                       alt={slide.title}
@@ -194,116 +248,188 @@ const HeroSlides = () => {
                       onError={(e) => {
                         e.currentTarget.src = PLACEHOLDER_IMAGE;
                       }}
-                      className="w-16 h-16 rounded-lg object-cover border border-gray-200"
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover border border-gray-200 shadow-sm"
                     />
                   </td>
-                  <td className="px-6 py-4 font-medium">{slide.title}</td>
-                  <td className="px-6 py-4 text-gray-600">{slide.subtitle}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs rounded-full ${slide.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                  <td className="px-4 sm:px-6 py-3 font-medium text-sm text-gray-800">{slide.title}</td>
+                  <td className="px-4 sm:px-6 py-3 text-sm text-gray-600">{slide.subtitle}</td>
+                  <td className="px-4 sm:px-6 py-3">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
+                        slide.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      {slide.isActive ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
                       {slide.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">{slide.order}</td>
-                  <td className="px-6 py-4 text-right space-x-2">
-                    <button onClick={() => moveSlide(slide._id, 'up')} className="text-gray-400 hover:text-gray-600"><ArrowUp className="w-4 h-4" /></button>
-                    <button onClick={() => moveSlide(slide._id, 'down')} className="text-gray-400 hover:text-gray-600"><ArrowDown className="w-4 h-4" /></button>
-                    <button onClick={() => handleOpenModal(slide)} className="text-blue-600 hover:text-blue-800"><Edit className="w-4 h-4" /></button>
-                    <button onClick={() => handleDeleteClick(slide._id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button>
+                  <td className="px-4 sm:px-6 py-3 text-sm text-gray-600">{slide.order}</td>
+                  <td className="px-4 sm:px-6 py-3 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => moveSlide(slide._id, 'up')}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition"
+                      >
+                        <ArrowUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => moveSlide(slide._id, 'down')}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition"
+                      >
+                        <ArrowDown className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleOpenModal(slide)}
+                        className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 hover:text-blue-800 transition"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(slide._id)}
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-red-600 hover:text-red-800 transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
       {/* Modal for Add/Edit */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <motion.div
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            className="bg-white rounded-2xl shadow-2xl p-6 max-w-lg w-full"
-          >
-            <h2 className="text-2xl font-bold mb-4">{editingSlide ? 'Edit Slide' : 'Add New Slide'}</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Title</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full border rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-leaf-green"
-                />
+      <AnimatePresence>
+        {isModalOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+              onClick={handleCloseModal}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-6 max-w-lg w-full border border-white/40">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold text-gray-800">
+                    {editingSlide ? 'Edit Slide' : 'Add New Slide'}
+                  </h2>
+                  <button
+                    onClick={handleCloseModal}
+                    className="p-2 rounded-xl hover:bg-gray-100 transition"
+                  >
+                    <X className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Subtitle</label>
+                    <input
+                      type="text"
+                      value={formData.subtitle}
+                      onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                    <div className="flex items-center gap-4">
+                      <label className="flex-1 cursor-pointer">
+                        <div className="flex items-center gap-2 px-4 py-3 border border-dashed border-gray-300 rounded-xl hover:border-leaf-green transition text-sm text-gray-500">
+                          <UploadCloud className="w-5 h-5" />
+                          {file ? file.name : 'Click to upload image'}
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setFile(e.target.files?.[0] || null)}
+                          className="hidden"
+                        />
+                      </label>
+                      {(formData.imageUrl || file) && (
+                        <img
+                          src={file ? URL.createObjectURL(file) : formData.imageUrl}
+                          alt="Preview"
+                          className="w-14 h-14 rounded-lg object-cover border border-gray-200"
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
+                    <input
+                      type="number"
+                      value={formData.order}
+                      onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        formData.isActive ? 'bg-leaf-green' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          formData.isActive ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                    <span className="text-sm font-medium text-gray-700">
+                      {formData.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={handleCloseModal}
+                      className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm font-medium"
+                    >
+                      Cancel
+                    </button>
+                    <motion.button
+                      type="submit"
+                      disabled={uploading}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="px-5 py-2.5 bg-leaf-green text-white rounded-xl font-medium shadow-md hover:bg-green-700 transition disabled:opacity-60 text-sm flex items-center gap-2"
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        'Save'
+                      )}
+                    </motion.button>
+                  </div>
+                </form>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Subtitle</label>
-                <input
-                  type="text"
-                  value={formData.subtitle}
-                  onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                  className="w-full border rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-leaf-green"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Image</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  className="w-full border rounded-xl px-4 py-2"
-                />
-                {formData.imageUrl && !file && (
-                  <img
-                    src={formData.imageUrl}
-                    alt="Current"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.src = PLACEHOLDER_IMAGE;
-                    }}
-                    className="mt-2 w-24 h-24 rounded object-cover border border-gray-200"
-                  />
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Order</label>
-                <input
-                  type="number"
-                  value={formData.order}
-                  onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                  className="w-full border rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-leaf-green"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="w-4 h-4 text-leaf-green focus:ring-leaf-green"
-                />
-                <label className="text-sm font-medium text-gray-700">Active</label>
-              </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={uploading}
-                  className="px-4 py-2 bg-leaf-green text-white rounded-xl hover:bg-green-700 disabled:opacity-60"
-                >
-                  {uploading ? 'Uploading...' : 'Save'}
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

@@ -1,7 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useGetAllOrdersQuery, useUpdateOrderStatusMutation } from '../../features/api/apiSlice';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  useGetAllOrdersQuery,
+  useUpdateOrderStatusMutation,
+} from '../../features/api/apiSlice';
 import {
   ArrowLeft,
   ChevronLeft,
@@ -13,13 +16,19 @@ import {
   CheckCircle,
   Clock,
   Phone,
+  Eye,
+  MapPin,
+  CreditCard,
+  Calendar,
+  Package,
 } from 'lucide-react';
 
+// ---------- Types ----------
 interface OrderItem {
   _id: string;
   user: { email: string };
-  name?: string;         // customer name stored at order time
-  phone?: string;        // customer phone stored at order time
+  name?: string;
+  phone?: string;
   totalPrice: number;
   status: string;
   createdAt: string;
@@ -33,6 +42,7 @@ interface OrderItem {
   };
 }
 
+// ---------- Constants ----------
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   paystack: 'Paystack',
   bank_transfer: 'Bank Transfer',
@@ -49,12 +59,31 @@ const STATUS_COLORS: Record<string, string> = {
 const STATUS_OPTIONS = ['All', 'Pending', 'Paid', 'Shipped', 'Delivered'];
 const PAYMENT_OPTIONS = ['All', 'paystack', 'bank_transfer', 'whatsapp'];
 
+// ---------- Animation Variants ----------
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
+  },
+};
+
+const itemFadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring' as const, stiffness: 300, damping: 25 },
+  },
+};
+
+// ---------- Component ----------
 const Orders = () => {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const limit = 10;
 
-  // Filter state
+  // Filters
   const [statusFilter, setStatusFilter] = useState('All');
   const [paymentFilter, setPaymentFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -73,6 +102,9 @@ const Orders = () => {
   });
 
   const [updateStatus] = useUpdateOrderStatusMutation();
+
+  // Modal state for order details
+  const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
@@ -105,19 +137,24 @@ const Orders = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-leaf-green"></div>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+          className="rounded-full h-12 w-12 border-4 border-leaf-green/30 border-t-leaf-green"
+        />
       </div>
     );
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-4 md:space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6 md:space-y-8"
     >
       {/* Header */}
-      <div className="flex flex-row items-center justify-between gap-4">
+      <motion.div variants={itemFadeUp} className="flex flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/admin')}
@@ -125,146 +162,133 @@ const Orders = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-xl md:text-3xl font-bold text-gray-800">All Orders</h1>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">All Orders</h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">View and manage every customer order</p>
+          </div>
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition text-xs sm:text-sm font-medium whitespace-nowrap"
+          className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200 hover:bg-gray-50 transition text-sm font-medium"
         >
           <Filter className="w-4 h-4" />
           <span className="hidden sm:inline">Filters</span>
         </button>
-      </div>
+      </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
-          <div className="p-2 sm:p-3 bg-blue-100 rounded-xl shrink-0">
-            <ShoppingBag className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600" />
-          </div>
-          <div>
-            <p className="text-[10px] sm:text-sm text-gray-500">Total</p>
-            <p className="text-base sm:text-xl font-bold text-gray-800">{stats.total}</p>
-          </div>
-        </div>
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
-          <div className="p-2 sm:p-3 bg-green-100 rounded-xl shrink-0">
-            <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
-          </div>
-          <div>
-            <p className="text-[10px] sm:text-sm text-gray-500">Paid</p>
-            <p className="text-base sm:text-xl font-bold text-green-600">{stats.paid}</p>
-          </div>
-        </div>
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
-          <div className="p-2 sm:p-3 bg-yellow-100 rounded-xl shrink-0">
-            <Clock className="w-4 h-4 sm:w-6 sm:h-6 text-yellow-600" />
-          </div>
-          <div>
-            <p className="text-[10px] sm:text-sm text-gray-500">Pending</p>
-            <p className="text-base sm:text-xl font-bold text-yellow-600">{stats.pending}</p>
-          </div>
-        </div>
-      </div>
+      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          { title: 'Total', value: stats.total, icon: <ShoppingBag className="w-5 h-5" />, color: 'text-blue-600', bg: 'bg-blue-100' },
+          { title: 'Paid', value: stats.paid, icon: <CheckCircle className="w-5 h-5" />, color: 'text-green-600', bg: 'bg-green-100' },
+          { title: 'Pending', value: stats.pending, icon: <Clock className="w-5 h-5" />, color: 'text-yellow-600', bg: 'bg-yellow-100' },
+        ].map((stat, idx) => (
+          <motion.div
+            key={idx}
+            variants={itemFadeUp}
+            whileHover={{ y: -2, scale: 1.02 }}
+            className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-4"
+          >
+            <div className={`p-3 rounded-xl ${stat.bg}`}>{stat.icon}</div>
+            <div>
+              <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">{stat.title}</p>
+              <p className={`text-lg font-bold ${stat.color}`}>{stat.value}</p>
+            </div>
+          </motion.div>
+        ))}
+      </motion.div>
 
       {/* Filters Panel */}
-      {showFilters && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6"
-        >
-          <div className="flex flex-wrap gap-3 sm:gap-4 items-end">
-            {/* Status filter */}
-            <div className="flex-1 min-w-[120px]">
-              <label className="block text-[10px] sm:text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-leaf-green text-xs sm:text-sm"
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 overflow-hidden"
+          >
+            <div className="flex flex-wrap gap-3 sm:gap-4 items-end">
+              <div className="flex-1 min-w-[120px]">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                >
+                  {STATUS_OPTIONS.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1 min-w-[120px]">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Payment</label>
+                <select
+                  value={paymentFilter}
+                  onChange={(e) => setPaymentFilter(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                >
+                  {PAYMENT_OPTIONS.map(p => (
+                    <option key={p} value={p}>{p === 'All' ? 'All' : PAYMENT_METHOD_LABELS[p]}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1 min-w-[160px]">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Search Email</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Search email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">From</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">To</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={handleClearFilters}
+                className="px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition text-sm font-medium"
               >
-                {STATUS_OPTIONS.map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+                Clear Filters
+              </button>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-            {/* Payment method filter */}
-            <div className="flex-1 min-w-[120px]">
-              <label className="block text-[10px] sm:text-sm font-medium text-gray-700 mb-1">Payment</label>
-              <select
-                value={paymentFilter}
-                onChange={(e) => setPaymentFilter(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-leaf-green text-xs sm:text-sm"
-              >
-                {PAYMENT_OPTIONS.map(p => (
-                  <option key={p} value={p}>{p === 'All' ? 'All' : PAYMENT_METHOD_LABELS[p]}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Search by user email */}
-            <div className="flex-1 min-w-[160px]">
-              <label className="block text-[10px] sm:text-sm font-medium text-gray-700 mb-1">Search Email</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-leaf-green text-xs sm:text-sm"
-                />
-              </div>
-            </div>
-
-            {/* Date range */}
-            <div className="flex gap-2 sm:gap-3">
-              <div>
-                <label className="block text-[10px] sm:text-sm font-medium text-gray-700 mb-1">From</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-leaf-green text-xs sm:text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] sm:text-sm font-medium text-gray-700 mb-1">To</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-leaf-green text-xs sm:text-sm"
-                />
-              </div>
-            </div>
-
-            {/* Clear filters */}
-            <button
-              onClick={handleClearFilters}
-              className="px-3 py-2 sm:px-4 sm:py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition flex items-center gap-1 text-xs sm:text-sm"
-            >
-              <X className="w-4 h-4" />
-              <span className="hidden sm:inline">Clear</span>
-            </button>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Orders Table – now displays customer name & phone */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
+      {/* Orders Table */}
+      <motion.div variants={itemFadeUp} className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-gray-50/50">
               <tr>
-                <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider min-w-[160px]">Customer</th>
-                <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider min-w-[120px]">Items</th>
-                <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Total</th>
-                <th className="hidden sm:table-cell px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Date</th>
-                <th className="hidden sm:table-cell px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Payment</th>
-                <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider min-w-[150px]">Address</th>
-                <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Customer</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Items</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Total</th>
+                <th className="hidden sm:table-cell px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                <th className="hidden sm:table-cell px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Payment</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -273,11 +297,11 @@ const Orders = () => {
                   key={order._id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
                   whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
                   className="transition-colors"
                 >
-                  <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">
-                    {/* Show name if available, then email, then phone if present */}
+                  <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm">
                     <div className="flex flex-col">
                       {order.name && <span className="font-medium text-gray-800">{order.name}</span>}
                       <span className="text-gray-600">{order.user?.email}</span>
@@ -289,8 +313,8 @@ const Orders = () => {
                       )}
                     </div>
                   </td>
-                  <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">
-                    {order.orderItems && order.orderItems.length > 0 ? (
+                  <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm">
+                    {order.orderItems?.length > 0 ? (
                       order.orderItems.map((item, idx) => (
                         <span key={idx}>
                           {item.qty}x {item.name}
@@ -301,35 +325,35 @@ const Orders = () => {
                       <span className="text-gray-400">—</span>
                     )}
                   </td>
-                  <td className="px-3 sm:px-6 py-2 sm:py-4 font-medium text-xs sm:text-sm text-gray-800">
+                  <td className="px-4 sm:px-6 py-3 font-medium text-xs sm:text-sm text-gray-800">
                     ₦{order.totalPrice.toLocaleString()}
                   </td>
-                  <td className="hidden sm:table-cell px-6 py-4 text-sm text-gray-500">
+                  <td className="hidden sm:table-cell px-4 sm:px-6 py-3 text-xs sm:text-sm text-gray-500">
                     {new Date(order.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="hidden sm:table-cell px-6 py-4 text-xs font-medium text-gray-600 capitalize">
+                  <td className="hidden sm:table-cell px-4 sm:px-6 py-3 text-xs sm:text-sm text-gray-600 capitalize">
                     {PAYMENT_METHOD_LABELS[order.paymentMethod || ''] || '—'}
                   </td>
-                  <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">
-                    {order.shippingAddress ? (
-                      <>
-                        {order.shippingAddress.address}, {order.shippingAddress.city}
-                      </>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-3 sm:px-6 py-2 sm:py-4">
+                  <td className="px-4 sm:px-6 py-3">
                     <select
                       value={order.status}
                       onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                      className={`px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold border-0 focus:ring-2 focus:ring-leaf-green ${STATUS_COLORS[order.status]} cursor-pointer outline-none transition-all`}
+                      className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold border-0 focus:ring-2 focus:ring-leaf-green ${STATUS_COLORS[order.status]} cursor-pointer outline-none transition-all`}
                     >
                       <option value="Pending">Pending</option>
                       <option value="Paid">Paid</option>
                       <option value="Shipped">Shipped</option>
                       <option value="Delivered">Delivered</option>
                     </select>
+                  </td>
+                  <td className="px-4 sm:px-6 py-3">
+                    <button
+                      onClick={() => setSelectedOrder(order)}
+                      className="text-leaf-green hover:underline flex items-center gap-1 text-xs sm:text-sm font-medium"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View
+                    </button>
                   </td>
                 </motion.tr>
               ))}
@@ -339,7 +363,7 @@ const Orders = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row justify-between items-center px-3 sm:px-6 py-2 sm:py-4 border-t border-gray-100 gap-2">
+          <div className="flex flex-col sm:flex-row justify-between items-center px-4 sm:px-6 py-3 border-t border-gray-100 gap-2">
             <span className="text-xs sm:text-sm text-gray-500">
               Page {page} of {totalPages}
             </span>
@@ -361,7 +385,134 @@ const Orders = () => {
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
+
+      {/* Order Detail Modal */}
+      <AnimatePresence>
+        {selectedOrder && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+              onClick={() => setSelectedOrder(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto border border-white/40">
+                <div className="sticky top-0 bg-white/90 backdrop-blur-md p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center">
+                  <h2 className="text-xl font-bold text-gray-800">
+                    Order #{selectedOrder._id.slice(-8).toUpperCase()}
+                  </h2>
+                  <button
+                    onClick={() => setSelectedOrder(null)}
+                    className="p-2 rounded-xl hover:bg-gray-100 transition"
+                  >
+                    <X className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+                <div className="p-4 sm:p-6 space-y-6">
+                  <div className="flex flex-wrap gap-3 items-center">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${STATUS_COLORS[selectedOrder.status]}`}>
+                      {selectedOrder.status}
+                    </span>
+                    <span className="text-sm text-gray-500 flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      {new Date(selectedOrder.createdAt).toLocaleDateString('en-NG', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </span>
+                    {selectedOrder.paymentMethod && (
+                      <span className="text-sm text-gray-500 flex items-center gap-1">
+                        <CreditCard className="w-4 h-4" />
+                        {PAYMENT_METHOD_LABELS[selectedOrder.paymentMethod] || selectedOrder.paymentMethod}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Customer info */}
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Customer</p>
+                    <p className="font-medium text-gray-800">{selectedOrder.name || 'N/A'}</p>
+                    <p className="text-sm text-gray-600">{selectedOrder.user?.email}</p>
+                    {selectedOrder.phone && (
+                      <p className="text-sm text-gray-600 flex items-center gap-1">
+                        <Phone className="w-3.5 h-3.5" /> {selectedOrder.phone}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Shipping Address */}
+                  {selectedOrder.shippingAddress && (
+                    <div className="bg-gray-50 rounded-xl p-4">
+                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Shipping Address</p>
+                      <p className="text-sm text-gray-800 flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                        {selectedOrder.shippingAddress.address}, {selectedOrder.shippingAddress.city}
+                        {selectedOrder.shippingAddress.postalCode ? `, ${selectedOrder.shippingAddress.postalCode}` : ''}
+                        {selectedOrder.shippingAddress.country ? `, ${selectedOrder.shippingAddress.country}` : ''}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Order Items */}
+                  <div>
+                    <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <Package className="w-4 h-4 text-leaf-green" />
+                      Items
+                    </h3>
+                    <div className="space-y-2">
+                      {selectedOrder.orderItems.map((item, i) => (
+                        <div key={i} className="flex justify-between items-center text-sm bg-gray-50 rounded-lg p-3">
+                          <span className="text-gray-700 font-medium">{item.name}</span>
+                          <span className="text-gray-500">{item.qty} × ₦{item.price.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Total */}
+                  <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                    <span className="text-gray-800 font-semibold text-lg">Total</span>
+                    <span className="text-2xl font-bold text-leaf-green">
+                      ₦{selectedOrder.totalPrice.toLocaleString()}
+                    </span>
+                  </div>
+
+                  {/* Quick status update inside modal */}
+                  <div className="flex items-center gap-3 pt-2">
+                    <span className="text-sm text-gray-600">Update Status:</span>
+                    <select
+                      value={selectedOrder.status}
+                      onChange={(e) => {
+                        handleStatusChange(selectedOrder._id, e.target.value);
+                        // update the selectedOrder locally for immediate feedback
+                        setSelectedOrder({
+                          ...selectedOrder,
+                          status: e.target.value,
+                        });
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold border-0 focus:ring-2 focus:ring-leaf-green ${STATUS_COLORS[selectedOrder.status]} cursor-pointer outline-none transition-all`}
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Paid">Paid</option>
+                      <option value="Shipped">Shipped</option>
+                      <option value="Delivered">Delivered</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
