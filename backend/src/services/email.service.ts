@@ -384,6 +384,9 @@ export const sendOrderStatusUpdateEmail = async (
 
   const message = statusMessages[status] || `Your order status is now ${status}`;
 
+  // For Delivered, we don't say "We'll keep you updated"
+  const isFinal = status === 'Delivered';
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -418,7 +421,7 @@ export const sendOrderStatusUpdateEmail = async (
             <p>Your order <strong>#${orderId}</strong> has been updated to:</p>
             <div class="status-badge">${status}</div>
             <p style="margin-top: 20px;"><strong>Total:</strong> ₦${total.toLocaleString()}</p>
-            <p>We'll keep you updated on your order's progress.</p>
+            ${isFinal ? `<p>Your order has been delivered. Thank you for shopping with us!</p>` : `<p>We'll keep you updated on your order's progress.</p>`}
           </div>
           <div class="footer">
             &copy; 2025 LotceWieth. All rights reserved.<br>
