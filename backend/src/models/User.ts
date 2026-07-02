@@ -4,6 +4,8 @@ import bcrypt from 'bcryptjs';
 export interface IUser extends Document {
   email: string;
   password: string;
+  name?: string;
+  phone?: string;               // optional phone number
   role: 'user' | 'admin';
   createdAt: Date;
   isVerified: boolean;
@@ -14,6 +16,8 @@ export interface IUser extends Document {
 const UserSchema: Schema = new Schema({
   email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true },
+  name: { type: String, default: '' },
+  phone: { type: String, default: '' },   // new field
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   createdAt: { type: Date, default: Date.now },
   isVerified: { type: Boolean, default: false },

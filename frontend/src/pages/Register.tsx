@@ -5,19 +5,19 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRegisterMutation } from "../features/api/apiSlice";
-import { Mail, Lock, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, CheckCircle, AlertCircle, Eye, EyeOff, User, Phone } from "lucide-react";
 
-// Zod Validation Schema with custom refinement for password matching
-const registerSchema = z
-  .object({
-    email: z.string().email("Please enter a valid email address"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+// Zod Validation Schema – name & phone optional
+const registerSchema = z.object({
+  name: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -41,7 +41,12 @@ const Register = () => {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      await registerUser({ email: data.email, password: data.password }).unwrap();
+      await registerUser({
+        email: data.email,
+        password: data.password,
+        name: data.name || "",
+        phone: data.phone || "",
+      }).unwrap();
       reset();
       setRegisteredEmail(data.email);
       setRegistrationSuccess(true);
@@ -124,6 +129,34 @@ const Register = () => {
           <p className="text-gray-500 mb-8 text-center md:text-left text-sm">Join us and enjoy fresh organic delights.</p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Name (optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name (optional)</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+                <input
+                  type="text"
+                  {...register("name")}
+                  className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent transition-all placeholder:text-gray-400"
+                  placeholder="John Doe"
+                />
+              </div>
+            </div>
+
+            {/* Phone (optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (optional)</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+                <input
+                  type="tel"
+                  {...register("phone")}
+                  className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent transition-all placeholder:text-gray-400"
+                  placeholder="+234 800 000 0000"
+                />
+              </div>
+            </div>
+
             {/* Email Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>

@@ -11,6 +11,16 @@ import { useCreateOrderMutation, useGetPublicSettingsQuery } from '../features/a
 import { clearCart } from '../features/cart/cartSlice';
 import { MapPin, Building, CreditCard, Banknote, MessageCircle } from 'lucide-react';
 
+// ---------- Types ----------
+interface CartItem {
+  _id: string;
+  name: string;
+  price: number;
+  qty: number;
+  image: string;
+  stock?: number;
+}
+
 const checkoutSchema = z.object({
   address: z.string().min(5, 'Address must be at least 5 characters'),
   city: z.string().min(2, 'City is required'),
@@ -26,10 +36,11 @@ const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { cartItems } = useSelector((state: RootState) => state.cart);
+
+  // ✅ use typed state
+  const cart = useSelector((state: RootState) => state.cart);
   const { user } = useSelector((state: RootState) => state.auth);
   const [createOrder, { isLoading }] = useCreateOrderMutation();
-
   const { data: publicSettings } = useGetPublicSettingsQuery({});
 
   const { register, handleSubmit, formState: { errors } } = useForm<CheckoutFormData>({
@@ -40,19 +51,22 @@ const Checkout = () => {
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderData, setOrderData] = useState<OrderResponse | null>(null);
 
-  const totalPrice = cartItems.reduce((acc, item) => acc + item.price * item.qty, 0);
+  // ✅ typed reduce
+  const totalPrice = cart.cartItems.reduce(
+    (acc: number, item: CartItem) => acc + item.price * item.qty,
+    0
+  );
 
   const onSubmit = async (data: CheckoutFormData) => {
     if (!user) {
       toast.error('Please login to checkout');
-      // ✅ Pass the current path so login can redirect back
       navigate('/login', { state: { from: location.pathname } });
       return;
     }
 
     try {
       const result = await createOrder({
-        orderItems: cartItems,
+        orderItems: cart.cartItems,
         shippingAddress: { ...data, postalCode: '', country: 'Nigeria' },
         totalPrice,
         paymentMethod,
@@ -72,7 +86,7 @@ const Checkout = () => {
     }
   };
 
-  // Show success page if order placed
+  // ---------- Success Page ----------
   if (orderSuccess) {
     const details = publicSettings || {
       bankAccountName: 'LotceWieth Store',
@@ -145,8 +159,8 @@ const Checkout = () => {
     );
   }
 
-  // Empty cart
-  if (cartItems.length === 0) {
+  // ---------- Empty Cart ----------
+  if (cart.cartItems.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
         Your cart is empty. Go back to shopping.
@@ -154,14 +168,15 @@ const Checkout = () => {
     );
   }
 
-  // Normal Checkout Page
+  // ---------- Normal Checkout Page ----------
   return (
-    <div className="min-h-screen p-4 relative bg-cover bg-center bg-no-repeat flex items-center justify-center"
+    <div
+      className="min-h-screen p-4 relative bg-cover bg-center bg-no-repeat flex items-center justify-center"
       style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1506619216599-9d16d0903dfd?auto=format&fit=crop&w=1920&q=80)' }}
     >
       <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-0"></div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative z-10 w-full max-w-6xl bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/40 grid md:grid-cols-2 min-h-[550px]"
@@ -172,7 +187,7 @@ const Checkout = () => {
           <p className="text-gray-500 mb-6 text-sm">Enter your details and choose a payment method.</p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Address fields */}
+            {/* Address */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Address</label>
               <div className="relative">
@@ -186,6 +201,7 @@ const Checkout = () => {
               {errors.address && <p className="mt-1 text-xs text-red-500">{errors.address.message}</p>}
             </div>
 
+            {/* City */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
               <div className="relative">
@@ -199,7 +215,7 @@ const Checkout = () => {
               {errors.city && <p className="mt-1 text-xs text-red-500">{errors.city.message}</p>}
             </div>
 
-            {/* Payment Method Selection */}
+            {/* Payment Method */}
             <div className="pt-2">
               <label className="block text-sm font-medium text-gray-700 mb-3">Payment Method</label>
               <div className="space-y-2">
@@ -241,7 +257,6 @@ const Checkout = () => {
               </div>
             </div>
 
-            {/* Security note – show only for Paystack */}
             {paymentMethod === 'paystack' && (
               <div className="bg-pastel-green/50 p-4 rounded-xl border border-leaf-green/20 mt-2">
                 <p className="text-xs text-gray-700 flex items-center gap-2">
@@ -270,7 +285,7 @@ const Checkout = () => {
         <div className="p-8 md:p-12 flex flex-col justify-start bg-gray-50/50 backdrop-blur-sm">
           <h3 className="text-xl font-bold text-gray-800 mb-6 border-b border-gray-200 pb-4">Order Summary</h3>
           <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-            {cartItems.map((item) => (
+            {cart.cartItems.map((item: CartItem) => (
               <div key={item._id} className="flex justify-between items-center border-b border-gray-100 pb-3">
                 <div className="flex items-center gap-3">
                   <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover border border-gray-200" />

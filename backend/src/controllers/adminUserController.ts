@@ -5,6 +5,8 @@ import { User } from '../models/User';
 // @route   GET /api/admin/users
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
+    // .select('-password') returns all fields except password,
+    // so name, createdAt, etc. are included
     const users = await User.find({}).select('-password');
     res.json(users);
   } catch (error: any) {

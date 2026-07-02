@@ -4,7 +4,7 @@ import cartReducer from './features/cart/cartSlice';
 import authReducer from './features/auth/authSlice';
 import { persistStore, persistReducer } from 'redux-persist';
 
-// Custom, bulletproof storage engine for Vite
+// custom storage (unchanged)
 const storage = {
   getItem: (key: string) => {
     if (typeof window === 'undefined') return Promise.resolve(null);
@@ -22,10 +22,10 @@ const storage = {
   },
 };
 
-const persistConfig = { 
-  key: 'root', 
-  storage, 
-  whitelist: ['cart', 'auth'] // ✅ Persist both cart and auth
+const persistConfig = {
+  key: 'root',
+  storage,
+  whitelist: ['cart', 'auth'],
 };
 
 const rootReducer = combineReducers({
@@ -43,5 +43,7 @@ export const store = configureStore({
 });
 
 export const persistor = persistStore(store);
-export type RootState = ReturnType<typeof store.getState>;
+
+// ✅ FIX: Derive RootState from rootReducer so all slices are visible
+export type RootState = ReturnType<typeof rootReducer>;
 export type AppDispatch = typeof store.dispatch;

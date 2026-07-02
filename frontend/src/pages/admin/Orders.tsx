@@ -12,11 +12,14 @@ import {
   ShoppingBag,
   CheckCircle,
   Clock,
+  Phone,
 } from 'lucide-react';
 
 interface OrderItem {
   _id: string;
   user: { email: string };
+  name?: string;         // customer name stored at order time
+  phone?: string;        // customer phone stored at order time
   totalPrice: number;
   status: string;
   createdAt: string;
@@ -89,12 +92,9 @@ const Orders = () => {
     setPage(1);
   };
 
-  // Memoize orders to avoid re‑creating array on every render
   const orders = useMemo(() => data?.orders || [], [data?.orders]);
-
   const totalPages = data?.totalPages || 1;
 
-  // Stats cards
   const stats = useMemo(() => {
     const total = orders.length;
     const paid = orders.filter((o: OrderItem) => o.status === 'Paid').length;
@@ -252,13 +252,13 @@ const Orders = () => {
         </motion.div>
       )}
 
-      {/* Orders Table – now includes Address column */}
+      {/* Orders Table – now displays customer name & phone */}
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-gray-50/50">
               <tr>
-                <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider min-w-[100px]">User</th>
+                <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider min-w-[160px]">Customer</th>
                 <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider min-w-[120px]">Items</th>
                 <th className="px-3 sm:px-6 py-2 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Total</th>
                 <th className="hidden sm:table-cell px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Date</th>
@@ -276,7 +276,19 @@ const Orders = () => {
                   whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
                   className="transition-colors"
                 >
-                  <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">{order.user?.email}</td>
+                  <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">
+                    {/* Show name if available, then email, then phone if present */}
+                    <div className="flex flex-col">
+                      {order.name && <span className="font-medium text-gray-800">{order.name}</span>}
+                      <span className="text-gray-600">{order.user?.email}</span>
+                      {order.phone && (
+                        <span className="text-gray-400 flex items-center gap-1 mt-0.5">
+                          <Phone className="w-3 h-3" />
+                          {order.phone}
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">
                     {order.orderItems && order.orderItems.length > 0 ? (
                       order.orderItems.map((item, idx) => (

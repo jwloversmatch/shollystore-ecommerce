@@ -12,7 +12,6 @@ const reduceStockForOrder = async (order: any) => {
   for (const item of order.orderItems) {
     const product = await Product.findById(item.product);
     if (product) {
-      // Ensure stock doesn't go below 0
       const newStock = Math.max(0, product.stock - item.qty);
       await Product.findByIdAndUpdate(item.product, { stock: newStock });
     }
@@ -23,13 +22,12 @@ const reduceStockForOrder = async (order: any) => {
 // @route   GET /api/admin/orders
 export const getAdminStats = async (req: Request, res: Response): Promise<void> => {
   try {
-    // 1. Get the 5 most recent orders (all statuses)
+    // Populate user email and name for the dashboard
     const recentOrders = await Order.find()
-      .populate('user', 'email')
+      .populate('user', 'email name')
       .sort({ createdAt: -1 })
       .limit(5);
 
-    // 2. Compute total revenue from orders that are NOT 'Pending'
     const revenueResult = await Order.aggregate([
       { $match: { status: { $ne: 'Pending' } } },
       { $group: { _id: null, total: { $sum: '$totalPrice' } } },
@@ -52,7 +50,6 @@ export const getAllOrders = async (req: Request, res: Response): Promise<void> =
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    // Build filter object
     const filter: any = {};
 
     if (req.query.status && req.query.status !== 'All') {
@@ -79,7 +76,7 @@ export const getAllOrders = async (req: Request, res: Response): Promise<void> =
 
     const [orders, total] = await Promise.all([
       Order.find(filter)
-        .populate('user', 'email')
+        .populate('user', 'email name') // now includes name
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -105,8 +102,7 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
     const { id } = req.params;
     const { status } = req.body;
 
-    // ✅ Populate user and cast to the correct type
-    const order = await Order.findById(id).populate('user', 'email') as any;
+    const order = await Order.findById(id).populate('user', 'email name');
     if (!order) {
       res.status(404).json({ message: 'Order not found' });
       return;
@@ -116,21 +112,23 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
       await reduceStockForOrder(order);
     }
 
-    const oldStatus = order.status;
     order.status = status;
     await order.save();
 
-    // ✅ Notify admin about status change
     await sendAdminOrderNotification(order, 'updated', status);
 
-    // ✅ If shipped or delivered, notify the user
-    if (['Shipped', 'Delivered'].includes(status) && order.user?.email) {
-      await sendOrderStatusUpdateEmail(
-        order.user.email,
-        order._id.toString(),
-        status,
-        order.totalPrice,
-      );
+    // Notify user (if email exists)
+    if (['Shipped', 'Delivered'].includes(status)) {
+      // Safely cast user to populated shape
+      const populatedUser = order.user as unknown as { email?: string; name?: string } | null;
+      if (populatedUser?.email) {
+        await sendOrderStatusUpdateEmail(
+          populatedUser.email,
+          order._id.toString(),
+          status,
+          order.totalPrice,
+        );
+      }
     }
 
     res.json({ success: true, order });

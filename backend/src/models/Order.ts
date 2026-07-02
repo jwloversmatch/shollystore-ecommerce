@@ -2,6 +2,8 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IOrder extends Document {
   user: mongoose.Types.ObjectId;
+  name?: string;             // customer name at time of order
+  phone?: string;            // customer phone at time of order
   orderItems: { name: string; qty: number; price: number; product: mongoose.Types.ObjectId }[];
   shippingAddress: {
     address: string;
@@ -22,13 +24,15 @@ export interface IOrder extends Document {
 
 const OrderSchema: Schema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  name: { type: String },            // optional, but you can make it required if needed
+  phone: { type: String },
   orderItems: [{
     name: { type: String, required: true },
     qty: { type: Number, required: true },
     price: { type: Number, required: true },
     product: { type: Schema.Types.ObjectId, ref: 'Product', required: true }
   }],
-  shippingAddress: { // ✅ ADD THIS
+  shippingAddress: {
     address: { type: String, required: true },
     city: { type: String, required: true },
     postalCode: String,

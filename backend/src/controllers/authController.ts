@@ -8,7 +8,7 @@ import { sendVerificationEmail } from '../services/email.service';
 // @route   POST /api/auth/register
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { email, password, name, phone } = req.body;   // ✅ accept phone
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -16,18 +16,17 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Generate verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    // Create user with verificationToken and isVerified = false
     const user = await User.create({
       email,
       password,
+      name: name || '',
+      phone: phone || '',        // ✅ store phone
       verificationToken,
       isVerified: false,
     });
 
-    // Send verification email
     await sendVerificationEmail(email, verificationToken);
 
     res.status(201).json({
@@ -43,7 +42,6 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
 // @route   GET /api/auth/verify-email
 export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
   try {
-    // ✅ Cast token to string
     const token = req.query.token as string;
 
     if (!token) {
@@ -82,12 +80,10 @@ export const resendVerificationEmail = async (req: Request, res: Response): Prom
       return;
     }
 
-    // Generate a new token and save
     const verificationToken = crypto.randomBytes(32).toString('hex');
     user.verificationToken = verificationToken;
     await user.save();
 
-    // Send new verification email
     await sendVerificationEmail(email, verificationToken);
 
     res.json({ success: true, message: 'Verification email resent successfully. Please check your inbox.' });
@@ -108,7 +104,6 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Block login if email is not verified
     if (!user.isVerified) {
       res.status(403).json({
         success: false,
@@ -117,12 +112,15 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Generate token and respond
+    // ✅ Include phone in response
     res.json({
       success: true,
       _id: user._id,
       email: user.email,
+      name: user.name,
+      phone: user.phone,             // added
       role: user.role,
+      createdAt: user.createdAt,
       token: generateToken(user._id.toString()),
     });
   } catch (error: any) {

@@ -6,7 +6,7 @@ import { User } from '../models/User';
 import { initializePayment } from '../services/paystack.service';
 import {
   sendOrderConfirmation,
-  sendAdminOrderNotification, // ✅ added
+  sendAdminOrderNotification,
 } from '../services/email.service';
 import { AuthRequest } from '../middleware/auth';
 
@@ -21,7 +21,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
-    // 1. Check stock availability for all items (no reduction yet)
+    // 1. Check stock availability
     for (const item of orderItems) {
       const product = await Product.findById(item._id);
       if (!product) {
@@ -37,9 +37,11 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       }
     }
 
-    // 2. Build and save the order
+    // 2. Build order document – ✅ include name and phone from req.user
     const order = new Order({
       user: req.user!._id,
+      name: req.user!.name || '',
+      phone: req.user!.phone || '',
       orderItems: orderItems.map((x: any) => ({
         ...x,
         product: x._id,
@@ -64,12 +66,10 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 
     const createdOrder = await order.save();
 
-    // ✅ Notify admin about new order
+    // 3. Notify admin
     await sendAdminOrderNotification(createdOrder, 'created');
 
-    // 3. Stock NOT reduced here – it will be reduced when the order leaves 'Pending' (via webhook or admin update)
-
-    // 4. Handle payment flow
+    // 4. Payment flow
     if (paymentMethod === 'paystack') {
       const paymentData = await initializePayment(
         req.user!.email,
@@ -87,7 +87,6 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
         reference: paymentData.data.reference,
       });
     } else {
-      // Bank Transfer or WhatsApp: no redirect
       res.status(201).json({
         success: true,
         order: createdOrder,

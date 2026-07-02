@@ -4,7 +4,6 @@ import path from "path";
 // Load .env from the backend root (two levels up from this file)
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
-// Debug: confirm the key is loaded
 console.log("🔑 BREVO_API_KEY loaded:", !!process.env.BREVO_API_KEY);
 console.log(
   "🔑 Key starts with:",
@@ -22,7 +21,6 @@ if (!BREVO_API_KEY) {
   );
 }
 
-// Define return type with optional 'simulated' flag
 type SendEmailResult = {
   success: boolean;
   messageId?: string;
@@ -30,9 +28,6 @@ type SendEmailResult = {
   simulated?: boolean;
 };
 
-/**
- * Send an email using Brevo's HTTP API
- */
 const sendEmail = async (
   to: string,
   subject: string,
@@ -82,9 +77,6 @@ const sendEmail = async (
   }
 };
 
-/**
- * Strip HTML for plain text version
- */
 const stripHtml = (html: string): string => {
   return html
     .replace(/<[^>]*>/g, "")
@@ -93,11 +85,22 @@ const stripHtml = (html: string): string => {
 };
 
 // ------------------------------------------------------------------
-// PROFESSIONAL EMAIL TEMPLATES
+// PROFESSIONAL EMAIL TEMPLATES (with optional name personalization)
 // ------------------------------------------------------------------
 
-export const sendVerificationEmail = async (email: string, token: string) => {
+/**
+ * Send verification email. If a name is provided, the greeting becomes:
+ * "Hi [Name], welcome to LotceWieth! ..."
+ */
+export const sendVerificationEmail = async (
+  email: string,
+  token: string,
+  name?: string,
+) => {
   const verifyUrl = `${CLIENT_URL}/verify-email?token=${token}`;
+  const greeting = name
+    ? `Hi <strong>${name}</strong>, welcome to LotceWieth! 🌿`
+    : `Welcome to LotceWieth! 🌿`;
 
   const html = `
     <!DOCTYPE html>
@@ -129,7 +132,7 @@ export const sendVerificationEmail = async (email: string, token: string) => {
             <h1>Lotce<span style="color:#4a8f29;">Wieth</span></h1>
           </div>
           <div class="content">
-            <h2>Welcome to LotceWieth! 🌿</h2>
+            <h2>${greeting}</h2>
             <p>Thank you for joining us. We're excited to have you on board!<br>Please verify your email address to complete your registration.</p>
             <a href="${verifyUrl}" class="btn">Verify Email Address</a>
             <p style="margin-top: 25px; font-size: 14px; color: #718096;">If you didn't create an account with us, you can safely ignore this email.</p>
@@ -144,7 +147,7 @@ export const sendVerificationEmail = async (email: string, token: string) => {
     </html>
   `;
 
-  const text = `Welcome to LotceWieth! Please verify your email address by clicking this link: ${verifyUrl}`;
+  const text = `Hi${name ? " " + name : ""}, welcome to LotceWieth! Please verify your email address by clicking this link: ${verifyUrl}`;
 
   return sendEmail(
     email,
@@ -154,11 +157,19 @@ export const sendVerificationEmail = async (email: string, token: string) => {
   );
 };
 
+/**
+ * Send order confirmation. Personalized greeting if name is provided.
+ */
 export const sendOrderConfirmation = async (
   email: string,
   orderId: string,
   total: number,
+  name?: string,
 ) => {
+  const greeting = name
+    ? `Thank you, <strong>${name}</strong>! 🎉`
+    : `Order Confirmed! 🎉`;
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -190,7 +201,7 @@ export const sendOrderConfirmation = async (
             <h1>Lotce<span style="color:#4a8f29;">Wieth</span></h1>
           </div>
           <div class="content">
-            <h2>Order Confirmed! 🎉</h2>
+            <h2>${greeting}</h2>
             <p>Thank you for your purchase! We're preparing your order and will ship it soon.</p>
             <div class="order-details">
               <p><strong>Order #</strong> ${orderId}</p>
@@ -208,89 +219,21 @@ export const sendOrderConfirmation = async (
     </html>
   `;
 
-  const text = `Order Confirmation – Order #${orderId}. Total: ₦${total.toLocaleString()}. Thank you for your purchase!`;
+  const text = `Hi${name ? " " + name : ""}, your order #${orderId} has been confirmed. Total: ₦${total.toLocaleString()}. Thank you for your purchase!`;
 
   return sendEmail(email, "Order Confirmation – LotceWieth", html, text);
 };
 
-// ------------------------------------------------------------------
-// ADMIN NOTIFICATION (for any order status change)
-// ------------------------------------------------------------------
-
-/**
- * Send a notification email to the admin when an order is created or updated.
- * @param order - The order document (must be populated with user)
- * @param action - 'created' or 'updated'
- * @param newStatus - (optional) the new status if action is 'updated'
- */
-export const sendAdminOrderNotification = async (
-  order: any,
-  action: 'created' | 'updated',
-  newStatus?: string,
+// Shipped and Delivered templates also get a name parameter
+export const sendOrderShippedEmail = async (
+  email: string,
+  orderId: string,
+  name?: string,
 ) => {
-  const adminEmail = process.env.ADMIN_EMAIL;
-  if (!adminEmail) {
-    console.warn('⚠️ ADMIN_EMAIL not set. Admin notification skipped.');
-    return;
-  }
+  const greeting = name
+    ? `Hi <strong>${name}</strong>, your order has been shipped! 🚚`
+    : `Your Order Has Been Shipped! 🚚`;
 
-  // Try to get user email from populated order, or fallback to fetching user
-  let userEmail = order.user?.email || 'N/A';
-  if (!order.user?.email && order.user) {
-    try {
-      const User = (await import('../models/User')).User;
-      const user = await User.findById(order.user);
-      userEmail = user?.email || 'N/A';
-    } catch (error) {
-      console.error('Failed to fetch user for email notification:', error);
-    }
-  }
-
-  const itemsList = order.orderItems
-    .map(
-      (item: any) =>
-        `${item.qty}x ${item.name} – ₦${(item.price * item.qty).toLocaleString()}`,
-    )
-    .join('<br/>');
-
-  const subject =
-    action === 'created'
-      ? `🛒 New Order #${order._id} Placed`
-      : `🔄 Order #${order._id} Status Updated to ${newStatus || order.status}`;
-
-  // Determine status color
-  const statusColor =
-    order.status === 'Paid'
-      ? 'green'
-      : order.status === 'Pending'
-      ? 'orange'
-      : order.status === 'Shipped'
-      ? 'blue'
-      : 'gray';
-
-  const html = `
-    <h2>${subject}</h2>
-    <p><strong>Order #:</strong> ${order._id}</p>
-    <p><strong>Customer:</strong> ${userEmail}</p>
-    <p><strong>Total:</strong> ₦${order.totalPrice.toLocaleString()}</p>
-    <p><strong>Payment Method:</strong> ${order.paymentMethod || 'N/A'}</p>
-    <p><strong>Current Status:</strong> <strong style="color:${statusColor};">${order.status}</strong></p>
-    <p><strong>Shipping Address:</strong><br/>
-      ${order.shippingAddress?.address || 'N/A'}, 
-      ${order.shippingAddress?.city || 'N/A'}
-    </p>
-    <h3>Items:</h3>
-    <p>${itemsList}</p>
-    <hr/>
-    <p style="color:gray;">Manage this order in the admin dashboard.</p>
-  `;
-
-  const text = `Order #${order._id} from ${userEmail}. Status: ${order.status}. Total: ₦${order.totalPrice.toLocaleString()}`;
-
-  return sendEmail(adminEmail, subject, html, text);
-};
-
-export const sendOrderShippedEmail = async (email: string, orderId: string) => {
   const html = `
     <!DOCTYPE html>
     <html>
@@ -318,7 +261,7 @@ export const sendOrderShippedEmail = async (email: string, orderId: string) => {
             <h1>Lotce<span style="color:#ffffff;">Wieth</span></h1>
           </div>
           <div class="content">
-            <h2>Your Order Has Been Shipped! 🚚</h2>
+            <h2>${greeting}</h2>
             <p>Great news! Your order <strong>#${orderId}</strong> is on its way.</p>
             <p>You'll receive a delivery confirmation once it arrives.</p>
           </div>
@@ -331,12 +274,20 @@ export const sendOrderShippedEmail = async (email: string, orderId: string) => {
     </body>
     </html>
   `;
-  const text = `Your order #${orderId} has been shipped! You'll receive a delivery confirmation once it arrives.`;
+  const text = `Hi${name ? " " + name : ""}, your order #${orderId} has been shipped! You'll receive a delivery confirmation once it arrives.`;
 
   return sendEmail(email, "Your Order Has Been Shipped – LotceWieth", html, text);
 };
 
-export const sendOrderDeliveredEmail = async (email: string, orderId: string) => {
+export const sendOrderDeliveredEmail = async (
+  email: string,
+  orderId: string,
+  name?: string,
+) => {
+  const greeting = name
+    ? `Thank you, <strong>${name}</strong>! Your order has been delivered ✅`
+    : `Order Delivered! ✅`;
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -364,7 +315,7 @@ export const sendOrderDeliveredEmail = async (email: string, orderId: string) =>
             <h1>Lotce<span style="color:#ffffff;">Wieth</span></h1>
           </div>
           <div class="content">
-            <h2>Order Delivered! ✅</h2>
+            <h2>${greeting}</h2>
             <p>Your order <strong>#${orderId}</strong> has been successfully delivered.</p>
             <p>We hope you enjoy your beverages! 🥤</p>
           </div>
@@ -377,26 +328,35 @@ export const sendOrderDeliveredEmail = async (email: string, orderId: string) =>
     </body>
     </html>
   `;
-  const text = `Your order #${orderId} has been delivered! We hope you enjoy your beverages.`;
+  const text = `Hi${name ? " " + name : ""}, your order #${orderId} has been delivered! We hope you enjoy your beverages.`;
 
   return sendEmail(email, "Order Delivered – LotceWieth", html, text);
 };
 
-// Add after sendOrderConfirmation
+/**
+ * Generic status update email (Shipped/Delivered). Also accepts a name.
+ */
 export const sendOrderStatusUpdateEmail = async (
   email: string,
   orderId: string,
   status: string,
   total: number,
+  name?: string,
 ) => {
   const statusMessages: Record<string, string> = {
-    Shipped: 'Your order has been shipped! 🚚',
-    Delivered: 'Your order has been delivered! ✅',
+    Shipped: name
+      ? `Hi ${name}, your order has been shipped! 🚚`
+      : `Your order has been shipped! 🚚`,
+    Delivered: name
+      ? `Hi ${name}, your order has been delivered! ✅`
+      : `Your order has been delivered! ✅`,
   };
+  const message =
+    statusMessages[status] ||
+    (name
+      ? `Hi ${name}, your order status is now ${status}`
+      : `Your order status is now ${status}`);
 
-  const message = statusMessages[status] || `Your order status is now ${status}`;
-
-  // For Delivered, we don't say "We'll keep you updated"
   const isFinal = status === 'Delivered';
 
   const html = `
@@ -445,7 +405,92 @@ export const sendOrderStatusUpdateEmail = async (
     </html>
   `;
 
-  const text = `Your order #${orderId} is now ${status}. Total: ₦${total.toLocaleString()}.`;
+  const text = `Hi${name ? " " + name : ""}, your order #${orderId} is now ${status}. Total: ₦${total.toLocaleString()}.`;
 
   return sendEmail(email, `Order #${orderId} – Status Updated`, html, text);
+};
+
+// Admin notification – now uses order.name and order.phone when available
+export const sendAdminOrderNotification = async (
+  order: any,
+  action: 'created' | 'updated',
+  newStatus?: string,
+) => {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
+    console.warn('⚠️ ADMIN_EMAIL not set. Admin notification skipped.');
+    return;
+  }
+
+  // 1. Try to get name and phone directly from the order document
+  const orderName = order.name || '';
+  const orderPhone = order.phone || '';
+
+  let userEmail = order.user?.email || 'N/A';
+  let userName = orderName || order.user?.name || '';
+  let userPhone = orderPhone || order.user?.phone || '';
+
+  // 2. If user is only an ID (not populated), fetch full user to be safe
+  if (!order.user?.email && order.user) {
+    try {
+      const User = (await import('../models/User')).User;
+      const user = await User.findById(order.user);
+      userEmail = user?.email || 'N/A';
+      userName = userName || user?.name || '';
+      userPhone = userPhone || user?.phone || '';
+    } catch (error) {
+      console.error('Failed to fetch user for email notification:', error);
+    }
+  }
+
+  // 3. Build a human-friendly customer label
+  const customerLabel = [
+    userName,
+    userEmail,
+    userPhone ? `📞 ${userPhone}` : '',
+  ]
+    .filter(Boolean)
+    .join(' | ');
+
+  const itemsList = order.orderItems
+    .map(
+      (item: any) =>
+        `${item.qty}x ${item.name} – ₦${(item.price * item.qty).toLocaleString()}`,
+    )
+    .join('<br/>');
+
+  const subject =
+    action === 'created'
+      ? `🛒 New Order #${order._id} Placed`
+      : `🔄 Order #${order._id} Status Updated to ${newStatus || order.status}`;
+
+  const statusColor =
+    order.status === 'Paid'
+      ? 'green'
+      : order.status === 'Pending'
+      ? 'orange'
+      : order.status === 'Shipped'
+      ? 'blue'
+      : 'gray';
+
+  const html = `
+    <h2>${subject}</h2>
+    <p><strong>Order #:</strong> ${order._id}</p>
+    <p><strong>Customer:</strong> ${customerLabel}</p>
+    <p><strong>Total:</strong> ₦${order.totalPrice.toLocaleString()}</p>
+    <p><strong>Payment Method:</strong> ${order.paymentMethod || 'N/A'}</p>
+    <p><strong>Current Status:</strong> <strong style="color:${statusColor};">${order.status}</strong></p>
+    <p><strong>Shipping Address:</strong><br/>
+      ${order.shippingAddress?.address || 'N/A'}, 
+      ${order.shippingAddress?.city || 'N/A'}
+    </p>
+    <h3>Items:</h3>
+    <p>${itemsList}</p>
+    <hr/>
+    <p style="color:gray;">Manage this order in the admin dashboard.</p>
+  `;
+
+  const text = `Order #${order._id} from ${customerLabel}. Status: ${order.status}. Total: ₦${order.totalPrice.toLocaleString()}`;
+
+  return sendEmail(adminEmail, subject, html, text);
 };
