@@ -23,12 +23,12 @@ import {
   Package,
 } from 'lucide-react';
 
-// ---------- Types ----------
+// ---------- Types (updated: user object includes phone) ----------
 interface OrderItem {
   _id: string;
-  user: { email: string };
-  name?: string;
-  phone?: string;
+  user: { email: string; phone?: string };   // 👈 phone from populated user
+  name?: string;                              // order snapshot name
+  phone?: string;                             // order snapshot phone (fallback)
   totalPrice: number;
   status: string;
   createdAt: string;
@@ -305,10 +305,11 @@ const Orders = () => {
                     <div className="flex flex-col">
                       {order.name && <span className="font-medium text-gray-800">{order.name}</span>}
                       <span className="text-gray-600">{order.user?.email}</span>
-                      {order.phone && (
+                      {/* Show current phone from populated user if available, else order snapshot */}
+                      {(order.user?.phone || order.phone) && (
                         <span className="text-gray-400 flex items-center gap-1 mt-0.5">
                           <Phone className="w-3 h-3" />
-                          {order.phone}
+                          {order.user?.phone || order.phone}
                         </span>
                       )}
                     </div>
@@ -442,9 +443,9 @@ const Orders = () => {
                     <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Customer</p>
                     <p className="font-medium text-gray-800">{selectedOrder.name || 'N/A'}</p>
                     <p className="text-sm text-gray-600">{selectedOrder.user?.email}</p>
-                    {selectedOrder.phone && (
+                    {(selectedOrder.user?.phone || selectedOrder.phone) && (
                       <p className="text-sm text-gray-600 flex items-center gap-1">
-                        <Phone className="w-3.5 h-3.5" /> {selectedOrder.phone}
+                        <Phone className="w-3.5 h-3.5" /> {selectedOrder.user?.phone || selectedOrder.phone}
                       </p>
                     )}
                   </div>
