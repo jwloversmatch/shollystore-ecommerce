@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { logout } from '../features/auth/authSlice';
 import toast from 'react-hot-toast';
 import {
   ShoppingBag,
@@ -11,42 +10,65 @@ import {
   CheckCircle,
   Truck,
   Package,
-  LogOut,
   Mail,
-  User,
   Phone,
-  ChevronRight,
+  Eye,
+  X,
   AlertCircle,
+  Calendar,
+  CreditCard,
+  MapPin,
 } from 'lucide-react';
 
 // ---------- Types ----------
-interface OrderItem {
+interface OrderItemDetail {
+  name: string;
+  qty: number;
+  price: number;
+}
+
+interface Order {
   _id: string;
   totalPrice: number;
   status: string;
   createdAt: string;
-  orderItems: Array<{ name: string; qty: number; price: number }>;
+  orderItems: OrderItemDetail[];
+  shippingAddress?: {
+    address: string;
+    city: string;
+    postalCode?: string;
+    country?: string;
+  };
+  paymentMethod?: string;
+  name?: string;   // customer name if available
+  phone?: string;
 }
 
-// Helper: Status Icon & Color (React.ReactNode avoids JSX.Element import)
-const getStatusInfo = (status: string): { icon: React.ReactNode; color: string } => {
-  const map: Record<string, { icon: React.ReactNode; color: string }> = {
-    Paid: { icon: <CheckCircle className="w-4 h-4" />, color: 'bg-green-100 text-green-700' },
-    Pending: { icon: <Clock className="w-4 h-4" />, color: 'bg-yellow-100 text-yellow-700' },
-    Shipped: { icon: <Truck className="w-4 h-4" />, color: 'bg-blue-100 text-blue-700' },
-    Delivered: { icon: <Package className="w-4 h-4" />, color: 'bg-purple-100 text-purple-700' },
+// ---------- Status helpers ----------
+const getStatusInfo = (status: string): { icon: React.ReactNode; color: string; label: string } => {
+  const map: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
+    Paid: { icon: <CheckCircle className="w-4 h-4" />, color: 'bg-green-100 text-green-700', label: 'Paid' },
+    Pending: { icon: <Clock className="w-4 h-4" />, color: 'bg-yellow-100 text-yellow-700', label: 'Pending' },
+    Shipped: { icon: <Truck className="w-4 h-4" />, color: 'bg-blue-100 text-blue-700', label: 'Shipped' },
+    Delivered: { icon: <Package className="w-4 h-4" />, color: 'bg-purple-100 text-purple-700', label: 'Delivered' },
   };
-  return map[status] || { icon: <AlertCircle className="w-4 h-4" />, color: 'bg-gray-100 text-gray-700' };
+  return map[status] || { icon: <AlertCircle className="w-4 h-4" />, color: 'bg-gray-100 text-gray-700', label: status };
+};
+
+const paymentLabels: Record<string, string> = {
+  paystack: 'Paystack',
+  bank_transfer: 'Bank Transfer',
+  whatsapp: 'WhatsApp',
 };
 
 const Account = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
-  const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'orders' | 'profile'>('orders');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -74,13 +96,6 @@ const Account = () => {
     fetchOrders();
   }, [user, navigate]);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    localStorage.removeItem('token');
-    toast.success('Logged out');
-    navigate('/login');
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-pastel-pink via-pastel-green to-white">
@@ -95,29 +110,31 @@ const Account = () => {
       animate={{ opacity: 1, y: 0 }}
       className="p-4 md:p-6 pt-20 md:pt-24 max-w-6xl mx-auto space-y-8"
     >
-      {/* ---------- Header with User Info ---------- */}
+      {/* ---------- Profile Header (no logout) ---------- */}
       <motion.div
         initial={{ opacity: 0, x: -30 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
-        className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+        className="flex items-center gap-6 bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-100"
       >
+        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-leaf-green to-emerald-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+          {user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
+        </div>
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800">My Account</h1>
-          <p className="text-gray-500 mt-1 flex items-center gap-2">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+            {user?.name || 'Welcome back!'}
+          </h1>
+          <p className="text-gray-500 flex items-center gap-1 mt-1">
             <Mail className="w-4 h-4" />
             {user?.email}
           </p>
+          {user?.phone && (
+            <p className="text-gray-500 flex items-center gap-1 mt-0.5">
+              <Phone className="w-4 h-4" />
+              {user.phone}
+            </p>
+          )}
         </div>
-        <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={handleLogout}
-          className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-full font-medium shadow-sm hover:shadow-md transition-all"
-        >
-          <LogOut className="w-4 h-4" />
-          Logout
-        </motion.button>
       </motion.div>
 
       {/* ---------- Tabs ---------- */}
@@ -153,9 +170,8 @@ const Account = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
-            className="space-y-6"
+            className="space-y-4"
           >
-            {/* Error State */}
             {error && (
               <div className="bg-red-50 text-red-700 rounded-xl p-4 flex items-center gap-3">
                 <AlertCircle className="w-5 h-5" />
@@ -163,7 +179,6 @@ const Account = () => {
               </div>
             )}
 
-            {/* Empty State */}
             {!error && orders.length === 0 && (
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-10 text-center">
                 <ShoppingBag className="w-16 h-16 mx-auto text-gray-300 mb-4" />
@@ -180,114 +195,126 @@ const Account = () => {
               </div>
             )}
 
-            {/* Order List */}
-            {orders.map((order, idx) => {
-              const { icon, color } = getStatusInfo(order.status);
-              return (
-                <motion.div
-                  key={order._id}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05, duration: 0.3 }}
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all overflow-hidden"
-                >
-                  {/* Order Header */}
-                  <div className="p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-100">
-                    <div>
-                      <p className="font-semibold text-gray-800">
-                        Order #{order._id.slice(-8).toUpperCase()}
-                      </p>
-                      <p className="text-sm text-gray-500">
+            {/* Compact Order List */}
+            <div className="space-y-3">
+              {orders.map((order, idx) => {
+                const { icon, color, label } = getStatusInfo(order.status);
+                return (
+                  <motion.div
+                    key={order._id}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.03, duration: 0.3 }}
+                    className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all overflow-hidden"
+                  >
+                    <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider">Order #</p>
+                          <p className="font-medium text-gray-800 text-sm mt-0.5">
+                            {order._id.slice(-8).toUpperCase()}
+                          </p>
+                        </div>
+                        <div className="hidden sm:block">
+                          <p className="text-xs text-gray-500 uppercase tracking-wider">Date</p>
+                          <p className="font-medium text-gray-800 text-sm mt-0.5 flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                            {new Date(order.createdAt).toLocaleDateString('en-NG', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider">Status</p>
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold mt-1 ${color}`}>
+                            {icon}
+                            {label}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider">Total</p>
+                          <p className="font-bold text-leaf-green text-sm mt-0.5">
+                            ₦{order.totalPrice.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setSelectedOrder(order)}
+                        className="flex items-center gap-1 text-sm font-medium text-leaf-green hover:underline shrink-0 self-end sm:self-center"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View Details
+                      </button>
+                    </div>
+                    {/* Mobile date shown only on small screens */}
+                    <div className="sm:hidden px-4 pb-3">
+                      <p className="text-xs text-gray-500 flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5" />
                         {new Date(order.createdAt).toLocaleDateString('en-NG', {
                           year: 'numeric',
-                          month: 'long',
+                          month: 'short',
                           day: 'numeric',
                         })}
                       </p>
                     </div>
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${color}`}>
-                      {icon}
-                      {order.status}
-                    </span>
-                  </div>
-
-                  {/* Order Items */}
-                  <div className="p-4 sm:p-6">
-                    <div className="space-y-3">
-                      {order.orderItems.map((item) => (
-                        <div key={item.name} className="flex justify-between items-center text-sm">
-                          <span className="text-gray-700 font-medium">{item.name}</span>
-                          <span className="text-gray-500">
-                            {item.qty} × ₦{item.price.toLocaleString()}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
-                      <span className="text-gray-800 font-semibold">Total</span>
-                      <span className="text-xl font-bold text-leaf-green">
-                        ₦{order.totalPrice.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* View Details (optional) */}
-                  <div className="bg-gray-50/50 px-4 sm:px-6 py-3 flex justify-end">
-                    <button className="text-sm text-leaf-green font-medium hover:underline flex items-center gap-1">
-                      View Details <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              );
-            })}
+                  </motion.div>
+                );
+              })}
+            </div>
           </motion.div>
         ) : (
-          /* Profile Settings Tab – now includes phone number */
+          /* Profile Settings Tab – enhanced layout */
           <motion.div
             key="profile"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
-            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6"
+            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-6"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-leaf-green/10 flex items-center justify-center text-2xl">
-                <User className="w-8 h-8 text-leaf-green" />
+            <div className="flex items-center gap-5">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-leaf-green to-emerald-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                {user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-gray-800">{user?.name || 'User'}</h3>
-                <p className="text-gray-500 flex items-center gap-1">
+                <h3 className="text-2xl font-bold text-gray-800">{user?.name || 'User'}</h3>
+                <p className="text-gray-500 flex items-center gap-1 mt-1">
                   <Mail className="w-4 h-4" />
                   {user?.email}
                 </p>
+                {user?.phone && (
+                  <p className="text-gray-500 flex items-center gap-1 mt-0.5">
+                    <Phone className="w-4 h-4" />
+                    {user.phone}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="bg-gray-50/50 rounded-xl p-4">
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">Full Name</p>
-                  <p className="font-medium text-gray-800 mt-1">{user?.name || 'Not set'}</p>
-                </div>
-                <div className="bg-gray-50/50 rounded-xl p-4">
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">Email Address</p>
-                  <p className="font-medium text-gray-800 mt-1">{user?.email}</p>
-                </div>
-                {/* Phone Number */}
-                <div className="bg-gray-50/50 rounded-xl p-4 sm:col-span-2">
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">Phone Number</p>
-                  <p className="font-medium text-gray-800 mt-1 flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-gray-400" />
-                    {user?.phone || 'Not set'}
-                  </p>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="bg-gray-50/60 rounded-xl p-4">
+                <p className="text-xs text-gray-500 uppercase tracking-wider">Full Name</p>
+                <p className="font-medium text-gray-800 mt-1">{user?.name || 'Not set'}</p>
               </div>
-              <div className="bg-gray-50/50 rounded-xl p-4">
+              <div className="bg-gray-50/60 rounded-xl p-4">
+                <p className="text-xs text-gray-500 uppercase tracking-wider">Email Address</p>
+                <p className="font-medium text-gray-800 mt-1 break-all">{user?.email}</p>
+              </div>
+              <div className="bg-gray-50/60 rounded-xl p-4">
+                <p className="text-xs text-gray-500 uppercase tracking-wider">Phone</p>
+                <p className="font-medium text-gray-800 mt-1">{user?.phone || 'Not set'}</p>
+              </div>
+              <div className="bg-gray-50/60 rounded-xl p-4">
                 <p className="text-xs text-gray-500 uppercase tracking-wider">Member Since</p>
                 <p className="font-medium text-gray-800 mt-1">
                   {user?.createdAt
-                    ? new Date(user.createdAt).toLocaleDateString('en-NG')
+                    ? new Date(user.createdAt).toLocaleDateString('en-NG', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })
                     : 'N/A'}
                 </p>
               </div>
@@ -297,6 +324,108 @@ const Account = () => {
               Profile editing coming soon. For now, enjoy your shopping experience!
             </p>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ---------- Order Details Modal ---------- */}
+      <AnimatePresence>
+        {selectedOrder && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+              onClick={() => setSelectedOrder(null)}
+            />
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto border border-white/40">
+                <div className="sticky top-0 bg-white/90 backdrop-blur-md p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center">
+                  <h2 className="text-xl font-bold text-gray-800">
+                    Order #{selectedOrder._id.slice(-8).toUpperCase()}
+                  </h2>
+                  <button
+                    onClick={() => setSelectedOrder(null)}
+                    className="p-2 rounded-xl hover:bg-gray-100 transition"
+                  >
+                    <X className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+
+                <div className="p-4 sm:p-6 space-y-6">
+                  {/* Status badge & date */}
+                  <div className="flex flex-wrap gap-3 items-center">
+                    {(() => {
+                      const { icon, color, label } = getStatusInfo(selectedOrder.status);
+                      return (
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${color}`}>
+                          {icon}
+                          {label}
+                        </span>
+                      );
+                    })()}
+                    <span className="text-sm text-gray-500 flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      {new Date(selectedOrder.createdAt).toLocaleDateString('en-NG', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </span>
+                    {selectedOrder.paymentMethod && (
+                      <span className="text-sm text-gray-500 flex items-center gap-1">
+                        <CreditCard className="w-4 h-4" />
+                        {paymentLabels[selectedOrder.paymentMethod] || selectedOrder.paymentMethod}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Shipping address if present */}
+                  {selectedOrder.shippingAddress && (
+                    <div className="bg-gray-50 rounded-xl p-4">
+                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Shipping Address</p>
+                      <p className="text-sm text-gray-800 flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                        {selectedOrder.shippingAddress.address}, {selectedOrder.shippingAddress.city}
+                        {selectedOrder.shippingAddress.postalCode ? `, ${selectedOrder.shippingAddress.postalCode}` : ''}
+                        {selectedOrder.shippingAddress.country ? `, ${selectedOrder.shippingAddress.country}` : ''}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Order Items Table */}
+                  <div>
+                    <h3 className="font-semibold text-gray-800 mb-3">Items</h3>
+                    <div className="space-y-2">
+                      {selectedOrder.orderItems.map((item, i) => (
+                        <div key={i} className="flex justify-between items-center text-sm bg-gray-50 rounded-lg p-3">
+                          <span className="text-gray-700 font-medium">{item.name}</span>
+                          <span className="text-gray-500">
+                            {item.qty} × ₦{item.price.toLocaleString()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Total */}
+                  <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                    <span className="text-gray-800 font-semibold text-lg">Total</span>
+                    <span className="text-2xl font-bold text-leaf-green">
+                      ₦{selectedOrder.totalPrice.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </motion.div>
