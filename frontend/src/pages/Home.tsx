@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useInView } from 'framer-motion'; // ✅ import useInView
+import { useInView } from 'framer-motion';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   useGetProductsQuery,
@@ -46,17 +46,18 @@ const Home = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
-  const isCarouselInView = useInView(carouselRef, { once: false, amount: 0.3 });
+  // ✅ Keep useInView only for the entrance animation
+  useInView(carouselRef, { once: false, amount: 0.3 });
 
-  // Auto-slide – only when carousel is in view
+  // ✅ Auto-slide – always active, regardless of visibility
   useEffect(() => {
-    if (!heroSlides || heroSlides.length === 0 || !isCarouselInView) return;
+    if (!heroSlides || heroSlides.length === 0) return;
     const interval = setInterval(() => {
       setDirection(1);
       setCurrentIndex((prev) => (prev + 1) % heroSlides.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [heroSlides, isCarouselInView]);
+  }, [heroSlides]);
 
   const handleNext = () => {
     if (!heroSlides || heroSlides.length === 0) return;
@@ -127,7 +128,7 @@ const Home = () => {
           </motion.button>
         </motion.div>
 
-        {/* Right side: Carousel – now with ref and inView detection */}
+        {/* Right side: Carousel */}
         <motion.div 
           ref={carouselRef}
           initial={{ opacity: 0, scale: 0.95 }}
