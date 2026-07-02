@@ -19,6 +19,7 @@ import adminHeroSlideRoutes from './routes/adminHeroSlideRoutes';
 import heroSlideRoutes from './routes/heroSlideRoutes'; 
 import categoryRoutes from './routes/categoryRoutes';
 import adminCategoryRoutes from './routes/adminCategoryRoutes';
+import adminMarketingRoutes from './routes/adminMarketingRoutes';
 
 dotenv.config();
 
@@ -48,6 +49,7 @@ app.use('/api/admin/hero-slides', adminHeroSlideRoutes);
 app.use('/api/hero-slides', heroSlideRoutes); 
 app.use('/api/categories', categoryRoutes);
 app.use('/api/admin/categories', adminCategoryRoutes);
+app.use('/api/admin/marketing', adminMarketingRoutes);
 
 // Health Check (public)
 app.get("/api/health", (req: Request, res: Response) => {
