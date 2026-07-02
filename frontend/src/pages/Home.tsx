@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { useInView } from 'framer-motion'; // ✅ import useInView
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   useGetProductsQuery,
@@ -44,16 +45,18 @@ const Home = () => {
   // Carousel state
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const isCarouselInView = useInView(carouselRef, { once: false, amount: 0.3 });
 
-  // Auto-slide
+  // Auto-slide – only when carousel is in view
   useEffect(() => {
-    if (!heroSlides || heroSlides.length === 0) return;
+    if (!heroSlides || heroSlides.length === 0 || !isCarouselInView) return;
     const interval = setInterval(() => {
       setDirection(1);
       setCurrentIndex((prev) => (prev + 1) % heroSlides.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [heroSlides]);
+  }, [heroSlides, isCarouselInView]);
 
   const handleNext = () => {
     if (!heroSlides || heroSlides.length === 0) return;
@@ -78,11 +81,11 @@ const Home = () => {
     return displayProducts.filter((p: ProductItem) => p.category === selectedCategory);
   }, [displayProducts, selectedCategory]);
 
-  // Animation variants (fade for carousel)
+  // Lighter animation variants (removed scale to reduce layout shifting)
   const variants = {
-    enter: { opacity: 0, scale: 0.95 },
-    center: { opacity: 1, scale: 1 },
-    exit: { opacity: 0, scale: 0.95 },
+    enter: { opacity: 0 },
+    center: { opacity: 1 },
+    exit: { opacity: 0 },
   };
 
   if (isLoading || slidesLoading || categoriesLoading) {
@@ -99,7 +102,11 @@ const Home = () => {
       
       {/* --- 1. Hero Section --- */}
       <section className="max-w-7xl mx-auto px-6 pt-20 md:pt-24 pb-16 md:pb-20 grid md:grid-cols-2 items-center gap-12">
-        <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}>
+        <motion.div 
+          initial={{ opacity: 0, x: -30 }} 
+          animate={{ opacity: 1, x: 0 }} 
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+        >
           <span className="bg-white/40 px-4 py-1.5 rounded-full text-sm font-medium text-blob-orange inline-block mb-4 backdrop-blur-sm border border-white/60">
             📦 Bulk Beverage Store
           </span>
@@ -111,22 +118,23 @@ const Home = () => {
             From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in convenient packs. Perfect for stocking your home, office, or event.
           </p>
           <motion.button 
-            whileHover={{ scale: 1.05 }} 
-            whileTap={{ scale: 0.95 }} 
+            whileHover={{ scale: 1.03 }} 
+            whileTap={{ scale: 0.97 }}
             onClick={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })}
-            className="bg-blob-orange text-white px-8 md:px-10 py-3 md:py-4 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all cursor-pointer"
+            className="bg-blob-orange text-white px-8 md:px-10 py-3 md:py-4 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all cursor-pointer will-change-transform"
           >
             Explore Our Range
           </motion.button>
         </motion.div>
 
-        {/* Right side: Carousel */}
+        {/* Right side: Carousel – now with ref and inView detection */}
         <motion.div 
-          initial={{ opacity: 0, scale: 0.9, y: 30 }}
-          whileInView={{ opacity: 1, scale: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="relative flex justify-center items-center h-[450px] md:h-[550px]"
+          ref={carouselRef}
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.7, delay: 0.1 }}
+          className="relative flex justify-center items-center h-[450px] md:h-[550px] will-change-transform"
         >
           <div className="relative w-full max-w-lg aspect-square group">
             {heroSlides && heroSlides.length > 0 ? (
@@ -139,18 +147,20 @@ const Home = () => {
                     initial="enter"
                     animate="center"
                     exit="exit"
-                    transition={{ duration: 0.5, ease: 'easeInOut' }}
+                    transition={{ duration: 0.4, ease: 'easeInOut' }}
                     src={heroSlides[currentIndex].imageUrl}
                     alt={heroSlides[currentIndex].title || 'Hero slide'}
-                    className="w-full h-full object-contain drop-shadow-2xl"
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-contain drop-shadow-2xl will-change-transform"
                   />
                 </AnimatePresence>
 
                 {/* Navigation arrows */}
-                <button onClick={handlePrev} className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-white">
+                <button onClick={handlePrev} className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white">
                   <ChevronLeft className="w-5 h-5 text-gray-800" />
                 </button>
-                <button onClick={handleNext} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-white">
+                <button onClick={handleNext} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white">
                   <ChevronRight className="w-5 h-5 text-gray-800" />
                 </button>
 
@@ -163,8 +173,8 @@ const Home = () => {
                         setDirection(idx > currentIndex ? 1 : -1);
                         setCurrentIndex(idx);
                       }}
-                      className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ${
-                        idx === currentIndex ? 'bg-leaf-green w-8' : 'bg-gray-300'
+                      className={`h-2 w-2 rounded-full transition-all duration-300 ${
+                        idx === currentIndex ? 'bg-leaf-green w-6' : 'bg-gray-300'
                       }`}
                     />
                   ))}
@@ -182,9 +192,9 @@ const Home = () => {
       {/* --- 2. Why Choose Us Section --- */}
       <section className="max-w-7xl mx-auto px-4 md:px-6 py-12 md:py-16">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.6 }}
           className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"
         >
@@ -196,11 +206,11 @@ const Home = () => {
           ].map((item, idx) => (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition-all text-center"
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ delay: idx * 0.1, duration: 0.4 }}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition-all text-center will-change-transform"
             >
               <div className="bg-pastel-pink/30 rounded-full p-4 w-16 h-16 mx-auto flex items-center justify-center mb-3">
                 {item.icon}
@@ -230,7 +240,7 @@ const Home = () => {
             <motion.button
               key={cat}
               whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedCategory(cat)}
               className={`bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border p-4 md:p-6 hover:shadow-md transition-all flex flex-col items-center justify-center gap-2 ${
                 selectedCategory === cat ? 'border-leaf-green ring-2 ring-leaf-green/20' : 'border-gray-100'
@@ -275,10 +285,22 @@ const Home = () => {
             ))}
           </div>
         ) : (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ staggerChildren: 0.1 }} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            transition={{ duration: 0.5 }}
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+          >
             <AnimatePresence mode="wait">
               {filteredProducts.map((product: ProductItem) => (
-                <motion.div key={product._id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.2 }}>
+                <motion.div 
+                  key={product._id} 
+                  layout 
+                  initial={{ opacity: 0, y: 10 }} 
+                  animate={{ opacity: 1, y: 0 }} 
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
                   <ProductCard _id={product._id} name={product.name} price={product.price} image={product.images?.[0] || 'https://via.placeholder.com/150'} category={product.category || 'General'} stock={product.stock} />
                 </motion.div>
               ))}
@@ -290,10 +312,11 @@ const Home = () => {
       {/* --- 5. Special Offers Banner --- */}
       <section className="max-w-7xl mx-auto px-4 md:px-6 mt-12 md:mt-16">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.96 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="bg-gradient-to-r from-blob-orange/20 to-leaf-green/20 rounded-3xl p-8 md:p-12 text-center border border-white/40 backdrop-blur-sm"
+          transition={{ duration: 0.5 }}
+          className="bg-gradient-to-r from-blob-orange/20 to-leaf-green/20 rounded-3xl p-8 md:p-12 text-center border border-white/40 backdrop-blur-sm will-change-transform"
         >
           <h2 className="text-2xl md:text-4xl font-bold text-gray-800 mb-4">Stock Up & Save</h2>
           <p className="text-gray-600 mb-6 max-w-lg mx-auto">

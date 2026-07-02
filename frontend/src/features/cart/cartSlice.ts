@@ -28,11 +28,12 @@ const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
+    // ✅ Now adds to existing quantity instead of replacing it
     addToCart: (state, action: PayloadAction<CartItem>) => {
       const item = action.payload;
       const existItem = state.cartItems.find((x) => x._id === item._id);
       if (existItem) {
-        existItem.qty = item.qty;
+        existItem.qty += item.qty;
       } else {
         state.cartItems.push(item);
       }
@@ -40,12 +41,11 @@ const cartSlice = createSlice({
     removeFromCart: (state, action: PayloadAction<string>) => {
       state.cartItems = state.cartItems.filter((x) => x._id !== action.payload);
     },
-    // ✅ NEW: Update quantity for an item in the cart
     updateQuantity: (state, action: PayloadAction<{ _id: string; qty: number }>) => {
       const { _id, qty } = action.payload;
       const item = state.cartItems.find((x) => x._id === _id);
       if (item) {
-        // Professional check: ensure we don't go below 1 or exceed available stock
+        // Ensure quantity is at least 1 and doesn't exceed stock
         item.qty = Math.max(1, Math.min(qty, item.stock));
       }
     },
@@ -58,13 +58,12 @@ const cartSlice = createSlice({
   },
 });
 
-// ✅ Don't forget to export the new action
-export const { 
-  addToCart, 
-  removeFromCart, 
-  updateQuantity, 
-  saveShippingAddress, 
-  clearCart 
+export const {
+  addToCart,
+  removeFromCart,
+  updateQuantity,
+  saveShippingAddress,
+  clearCart,
 } = cartSlice.actions;
 
 export default cartSlice.reducer;

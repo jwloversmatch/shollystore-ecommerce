@@ -234,6 +234,18 @@ export const sendAdminOrderNotification = async (
     return;
   }
 
+  // Try to get user email from populated order, or fallback to fetching user
+  let userEmail = order.user?.email || 'N/A';
+  if (!order.user?.email && order.user) {
+    try {
+      const User = (await import('../models/User')).User;
+      const user = await User.findById(order.user);
+      userEmail = user?.email || 'N/A';
+    } catch (error) {
+      console.error('Failed to fetch user for email notification:', error);
+    }
+  }
+
   const itemsList = order.orderItems
     .map(
       (item: any) =>
@@ -259,7 +271,7 @@ export const sendAdminOrderNotification = async (
   const html = `
     <h2>${subject}</h2>
     <p><strong>Order #:</strong> ${order._id}</p>
-    <p><strong>Customer:</strong> ${order.user?.email || 'N/A'}</p>
+    <p><strong>Customer:</strong> ${userEmail}</p>
     <p><strong>Total:</strong> ₦${order.totalPrice.toLocaleString()}</p>
     <p><strong>Payment Method:</strong> ${order.paymentMethod || 'N/A'}</p>
     <p><strong>Current Status:</strong> <strong style="color:${statusColor};">${order.status}</strong></p>
@@ -273,7 +285,7 @@ export const sendAdminOrderNotification = async (
     <p style="color:gray;">Manage this order in the admin dashboard.</p>
   `;
 
-  const text = `Order #${order._id} from ${order.user?.email}. Status: ${order.status}. Total: ₦${order.totalPrice.toLocaleString()}`;
+  const text = `Order #${order._id} from ${userEmail}. Status: ${order.status}. Total: ₦${order.totalPrice.toLocaleString()}`;
 
   return sendEmail(adminEmail, subject, html, text);
 };
