@@ -1,5 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { useInView } from 'framer-motion';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   useGetProductsQuery,
@@ -45,11 +44,8 @@ const Home = () => {
   // Carousel state
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
-  const carouselRef = useRef<HTMLDivElement>(null);
-  // ✅ Keep useInView only for the entrance animation
-  useInView(carouselRef, { once: false, amount: 0.3 });
 
-  // ✅ Auto-slide – always active, regardless of visibility
+  // Auto‑slide every 5 seconds
   useEffect(() => {
     if (!heroSlides || heroSlides.length === 0) return;
     const interval = setInterval(() => {
@@ -64,10 +60,27 @@ const Home = () => {
     setDirection(1);
     setCurrentIndex((prev) => (prev + 1) % heroSlides.length);
   };
+
   const handlePrev = () => {
     if (!heroSlides || heroSlides.length === 0) return;
     setDirection(-1);
     setCurrentIndex((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+  };
+
+  // Slide animation variants
+  const slideVariants = {
+    enter: (dir: number) => ({
+      x: dir > 0 ? '100%' : '-100%',
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (dir: number) => ({
+      x: dir > 0 ? '-100%' : '100%',
+      opacity: 0,
+    }),
   };
 
   // Build category list: "All" + fetched category names
@@ -82,13 +95,7 @@ const Home = () => {
     return displayProducts.filter((p: ProductItem) => p.category === selectedCategory);
   }, [displayProducts, selectedCategory]);
 
-  // Lighter animation variants (removed scale to reduce layout shifting)
-  const variants = {
-    enter: { opacity: 0 },
-    center: { opacity: 1 },
-    exit: { opacity: 0 },
-  };
-
+  // Loading state
   if (isLoading || slidesLoading || categoriesLoading) {
     return (
       <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-pastel-pink via-pastel-green to-white">
@@ -100,26 +107,26 @@ const Home = () => {
   return (
     <div className="min-h-screen relative overflow-x-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-pastel-pink via-pastel-green to-white -z-10" />
-      
+
       {/* --- 1. Hero Section --- */}
       <section className="max-w-7xl mx-auto px-6 pt-20 md:pt-24 pb-16 md:pb-20 grid md:grid-cols-2 items-center gap-12">
-        <motion.div 
-          initial={{ opacity: 0, x: -30 }} 
-          animate={{ opacity: 1, x: 0 }} 
+        <motion.div
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
         >
           <span className="bg-white/40 px-4 py-1.5 rounded-full text-sm font-medium text-blob-orange inline-block mb-4 backdrop-blur-sm border border-white/60">
             📦 Bulk Beverage Store
           </span>
           <h1 className="text-4xl md:text-7xl font-bold text-gray-900 leading-[1.1] mb-6">
-            Your Everyday <br /> 
+            Your Everyday <br />
             <span className="text-leaf-green">Drink Superstore</span>
           </h1>
           <p className="text-gray-600 text-base md:text-lg mb-8 max-w-md">
-            From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in convenient packs. Perfect for stocking your home, office, or event.
+            From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in convenient packs.
           </p>
-          <motion.button 
-            whileHover={{ scale: 1.03 }} 
+          <motion.button
+            whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })}
             className="bg-blob-orange text-white px-8 md:px-10 py-3 md:py-4 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all cursor-pointer will-change-transform"
@@ -128,45 +135,50 @@ const Home = () => {
           </motion.button>
         </motion.div>
 
-        {/* Right side: Carousel */}
-        <motion.div 
-          ref={carouselRef}
+        {/* Right side: Sliding Carousel */}
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.7, delay: 0.1 }}
           className="relative flex justify-center items-center h-[450px] md:h-[550px] will-change-transform"
         >
-          <div className="relative w-full max-w-lg aspect-square group">
+          <div className="relative w-full max-w-lg aspect-square group overflow-hidden">
             {heroSlides && heroSlides.length > 0 ? (
               <>
                 <AnimatePresence initial={false} custom={direction} mode="wait">
                   <motion.img
                     key={currentIndex}
                     custom={direction}
-                    variants={variants}
+                    variants={slideVariants}
                     initial="enter"
                     animate="center"
                     exit="exit"
-                    transition={{ duration: 0.4, ease: 'easeInOut' }}
+                    transition={{ type: 'tween', duration: 0.4, ease: 'easeInOut' }}
                     src={heroSlides[currentIndex].imageUrl}
                     alt={heroSlides[currentIndex].title || 'Hero slide'}
                     loading="lazy"
                     decoding="async"
-                    className="w-full h-full object-contain drop-shadow-2xl will-change-transform"
+                    className="w-full h-full object-contain drop-shadow-2xl will-change-transform absolute inset-0"
                   />
                 </AnimatePresence>
 
                 {/* Navigation arrows */}
-                <button onClick={handlePrev} className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white">
+                <button
+                  onClick={handlePrev}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white z-10"
+                >
                   <ChevronLeft className="w-5 h-5 text-gray-800" />
                 </button>
-                <button onClick={handleNext} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white">
+                <button
+                  onClick={handleNext}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white z-10"
+                >
                   <ChevronRight className="w-5 h-5 text-gray-800" />
                 </button>
 
                 {/* Dots */}
-                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
+                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
                   {heroSlides.map((_: HeroSlide, idx: number) => (
                     <button
                       key={idx}
@@ -228,7 +240,7 @@ const Home = () => {
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 md:mb-10 gap-4">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Shop by Category</h2>
           {selectedCategory !== 'All' && (
-            <button 
+            <button
               onClick={() => setSelectedCategory('All')}
               className="text-sm text-gray-500 hover:text-leaf-green transition-colors underline"
             >
@@ -278,36 +290,35 @@ const Home = () => {
             ))}
           </div>
         </div>
-        
-        {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white h-64 rounded-2xl animate-pulse border border-gray-100 shadow-sm"></div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+        >
+          <AnimatePresence mode="wait">
+            {filteredProducts.map((product: ProductItem) => (
+              <motion.div
+                key={product._id}
+                layout
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ProductCard
+                  _id={product._id}
+                  name={product.name}
+                  price={product.price}
+                  image={product.images?.[0] || 'https://via.placeholder.com/150'}
+                  category={product.category || 'General'}
+                  stock={product.stock}
+                />
+              </motion.div>
             ))}
-          </div>
-        ) : (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            transition={{ duration: 0.5 }}
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
-          >
-            <AnimatePresence mode="wait">
-              {filteredProducts.map((product: ProductItem) => (
-                <motion.div 
-                  key={product._id} 
-                  layout 
-                  initial={{ opacity: 0, y: 10 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <ProductCard _id={product._id} name={product.name} price={product.price} image={product.images?.[0] || 'https://via.placeholder.com/150'} category={product.category || 'General'} stock={product.stock} />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
-        )}
+          </AnimatePresence>
+        </motion.div>
       </section>
 
       {/* --- 5. Special Offers Banner --- */}
@@ -321,7 +332,8 @@ const Home = () => {
         >
           <h2 className="text-2xl md:text-4xl font-bold text-gray-800 mb-4">Stock Up & Save</h2>
           <p className="text-gray-600 mb-6 max-w-lg mx-auto">
-            Get <span className="font-bold text-leaf-green">₦500 off</span> your first bulk order of ₦10,000 or more. Use code <span className="font-bold text-leaf-green">FIRST500</span>
+            Get <span className="font-bold text-leaf-green">₦500 off</span> your first bulk order of ₦10,000 or more. Use code{' '}
+            <span className="font-bold text-leaf-green">FIRST500</span>
           </p>
           <button
             onClick={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })}
