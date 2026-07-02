@@ -10,7 +10,7 @@ import {
 } from '../../features/api/apiSlice';
 import { ArrowLeft, Plus, Trash2, Edit, ArrowUp, ArrowDown } from 'lucide-react';
 import toast from 'react-hot-toast';
-import ConfirmationModal from '../../components/ConfirmationModal'; // Import modal
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 interface HeroSlide {
   _id: string;
@@ -20,6 +20,8 @@ interface HeroSlide {
   order: number;
   isActive: boolean;
 }
+
+const PLACEHOLDER_IMAGE = 'https://via.placeholder.com/150';
 
 const HeroSlides = () => {
   const navigate = useNavigate();
@@ -185,7 +187,15 @@ const HeroSlides = () => {
               {slides.map((slide: HeroSlide) => (
                 <tr key={slide._id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
-                    <img src={slide.imageUrl} alt={slide.title} className="w-16 h-16 rounded-lg object-cover" />
+                    <img
+                      src={slide.imageUrl || PLACEHOLDER_IMAGE}
+                      alt={slide.title}
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.src = PLACEHOLDER_IMAGE;
+                      }}
+                      className="w-16 h-16 rounded-lg object-cover border border-gray-200"
+                    />
                   </td>
                   <td className="px-6 py-4 font-medium">{slide.title}</td>
                   <td className="px-6 py-4 text-gray-600">{slide.subtitle}</td>
@@ -245,7 +255,15 @@ const HeroSlides = () => {
                   className="w-full border rounded-xl px-4 py-2"
                 />
                 {formData.imageUrl && !file && (
-                  <img src={formData.imageUrl} alt="Current" className="mt-2 w-24 h-24 rounded object-cover" />
+                  <img
+                    src={formData.imageUrl}
+                    alt="Current"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.src = PLACEHOLDER_IMAGE;
+                    }}
+                    className="mt-2 w-24 h-24 rounded object-cover border border-gray-200"
+                  />
                 )}
               </div>
               <div>

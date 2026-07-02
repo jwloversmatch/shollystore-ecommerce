@@ -82,7 +82,7 @@ const Products = () => {
   // ---------- UI State ----------
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
-  const [showLowStock, setShowLowStock] = useState(false); // ✅ New filter
+  const [showLowStock, setShowLowStock] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
@@ -121,24 +121,21 @@ const Products = () => {
   const filteredProducts = useMemo(() => {
     let filtered = products;
 
-    // Category filter
     if (categoryFilter !== 'All') {
       filtered = filtered.filter((p: ProductItem) => p.category === categoryFilter);
     }
 
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter((p: ProductItem) =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // ✅ Low Stock filter (stock < 5)
     if (showLowStock) {
       filtered = filtered.filter((p: ProductItem) => p.stock < 5);
     }
 
-    return filtered.slice().sort((a: ProductItem, b: ProductItem) => 
+    return filtered.slice().sort((a: ProductItem, b: ProductItem) =>
       b._id.localeCompare(a._id)
     );
   }, [products, searchTerm, categoryFilter, showLowStock]);
@@ -194,7 +191,6 @@ const Products = () => {
     setModalAction(null);
   };
 
-  // Quick stock increment/decrement
   const handleQuickStock = async (id: string, currentStock: number, delta: number) => {
     const newStock = Math.max(0, currentStock + delta);
     try {
@@ -243,6 +239,9 @@ const Products = () => {
     }
   };
 
+  // Placeholder image for broken or missing images
+  const placeholderImage = 'https://via.placeholder.com/150';
+
   // ---------- Render ----------
   return (
     <div className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-4 md:space-y-6">
@@ -273,8 +272,7 @@ const Products = () => {
             <p className="text-xs sm:text-sm text-gray-500 mt-1">Manage your product catalog</p>
           </div>
         </div>
-        
-        {/* Add Product button – always right-aligned */}
+
         <div className="flex justify-end w-full sm:w-auto">
           <button
             onClick={() => handleOpenDrawer()}
@@ -309,7 +307,6 @@ const Products = () => {
             </option>
           ))}
         </select>
-        {/* ✅ Low Stock filter toggle */}
         <button
           onClick={() => setShowLowStock(!showLowStock)}
           className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap border ${
@@ -372,8 +369,12 @@ const Products = () => {
                   >
                     <td className="px-4 sm:px-6 py-3 sm:py-4">
                       <img
-                        src={product.images?.[0] || 'https://via.placeholder.com/150'}
+                        src={product.images?.[0] || placeholderImage}
                         alt={product.name}
+                        loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.src = placeholderImage;
+                        }}
                         className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-gray-200"
                       />
                     </td>
@@ -624,7 +625,7 @@ const Products = () => {
                         Uploading...
                       </div>
                     )}
-                    
+
                     {/* New image preview when a file is selected */}
                     {file && (
                       <div className="mt-2">
@@ -644,6 +645,10 @@ const Products = () => {
                         <img
                           src={editingProduct.images[0]}
                           alt="Current"
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.src = placeholderImage;
+                          }}
                           className="mt-1 w-20 h-20 rounded-lg object-cover border border-gray-200"
                         />
                       </div>

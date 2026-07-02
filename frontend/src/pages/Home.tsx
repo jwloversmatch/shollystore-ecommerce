@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   useGetProductsQuery,
@@ -7,7 +7,7 @@ import {
 } from '../features/api/apiSlice';
 import ProductCard from '../components/ProductCard';
 import Footer from './Footer';
-import { ChevronLeft, ChevronRight, Package, Truck, CreditCard, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Package, Truck, CreditCard, Star, ImageOff } from 'lucide-react';
 
 interface ProductItem {
   _id: string;
@@ -44,6 +44,20 @@ const Home = () => {
   // Carousel state
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
+
+  // Track which slide index has loaded / errored (no effect needed)
+  const [loadedIndex, setLoadedIndex] = useState<number | null>(null);
+  const [errorIndex, setErrorIndex] = useState<number | null>(null);
+
+  const handleImageLoad = useCallback(() => {
+    setLoadedIndex(currentIndex);
+    setErrorIndex(null);
+  }, [currentIndex]);
+
+  const handleImageError = useCallback(() => {
+    setErrorIndex(currentIndex);
+    setLoadedIndex(null);
+  }, [currentIndex]);
 
   // Auto‑slide every 5 seconds
   useEffect(() => {
@@ -147,7 +161,7 @@ const Home = () => {
             {heroSlides && heroSlides.length > 0 ? (
               <>
                 <AnimatePresence initial={false} custom={direction} mode="wait">
-                  <motion.img
+                  <motion.div
                     key={currentIndex}
                     custom={direction}
                     variants={slideVariants}
@@ -155,12 +169,33 @@ const Home = () => {
                     animate="center"
                     exit="exit"
                     transition={{ type: 'tween', duration: 0.4, ease: 'easeInOut' }}
-                    src={heroSlides[currentIndex].imageUrl}
-                    alt={heroSlides[currentIndex].title || 'Hero slide'}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-contain drop-shadow-2xl will-change-transform absolute inset-0"
-                  />
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    {/* Shimmer placeholder while loading */}
+                    {loadedIndex !== currentIndex && errorIndex !== currentIndex && (
+                      <div className="absolute inset-0 bg-gray-100 animate-pulse rounded-3xl" />
+                    )}
+
+                    {/* Fallback when image fails to load */}
+                    {errorIndex === currentIndex ? (
+                      <div className="flex flex-col items-center justify-center text-gray-400 p-4">
+                        <ImageOff className="w-12 h-12 mb-2" />
+                        <span className="text-sm">Image not available</span>
+                      </div>
+                    ) : (
+                      <img
+                        src={heroSlides[currentIndex].imageUrl}
+                        alt={heroSlides[currentIndex].title || 'Hero slide'}
+                        loading="lazy"
+                        decoding="async"
+                        onLoad={handleImageLoad}
+                        onError={handleImageError}
+                        className={`w-full h-full object-contain drop-shadow-2xl transition-opacity duration-300 ${
+                          loadedIndex === currentIndex ? 'opacity-100' : 'opacity-0'
+                        }`}
+                      />
+                    )}
+                  </motion.div>
                 </AnimatePresence>
 
                 {/* Navigation arrows */}
