@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShoppingCart, ImageOff, Check } from 'lucide-react';
 import { useDispatch } from 'react-redux';
@@ -13,10 +12,10 @@ interface ProductProps {
   image: string;
   category?: string;
   stock?: number;
-  slug?: string;          // ✅ required for linking to detail page
+  // slug removed
+  onClick?: () => void;
 }
 
-// ---------- Animation Variants ----------
 const cardVariants = {
   hidden: { opacity: 0, y: 30 },
   visible: {
@@ -41,7 +40,7 @@ const ProductCard = ({
   image,
   category = 'General',
   stock,
-  slug,
+  onClick,
 }: ProductProps) => {
   const dispatch = useDispatch();
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -50,39 +49,39 @@ const ProductCard = ({
 
   const isOutOfStock = stock !== undefined && stock === 0;
 
-  const handleAddToCart = useCallback(() => {
-    if (isOutOfStock) {
-      toast.error('Sorry, this item is out of stock!');
-      return;
-    }
-    dispatch(
-      addToCart({
-        _id,
-        name,
-        image,
-        price,
-        qty: 1,
-        stock: stock ?? 999,
-      })
-    );
-    toast.success(`Added ${name} to cart!`);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
-  }, [dispatch, _id, name, image, price, stock, isOutOfStock]);
+  const handleAddToCart = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (isOutOfStock) {
+        toast.error('Sorry, this item is out of stock!');
+        return;
+      }
+      dispatch(addToCart({ _id, name, image, price, qty: 1, stock: stock ?? 999 }));
+      toast.success(`Added ${name} to cart!`);
+      setAdded(true);
+      setTimeout(() => setAdded(false), 1500);
+    },
+    [dispatch, _id, name, image, price, stock, isOutOfStock]
+  );
 
   return (
-    <Link to={`/product/${slug}`} className="block">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
+      className="cursor-pointer group"
+    >
       <motion.div
         variants={cardVariants}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: '-20px' }}
         whileHover={isOutOfStock ? {} : { y: -4 }}
-        className="group relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden border border-gray-100"
+        className="relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden border border-gray-100"
       >
         {/* Image container */}
         <div className="relative w-full aspect-[4/3] bg-gray-100 overflow-hidden shrink-0">
-          {/* Skeleton / Error handling */}
           {!imageLoaded && !imageError && (
             <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%]" />
           )}
@@ -106,7 +105,6 @@ const ProductCard = ({
             />
           )}
 
-          {/* Category badge */}
           <motion.span
             variants={badgeSpring}
             initial="rest"
@@ -116,7 +114,6 @@ const ProductCard = ({
             {category}
           </motion.span>
 
-          {/* Stock badge */}
           {stock !== undefined && (
             <motion.span
               variants={badgeSpring}
@@ -130,7 +127,6 @@ const ProductCard = ({
             </motion.span>
           )}
 
-          {/* Out-of-stock overlay */}
           {isOutOfStock && (
             <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
               <span className="text-red-500 font-bold text-lg opacity-80">Out of Stock</span>
@@ -140,7 +136,6 @@ const ProductCard = ({
 
         {/* Content */}
         <div className="p-4 md:p-5 flex flex-col flex-1 justify-between">
-          {/* Name & Price with staggered entrance */}
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -170,7 +165,6 @@ const ProductCard = ({
             </motion.p>
           </motion.div>
 
-          {/* Add to Cart button – always visible, but retains animation on interaction */}
           <div className="mt-3 md:mt-4">
             {isOutOfStock ? (
               <div className="w-full bg-red-50 text-red-600 py-2.5 md:py-3 rounded-xl text-center text-sm font-medium">
@@ -178,10 +172,7 @@ const ProductCard = ({
               </div>
             ) : (
               <motion.button
-                onClick={(e) => {
-                  e.preventDefault(); // prevent Link navigation when clicking the button
-                  handleAddToCart();
-                }}
+                onClick={handleAddToCart}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.95 }}
                 className="w-full relative overflow-hidden bg-black text-white py-2.5 md:py-3 rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
@@ -201,7 +192,7 @@ const ProductCard = ({
           </div>
         </div>
       </motion.div>
-    </Link>
+    </div>
   );
 };
 

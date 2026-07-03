@@ -1,12 +1,12 @@
-import { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   useGetProductsQuery,
   useGetHeroSlidesQuery,
   useGetCategoriesQuery,
-} from '../features/api/apiSlice';
-import ProductCard from '../components/ProductCard';
-import Footer from './Footer';
+} from "../features/api/apiSlice";
+import ProductCard from "../components/ProductCard";
+import Footer from "./Footer";
 import {
   ChevronLeft,
   ChevronRight,
@@ -17,9 +17,10 @@ import {
   Sparkles,
   ArrowRight,
   Search,
-} from 'lucide-react';
-import SEO from '../components/SEO';
-import StructuredData from '../components/StructuredData';
+} from "lucide-react";
+import SEO from "../components/SEO";
+import StructuredData from "../components/StructuredData";
+import ProductQuickViewModal from "../components/ProductQuickViewModal";
 
 // ---------- Interfaces ----------
 interface ProductItem {
@@ -29,7 +30,7 @@ interface ProductItem {
   images?: string[];
   category?: string;
   stock?: number;
-  slug?: string;           // ✅ added for linking to detail page
+  slug?: string; // ✅ added for linking to detail page
 }
 
 interface HeroSlide {
@@ -47,7 +48,7 @@ interface CategoryItem {
   slug: string;
 }
 
-const PLACEHOLDER = 'https://via.placeholder.com/600x600?text=No+Image';
+const PLACEHOLDER = "https://via.placeholder.com/600x600?text=No+Image";
 
 // ---------- Animation variants ----------
 const fadeInUpHidden = { opacity: 0, y: 40 };
@@ -57,7 +58,7 @@ const fadeInUpVisible = (i = 0) => ({
   transition: {
     delay: i * 0.1,
     duration: 0.6,
-    ease: 'easeOut' as const,
+    ease: "easeOut" as const,
   },
 });
 
@@ -86,19 +87,28 @@ const slideVariants = {
 
 // ---------- Component ----------
 const Home = () => {
-  const { data: products, isLoading: productsLoading } = useGetProductsQuery({});
-  const { data: heroSlides, isLoading: slidesLoading } = useGetHeroSlidesQuery({});
-  const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery({});
+  const { data: products, isLoading: productsLoading } = useGetProductsQuery(
+    {},
+  );
+  const { data: heroSlides, isLoading: slidesLoading } = useGetHeroSlidesQuery(
+    {},
+  );
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useGetCategoriesQuery({});
 
   const isPageLoading = productsLoading || slidesLoading || categoriesLoading;
 
-  const displayProducts = useMemo<ProductItem[]>(() => products || [], [products]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [searchTerm, setSearchTerm] = useState('');
+  const displayProducts = useMemo<ProductItem[]>(
+    () => products || [],
+    [products],
+  );
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Carousel state
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
+  const [modalProduct, setModalProduct] = useState<ProductItem | null>(null);
 
   // Auto‑slide
   useEffect(() => {
@@ -118,31 +128,35 @@ const Home = () => {
   const handlePrev = () => {
     if (!heroSlides || heroSlides.length === 0) return;
     setDirection(-1);
-    setCurrentIndex((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+    setCurrentIndex(
+      (prev) => (prev - 1 + heroSlides.length) % heroSlides.length,
+    );
   };
 
   // Category list with counts
   const categoryList = useMemo(() => {
     const names = categories.map((c: CategoryItem) => c.name);
-    return ['All', ...names];
+    return ["All", ...names];
   }, [categories]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { All: displayProducts.length };
     categories.forEach((cat: CategoryItem) => {
-      counts[cat.name] = displayProducts.filter((p) => p.category === cat.name).length;
+      counts[cat.name] = displayProducts.filter(
+        (p) => p.category === cat.name,
+      ).length;
     });
     return counts;
   }, [displayProducts, categories]);
 
   const filteredProducts = useMemo(() => {
     let filtered = displayProducts;
-    if (selectedCategory !== 'All') {
+    if (selectedCategory !== "All") {
       filtered = filtered.filter((p) => p.category === selectedCategory);
     }
     if (searchTerm.trim()) {
       filtered = filtered.filter((p) =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
     return filtered.slice().sort((a, b) => b._id.localeCompare(a._id));
@@ -175,7 +189,8 @@ const Home = () => {
     url: "https://shollystore-ecommerce.vercel.app",
     potentialAction: {
       "@type": "SearchAction",
-      target: "https://shollystore-ecommerce.vercel.app/search?q={search_term_string}",
+      target:
+        "https://shollystore-ecommerce.vercel.app/search?q={search_term_string}",
       "query-input": "required name=search_term_string",
     },
   };
@@ -186,7 +201,7 @@ const Home = () => {
       <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-pastel-pink via-pastel-green to-white">
         <motion.div
           animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
           className="rounded-full h-16 w-16 border-4 border-leaf-green border-t-transparent"
         />
       </div>
@@ -207,13 +222,13 @@ const Home = () => {
       {/* Animated background blobs */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <motion.div
-          animate={{ x: ['-10%', '10%', '-10%'], y: ['-5%', '5%', '-5%'] }}
-          transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
+          animate={{ x: ["-10%", "10%", "-10%"], y: ["-5%", "5%", "-5%"] }}
+          transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
           className="absolute -top-20 -left-20 w-80 h-80 bg-blob-orange/20 rounded-full blur-3xl"
         />
         <motion.div
-          animate={{ x: ['10%', '-10%', '10%'], y: ['5%', '-5%', '5%'] }}
-          transition={{ repeat: Infinity, duration: 25, ease: 'linear' }}
+          animate={{ x: ["10%", "-10%", "10%"], y: ["5%", "-5%", "5%"] }}
+          transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
           className="absolute top-1/3 -right-20 w-96 h-96 bg-leaf-green/20 rounded-full blur-3xl"
         />
       </div>
@@ -239,7 +254,7 @@ const Home = () => {
             custom={1}
             className="text-5xl md:text-7xl font-extrabold text-gray-900 leading-[1.1]"
           >
-            Your Everyday{' '}
+            Your Everyday{" "}
             <span className="bg-gradient-to-r from-leaf-green to-emerald-500 bg-clip-text text-transparent">
               Drink Superstore
             </span>
@@ -249,16 +264,24 @@ const Home = () => {
             custom={2}
             className="text-gray-600 text-lg md:text-xl max-w-md"
           >
-            From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in convenient packs.
+            From classic Fanta and Coke to refreshing Malt and premium bottled
+            water — all available in convenient packs.
           </motion.p>
           <motion.div
             variants={{ hidden: fadeInUpHidden, visible: fadeInUpVisible }}
             custom={3}
           >
             <motion.button
-              whileHover={{ scale: 1.05, boxShadow: '0 10px 25px rgba(251, 146, 60, 0.4)' }}
+              whileHover={{
+                scale: 1.05,
+                boxShadow: "0 10px 25px rgba(251, 146, 60, 0.4)",
+              }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() =>
+                document
+                  .getElementById("products-grid")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
               className="bg-blob-orange text-white px-10 py-4 rounded-full font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2 group"
             >
               Explore Our Range
@@ -277,7 +300,7 @@ const Home = () => {
         >
           <motion.div
             animate={{ y: [0, -12, 0] }}
-            transition={{ repeat: Infinity, duration: 5, ease: 'easeInOut' }}
+            transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
             className="relative w-full max-w-lg aspect-square group"
           >
             {heroSlides && heroSlides.length > 0 ? (
@@ -290,10 +313,12 @@ const Home = () => {
                     initial="enter"
                     animate="center"
                     exit="exit"
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
                     src={heroSlides[currentIndex].imageUrl}
-                    alt={heroSlides[currentIndex].title || 'Hero slide'}
-                    onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
+                    alt={heroSlides[currentIndex].title || "Hero slide"}
+                    onError={(e) => {
+                      e.currentTarget.src = PLACEHOLDER;
+                    }}
                     className="w-full h-full object-contain drop-shadow-2xl absolute inset-0"
                   />
                 </AnimatePresence>
@@ -326,7 +351,9 @@ const Home = () => {
                         setCurrentIndex(idx);
                       }}
                       className={`h-2 w-2 rounded-full transition-all duration-300 ${
-                        idx === currentIndex ? 'bg-leaf-green w-8' : 'bg-gray-300 hover:bg-gray-400'
+                        idx === currentIndex
+                          ? "bg-leaf-green w-8"
+                          : "bg-gray-300 hover:bg-gray-400"
                       }`}
                     />
                   ))}
@@ -347,25 +374,48 @@ const Home = () => {
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: '-50px' }}
+          viewport={{ once: true, margin: "-50px" }}
           className="grid grid-cols-2 md:grid-cols-4 gap-6"
         >
           {[
-            { icon: <Package className="w-8 h-8" />, title: 'Bulk Packs', desc: 'Stock up for home, office, or events.', color: 'text-leaf-green' },
-            { icon: <Truck className="w-8 h-8" />, title: 'Fast Delivery', desc: 'Reliable delivery across Nigeria.', color: 'text-blob-orange' },
-            { icon: <CreditCard className="w-8 h-8" />, title: 'Secure Payments', desc: 'Paystack, Bank Transfer & WhatsApp.', color: 'text-blue-600' },
-            { icon: <Star className="w-8 h-8" />, title: 'Authentic Brands', desc: '100% trusted and genuine products.', color: 'text-yellow-500' },
+            {
+              icon: <Package className="w-8 h-8" />,
+              title: "Bulk Packs",
+              desc: "Stock up for home, office, or events.",
+              color: "text-leaf-green",
+            },
+            {
+              icon: <Truck className="w-8 h-8" />,
+              title: "Fast Delivery",
+              desc: "Reliable delivery across Nigeria.",
+              color: "text-blob-orange",
+            },
+            {
+              icon: <CreditCard className="w-8 h-8" />,
+              title: "Secure Payments",
+              desc: "Paystack, Bank Transfer & WhatsApp.",
+              color: "text-blue-600",
+            },
+            {
+              icon: <Star className="w-8 h-8" />,
+              title: "Authentic Brands",
+              desc: "100% trusted and genuine products.",
+              color: "text-yellow-500",
+            },
           ].map((item, idx) => (
             <motion.div
               key={idx}
               variants={{ hidden: fadeInUpHidden, visible: fadeInUpVisible }}
               custom={idx}
-              whileHover={{ y: -8, boxShadow: '0 20px 30px -10px rgba(0,0,0,0.1)' }}
+              whileHover={{
+                y: -8,
+                boxShadow: "0 20px 30px -10px rgba(0,0,0,0.1)",
+              }}
               className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 p-6 text-center transition-shadow"
             >
               <motion.div
                 whileHover={{ rotate: [0, -10, 10, -10, 0], scale: 1.1 }}
-                transition={{ type: 'spring', stiffness: 400 }}
+                transition={{ type: "spring", stiffness: 400 }}
                 className={`bg-pastel-pink/30 rounded-full p-4 w-16 h-16 mx-auto flex items-center justify-center mb-4 ${item.color}`}
               >
                 {item.icon}
@@ -380,12 +430,14 @@ const Home = () => {
       {/* ========== 3. SHOP BY CATEGORY ========== */}
       <section className="max-w-7xl mx-auto px-4 md:px-6 mt-8">
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-800">Shop by Category</h2>
-          {selectedCategory !== 'All' && (
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
+            Shop by Category
+          </h2>
+          {selectedCategory !== "All" && (
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              onClick={() => setSelectedCategory('All')}
+              onClick={() => setSelectedCategory("All")}
               className="text-sm text-leaf-green font-medium hover:underline"
             >
               Clear filter
@@ -397,22 +449,22 @@ const Home = () => {
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: '-50px' }}
+          viewport={{ once: true, margin: "-50px" }}
           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
         >
           {categoryList
-            .filter((cat) => cat !== 'All')
+            .filter((cat) => cat !== "All")
             .map((cat) => (
               <motion.button
                 key={cat}
                 variants={{ hidden: fadeInUpHidden, visible: fadeInUpVisible }}
-                whileHover={{ scale: 1.03, backgroundColor: '#f0fdf4' }}
+                whileHover={{ scale: 1.03, backgroundColor: "#f0fdf4" }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setSelectedCategory(cat)}
                 className={`relative bg-white/80 backdrop-blur-sm rounded-2xl border p-5 flex flex-col items-center gap-2 transition-all ${
                   selectedCategory === cat
-                    ? 'border-leaf-green ring-2 ring-leaf-green/30 shadow-md'
-                    : 'border-gray-100 shadow-sm'
+                    ? "border-leaf-green ring-2 ring-leaf-green/30 shadow-md"
+                    : "border-gray-100 shadow-sm"
                 }`}
               >
                 <div className="w-12 h-12 rounded-full bg-pastel-pink/30 flex items-center justify-center text-2xl">
@@ -428,7 +480,7 @@ const Home = () => {
                   <motion.div
                     layoutId="selectedCategory"
                     className="absolute inset-0 rounded-2xl border-2 border-leaf-green"
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   />
                 )}
               </motion.button>
@@ -437,10 +489,13 @@ const Home = () => {
       </section>
 
       {/* ========== 4. PRODUCTS GRID (with search) ========== */}
-      <section id="products-grid" className="max-w-7xl mx-auto px-4 md:px-6 mt-12 md:mt-16">
+      <section
+        id="products-grid"
+        className="max-w-7xl mx-auto px-4 md:px-6 mt-12 md:mt-16"
+      >
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
-            {selectedCategory === 'All' ? 'Our Best Sellers' : selectedCategory}
+            {selectedCategory === "All" ? "Our Best Sellers" : selectedCategory}
           </h2>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
             {/* Search input */}
@@ -462,8 +517,8 @@ const Home = () => {
                   onClick={() => setSelectedCategory(cat)}
                   className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
                     selectedCategory === cat
-                      ? 'bg-leaf-green text-white shadow-md'
-                      : 'bg-white text-gray-600 border border-gray-200 hover:border-leaf-green'
+                      ? "bg-leaf-green text-white shadow-md"
+                      : "bg-white text-gray-600 border border-gray-200 hover:border-leaf-green"
                   }`}
                 >
                   {cat}
@@ -473,7 +528,10 @@ const Home = () => {
           </div>
         </div>
 
-        <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+        <motion.div
+          layout
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+        >
           <AnimatePresence mode="popLayout">
             {filteredProducts.map((product: ProductItem) => (
               <motion.div
@@ -482,16 +540,18 @@ const Home = () => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
               >
                 <ProductCard
                   _id={product._id}
                   name={product.name}
                   price={product.price}
-                  image={product.images?.[0] || 'https://via.placeholder.com/150'}
-                  category={product.category || 'General'}
+                  image={
+                    product.images?.[0] || "https://via.placeholder.com/150"
+                  }
+                  category={product.category || "General"}
                   stock={product.stock}
-                  slug={product.slug}           // ✅ passing slug
+                  onClick={() => setModalProduct(product)}
                 />
               </motion.div>
             ))}
@@ -504,27 +564,29 @@ const Home = () => {
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-50px' }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
           className="relative bg-gradient-to-r from-blob-orange/20 to-leaf-green/20 rounded-3xl p-10 md:p-14 text-center border border-white/40 backdrop-blur-sm overflow-hidden"
         >
           <motion.div
             animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
+            transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
             className="absolute top-5 right-5 text-leaf-green/40"
           >
             <Sparkles className="w-8 h-8" />
           </motion.div>
-          <h2 className="text-3xl md:text-5xl font-extrabold text-gray-800 mb-4">Stock Up & Save</h2>
+          <h2 className="text-3xl md:text-5xl font-extrabold text-gray-800 mb-4">
+            Stock Up & Save
+          </h2>
           <p className="text-gray-600 text-lg mb-8 max-w-lg mx-auto">
-            Get{' '}
+            Get{" "}
             <motion.span
               whileHover={{ scale: 1.1 }}
               className="font-bold text-leaf-green inline-block"
             >
               ₦500 off
-            </motion.span>{' '}
-            your first bulk order of ₦10,000 or more. Use code{' '}
+            </motion.span>{" "}
+            your first bulk order of ₦10,000 or more. Use code{" "}
             <motion.span
               whileHover={{ scale: 1.05 }}
               className="font-bold bg-leaf-green/10 px-3 py-1 rounded-lg text-leaf-green"
@@ -533,9 +595,16 @@ const Home = () => {
             </motion.span>
           </p>
           <motion.button
-            whileHover={{ scale: 1.05, boxShadow: '0 10px 25px rgba(74, 143, 41, 0.3)' }}
+            whileHover={{
+              scale: 1.05,
+              boxShadow: "0 10px 25px rgba(74, 143, 41, 0.3)",
+            }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => document.getElementById('products-grid')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() =>
+              document
+                .getElementById("products-grid")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
             className="bg-leaf-green text-white px-10 py-4 rounded-full font-bold text-lg shadow-lg hover:bg-green-700 transition-all flex items-center gap-2 mx-auto"
           >
             Shop Now
@@ -543,8 +612,13 @@ const Home = () => {
           </motion.button>
         </motion.div>
       </section>
-
+<ProductQuickViewModal
+        product={modalProduct}
+        isOpen={!!modalProduct}
+        onClose={() => setModalProduct(null)}
+      />
       <Footer />
+      
     </div>
   );
 };
