@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Order } from '../models/Order';
 import { Product } from '../models/Product';
 import { User } from '../models/User';
+import { Coupon } from '../models/Coupon';   // ✅ added
 import {
   sendAdminOrderNotification,
   sendOrderStatusUpdateEmail,
@@ -118,6 +119,14 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
 
     // 4. Update the in‑memory object for the rest of the function
     order.status = status;
+
+    // 4b. ✅ Increment coupon usage if status is now Paid and wasn't paid via Paystack
+    if (status === 'Paid' && order.couponCode && !order.paymentResult) {
+      await Coupon.updateOne(
+        { code: order.couponCode.toUpperCase() },
+        { $inc: { usedCount: 1 } }
+      );
+    }
 
     // 5. Send admin notification (now has the new status)
     await sendAdminOrderNotification(order, 'updated', status);
