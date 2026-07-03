@@ -1,6 +1,27 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+// ---------- Address sub‑document ----------
+export interface IAddress {
+  _id?: string;
+  label: string;
+  address: string;
+  city: string;
+  postalCode?: string;
+  country?: string;
+  isDefault: boolean;
+}
+
+const AddressSchema = new Schema({
+  label: { type: String, default: 'Home' },
+  address: { type: String, required: true },
+  city: { type: String, required: true },
+  postalCode: { type: String, default: '' },
+  country: { type: String, default: '' },
+  isDefault: { type: Boolean, default: false },
+});
+
+// ---------- User interface ----------
 export interface IUser extends Document {
   email: string;
   password: string;
@@ -10,15 +31,11 @@ export interface IUser extends Document {
   createdAt: Date;
   isVerified: boolean;
   verificationToken: string | null;
-  shippingAddress?: {
-    address?: string;
-    city?: string;
-    postalCode?: string;
-    country?: string;
-  };
+  addresses: IAddress[];                     // ✅ multiple addresses
   matchPassword(enteredPassword: string): Promise<boolean>;
 }
 
+// ---------- User schema ----------
 const UserSchema: Schema = new Schema({
   email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true },
@@ -28,17 +45,12 @@ const UserSchema: Schema = new Schema({
   createdAt: { type: Date, default: Date.now },
   isVerified: { type: Boolean, default: false },
   verificationToken: { type: String, default: null },
-  shippingAddress: {
-    address: { type: String, default: '' },
-    city: { type: String, default: '' },
-    postalCode: { type: String, default: '' },
-    country: { type: String, default: '' },
-  },
+  addresses: { type: [AddressSchema], default: [] },   // ✅ replaced shippingAddress
 });
 
 // ---------- Indexes ----------
-UserSchema.index({ role: 1 });                     // filter by role in admin
-UserSchema.index({ createdAt: -1 });              // sort users by newest
+UserSchema.index({ role: 1 });
+UserSchema.index({ createdAt: -1 });
 
 // Hash password before saving
 UserSchema.pre<IUser>('save', async function (this: IUser) {
@@ -47,7 +59,7 @@ UserSchema.pre<IUser>('save', async function (this: IUser) {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Method to compare password
+// Compare password
 UserSchema.methods.matchPassword = async function (enteredPassword: string): Promise<boolean> {
   return await bcrypt.compare(enteredPassword, this.password);
 };

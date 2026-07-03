@@ -4,7 +4,14 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../store";
 import { motion, AnimatePresence } from "framer-motion";
 import { updateProfile } from "../features/auth/authSlice";
-import { useUpdateProfileMutation } from "../features/api/apiSlice";
+import {
+  useUpdateProfileMutation,
+  useGetAddressesQuery,
+  useAddAddressMutation,
+  useUpdateAddressMutation,
+  useDeleteAddressMutation,
+  useSetDefaultAddressMutation,
+} from "../features/api/apiSlice";
 import toast from "react-hot-toast";
 import api from "../services/axios";
 import {
@@ -23,6 +30,12 @@ import {
   CreditCard,
   MapPin,
   Ticket,
+  Home,
+  Briefcase,
+  Plus,
+  Edit3,
+  Trash2,
+  Check,
 } from "lucide-react";
 import { OrderRowSkeleton } from "../components/Skeletons";
 import SEO from "../components/SEO";
@@ -53,6 +66,17 @@ interface Order {
   discount?: number;
 }
 
+interface IAddress {
+  _id: string;
+  label: string;
+  address: string;
+  city: string;
+  postalCode?: string;
+  country?: string;
+  isDefault: boolean;
+}
+
+// ---------- Status helpers ----------
 const getStatusInfo = (
   status: string,
 ): { icon: React.ReactNode; color: string; label: string } => {
@@ -106,14 +130,30 @@ const Account = () => {
   const [activeTab, setActiveTab] = useState<"orders" | "profile">("orders");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  // Profile editing state
+  // Profile editing state (name & phone only)
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
-  const [editAddress, setEditAddress] = useState("");          // ✅ new
-  const [editCity, setEditCity] = useState("");                // ✅ new
   const [updateProfileApi, { isLoading: isUpdating }] =
     useUpdateProfileMutation();
+
+  // ---------- Address management ----------
+  const { data: addresses = [], refetch: refetchAddresses } = useGetAddressesQuery({});
+  const [addAddress] = useAddAddressMutation();
+  const [updateAddress] = useUpdateAddressMutation();
+  const [deleteAddress] = useDeleteAddressMutation();
+  const [setDefaultAddress] = useSetDefaultAddressMutation();
+
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [addressForm, setAddressForm] = useState({
+    label: "Home",
+    address: "",
+    city: "",
+    postalCode: "",
+    country: "",
+    isDefault: false,
+  });
 
   useEffect(() => {
     if (!user) {
@@ -140,8 +180,6 @@ const Account = () => {
   const startEditing = () => {
     setEditName(user?.name || "");
     setEditPhone(user?.phone || "");
-    setEditAddress(user?.shippingAddress?.address || "");
-    setEditCity(user?.shippingAddress?.city || "");
     setEditing(true);
   };
 
@@ -155,10 +193,6 @@ const Account = () => {
       const updatedUser = await updateProfileApi({
         name: editName,
         phone: editPhone,
-        shippingAddress: {
-          address: editAddress,
-          city: editCity,
-        },
       }).unwrap();
       dispatch(updateProfile(updatedUser));
       toast.success("Profile updated!");
@@ -168,6 +202,58 @@ const Account = () => {
     }
   };
 
+  // ---------- Address handlers ----------
+  const openAddAddress = () => {
+    setEditingAddressId(null);
+    setAddressForm({ label: "Home", address: "", city: "", postalCode: "", country: "", isDefault: false });
+    setAddressModalOpen(true);
+  };
+
+  const openEditAddress = (addr: IAddress) => {
+    setEditingAddressId(addr._id);
+    setAddressForm({
+      label: addr.label,
+      address: addr.address,
+      city: addr.city,
+      postalCode: addr.postalCode || "",
+      country: addr.country || "",
+      isDefault: addr.isDefault,
+    });
+    setAddressModalOpen(true);
+  };
+
+  const handleSaveAddress = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingAddressId) {
+        await updateAddress({ id: editingAddressId, ...addressForm }).unwrap();
+        toast.success("Address updated");
+      } else {
+        await addAddress(addressForm).unwrap();
+        toast.success("Address added");
+      }
+      refetchAddresses();
+      setAddressModalOpen(false);
+    } catch {
+      toast.error("Failed to save address");
+    }
+  };
+
+  const handleDeleteAddress = async (id: string) => {
+    if (window.confirm("Delete this address?")) {
+      await deleteAddress(id);
+      refetchAddresses();
+      toast.success("Address removed");
+    }
+  };
+
+  const handleSetDefault = async (id: string) => {
+    await setDefaultAddress(id);
+    refetchAddresses();
+    toast.success("Default address updated");
+  };
+
+  // Loading state
   if (loading) {
     return (
       <div className="p-4 md:p-6 pt-20 md:pt-24 max-w-6xl mx-auto space-y-8">
@@ -268,12 +354,8 @@ const Account = () => {
             {!error && orders.length === 0 && (
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-10 text-center">
                 <ShoppingBag className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  No orders yet
-                </h3>
-                <p className="text-gray-500 mb-6">
-                  Looks like you haven't placed any orders. Start shopping!
-                </p>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">No orders yet</h3>
+                <p className="text-gray-500 mb-6">Looks like you haven't placed any orders. Start shopping!</p>
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
@@ -298,44 +380,31 @@ const Account = () => {
                     <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
                         <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wider">
-                            Order #
-                          </p>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider">Order #</p>
                           <p className="font-medium text-gray-800 text-sm mt-0.5">
                             {order._id.slice(-8).toUpperCase()}
                           </p>
                         </div>
                         <div className="hidden sm:block">
-                          <p className="text-xs text-gray-500 uppercase tracking-wider">
-                            Date
-                          </p>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider">Date</p>
                           <p className="font-medium text-gray-800 text-sm mt-0.5 flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                            {new Date(order.createdAt).toLocaleDateString(
-                              "en-NG",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              },
-                            )}
+                            {new Date(order.createdAt).toLocaleDateString("en-NG", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wider">
-                            Status
-                          </p>
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold mt-1 ${color}`}
-                          >
+                          <p className="text-xs text-gray-500 uppercase tracking-wider">Status</p>
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold mt-1 ${color}`}>
                             {icon}
                             {label}
                           </span>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wider">
-                            Total
-                          </p>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider">Total</p>
                           <p className="font-bold text-leaf-green text-sm mt-0.5">
                             ₦{order.totalPrice.toLocaleString()}
                             {order.couponCode && (
@@ -377,165 +446,282 @@ const Account = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
-            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-6"
+            className="space-y-6"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-leaf-green/10 flex items-center justify-center text-2xl">
-                  <User className="w-8 h-8 text-leaf-green" />
+            {/* Personal Information */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-leaf-green/10 flex items-center justify-center text-2xl">
+                    <User className="w-8 h-8 text-leaf-green" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-800">{user?.name || "User"}</h3>
+                    <p className="text-gray-500 flex items-center gap-1">
+                      <Mail className="w-4 h-4" />
+                      {user?.email}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-800">
-                    {user?.name || "User"}
-                  </h3>
-                  <p className="text-gray-500 flex items-center gap-1">
-                    <Mail className="w-4 h-4" />
-                    {user?.email}
-                  </p>
-                </div>
+                {!editing ? (
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={startEditing}
+                    className="px-4 py-2 bg-leaf-green text-white rounded-xl font-medium text-sm shadow-md hover:bg-green-700 transition"
+                  >
+                    Edit Profile
+                  </motion.button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={cancelEditing}
+                    className="text-gray-500 hover:text-gray-700 text-sm"
+                  >
+                    Cancel
+                  </button>
+                )}
               </div>
-              {!editing ? (
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={startEditing}
-                  className="px-4 py-2 bg-leaf-green text-white rounded-xl font-medium text-sm shadow-md hover:bg-green-700 transition"
-                >
-                  Edit Profile
-                </motion.button>
+
+              {editing ? (
+                <form onSubmit={handleSaveProfile} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green"
+                      placeholder="Your name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                    <input
+                      type="tel"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green"
+                      placeholder="Your phone number"
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <motion.button
+                      type="submit"
+                      disabled={isUpdating}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="px-6 py-2.5 bg-leaf-green text-white rounded-xl font-medium shadow-md hover:bg-green-700 transition disabled:opacity-60"
+                    >
+                      {isUpdating ? "Saving..." : "Save Changes"}
+                    </motion.button>
+                  </div>
+                </form>
               ) : (
-                <button
-                  type="button"
-                  onClick={cancelEditing}
-                  className="text-gray-500 hover:text-gray-700 text-sm"
-                >
-                  Cancel
-                </button>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="bg-gray-50/60 rounded-xl p-4">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">Full Name</p>
+                    <p className="font-medium text-gray-800 mt-1">{user?.name || "Not set"}</p>
+                  </div>
+                  <div className="bg-gray-50/60 rounded-xl p-4">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">Phone Number</p>
+                    <p className="font-medium text-gray-800 mt-1">{user?.phone || "Not set"}</p>
+                  </div>
+                  <div className="bg-gray-50/60 rounded-xl p-4">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">Email Address</p>
+                    <p className="font-medium text-gray-800 mt-1 break-all">{user?.email}</p>
+                  </div>
+                  <div className="bg-gray-50/60 rounded-xl p-4">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">Member Since</p>
+                    <p className="font-medium text-gray-800 mt-1">
+                      {user?.createdAt
+                        ? new Date(user.createdAt).toLocaleDateString("en-NG", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
+                        : "N/A"}
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
 
-            {editing ? (
-              <form onSubmit={handleSaveProfile} className="space-y-4 mt-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green"
-                    placeholder="Your name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green"
-                    placeholder="Your phone number"
-                  />
-                </div>
-                {/* ✅ Default Shipping Address */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Default Shipping Address
-                  </label>
-                  <input
-                    type="text"
-                    value={editAddress}
-                    onChange={(e) => setEditAddress(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green"
-                    placeholder="Street address"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    value={editCity}
-                    onChange={(e) => setEditCity(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green"
-                    placeholder="City"
-                  />
-                </div>
-                <div className="flex justify-end">
-                  <motion.button
-                    type="submit"
-                    disabled={isUpdating}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="px-6 py-2.5 bg-leaf-green text-white rounded-xl font-medium shadow-md hover:bg-green-700 transition disabled:opacity-60"
-                  >
-                    {isUpdating ? "Saving..." : "Save Changes"}
-                  </motion.button>
-                </div>
-              </form>
-            ) : (
-              <div className="grid sm:grid-cols-2 gap-4 mt-6">
-                <div className="bg-gray-50/60 rounded-xl p-4">
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">
-                    Full Name
-                  </p>
-                  <p className="font-medium text-gray-800 mt-1">
-                    {user?.name || "Not set"}
-                  </p>
-                </div>
-                <div className="bg-gray-50/60 rounded-xl p-4">
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">
-                    Phone Number
-                  </p>
-                  <p className="font-medium text-gray-800 mt-1">
-                    {user?.phone || "Not set"}
-                  </p>
-                </div>
-                <div className="bg-gray-50/60 rounded-xl p-4">
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">
-                    Email Address
-                  </p>
-                  <p className="font-medium text-gray-800 mt-1 break-all">
-                    {user?.email}
-                  </p>
-                </div>
-                <div className="bg-gray-50/60 rounded-xl p-4">
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">
-                    Member Since
-                  </p>
-                  <p className="font-medium text-gray-800 mt-1">
-                    {user?.createdAt
-                      ? new Date(user.createdAt).toLocaleDateString("en-NG", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })
-                      : "N/A"}
-                  </p>
-                </div>
-                {/* ✅ Show default address in view mode */}
-                <div className="bg-gray-50/60 rounded-xl p-4 sm:col-span-2">
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">
-                    Default Shipping Address
-                  </p>
-                  <p className="font-medium text-gray-800 mt-1 flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                    {user?.shippingAddress?.address && user?.shippingAddress?.city
-                      ? `${user.shippingAddress.address}, ${user.shippingAddress.city}`
-                      : "Not set"}
-                  </p>
-                </div>
+            {/* Saved Addresses */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-leaf-green" />
+                  Saved Addresses
+                </h3>
+                <button
+                  onClick={openAddAddress}
+                  className="flex items-center gap-1.5 text-sm font-medium text-leaf-green hover:underline"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Address
+                </button>
               </div>
-            )}
+
+              {addresses.length === 0 ? (
+                <p className="text-sm text-gray-500">No saved addresses yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {addresses.map((addr: IAddress) => (
+                    <div
+                      key={addr._id}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5">
+                          {addr.label === "Home" ? (
+                            <Home className="w-4 h-4 text-leaf-green" />
+                          ) : (
+                            <Briefcase className="w-4 h-4 text-leaf-green" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-sm text-gray-800">{addr.label}</p>
+                            {addr.isDefault && (
+                              <span className="text-xs bg-leaf-green/10 text-leaf-green px-1.5 py-0.5 rounded-full font-medium">
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {addr.address}, {addr.city}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {!addr.isDefault && (
+                          <button
+                            onClick={() => handleSetDefault(addr._id)}
+                            className="p-1.5 text-gray-400 hover:text-leaf-green transition rounded-lg hover:bg-leaf-green/10"
+                            title="Set as default"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openEditAddress(addr)}
+                          className="p-1.5 text-gray-400 hover:text-blue-600 transition rounded-lg hover:bg-blue-50"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAddress(addr._id)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 transition rounded-lg hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Order Details Modal with coupon breakdown */}
+      {/* Address Modal (Add / Edit) */}
+      <AnimatePresence>
+        {addressModalOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+              onClick={() => setAddressModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-gray-800">
+                    {editingAddressId ? "Edit Address" : "New Address"}
+                  </h2>
+                  <button onClick={() => setAddressModalOpen(false)} className="p-1 rounded-lg hover:bg-gray-100">
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+                <form onSubmit={handleSaveAddress} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Label</label>
+                    <select
+                      value={addressForm.label}
+                      onChange={(e) => setAddressForm({ ...addressForm, label: e.target.value })}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                    >
+                      <option value="Home">Home</option>
+                      <option value="Office">Office</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                    <input
+                      type="text"
+                      value={addressForm.address}
+                      onChange={(e) => setAddressForm({ ...addressForm, address: e.target.value })}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                      placeholder="Street address"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                    <input
+                      type="text"
+                      value={addressForm.city}
+                      onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                      placeholder="City"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="isDefaultAddress"
+                      checked={addressForm.isDefault}
+                      onChange={(e) => setAddressForm({ ...addressForm, isDefault: e.target.checked })}
+                      className="w-4 h-4 text-leaf-green focus:ring-leaf-green rounded"
+                    />
+                    <label htmlFor="isDefaultAddress" className="text-sm text-gray-700">
+                      Set as default address
+                    </label>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => setAddressModalOpen(false)}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm font-medium"
+                    >
+                      Cancel
+                    </button>
+                    <motion.button
+                      type="submit"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="px-4 py-2 bg-leaf-green text-white rounded-xl font-medium shadow-md hover:bg-green-700 transition disabled:opacity-60 text-sm"
+                    >
+                      Save Address
+                    </motion.button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Order Details Modal (unchanged) */}
       <AnimatePresence>
         {selectedOrder && (
           <>
@@ -567,13 +753,9 @@ const Account = () => {
                 <div className="p-4 sm:p-6 space-y-6">
                   <div className="flex flex-wrap gap-3 items-center">
                     {(() => {
-                      const { icon, color, label } = getStatusInfo(
-                        selectedOrder.status,
-                      );
+                      const { icon, color, label } = getStatusInfo(selectedOrder.status);
                       return (
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${color}`}
-                        >
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${color}`}>
                           {icon}
                           {label}
                         </span>
@@ -581,10 +763,11 @@ const Account = () => {
                     })()}
                     <span className="text-sm text-gray-500 flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      {new Date(selectedOrder.createdAt).toLocaleDateString(
-                        "en-NG",
-                        { year: "numeric", month: "long", day: "numeric" },
-                      )}
+                      {new Date(selectedOrder.createdAt).toLocaleDateString("en-NG", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
                     </span>
                     {selectedOrder.paymentMethod && (
                       <span className="text-sm text-gray-500 flex items-center gap-1">
@@ -596,9 +779,7 @@ const Account = () => {
                   </div>
                   {selectedOrder.shippingAddress && (
                     <div className="bg-gray-50 rounded-xl p-4">
-                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                        Shipping Address
-                      </p>
+                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Shipping Address</p>
                       <p className="text-sm text-gray-800 flex items-start gap-2">
                         <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                         {selectedOrder.shippingAddress.address},{" "}
@@ -620,9 +801,7 @@ const Account = () => {
                           key={i}
                           className="flex justify-between items-center text-sm bg-gray-50 rounded-lg p-3"
                         >
-                          <span className="text-gray-700 font-medium">
-                            {item.name}
-                          </span>
+                          <span className="text-gray-700 font-medium">{item.name}</span>
                           <span className="text-gray-500">
                             {item.qty} × ₦{item.price.toLocaleString()}
                           </span>

@@ -298,6 +298,41 @@ export const apiSlice = createApi({
       query: () => "/admin/settings/changes",
       providesTags: ["Settings"],
     }),
+
+     getAddresses: builder.query({
+      query: () => "/auth/addresses",
+      providesTags: ["User"],
+    }),
+    addAddress: builder.mutation({
+      query: (data) => ({
+        url: "/auth/addresses",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["User"],
+    }),
+    updateAddress: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `/auth/addresses/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["User"],
+    }),
+    deleteAddress: builder.mutation({
+      query: (id) => ({
+        url: `/auth/addresses/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["User"],
+    }),
+    setDefaultAddress: builder.mutation({
+      query: (id) => ({
+        url: `/auth/addresses/${id}/default`,
+        method: "PUT",
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -341,4 +376,9 @@ export const {
   useDeleteCouponMutation,
   useValidateCouponMutation,
   useGetSettingsChangesQuery,
+  useGetAddressesQuery,
+  useAddAddressMutation,
+  useUpdateAddressMutation,
+  useDeleteAddressMutation,
+  useSetDefaultAddressMutation,
 } = apiSlice;

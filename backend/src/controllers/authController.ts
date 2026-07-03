@@ -119,7 +119,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       email: user.email,
       name: user.name,
       phone: user.phone,
-      shippingAddress: user.shippingAddress,   // ✅ now included
+      addresses: user.addresses,            // ✅ now returns the full addresses array
       role: user.role,
       createdAt: user.createdAt,
       token: generateToken(user._id.toString()),
@@ -129,7 +129,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-// @desc    Update user profile (name, phone, shipping address)
+// @desc    Update user profile (name & phone only – addresses have their own endpoints)
 // @route   PUT /api/auth/profile
 export const updateProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -142,16 +142,6 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     user.name = req.body.name || user.name;
     user.phone = req.body.phone || user.phone;
 
-    // ✅ update shipping address if provided
-    if (req.body.shippingAddress) {
-      user.shippingAddress = {
-        address: req.body.shippingAddress.address ?? user.shippingAddress?.address ?? '',
-        city: req.body.shippingAddress.city ?? user.shippingAddress?.city ?? '',
-        postalCode: req.body.shippingAddress.postalCode ?? user.shippingAddress?.postalCode ?? '',
-        country: req.body.shippingAddress.country ?? user.shippingAddress?.country ?? '',
-      };
-    }
-
     const updatedUser = await user.save();
 
     res.json({
@@ -160,10 +150,127 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
       email: updatedUser.email,
       name: updatedUser.name,
       phone: updatedUser.phone,
-      shippingAddress: updatedUser.shippingAddress,
+      addresses: updatedUser.addresses,      // ✅ return updated addresses as well
       role: updatedUser.role,
       createdAt: updatedUser.createdAt,
     });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ------------------------------------------------------------------
+// ADDRESS CRUD
+// ------------------------------------------------------------------
+
+// @desc    Get user's addresses
+// @route   GET /api/auth/addresses
+export const getAddresses = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const user = await User.findById(req.user!._id);
+    res.json(user?.addresses || []);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Add a new address
+// @route   POST /api/auth/addresses
+export const addAddress = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const user = await User.findById(req.user!._id);
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    const { label, address, city, postalCode, country, isDefault } = req.body;
+
+    // If this address is set as default, unset all others
+    if (isDefault) {
+      user.addresses.forEach((addr) => addr.isDefault = false);
+    }
+
+    user.addresses.push({ label, address, city, postalCode, country, isDefault });
+    await user.save();
+    res.status(201).json(user.addresses);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Update an address
+// @route   PUT /api/auth/addresses/:id
+export const updateAddress = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const user = await User.findById(req.user!._id);
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    // TypeScript doesn't know about Mongoose subdoc .id(), so we cast
+    const address = (user.addresses as any).id(req.params.id);
+    if (!address) {
+      res.status(404).json({ success: false, message: 'Address not found' });
+      return;
+    }
+
+    // Update fields
+    Object.assign(address, req.body);
+
+    // If this address is now default, unset others
+    if (req.body.isDefault) {
+      user.addresses.forEach((addr) => {
+        if (addr._id?.toString() !== req.params.id) addr.isDefault = false;
+      });
+    }
+
+    await user.save();
+    res.json(user.addresses);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Delete an address
+// @route   DELETE /api/auth/addresses/:id
+export const deleteAddress = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const user = await User.findById(req.user!._id);
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    (user.addresses as any).pull(req.params.id);
+    await user.save();
+    res.json(user.addresses);
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Set an address as default
+// @route   PUT /api/auth/addresses/:id/default
+export const setDefaultAddress = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const user = await User.findById(req.user!._id);
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    const address = (user.addresses as any).id(req.params.id);
+    if (!address) {
+      res.status(404).json({ success: false, message: 'Address not found' });
+      return;
+    }
+
+    user.addresses.forEach((addr) => addr.isDefault = false);
+    address.isDefault = true;
+    await user.save();
+    res.json(user.addresses);
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }
