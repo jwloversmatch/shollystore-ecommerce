@@ -15,6 +15,12 @@ router.get('/', async (req, res) => {
       bankAccountNumber: settings.bankAccountNumber,
       bankName: settings.bankName,
       whatsappNumber: settings.whatsappNumber,
+      // ✅ added new fields
+      heroTagline: settings.heroTagline,
+      heroTitle: settings.heroTitle,
+      heroDescription: settings.heroDescription,
+      specialOfferTitle: settings.specialOfferTitle,
+      specialOfferText: settings.specialOfferText,
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
