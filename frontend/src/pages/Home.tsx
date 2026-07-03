@@ -535,29 +535,28 @@ const Home = () => {
         </div>
 
         {/* ✅ THE ORIGINAL ANIMATION – no AnimatePresence, cards appear instantly */}
-        <motion.div
-          layout
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
-        >
-          {filteredProducts.map((product: ProductItem) => (
-            <motion.div
-              key={product._id}
-              layout
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-            >
-              <ProductCard
-                _id={product._id}
-                name={product.name}
-                price={product.price}
-                image={product.images?.[0] || "https://via.placeholder.com/150"}
-                category={product.category || "General"}
-                stock={product.stock}
-                onClick={() => setModalProduct(product)}
-              />
-            </motion.div>
-          ))}
+        <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <AnimatePresence mode="popLayout">
+            {filteredProducts.map((product: ProductItem) => (
+              <motion.div
+                key={product._id}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              >
+                <ProductCard
+                  _id={product._id}
+                  name={product.name}
+                  price={product.price}
+                  image={product.images?.[0] || 'https://via.placeholder.com/150'}
+                  category={product.category || 'General'}
+                  stock={product.stock}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </motion.div>
       </section>
 
