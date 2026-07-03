@@ -10,7 +10,15 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Product", "Order", "User", "Settings", "HeroSlide", "Category"],
+  tagTypes: [
+    "Product",
+    "Order",
+    "User",
+    "Settings",
+    "HeroSlide",
+    "Category",
+    "Coupon",
+  ],
   endpoints: (builder) => ({
     getProducts: builder.query({
       query: () => "/products?limit=9999",
@@ -255,7 +263,36 @@ export const apiSlice = createApi({
 
     getProductBySlug: builder.query({
       query: (slug) => `/products/${slug}`,
-      providesTags: ['Product'],
+      providesTags: ["Product"],
+    }),
+
+    // Inside endpoints
+    getCoupons: builder.query({
+      query: () => "/admin/coupons",
+      providesTags: ["Coupon"],
+    }),
+    createCoupon: builder.mutation({
+      query: (data) => ({ url: "/admin/coupons", method: "POST", body: data }),
+      invalidatesTags: ["Coupon"],
+    }),
+    updateCoupon: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `/admin/coupons/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["Coupon"],
+    }),
+    deleteCoupon: builder.mutation({
+      query: (id) => ({ url: `/admin/coupons/${id}`, method: "DELETE" }),
+      invalidatesTags: ["Coupon"],
+    }),
+    validateCoupon: builder.mutation({
+      query: (data) => ({
+        url: "/coupons/validate",
+        method: "POST",
+        body: data,
+      }),
     }),
   }),
 });
@@ -293,5 +330,10 @@ export const {
   useGetOrderCustomerCountQuery,
   useUpdateProfileMutation,
   useSendMarketingEmailMutation,
-  useGetProductBySlugQuery 
+  useGetProductBySlugQuery,
+  useGetCouponsQuery,
+  useCreateCouponMutation,
+  useUpdateCouponMutation,
+  useDeleteCouponMutation,
+  useValidateCouponMutation,
 } = apiSlice;

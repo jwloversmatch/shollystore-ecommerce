@@ -10,6 +10,7 @@ import { RootState } from "../store";
 import {
   useCreateOrderMutation,
   useGetPublicSettingsQuery,
+  useValidateCouponMutation, // ✅ added
 } from "../features/api/apiSlice";
 import { clearCart } from "../features/cart/cartSlice";
 import {
@@ -18,6 +19,7 @@ import {
   CreditCard,
   Banknote,
   MessageCircle,
+  X,
 } from "lucide-react";
 import SEO from "../components/SEO";
 
@@ -47,11 +49,12 @@ const Checkout = () => {
   const location = useLocation();
   const dispatch = useDispatch();
 
-  // ✅ use typed state
   const cart = useSelector((state: RootState) => state.cart);
   const { user } = useSelector((state: RootState) => state.auth);
   const [createOrder, { isLoading }] = useCreateOrderMutation();
   const { data: publicSettings } = useGetPublicSettingsQuery({});
+  const [validateCoupon, { isLoading: isApplying }] =
+    useValidateCouponMutation();
 
   const {
     register,
@@ -67,11 +70,44 @@ const Checkout = () => {
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderData, setOrderData] = useState<OrderResponse | null>(null);
 
-  // ✅ typed reduce
+  // ---------- Coupon State ----------
+  const [couponCode, setCouponCode] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponError, setCouponError] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+
   const totalPrice = cart.cartItems.reduce(
     (acc: number, item: CartItem) => acc + item.price * item.qty,
     0,
   );
+
+  const finalTotal = totalPrice - couponDiscount;
+
+  const handleApplyCoupon = async () => {
+    setCouponError("");
+    if (!couponCode.trim()) return;
+    try {
+      const res = await validateCoupon({
+        code: couponCode,
+        orderTotal: totalPrice,
+      }).unwrap();
+      setCouponDiscount(res.coupon.discount);
+      setAppliedCoupon(res.coupon.code);
+      toast.success(
+        `Coupon applied – ₦${res.coupon.discount.toLocaleString()} off!`,
+      );
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      setCouponError(error?.data?.message || "Invalid coupon");
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode("");
+    setCouponDiscount(0);
+    setCouponError("");
+  };
 
   const onSubmit = async (data: CheckoutFormData) => {
     if (!user) {
@@ -84,8 +120,10 @@ const Checkout = () => {
       const result = await createOrder({
         orderItems: cart.cartItems,
         shippingAddress: { ...data, postalCode: "", country: "Nigeria" },
-        totalPrice,
+        totalPrice: finalTotal, // discounted total
         paymentMethod,
+        couponCode: appliedCoupon, // pass to backend
+        discount: couponDiscount, // pass to backend
       }).unwrap();
 
       dispatch(clearCart());
@@ -111,13 +149,12 @@ const Checkout = () => {
       whatsappNumber: "+2348000000000",
     };
 
-    <SEO
-      title="Checkout"
-      description="Complete your order with secure payment options including Paystack, bank transfer, or WhatsApp."
-    />;
-
     return (
       <div className="min-h-screen p-4 flex items-center justify-center bg-gradient-to-br from-pastel-pink via-pastel-green to-white">
+        <SEO
+          title="Order Placed"
+          description="Your order has been placed successfully."
+        />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -219,6 +256,10 @@ const Checkout = () => {
           "url(https://images.unsplash.com/photo-1506619216599-9d16d0903dfd?auto=format&fit=crop&w=1920&q=80)",
       }}
     >
+      <SEO
+        title="Checkout"
+        description="Complete your order with secure payment options including Paystack, bank transfer, or WhatsApp."
+      />
       <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-0"></div>
 
       <motion.div
@@ -344,7 +385,7 @@ const Checkout = () => {
               {isLoading
                 ? "Processing..."
                 : paymentMethod === "paystack"
-                  ? `Pay ₦${totalPrice.toLocaleString()}`
+                  ? `Pay ₦${finalTotal.toLocaleString()}`
                   : "Place Order"}
             </motion.button>
           </form>
@@ -355,7 +396,7 @@ const Checkout = () => {
           <h3 className="text-xl font-bold text-gray-800 mb-6 border-b border-gray-200 pb-4">
             Order Summary
           </h3>
-          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
             {cart.cartItems.map((item: CartItem) => (
               <div
                 key={item._id}
@@ -380,11 +421,58 @@ const Checkout = () => {
               </div>
             ))}
           </div>
+
+          {/* Coupon Input */}
+          <div className="mt-4 border-t pt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Discount Code
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                disabled={!!appliedCoupon}
+                placeholder="Enter code"
+                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm disabled:bg-gray-100"
+              />
+              {!appliedCoupon ? (
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  disabled={isApplying || !couponCode.trim()}
+                  className="px-4 py-2.5 bg-leaf-green text-white rounded-xl font-medium text-sm disabled:opacity-50"
+                >
+                  {isApplying ? "..." : "Apply"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  className="px-4 py-2.5 bg-red-50 text-red-600 rounded-xl font-medium text-sm flex items-center gap-1"
+                >
+                  <X className="w-4 h-4" />
+                  Remove
+                </button>
+              )}
+            </div>
+            {couponError && (
+              <p className="text-xs text-red-500 mt-1">{couponError}</p>
+            )}
+          </div>
+
+          {/* Totals */}
           <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
             <div className="flex justify-between text-sm text-gray-600">
               <span>Subtotal</span>
               <span>₦{totalPrice.toLocaleString()}</span>
             </div>
+            {couponDiscount > 0 && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>Discount</span>
+                <span>- ₦{couponDiscount.toLocaleString()}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm text-gray-600">
               <span>Delivery</span>
               <span className="text-leaf-green font-medium">Free</span>
@@ -392,7 +480,7 @@ const Checkout = () => {
             <div className="flex justify-between font-bold text-xl text-gray-900 mt-2">
               <span>Total</span>
               <span className="text-blob-orange">
-                ₦{totalPrice.toLocaleString()}
+                ₦{finalTotal.toLocaleString()}
               </span>
             </div>
           </div>

@@ -23,6 +23,7 @@ const HeroSlides = React.lazy(() => import('./pages/admin/HeroSlides'));
 const Categories = React.lazy(() => import('./pages/admin/Categories'));
 const Account = React.lazy(() => import('./pages/Account'));
 const ProductDetail = React.lazy(() => import('./pages/ProductDetail'));
+const Coupons = React.lazy(() => import('./pages/admin/Coupons'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 import Settings from './pages/admin/Settings';
@@ -62,6 +63,7 @@ function App() {
               <Route path="/admin/orders" element={<Orders />} />
               <Route path="/admin/hero-slides" element={<HeroSlides />} />
               <Route path="/admin/categories" element={<Categories />} />
+              <Route path="/admin/coupons" element={<Coupons />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
