@@ -23,6 +23,7 @@ const HeroSlides = React.lazy(() => import('./pages/admin/HeroSlides'));
 const Categories = React.lazy(() => import('./pages/admin/Categories'));
 const Account = React.lazy(() => import('./pages/Account'));
 const ProductDetail = React.lazy(() => import('./pages/ProductDetail'));
+const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 import Settings from './pages/admin/Settings';
 
@@ -41,6 +42,7 @@ function App() {
         <Navbar />
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
+            {/* Public routes */}
             <Route path="/" element={<Home />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
@@ -48,6 +50,9 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/account" element={<Account />} />
+
+            {/* ✅ Product Detail – public, no auth required */}
+            <Route path="/product/:slug" element={<ProductDetail />} />
 
             {/* Protected Admin Routes */}
             <Route element={<AdminRoute />}>
@@ -57,8 +62,8 @@ function App() {
               <Route path="/admin/orders" element={<Orders />} />
               <Route path="/admin/hero-slides" element={<HeroSlides />} />
               <Route path="/admin/categories" element={<Categories />} />
-              <Route path="/product/:slug" element={<ProductDetail />} />
             </Route>
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </Router>
