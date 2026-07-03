@@ -22,6 +22,7 @@ const VerifyEmail = React.lazy(() => import('./pages/VerifyEmail'));
 const HeroSlides = React.lazy(() => import('./pages/admin/HeroSlides'));
 const Categories = React.lazy(() => import('./pages/admin/Categories'));
 const Account = React.lazy(() => import('./pages/Account'));
+const ProductDetail = React.lazy(() => import('./pages/ProductDetail'));
 
 import Settings from './pages/admin/Settings';
 
@@ -56,6 +57,7 @@ function App() {
               <Route path="/admin/orders" element={<Orders />} />
               <Route path="/admin/hero-slides" element={<HeroSlides />} />
               <Route path="/admin/categories" element={<Categories />} />
+              <Route path="/product/:slug" element={<ProductDetail />} />
             </Route>
           </Routes>
         </Suspense>

@@ -13,7 +13,7 @@ const SEO = ({
   title,
   description,
   canonicalUrl,
-  ogImage = '/og-default.jpg',          // add a default image to public/
+  ogImage = '/og-default.jpg',          
   ogType = 'website',
   twitterCard = 'summary_large_image',
 }: SEOProps) => {

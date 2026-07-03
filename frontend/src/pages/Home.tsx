@@ -16,8 +16,10 @@ import {
   Star,
   Sparkles,
   ArrowRight,
+  Search,
 } from 'lucide-react';
 import SEO from '../components/SEO';
+import StructuredData from '../components/StructuredData';
 
 // ---------- Interfaces ----------
 interface ProductItem {
@@ -27,6 +29,7 @@ interface ProductItem {
   images?: string[];
   category?: string;
   stock?: number;
+  slug?: string;           // ✅ added for linking to detail page
 }
 
 interface HeroSlide {
@@ -46,7 +49,7 @@ interface CategoryItem {
 
 const PLACEHOLDER = 'https://via.placeholder.com/600x600?text=No+Image';
 
-// ---------- Reusable animation variants (without transitions in variants) ----------
+// ---------- Animation variants ----------
 const fadeInUpHidden = { opacity: 0, y: 40 };
 const fadeInUpVisible = (i = 0) => ({
   opacity: 1,
@@ -84,13 +87,14 @@ const slideVariants = {
 // ---------- Component ----------
 const Home = () => {
   const { data: products, isLoading: productsLoading } = useGetProductsQuery({});
-const { data: heroSlides, isLoading: slidesLoading } = useGetHeroSlidesQuery({});
-const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery({});
+  const { data: heroSlides, isLoading: slidesLoading } = useGetHeroSlidesQuery({});
+  const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery({});
 
-const isPageLoading = productsLoading || slidesLoading || categoriesLoading;
+  const isPageLoading = productsLoading || slidesLoading || categoriesLoading;
 
   const displayProducts = useMemo<ProductItem[]>(() => products || [], [products]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Carousel state
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -132,30 +136,74 @@ const isPageLoading = productsLoading || slidesLoading || categoriesLoading;
   }, [displayProducts, categories]);
 
   const filteredProducts = useMemo(() => {
-    if (selectedCategory === 'All') return displayProducts;
-    return displayProducts.filter((p) => p.category === selectedCategory);
-  }, [displayProducts, selectedCategory]);
+    let filtered = displayProducts;
+    if (selectedCategory !== 'All') {
+      filtered = filtered.filter((p) => p.category === selectedCategory);
+    }
+    if (searchTerm.trim()) {
+      filtered = filtered.filter((p) =>
+        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    return filtered.slice().sort((a, b) => b._id.localeCompare(a._id));
+  }, [displayProducts, selectedCategory, searchTerm]);
 
+  // ---------- JSON-LD Schemas ----------
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "LotceWieth",
+    url: "https://shollystore-ecommerce.vercel.app",
+    logo: "https://shollystore-ecommerce.vercel.app/logo.png",
+    sameAs: [
+      "https://facebook.com/lotcewieth",
+      "https://instagram.com/lotcewieth",
+      "https://twitter.com/lotcewieth",
+    ],
+    contactPoint: {
+      "@type": "ContactPoint",
+      telephone: "+234-800-000-0000",
+      contactType: "customer service",
+      areaServed: "NG",
+      availableLanguage: "en",
+    },
+  };
+
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    url: "https://shollystore-ecommerce.vercel.app",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: "https://shollystore-ecommerce.vercel.app/search?q={search_term_string}",
+      "query-input": "required name=search_term_string",
+    },
+  };
+
+  // Loading state
   if (isPageLoading) {
-  return (
-    <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-pastel-pink via-pastel-green to-white">
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-        className="rounded-full h-16 w-16 border-4 border-leaf-green border-t-transparent"
-      />
-    </div>
-  );
-}
-
-<SEO
-  title="Your Everyday Drink Superstore"
-  description="LotceWieth brings the coldest, most refreshing beverages straight to your doorstep across Nigeria. From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in convenient packs."
-  canonicalUrl="hhttps://shollystore-ecommerce.vercel.app"
-/>
+    return (
+      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-pastel-pink via-pastel-green to-white">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+          className="rounded-full h-16 w-16 border-4 border-leaf-green border-t-transparent"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen relative overflow-x-hidden">
+      {/* SEO & Structured Data */}
+      <SEO
+        title="Your Everyday Drink Superstore"
+        description="LotceWieth brings the coldest, most refreshing beverages straight to your doorstep across Nigeria. From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in convenient packs."
+        canonicalUrl="https://shollystore-ecommerce.vercel.app"
+      />
+      <StructuredData data={organizationSchema} />
+      <StructuredData data={websiteSchema} />
+
       {/* Animated background blobs */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <motion.div
@@ -388,26 +436,40 @@ const isPageLoading = productsLoading || slidesLoading || categoriesLoading;
         </motion.div>
       </section>
 
-      {/* ========== 4. PRODUCTS GRID ========== */}
+      {/* ========== 4. PRODUCTS GRID (with search) ========== */}
       <section id="products-grid" className="max-w-7xl mx-auto px-4 md:px-6 mt-12 md:mt-16">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
             {selectedCategory === 'All' ? 'Our Best Sellers' : selectedCategory}
           </h2>
-          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-            {categoryList.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
-                  selectedCategory === cat
-                    ? 'bg-leaf-green text-white shadow-md'
-                    : 'bg-white text-gray-600 border border-gray-200 hover:border-leaf-green'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+            {/* Search input */}
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-leaf-green text-sm bg-white/70"
+              />
+            </div>
+            {/* Category filter pills */}
+            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+              {categoryList.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                    selectedCategory === cat
+                      ? 'bg-leaf-green text-white shadow-md'
+                      : 'bg-white text-gray-600 border border-gray-200 hover:border-leaf-green'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -429,6 +491,7 @@ const isPageLoading = productsLoading || slidesLoading || categoriesLoading;
                   image={product.images?.[0] || 'https://via.placeholder.com/150'}
                   category={product.category || 'General'}
                   stock={product.stock}
+                  slug={product.slug}           // ✅ passing slug
                 />
               </motion.div>
             ))}

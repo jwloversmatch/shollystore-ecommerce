@@ -252,6 +252,11 @@ export const apiSlice = createApi({
         body: data,
       }),
     }),
+
+    getProductBySlug: builder.query({
+      query: (slug) => `/products/${slug}`,
+      providesTags: ['Product'],
+    }),
   }),
 });
 
@@ -287,5 +292,6 @@ export const {
   useDeleteCategoryMutation,
   useGetOrderCustomerCountQuery,
   useUpdateProfileMutation,
-  useSendMarketingEmailMutation,  
+  useSendMarketingEmailMutation,
+  useGetProductBySlugQuery 
 } = apiSlice;
