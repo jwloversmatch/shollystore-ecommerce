@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { Order } from '../models/Order';
 import { Product } from '../models/Product';
 import { User } from '../models/User';
+import { Coupon } from '../models/Coupon';                  // ✅ new import
 import { initializePayment } from '../services/paystack.service';
 import {
   sendOrderConfirmation,
@@ -139,6 +140,14 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
         update_time: event.data.paid_at,
       };
       await order.save();
+
+      // ✅ Increment coupon usage now that payment is confirmed
+      if (order.couponCode) {
+        await Coupon.updateOne(
+          { code: order.couponCode.toUpperCase() },
+          { $inc: { usedCount: 1 } }
+        );
+      }
 
       // Notify admin about status change
       await sendAdminOrderNotification(order, 'updated', 'Paid');
