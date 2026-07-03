@@ -89,13 +89,21 @@ const slideVariants = {
 
 // ---------- Component ----------
 const Home = () => {
-  const { data: products, isLoading: productsLoading } = useGetProductsQuery({});
-  const { data: heroSlides, isLoading: slidesLoading } = useGetHeroSlidesQuery({});
-  const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery({});
+  const { data: products, isLoading: productsLoading } = useGetProductsQuery(
+    {},
+  );
+  const { data: heroSlides, isLoading: slidesLoading } = useGetHeroSlidesQuery(
+    {},
+  );
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useGetCategoriesQuery({});
 
   const isPageLoading = productsLoading || slidesLoading || categoriesLoading;
 
-  const displayProducts = useMemo<ProductItem[]>(() => products || [], [products]);
+  const displayProducts = useMemo<ProductItem[]>(
+    () => products || [],
+    [products],
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -125,7 +133,7 @@ const Home = () => {
     if (!heroSlides || heroSlides.length === 0) return;
     setDirection(-1);
     setCurrentIndex(
-      (prev) => (prev - 1 + heroSlides.length) % heroSlides.length
+      (prev) => (prev - 1 + heroSlides.length) % heroSlides.length,
     );
   };
 
@@ -139,7 +147,7 @@ const Home = () => {
     const counts: Record<string, number> = { All: displayProducts.length };
     categories.forEach((cat: CategoryItem) => {
       counts[cat.name] = displayProducts.filter(
-        (p) => p.category === cat.name
+        (p) => p.category === cat.name,
       ).length;
     });
     return counts;
@@ -152,7 +160,7 @@ const Home = () => {
     }
     if (searchTerm.trim()) {
       filtered = filtered.filter((p) =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
     return filtered.slice().sort((a, b) => b._id.localeCompare(a._id));
@@ -496,6 +504,7 @@ const Home = () => {
             {selectedCategory === "All" ? "Our Best Sellers" : selectedCategory}
           </h2>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+            {/* Search input */}
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -506,6 +515,7 @@ const Home = () => {
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-leaf-green text-sm bg-white/70"
               />
             </div>
+            {/* Category filter pills */}
             <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
               {categoryList.map((cat) => (
                 <button
@@ -524,30 +534,35 @@ const Home = () => {
           </div>
         </div>
 
-        {/* ✅ NO AnimatePresence – old cards vanish instantly, new cards pop in */}
+        {/* ✅ AnimatePresence with popLayout – smooth exit/enter, just like before */}
         <motion.div
           layout
           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
         >
-          {filteredProducts.map((product: ProductItem) => (
-            <motion.div
-              key={product._id}
-              layout
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            >
-              <ProductCard
-                _id={product._id}
-                name={product.name}
-                price={product.price}
-                image={product.images?.[0] || "https://via.placeholder.com/150"}
-                category={product.category || "General"}
-                stock={product.stock}
-                onClick={() => setModalProduct(product)}
-              />
-            </motion.div>
-          ))}
+          <AnimatePresence mode="popLayout">
+            {filteredProducts.map((product: ProductItem) => (
+              <motion.div
+                key={product._id}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              >
+                <ProductCard
+                  _id={product._id}
+                  name={product.name}
+                  price={product.price}
+                  image={
+                    product.images?.[0] || "https://via.placeholder.com/150"
+                  }
+                  category={product.category || "General"}
+                  stock={product.stock}
+                  onClick={() => setModalProduct(product)}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </motion.div>
       </section>
 
