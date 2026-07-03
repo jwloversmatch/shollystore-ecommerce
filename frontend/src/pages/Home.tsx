@@ -4,6 +4,7 @@ import {
   useGetProductsQuery,
   useGetHeroSlidesQuery,
   useGetCategoriesQuery,
+  useGetPublicSettingsQuery,                       // ✅ new
 } from "../features/api/apiSlice";
 import ProductCard from "../components/ProductCard";
 import Footer from "./Footer";
@@ -89,21 +90,14 @@ const slideVariants = {
 
 // ---------- Component ----------
 const Home = () => {
-  const { data: products, isLoading: productsLoading } = useGetProductsQuery(
-    {},
-  );
-  const { data: heroSlides, isLoading: slidesLoading } = useGetHeroSlidesQuery(
-    {},
-  );
-  const { data: categories = [], isLoading: categoriesLoading } =
-    useGetCategoriesQuery({});
+  const { data: products, isLoading: productsLoading } = useGetProductsQuery({});
+  const { data: heroSlides, isLoading: slidesLoading } = useGetHeroSlidesQuery({});
+  const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery({});
+  const { data: publicSettings } = useGetPublicSettingsQuery({});   // ✅ fetch settings
 
   const isPageLoading = productsLoading || slidesLoading || categoriesLoading;
 
-  const displayProducts = useMemo<ProductItem[]>(
-    () => products || [],
-    [products],
-  );
+  const displayProducts = useMemo<ProductItem[]>(() => products || [], [products]);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -132,9 +126,7 @@ const Home = () => {
   const handlePrev = () => {
     if (!heroSlides || heroSlides.length === 0) return;
     setDirection(-1);
-    setCurrentIndex(
-      (prev) => (prev - 1 + heroSlides.length) % heroSlides.length,
-    );
+    setCurrentIndex((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
   };
 
   // Category list with counts
@@ -146,9 +138,7 @@ const Home = () => {
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { All: displayProducts.length };
     categories.forEach((cat: CategoryItem) => {
-      counts[cat.name] = displayProducts.filter(
-        (p) => p.category === cat.name,
-      ).length;
+      counts[cat.name] = displayProducts.filter((p) => p.category === cat.name).length;
     });
     return counts;
   }, [displayProducts, categories]);
@@ -160,17 +150,28 @@ const Home = () => {
     }
     if (searchTerm.trim()) {
       filtered = filtered.filter((p) =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()),
+        p.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     return filtered.slice().sort((a, b) => b._id.localeCompare(a._id));
   }, [displayProducts, selectedCategory, searchTerm]);
 
+  // ---------- Dynamic homepage content from settings ----------
+  const heroTagline = publicSettings?.heroTagline || "📦 Bulk Beverage Store";
+  const heroTitle = publicSettings?.heroTitle || "Your Everyday Drink Superstore";
+  const heroDescription =
+    publicSettings?.heroDescription ||
+    "From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in convenient packs.";
+  const specialOfferTitle = publicSettings?.specialOfferTitle || "Stock Up & Save";
+  const specialOfferText =
+    publicSettings?.specialOfferText ||
+    "Get ₦500 off your first bulk order of ₦10,000 or more. Use code FIRST500";
+
   // ---------- JSON-LD Schemas ----------
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "LotceWieth",
+    name: heroTitle,               // ✅ dynamic store name
     url: "https://shollystore-ecommerce.vercel.app",
     logo: "https://shollystore-ecommerce.vercel.app/logo.png",
     sameAs: [
@@ -193,8 +194,7 @@ const Home = () => {
     url: "https://shollystore-ecommerce.vercel.app",
     potentialAction: {
       "@type": "SearchAction",
-      target:
-        "https://shollystore-ecommerce.vercel.app/search?q={search_term_string}",
+      target: "https://shollystore-ecommerce.vercel.app/search?q={search_term_string}",
       "query-input": "required name=search_term_string",
     },
   };
@@ -218,8 +218,8 @@ const Home = () => {
     <div className="min-h-screen relative overflow-x-hidden">
       {/* SEO & Structured Data */}
       <SEO
-        title="Your Everyday Drink Superstore"
-        description="LotceWieth brings the coldest, most refreshing beverages straight to your doorstep across Nigeria. From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in convenient packs."
+        title={heroTitle}
+        description={heroDescription}
         canonicalUrl="https://shollystore-ecommerce.vercel.app"
       />
       <StructuredData data={organizationSchema} />
@@ -253,7 +253,7 @@ const Home = () => {
             custom={0}
             className="bg-white/60 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-medium text-blob-orange inline-block border border-white/40 shadow-sm"
           >
-            📦 Bulk Beverage Store
+            {heroTagline}
           </motion.span>
           <motion.h1
             variants={{ hidden: fadeInUpHidden, visible: fadeInUpVisible }}
@@ -262,7 +262,7 @@ const Home = () => {
           >
             Your Everyday{" "}
             <span className="bg-gradient-to-r from-leaf-green to-emerald-500 bg-clip-text text-transparent">
-              Drink Superstore
+              {heroTitle}
             </span>
           </motion.h1>
           <motion.p
@@ -270,8 +270,7 @@ const Home = () => {
             custom={2}
             className="text-gray-600 text-lg md:text-xl max-w-md"
           >
-            From classic Fanta and Coke to refreshing Malt and premium bottled
-            water — all available in convenient packs.
+            {heroDescription}
           </motion.p>
           <motion.div
             variants={{ hidden: fadeInUpHidden, visible: fadeInUpVisible }}
@@ -583,23 +582,10 @@ const Home = () => {
             <Sparkles className="w-8 h-8" />
           </motion.div>
           <h2 className="text-3xl md:text-5xl font-extrabold text-gray-800 mb-4">
-            Stock Up & Save
+            {specialOfferTitle}
           </h2>
           <p className="text-gray-600 text-lg mb-8 max-w-lg mx-auto">
-            Get{" "}
-            <motion.span
-              whileHover={{ scale: 1.1 }}
-              className="font-bold text-leaf-green inline-block"
-            >
-              ₦500 off
-            </motion.span>{" "}
-            your first bulk order of ₦10,000 or more. Use code{" "}
-            <motion.span
-              whileHover={{ scale: 1.05 }}
-              className="font-bold bg-leaf-green/10 px-3 py-1 rounded-lg text-leaf-green"
-            >
-              FIRST500
-            </motion.span>
+            {specialOfferText}
           </p>
           <motion.button
             whileHover={{

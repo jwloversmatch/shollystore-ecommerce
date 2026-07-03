@@ -294,6 +294,10 @@ export const apiSlice = createApi({
         body: data,
       }),
     }),
+    getSettingsChanges: builder.query({
+      query: () => "/admin/settings/changes",
+      providesTags: ["Settings"],
+    }),
   }),
 });
 
@@ -336,4 +340,5 @@ export const {
   useUpdateCouponMutation,
   useDeleteCouponMutation,
   useValidateCouponMutation,
+  useGetSettingsChangesQuery,
 } = apiSlice;
