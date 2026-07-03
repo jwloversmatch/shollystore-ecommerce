@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
@@ -85,14 +85,19 @@ const itemFadeUp = {
 };
 
 // ---------- Helpers ----------
-const formatPriceDisplay = (digits: string): string => {
-  if (!digits) return '';
-  const num = Number(digits);
-  if (isNaN(num)) return '';
-  return num.toLocaleString('en-NG', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+/**
+ * Formats a raw numeric string (digits + optional decimal) into a
+ * comma-separated display string.
+ *   "5000"     → "5,000"
+ *   "5000.5"   → "5,000.5"
+ *   "5000.50"  → "5,000.50"
+ *   ""         → ""
+ */
+const formatPriceInput = (raw: string): string => {
+  if (!raw) return '';
+  const [intPart, decPart] = raw.split('.');
+  const formattedInt = (intPart || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
 };
 
 // ---------- Component ----------
@@ -134,7 +139,7 @@ const Products = () => {
   const [marketingType, setMarketingType] = useState<'new_arrival' | 'back_in_stock'>('new_arrival');
   const [customMessage, setCustomMessage] = useState('');
 
-  // ✅ New arrival notification checkbox (only for new product)
+  // Notify on new product
   const [notifyCustomers, setNotifyCustomers] = useState(false);
 
   // ---------- React Hook Form ----------
@@ -148,9 +153,23 @@ const Products = () => {
     resolver: zodResolver(productSchema),
   });
 
-  // ✅ Price formatting state
+  // ---------- Price input state & refs ----------
+  // rawPrice holds the clean numeric string, e.g. "5000" or "5000.50"
   const [rawPrice, setRawPrice] = useState('');
-  const [priceFocused, setPriceFocused] = useState(false);
+  const priceInputRef = useRef<HTMLInputElement>(null);
+  const pendingCursorRef = useRef<number | null>(null);
+
+  // After every render, restore the cursor position we calculated during onChange.
+  // useLayoutEffect fires synchronously before the browser paints, preventing flicker.
+  useLayoutEffect(() => {
+    if (pendingCursorRef.current !== null && priceInputRef.current) {
+      priceInputRef.current.setSelectionRange(
+        pendingCursorRef.current,
+        pendingCursorRef.current,
+      );
+      pendingCursorRef.current = null;
+    }
+  });
 
   // ---------- Derived Categories (for filter) ----------
   const filterCategories = useMemo(() => {
@@ -195,7 +214,6 @@ const Products = () => {
         description: product.description || '',
       });
       setRawPrice(product.price.toString());
-      setPriceFocused(false);
       setFile(null);
       setNotifyCustomers(false);
     } else {
@@ -208,7 +226,6 @@ const Products = () => {
         description: '',
       });
       setRawPrice('');
-      setPriceFocused(false);
       setFile(null);
       setNotifyCustomers(false);
     }
@@ -242,23 +259,65 @@ const Products = () => {
     }
   };
 
-  // ✅ Price change handler – strips non‑digits, keeps raw
+  /**
+   * Live price change handler.
+   *
+   * On each keystroke:
+   * 1. Strip commas from the current displayed value to get the raw input.
+   * 2. Clean it: keep digits, allow one `.`, max 2 decimal places.
+   * 3. Reformat with commas.
+   * 4. Compute where the cursor should land in the new formatted string
+   *    by counting how many non-comma characters were before the old cursor.
+   * 5. Schedule cursor restoration via useLayoutEffect.
+   */
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digitsOnly = e.target.value.replace(/\D/g, '');
-    setRawPrice(digitsOnly);
-    setValue('price', digitsOnly, { shouldValidate: true });
-  };
+    const el = e.target;
 
-  const handlePriceFocus = () => {
-    setPriceFocused(true);
-  };
+    // Where was the cursor in the *displayed* (comma-included) string?
+    const cursor = el.selectionStart ?? el.value.length;
 
-  const handlePriceBlur = () => {
-    setPriceFocused(false);
-  };
+    // How many real (non-comma) characters were before the cursor?
+    const nonCommasBefore = el.value.slice(0, cursor).replace(/,/g, '').length;
 
-  // Determines what the input displays
-  const displayPrice = priceFocused ? rawPrice : formatPriceDisplay(rawPrice);
+    // Strip commas, then clean to: digits + one decimal point + ≤2 decimal places
+    const stripped = el.value.replace(/,/g, '');
+    let cleaned = '';
+    let seenDot = false;
+    let decCount = 0;
+    for (const ch of stripped) {
+      if (ch >= '0' && ch <= '9') {
+        if (seenDot) {
+          if (decCount < 2) { cleaned += ch; decCount++; }
+        } else {
+          cleaned += ch;
+        }
+      } else if (ch === '.' && !seenDot) {
+        seenDot = true;
+        cleaned += ch;
+      }
+    }
+
+    // Compute cursor position in the newly formatted string
+    const newFormatted = formatPriceInput(cleaned);
+    let charCount = 0;
+    let newCursor = newFormatted.length; // default: end of string
+    for (let i = 0; i < newFormatted.length; i++) {
+      if (newFormatted[i] !== ',') {
+        charCount++;
+        if (charCount === nonCommasBefore) {
+          newCursor = i + 1;
+          break;
+        }
+      }
+    }
+
+    // Schedule cursor restoration (runs after React re-render in useLayoutEffect)
+    pendingCursorRef.current = newCursor;
+
+    // Update state & RHF (cleaned = "5000.50", Number() works fine for validation)
+    setRawPrice(cleaned);
+    setValue('price', cleaned, { shouldValidate: true });
+  };
 
   const onSubmit = async (data: ProductFormData) => {
     try {
@@ -299,7 +358,7 @@ const Products = () => {
     }
   };
 
-  // ✅ Marketing email handlers
+  // Marketing email handlers
   const openMarketingModal = (product: ProductItem, type: 'new_arrival' | 'back_in_stock') => {
     setSelectedProductForMarketing(product);
     setMarketingType(type);
@@ -579,16 +638,15 @@ const Products = () => {
 
                 {/* Price & Stock */}
                 <div className="grid grid-cols-2 gap-4">
-                  {/* ✅ Improved formatted price input */}
+                  {/* Price – live comma formatting with decimal support */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Price (₦)</label>
                     <input
+                      ref={priceInputRef}
                       type="text"
-                      inputMode="numeric"
-                      value={displayPrice}
+                      inputMode="decimal"
+                      value={formatPriceInput(rawPrice)}
                       onChange={handlePriceChange}
-                      onFocus={handlePriceFocus}
-                      onBlur={handlePriceBlur}
                       className={`w-full border ${errors.price ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent`}
                       placeholder="0.00"
                     />
@@ -688,7 +746,7 @@ const Products = () => {
                   </div>
                 </div>
 
-                {/* ✅ Checkbox – only for new product */}
+                {/* Checkbox – only for new product */}
                 {!editingProduct && (
                   <div className="flex items-center gap-2 mt-4">
                     <input
