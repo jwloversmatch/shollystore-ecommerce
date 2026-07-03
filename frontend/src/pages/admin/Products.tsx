@@ -84,6 +84,17 @@ const itemFadeUp = {
   },
 };
 
+// ---------- Helpers ----------
+const formatPriceDisplay = (rawValue: string): string => {
+  if (!rawValue) return '';
+  const num = Number(rawValue);
+  if (isNaN(num)) return '';
+  return num.toLocaleString('en-NG', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 // ---------- Component ----------
 const Products = () => {
   const navigate = useNavigate();
@@ -131,10 +142,14 @@ const Products = () => {
     register,
     handleSubmit,
     reset,
+    setValue,                       // ✅ added
     formState: { errors, isSubmitting },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
   });
+
+  // ✅ State for the formatted price display
+  const [priceDisplay, setPriceDisplay] = useState('');
 
   // ---------- Derived Categories (for filter) ----------
   const filterCategories = useMemo(() => {
@@ -173,13 +188,14 @@ const Products = () => {
       setEditingProduct(product);
       reset({
         name: product.name,
-        price: product.price.toString(),
+        price: product.price.toString(),      // raw digits
         stock: product.stock.toString(),
         category: product.category || '',
         description: product.description || '',
       });
       setFile(null);
-      setNotifyCustomers(false); // not used when editing
+      setNotifyCustomers(false);
+      setPriceDisplay(formatPriceDisplay(product.price.toString()));  // ✅ set formatted
     } else {
       setEditingProduct(null);
       reset({
@@ -191,6 +207,7 @@ const Products = () => {
       });
       setFile(null);
       setNotifyCustomers(false);
+      setPriceDisplay('');   // ✅ empty
     }
     setIsDrawerOpen(true);
   };
@@ -222,6 +239,17 @@ const Products = () => {
     }
   };
 
+  // ✅ Custom change handler for the formatted price field
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    // Remove all non-digit characters
+    const digitsOnly = input.replace(/\D/g, '');
+    // Update the raw value in the form
+    setValue('price', digitsOnly, { shouldValidate: true });
+    // Update the display
+    setPriceDisplay(formatPriceDisplay(digitsOnly));
+  };
+
   const onSubmit = async (data: ProductFormData) => {
     try {
       let imageUrl = editingProduct?.images?.[0] || '';
@@ -236,7 +264,7 @@ const Products = () => {
 
       const productData = {
         name: data.name,
-        price: Number(data.price),
+        price: Number(data.price),         // raw digits → number
         stock: Number(data.stock),
         description: data.description || '',
         category: data.category,
@@ -250,7 +278,6 @@ const Products = () => {
           ...productData,
         }).unwrap();
       } else {
-        // ✅ Include notifyCustomers flag when creating a new product
         await createProduct({ ...productData, notifyCustomers }).unwrap();
       }
 
@@ -289,17 +316,18 @@ const Products = () => {
   const placeholderImage = 'https://via.placeholder.com/150';
 
   // ---------- Loading state ----------
-if (isLoading) {
-  return (
-    <div className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6">
-      <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-100">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <ProductRowSkeleton key={i} />
-        ))}
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6">
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-100">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <ProductRowSkeleton key={i} />
+          ))}
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
+
   // ---------- Render ----------
   return (
     <motion.div
@@ -541,15 +569,16 @@ if (isLoading) {
 
                 {/* Price & Stock */}
                 <div className="grid grid-cols-2 gap-4">
+                  {/* ✅ NEW formatted price input */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Price (₦)</label>
                     <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      {...register('price')}
+                      type="text"
+                      inputMode="numeric"
+                      value={priceDisplay}
+                      onChange={handlePriceChange}
                       className={`w-full border ${errors.price ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent`}
-                      placeholder="2500"
+                      placeholder="0.00"
                     />
                     {errors.price && (
                       <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
