@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { User, IUser } from '../models/User';
 import { generateToken } from '../utils/generateToken';
 import { sendVerificationEmail } from '../services/email.service';
-import { AuthRequest } from '../middleware/auth'; // <-- added
+import { AuthRequest } from '../middleware/auth';
 
 // @desc    Register a new user (with email verification)
 // @route   POST /api/auth/register
@@ -119,6 +119,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       email: user.email,
       name: user.name,
       phone: user.phone,
+      shippingAddress: user.shippingAddress,   // ✅ now included
       role: user.role,
       createdAt: user.createdAt,
       token: generateToken(user._id.toString()),
@@ -128,7 +129,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-// @desc    Update user profile (name, phone)
+// @desc    Update user profile (name, phone, shipping address)
 // @route   PUT /api/auth/profile
 export const updateProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -140,6 +141,17 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
 
     user.name = req.body.name || user.name;
     user.phone = req.body.phone || user.phone;
+
+    // ✅ update shipping address if provided
+    if (req.body.shippingAddress) {
+      user.shippingAddress = {
+        address: req.body.shippingAddress.address ?? user.shippingAddress?.address ?? '',
+        city: req.body.shippingAddress.city ?? user.shippingAddress?.city ?? '',
+        postalCode: req.body.shippingAddress.postalCode ?? user.shippingAddress?.postalCode ?? '',
+        country: req.body.shippingAddress.country ?? user.shippingAddress?.country ?? '',
+      };
+    }
+
     const updatedUser = await user.save();
 
     res.json({
@@ -148,6 +160,7 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
       email: updatedUser.email,
       name: updatedUser.name,
       phone: updatedUser.phone,
+      shippingAddress: updatedUser.shippingAddress,
       role: updatedUser.role,
       createdAt: updatedUser.createdAt,
     });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";                       // ✅ added useEffect
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
@@ -10,7 +10,7 @@ import { RootState } from "../store";
 import {
   useCreateOrderMutation,
   useGetPublicSettingsQuery,
-  useValidateCouponMutation, // ✅ added
+  useValidateCouponMutation,
 } from "../features/api/apiSlice";
 import { clearCart } from "../features/cart/cartSlice";
 import {
@@ -59,10 +59,21 @@ const Checkout = () => {
   const {
     register,
     handleSubmit,
+    reset,                                 // ✅ needed to reset form values
     formState: { errors },
   } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
   });
+
+  // ✅ Pre-fill with user's default shipping address
+  useEffect(() => {
+    if (user?.shippingAddress) {
+      reset({
+        address: user.shippingAddress.address || "",
+        city: user.shippingAddress.city || "",
+      });
+    }
+  }, [user, reset]);
 
   const [paymentMethod, setPaymentMethod] = useState<
     "paystack" | "bank_transfer" | "whatsapp"
@@ -120,10 +131,10 @@ const Checkout = () => {
       const result = await createOrder({
         orderItems: cart.cartItems,
         shippingAddress: { ...data, postalCode: "", country: "Nigeria" },
-        totalPrice: finalTotal, // discounted total
+        totalPrice: finalTotal,
         paymentMethod,
-        couponCode: appliedCoupon, // pass to backend
-        discount: couponDiscount, // pass to backend
+        couponCode: appliedCoupon,
+        discount: couponDiscount,
       }).unwrap();
 
       dispatch(clearCart());
@@ -315,7 +326,7 @@ const Checkout = () => {
               )}
             </div>
 
-            {/* Payment Method */}
+            {/* Payment Method (unchanged) */}
             <div className="pt-2">
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Payment Method
@@ -391,7 +402,7 @@ const Checkout = () => {
           </form>
         </div>
 
-        {/* Right Side - Order Summary */}
+        {/* Right Side - Order Summary (unchanged) */}
         <div className="p-8 md:p-12 flex flex-col justify-start bg-gray-50/50 backdrop-blur-sm">
           <h3 className="text-xl font-bold text-gray-800 mb-6 border-b border-gray-200 pb-4">
             Order Summary
@@ -422,7 +433,7 @@ const Checkout = () => {
             ))}
           </div>
 
-          {/* Coupon Input */}
+          {/* Coupon Input (unchanged) */}
           <div className="mt-4 border-t pt-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Discount Code
@@ -461,7 +472,7 @@ const Checkout = () => {
             )}
           </div>
 
-          {/* Totals */}
+          {/* Totals (unchanged) */}
           <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
             <div className="flex justify-between text-sm text-gray-600">
               <span>Subtotal</span>

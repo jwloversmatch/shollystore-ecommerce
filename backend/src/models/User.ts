@@ -10,6 +10,12 @@ export interface IUser extends Document {
   createdAt: Date;
   isVerified: boolean;
   verificationToken: string | null;
+  shippingAddress?: {
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+  };
   matchPassword(enteredPassword: string): Promise<boolean>;
 }
 
@@ -22,6 +28,12 @@ const UserSchema: Schema = new Schema({
   createdAt: { type: Date, default: Date.now },
   isVerified: { type: Boolean, default: false },
   verificationToken: { type: String, default: null },
+  shippingAddress: {
+    address: { type: String, default: '' },
+    city: { type: String, default: '' },
+    postalCode: { type: String, default: '' },
+    country: { type: String, default: '' },
+  },
 });
 
 // ---------- Indexes ----------

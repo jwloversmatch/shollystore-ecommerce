@@ -8,6 +8,12 @@ export interface User {
   phone?: string;
   createdAt?: string;
   token?: string;
+  shippingAddress?: {
+    address?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+  };
 }
 
 interface AuthState {

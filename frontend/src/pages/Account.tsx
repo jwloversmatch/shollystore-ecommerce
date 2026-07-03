@@ -22,7 +22,7 @@ import {
   Calendar,
   CreditCard,
   MapPin,
-  Ticket,                     // ✅ added for coupon display
+  Ticket,
 } from "lucide-react";
 import { OrderRowSkeleton } from "../components/Skeletons";
 import SEO from "../components/SEO";
@@ -49,8 +49,8 @@ interface Order {
   paymentMethod?: string;
   name?: string;
   phone?: string;
-  couponCode?: string;       // ✅ added
-  discount?: number;         // ✅ added
+  couponCode?: string;
+  discount?: number;
 }
 
 const getStatusInfo = (
@@ -110,6 +110,8 @@ const Account = () => {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
+  const [editAddress, setEditAddress] = useState("");          // ✅ new
+  const [editCity, setEditCity] = useState("");                // ✅ new
   const [updateProfileApi, { isLoading: isUpdating }] =
     useUpdateProfileMutation();
 
@@ -138,6 +140,8 @@ const Account = () => {
   const startEditing = () => {
     setEditName(user?.name || "");
     setEditPhone(user?.phone || "");
+    setEditAddress(user?.shippingAddress?.address || "");
+    setEditCity(user?.shippingAddress?.city || "");
     setEditing(true);
   };
 
@@ -151,6 +155,10 @@ const Account = () => {
       const updatedUser = await updateProfileApi({
         name: editName,
         phone: editPhone,
+        shippingAddress: {
+          address: editAddress,
+          city: editCity,
+        },
       }).unwrap();
       dispatch(updateProfile(updatedUser));
       toast.success("Profile updated!");
@@ -432,6 +440,31 @@ const Account = () => {
                     placeholder="Your phone number"
                   />
                 </div>
+                {/* ✅ Default Shipping Address */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Default Shipping Address
+                  </label>
+                  <input
+                    type="text"
+                    value={editAddress}
+                    onChange={(e) => setEditAddress(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green"
+                    placeholder="Street address"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    value={editCity}
+                    onChange={(e) => setEditCity(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green"
+                    placeholder="City"
+                  />
+                </div>
                 <div className="flex justify-end">
                   <motion.button
                     type="submit"
@@ -482,6 +515,18 @@ const Account = () => {
                           day: "numeric",
                         })
                       : "N/A"}
+                  </p>
+                </div>
+                {/* ✅ Show default address in view mode */}
+                <div className="bg-gray-50/60 rounded-xl p-4 sm:col-span-2">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">
+                    Default Shipping Address
+                  </p>
+                  <p className="font-medium text-gray-800 mt-1 flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    {user?.shippingAddress?.address && user?.shippingAddress?.city
+                      ? `${user.shippingAddress.address}, ${user.shippingAddress.city}`
+                      : "Not set"}
                   </p>
                 </div>
               </div>
