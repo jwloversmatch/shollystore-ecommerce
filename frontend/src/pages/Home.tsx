@@ -534,35 +534,30 @@ const Home = () => {
           </div>
         </div>
 
-        {/* ✅ Original popLayout animation – products scale in and out */}
+        {/* ✅ THE ORIGINAL ANIMATION – no AnimatePresence, cards appear instantly */}
         <motion.div
           layout
           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
         >
-          <AnimatePresence mode="wait">
-            {filteredProducts.map((product: ProductItem) => (
-              <motion.div
-                key={product._id}
-                layout
-                initial={{ opacity: 0, scale: 0.3 }} // start tiny, almost invisible
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ type: "spring", stiffness: 200, damping: 10 }} // very bouncy
-              >
-                <ProductCard
-                  _id={product._id}
-                  name={product.name}
-                  price={product.price}
-                  image={
-                    product.images?.[0] || "https://via.placeholder.com/150"
-                  }
-                  category={product.category || "General"}
-                  stock={product.stock}
-                  onClick={() => setModalProduct(product)}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          {filteredProducts.map((product: ProductItem) => (
+            <motion.div
+              key={product._id}
+              layout
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+            >
+              <ProductCard
+                _id={product._id}
+                name={product.name}
+                price={product.price}
+                image={product.images?.[0] || "https://via.placeholder.com/150"}
+                category={product.category || "General"}
+                stock={product.stock}
+                onClick={() => setModalProduct(product)}
+              />
+            </motion.div>
+          ))}
         </motion.div>
       </section>
 
