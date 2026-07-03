@@ -85,9 +85,9 @@ const itemFadeUp = {
 };
 
 // ---------- Helpers ----------
-const formatPriceDisplay = (rawValue: string): string => {
-  if (!rawValue) return '';
-  const num = Number(rawValue);
+const formatPriceDisplay = (digits: string): string => {
+  if (!digits) return '';
+  const num = Number(digits);
   if (isNaN(num)) return '';
   return num.toLocaleString('en-NG', {
     minimumFractionDigits: 2,
@@ -142,14 +142,15 @@ const Products = () => {
     register,
     handleSubmit,
     reset,
-    setValue,                       // ✅ added
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
   });
 
-  // ✅ State for the formatted price display
-  const [priceDisplay, setPriceDisplay] = useState('');
+  // ✅ Price formatting state
+  const [rawPrice, setRawPrice] = useState('');
+  const [priceFocused, setPriceFocused] = useState(false);
 
   // ---------- Derived Categories (for filter) ----------
   const filterCategories = useMemo(() => {
@@ -188,14 +189,15 @@ const Products = () => {
       setEditingProduct(product);
       reset({
         name: product.name,
-        price: product.price.toString(),      // raw digits
+        price: product.price.toString(),
         stock: product.stock.toString(),
         category: product.category || '',
         description: product.description || '',
       });
+      setRawPrice(product.price.toString());
+      setPriceFocused(false);
       setFile(null);
       setNotifyCustomers(false);
-      setPriceDisplay(formatPriceDisplay(product.price.toString()));  // ✅ set formatted
     } else {
       setEditingProduct(null);
       reset({
@@ -205,9 +207,10 @@ const Products = () => {
         category: '',
         description: '',
       });
+      setRawPrice('');
+      setPriceFocused(false);
       setFile(null);
       setNotifyCustomers(false);
-      setPriceDisplay('');   // ✅ empty
     }
     setIsDrawerOpen(true);
   };
@@ -239,16 +242,23 @@ const Products = () => {
     }
   };
 
-  // ✅ Custom change handler for the formatted price field
+  // ✅ Price change handler – strips non‑digits, keeps raw
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-    // Remove all non-digit characters
-    const digitsOnly = input.replace(/\D/g, '');
-    // Update the raw value in the form
+    const digitsOnly = e.target.value.replace(/\D/g, '');
+    setRawPrice(digitsOnly);
     setValue('price', digitsOnly, { shouldValidate: true });
-    // Update the display
-    setPriceDisplay(formatPriceDisplay(digitsOnly));
   };
+
+  const handlePriceFocus = () => {
+    setPriceFocused(true);
+  };
+
+  const handlePriceBlur = () => {
+    setPriceFocused(false);
+  };
+
+  // Determines what the input displays
+  const displayPrice = priceFocused ? rawPrice : formatPriceDisplay(rawPrice);
 
   const onSubmit = async (data: ProductFormData) => {
     try {
@@ -264,7 +274,7 @@ const Products = () => {
 
       const productData = {
         name: data.name,
-        price: Number(data.price),         // raw digits → number
+        price: Number(data.price),
         stock: Number(data.stock),
         description: data.description || '',
         category: data.category,
@@ -569,14 +579,16 @@ const Products = () => {
 
                 {/* Price & Stock */}
                 <div className="grid grid-cols-2 gap-4">
-                  {/* ✅ NEW formatted price input */}
+                  {/* ✅ Improved formatted price input */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Price (₦)</label>
                     <input
                       type="text"
                       inputMode="numeric"
-                      value={priceDisplay}
+                      value={displayPrice}
                       onChange={handlePriceChange}
+                      onFocus={handlePriceFocus}
+                      onBlur={handlePriceBlur}
                       className={`w-full border ${errors.price ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent`}
                       placeholder="0.00"
                     />
