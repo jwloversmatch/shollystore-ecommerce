@@ -30,7 +30,8 @@ interface ProductItem {
   images?: string[];
   category?: string;
   stock?: number;
-  slug?: string; // ✅ added for linking to detail page
+  slug?: string;
+  description?: string; 
 }
 
 interface HeroSlide {
