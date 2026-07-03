@@ -1,10 +1,27 @@
 // backend/src/services/marketingEmail.service.ts
 import { User } from '../models/User';
+import { Settings } from '../models/Settings';   // ← new
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const SENDER_EMAIL = process.env.MARKETING_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'store@lotcewieth.com';
 const SENDER_NAME = process.env.MARKETING_SENDER_NAME || process.env.BREVO_SENDER_NAME || 'LotceWieth Store';
 const CLIENT_URL = process.env.CLIENT_URL || 'https://lotcewieth.com';
+
+// ---------- Helper: get store name from settings (cached in memory for performance) ----------
+let cachedStoreName: string | null = null;
+const getStoreName = async (): Promise<string> => {
+  if (cachedStoreName) return cachedStoreName;
+
+  try {
+    const settings = await Settings.findOne();
+    // Use heroTitle, remove any "|" used for two‑color text, and trim
+    const rawTitle = settings?.heroTitle || '';
+    cachedStoreName = rawTitle.replace(/\|/g, '').trim() || 'LotceWieth';
+  } catch {
+    cachedStoreName = 'LotceWieth';
+  }
+  return cachedStoreName;
+};
 
 // ---------- Send email via Brevo (supports multiple recipients) ----------
 const sendBrevoEmail = async (
@@ -73,6 +90,7 @@ export const sendNewArrivalEmail = async (
   description?: string,
 ) => {
   const emails = recipients.map(r => r.email);
+  const storeName = await getStoreName();
 
   const html = `
     <!DOCTYPE html>
@@ -86,7 +104,6 @@ export const sendNewArrivalEmail = async (
         .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
         .header { background: #ffd6d6; padding: 30px 20px; text-align: center; }
         .header h1 { margin: 0; color: #2d3748; font-size: 28px; letter-spacing: -0.5px; }
-        .header span { color: #4a8f29; }
         .content { padding: 40px 30px; text-align: center; }
         .content h2 { color: #2d3748; font-size: 22px; margin-top: 0; }
         .product-img { width: 200px; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -101,7 +118,7 @@ export const sendNewArrivalEmail = async (
       <div style="padding: 20px; background-color: #f4f7f6;">
         <div class="container">
           <div class="header">
-            <h1>Lotce<span style="color:#4a8f29;">Wieth</span></h1>
+            <h1>${storeName}</h1>
           </div>
           <div class="content">
             <h2>🌟 New Arrival!</h2>
@@ -111,7 +128,7 @@ export const sendNewArrivalEmail = async (
             <a href="${productUrl}" class="btn">View Product</a>
           </div>
           <div class="footer">
-            &copy; ${new Date().getFullYear()} LotceWieth. All rights reserved.<br>
+            &copy; ${new Date().getFullYear()} ${storeName}. All rights reserved.<br>
             <a href="${CLIENT_URL}">Visit our store</a>
             <p style="font-size:12px; margin-top:8px;">You received this email because you're a valued customer. <a href="${CLIENT_URL}/unsubscribe">Unsubscribe</a></p>
           </div>
@@ -134,6 +151,7 @@ export const sendBackInStockEmail = async (
   productUrl: string,
 ) => {
   const emails = recipients.map(r => r.email);
+  const storeName = await getStoreName();
 
   const html = `
     <!DOCTYPE html>
@@ -147,7 +165,6 @@ export const sendBackInStockEmail = async (
         .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
         .header { background: #dff2e6; padding: 30px 20px; text-align: center; }
         .header h1 { margin: 0; color: #2d3748; font-size: 28px; letter-spacing: -0.5px; }
-        .header span { color: #4a8f29; }
         .content { padding: 40px 30px; text-align: center; }
         .content h2 { color: #2d3748; font-size: 22px; margin-top: 0; }
         .product-img { width: 200px; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -162,7 +179,7 @@ export const sendBackInStockEmail = async (
       <div style="padding: 20px; background-color: #f4f7f6;">
         <div class="container">
           <div class="header">
-            <h1>Lotce<span style="color:#4a8f29;">Wieth</span></h1>
+            <h1>${storeName}</h1>
           </div>
           <div class="content">
             <h2>🎉 Back in Stock!</h2>
@@ -171,7 +188,7 @@ export const sendBackInStockEmail = async (
             <a href="${productUrl}" class="btn">View Product</a>
           </div>
           <div class="footer">
-            &copy; ${new Date().getFullYear()} LotceWieth. All rights reserved.<br>
+            &copy; ${new Date().getFullYear()} ${storeName}. All rights reserved.<br>
             <a href="${CLIENT_URL}">Visit our store</a>
             <p style="font-size:12px; margin-top:8px;">You received this email because you're a valued customer. <a href="${CLIENT_URL}/unsubscribe">Unsubscribe</a></p>
           </div>

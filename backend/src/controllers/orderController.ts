@@ -14,7 +14,7 @@ import { AuthRequest } from '../middleware/auth';
 // @route   POST /api/orders
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { orderItems, shippingAddress, totalPrice, paymentMethod = 'paystack' } = req.body;
+    const { orderItems, shippingAddress, totalPrice, paymentMethod = 'paystack', couponCode, discount } = req.body;
 
     if (!orderItems || orderItems.length === 0) {
       res.status(400).json({ success: false, message: 'No order items' });
@@ -37,7 +37,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       }
     }
 
-    // 2. Build order document – ✅ include name and phone from req.user
+    // 2. Build order document – ✅ include name, phone, couponCode and discount
     const order = new Order({
       user: req.user!._id,
       name: req.user!.name || '',
@@ -62,6 +62,8 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
               whatsappNumber: process.env.WHATSAPP_NUMBER || '+2348000000000',
             }
           : undefined,
+      couponCode: couponCode || undefined,   // save coupon code if provided
+      discount: discount || 0,               // save discount amount if provided
     });
 
     const createdOrder = await order.save();
