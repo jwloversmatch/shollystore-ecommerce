@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { updateProfile } from "../features/auth/authSlice";
 import { useUpdateProfileMutation } from "../features/api/apiSlice";
 import toast from "react-hot-toast";
-import api from "../services/axios";                         
+import api from "../services/axios";
 import {
   ShoppingBag,
   Clock,
@@ -22,6 +22,7 @@ import {
   Calendar,
   CreditCard,
   MapPin,
+  Ticket,                     // ✅ added for coupon display
 } from "lucide-react";
 import { OrderRowSkeleton } from "../components/Skeletons";
 import SEO from "../components/SEO";
@@ -48,6 +49,8 @@ interface Order {
   paymentMethod?: string;
   name?: string;
   phone?: string;
+  couponCode?: string;       // ✅ added
+  discount?: number;         // ✅ added
 }
 
 const getStatusInfo = (
@@ -118,7 +121,7 @@ const Account = () => {
 
     const fetchOrders = async () => {
       try {
-        const res = await api.get("/orders/my-orders");    // ✅ using api
+        const res = await api.get("/orders/my-orders");
         setOrders(res.data);
         setError(null);
       } catch {
@@ -327,6 +330,12 @@ const Account = () => {
                           </p>
                           <p className="font-bold text-leaf-green text-sm mt-0.5">
                             ₦{order.totalPrice.toLocaleString()}
+                            {order.couponCode && (
+                              <span className="ml-1 inline-flex items-center gap-0.5 bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
+                                <Ticket className="w-3 h-3" />
+                                {order.couponCode}
+                              </span>
+                            )}
                           </p>
                         </div>
                       </div>
@@ -481,7 +490,7 @@ const Account = () => {
         )}
       </AnimatePresence>
 
-      {/* Order Details Modal (unchanged) */}
+      {/* Order Details Modal with coupon breakdown */}
       <AnimatePresence>
         {selectedOrder && (
           <>
@@ -576,14 +585,42 @@ const Account = () => {
                       ))}
                     </div>
                   </div>
-                  <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                    <span className="text-gray-800 font-semibold text-lg">
-                      Total
-                    </span>
-                    <span className="text-2xl font-bold text-leaf-green">
-                      ₦{selectedOrder.totalPrice.toLocaleString()}
-                    </span>
-                  </div>
+
+                  {/* Total section with coupon breakdown */}
+                  {(() => {
+                    const subtotal = selectedOrder.orderItems.reduce(
+                      (sum, item) => sum + item.price * item.qty,
+                      0
+                    );
+                    const discount = selectedOrder.discount || 0;
+                    const hasCoupon = !!selectedOrder.couponCode;
+
+                    return (
+                      <div className="pt-4 border-t border-gray-100 space-y-2">
+                        {hasCoupon && (
+                          <>
+                            <div className="flex justify-between text-sm text-gray-600">
+                              <span>Subtotal</span>
+                              <span>₦{subtotal.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-sm text-green-600">
+                              <span className="flex items-center gap-1">
+                                <Ticket className="w-3.5 h-3.5" />
+                                Discount ({selectedOrder.couponCode})
+                              </span>
+                              <span>- ₦{discount.toLocaleString()}</span>
+                            </div>
+                          </>
+                        )}
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-800 font-semibold text-lg">Total</span>
+                          <span className="text-2xl font-bold text-leaf-green">
+                            ₦{selectedOrder.totalPrice.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </motion.div>
