@@ -245,7 +245,7 @@ const Home = () => {
       </div>
 
       {/* ========== 1. HERO SECTION ========== */}
-      <section className="relative max-w-7xl mx-auto px-6 pt-28 md:pt-36 pb-20 md:pb-28 grid md:grid-cols-2 items-center gap-12">
+      <section className="relative max-w-7xl mx-auto px-6 pt-20 md:pt-24 pb-16 md:pb-20 grid md:grid-cols-2 items-center gap-12">
         {/* Left Content – Staggered */}
         <motion.div
           variants={staggerContainer}
