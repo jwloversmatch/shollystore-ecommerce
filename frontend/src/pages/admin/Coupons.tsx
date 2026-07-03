@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
@@ -24,6 +24,97 @@ interface Coupon {
   usedCount: number;
 }
 
+// ---------- Shared formatting helper ----------
+const formatWithCommas = (raw: string): string => {
+  if (!raw) return '';
+  const [intPart, decPart] = raw.split('.');
+  const formattedInt = (intPart || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
+};
+
+/**
+ * Reusable hook: manages a single numeric text input with live comma
+ * formatting, decimal support (≤ 2 places), and cursor-position restoration.
+ *
+ * Usage:
+ *   const myInput = useFormattedInput('0');
+ *   <input {...myInput.inputProps} className="..." />
+ *   // read cleaned value as: Number(myInput.raw)
+ *   // set programmatically: myInput.set('5000')
+ */
+function useFormattedInput(initial: string | number = '') {
+  const [raw, setRaw] = useState(String(initial));
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pendingCursor = useRef<number | null>(null);
+
+  // Restore cursor position BEFORE the browser paints (prevents jump-to-end flicker)
+  useLayoutEffect(() => {
+    if (pendingCursor.current !== null && inputRef.current) {
+      inputRef.current.setSelectionRange(pendingCursor.current, pendingCursor.current);
+      pendingCursor.current = null;
+    }
+  });
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const el = e.target;
+    const cursor = el.selectionStart ?? el.value.length;
+
+    // How many real chars (non-commas) were before the cursor in the old string?
+    const nonCommasBefore = el.value.slice(0, cursor).replace(/,/g, '').length;
+
+    // Strip commas → clean: digits + one decimal point + max 2 decimal places
+    const stripped = el.value.replace(/,/g, '');
+    let cleaned = '';
+    let seenDot = false;
+    let decCount = 0;
+    for (const ch of stripped) {
+      if (ch >= '0' && ch <= '9') {
+        if (seenDot) {
+          if (decCount < 2) { cleaned += ch; decCount++; }
+        } else {
+          cleaned += ch;
+        }
+      } else if (ch === '.' && !seenDot) {
+        seenDot = true;
+        cleaned += ch;
+      }
+    }
+
+    // Find where the cursor lands in the newly formatted string
+    const formatted = formatWithCommas(cleaned);
+    let charCount = 0;
+    let newCursor = formatted.length;
+    for (let i = 0; i < formatted.length; i++) {
+      if (formatted[i] !== ',') {
+        charCount++;
+        if (charCount === nonCommasBefore) {
+          newCursor = i + 1;
+          break;
+        }
+      }
+    }
+
+    pendingCursor.current = newCursor;
+    setRaw(cleaned);
+  };
+
+  /** Call this to programmatically set the raw value (e.g. when opening a drawer) */
+  const set = (val: string | number) => setRaw(String(val));
+
+  return {
+    raw,
+    set,
+    inputProps: {
+      ref: inputRef,
+      type: 'text' as const,
+      inputMode: 'decimal' as const,
+      value: formatWithCommas(raw),
+      onChange,
+    },
+  };
+}
+
+// ---------- Component ----------
 const Coupons = () => {
   const navigate = useNavigate();
   const { data: coupons = [], isLoading, refetch } = useGetCouponsQuery({});
@@ -36,21 +127,33 @@ const Coupons = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [couponToDelete, setCouponToDelete] = useState<string | null>(null);
 
+  // Formatted inputs — managed outside RHF so commas work cleanly
+  const discountAmountInput = useFormattedInput(10);
+  const minOrderAmountInput = useFormattedInput(0);
+
   const { register, handleSubmit, reset } = useForm();
 
   const openDrawer = (coupon?: Coupon) => {
     if (coupon) {
       setEditingCoupon(coupon);
-      reset(coupon);
+      reset({
+        code: coupon.code,
+        discountType: coupon.discountType,
+        usageLimit: coupon.usageLimit,
+        isActive: coupon.isActive,
+        expiresAt: coupon.expiresAt ? coupon.expiresAt.slice(0, 10) : '',
+      });
+      discountAmountInput.set(coupon.discountAmount);
+      minOrderAmountInput.set(coupon.minOrderAmount || 0);
     } else {
       setEditingCoupon(null);
       reset({
         discountType: 'percentage',
-        discountAmount: 10,
-        minOrderAmount: 0,
         usageLimit: 0,
         isActive: true,
       });
+      discountAmountInput.set(10);
+      minOrderAmountInput.set(0);
     }
     setDrawerOpen(true);
   };
@@ -62,11 +165,11 @@ const Coupons = () => {
 
   const onSubmit = async (data: Record<string, unknown>) => {
     try {
-      // Convert numeric fields to actual numbers
       const payload = {
         ...data,
-        discountAmount: Number(data.discountAmount),
-        minOrderAmount: Number(data.minOrderAmount) || 0,
+        // Read directly from our formatted-input state, not from RHF
+        discountAmount: Number(discountAmountInput.raw),
+        minOrderAmount: Number(minOrderAmountInput.raw) || 0,
         usageLimit: Number(data.usageLimit) || 0,
         isActive: data.isActive === 'true' || data.isActive === true,
       };
@@ -170,9 +273,9 @@ const Coupons = () => {
                   <td className="px-4 sm:px-6 py-3 text-sm">
                     {coupon.discountType === 'percentage'
                       ? `${coupon.discountAmount}%`
-                      : `₦${coupon.discountAmount}`}
+                      : `₦${coupon.discountAmount.toLocaleString()}`}
                   </td>
-                  <td className="px-4 sm:px-6 py-3 text-sm">₦{coupon.minOrderAmount || 0}</td>
+                  <td className="px-4 sm:px-6 py-3 text-sm">₦{(coupon.minOrderAmount || 0).toLocaleString()}</td>
                   <td className="px-4 sm:px-6 py-3 text-sm">
                     {coupon.usedCount}
                     {coupon.usageLimit > 0 ? ` / ${coupon.usageLimit}` : ''}
@@ -258,8 +361,8 @@ const Coupons = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
                     <input
-                      type="number"
-                      {...register('discountAmount', { required: true })}
+                      {...discountAmountInput.inputProps}
+                      placeholder="0"
                       className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
                     />
                   </div>
@@ -267,8 +370,8 @@ const Coupons = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Min Order Amount (₦)</label>
                   <input
-                    type="number"
-                    {...register('minOrderAmount')}
+                    {...minOrderAmountInput.inputProps}
+                    placeholder="0"
                     className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
                   />
                 </div>
