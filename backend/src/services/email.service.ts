@@ -85,13 +85,9 @@ const stripHtml = (html: string): string => {
 };
 
 // ------------------------------------------------------------------
-// PROFESSIONAL EMAIL TEMPLATES (with optional name personalization)
+// PROFESSIONAL EMAIL TEMPLATES
 // ------------------------------------------------------------------
 
-/**
- * Send verification email. If a name is provided, the greeting becomes:
- * "Hi [Name], welcome to LotceWieth! ..."
- */
 export const sendVerificationEmail = async (
   email: string,
   token: string,
@@ -157,18 +153,30 @@ export const sendVerificationEmail = async (
   );
 };
 
-/**
- * Send order confirmation. Personalized greeting if name is provided.
- */
+// -------------------------------------------------
+// UPDATED ORDER EMAILS WITH COUPON BREAKDOWN
+// -------------------------------------------------
+
 export const sendOrderConfirmation = async (
   email: string,
   orderId: string,
   total: number,
   name?: string,
+  discount?: number,
+  couponCode?: string,
+  subtotal?: number,
 ) => {
   const greeting = name
     ? `Thank you, <strong>${name}</strong>! 🎉`
     : `Order Confirmed! 🎉`;
+
+  const discountLine = (discount && couponCode)
+    ? `<p style="margin: 4px 0; color: #4a5568;"><strong>Discount (${couponCode})</strong> - ₦${discount.toLocaleString()}</p>`
+    : '';
+
+  const subtotalLine = (subtotal && subtotal !== total)
+    ? `<p style="margin: 8px 0; color: #4a5568;"><strong>Subtotal</strong> ₦${subtotal.toLocaleString()}</p>`
+    : '';
 
   const html = `
     <!DOCTYPE html>
@@ -205,12 +213,14 @@ export const sendOrderConfirmation = async (
             <p>Thank you for your purchase! We're preparing your order and will ship it soon.</p>
             <div class="order-details">
               <p><strong>Order #</strong> ${orderId}</p>
+              ${subtotalLine}
+              ${discountLine}
               <p><strong>Total Amount</strong> <span class="order-total">₦${total.toLocaleString()}</span></p>
             </div>
             <p style="color: #4a5568;">You'll receive a shipping notification once your order is on its way.</p>
           </div>
           <div class="footer">
-            &copy; 2025 LotceWieth. All rights reserved.<br>
+            &copy; ${new Date().getFullYear()} LotceWieth. All rights reserved.<br>
             <a href="${CLIENT_URL}">Visit our store</a>
           </div>
         </div>
@@ -219,20 +229,30 @@ export const sendOrderConfirmation = async (
     </html>
   `;
 
-  const text = `Hi${name ? " " + name : ""}, your order #${orderId} has been confirmed. Total: ₦${total.toLocaleString()}. Thank you for your purchase!`;
+  const text = `Hi${name ? " " + name : ""}, your order #${orderId} has been confirmed. ${subtotal && subtotal !== total ? `Subtotal: ₦${subtotal.toLocaleString()} ` : ''}${discount && couponCode ? `Discount (${couponCode}): -₦${discount.toLocaleString()} ` : ''}Total: ₦${total.toLocaleString()}. Thank you for your purchase!`;
 
   return sendEmail(email, "Order Confirmation – LotceWieth", html, text);
 };
 
-// Shipped and Delivered templates also get a name parameter
 export const sendOrderShippedEmail = async (
   email: string,
   orderId: string,
   name?: string,
+  total?: number,
+  discount?: number,
+  couponCode?: string,
 ) => {
   const greeting = name
     ? `Hi <strong>${name}</strong>, your order has been shipped! 🚚`
     : `Your Order Has Been Shipped! 🚚`;
+
+  const discountLine = (discount && couponCode)
+    ? `<p style="margin: 4px 0;"><strong>Discount (${couponCode})</strong> - ₦${discount.toLocaleString()}</p>`
+    : '';
+
+  const totalLine = total
+    ? `<p><strong>Total:</strong> ₦${total.toLocaleString()}</p>`
+    : '';
 
   const html = `
     <!DOCTYPE html>
@@ -263,10 +283,12 @@ export const sendOrderShippedEmail = async (
           <div class="content">
             <h2>${greeting}</h2>
             <p>Great news! Your order <strong>#${orderId}</strong> is on its way.</p>
+            ${discountLine}
+            ${totalLine}
             <p>You'll receive a delivery confirmation once it arrives.</p>
           </div>
           <div class="footer">
-            &copy; 2025 LotceWieth. All rights reserved.<br>
+            &copy; ${new Date().getFullYear()} LotceWieth. All rights reserved.<br>
             <a href="${CLIENT_URL}">Visit our store</a>
           </div>
         </div>
@@ -274,24 +296,30 @@ export const sendOrderShippedEmail = async (
     </body>
     </html>
   `;
-  const text = `Hi${name ? " " + name : ""}, your order #${orderId} has been shipped! You'll receive a delivery confirmation once it arrives.`;
+  const text = `Hi${name ? " " + name : ""}, your order #${orderId} has been shipped! ${discount && couponCode ? `Discount (${couponCode}): -₦${discount.toLocaleString()} ` : ''}${total ? `Total: ₦${total.toLocaleString()}` : ''}`;
 
-  return sendEmail(
-    email,
-    "Your Order Has Been Shipped – LotceWieth",
-    html,
-    text,
-  );
+  return sendEmail(email, "Your Order Has Been Shipped – LotceWieth", html, text);
 };
 
 export const sendOrderDeliveredEmail = async (
   email: string,
   orderId: string,
   name?: string,
+  total?: number,
+  discount?: number,
+  couponCode?: string,
 ) => {
   const greeting = name
     ? `Thank you, <strong>${name}</strong>! Your order has been delivered ✅`
     : `Order Delivered! ✅`;
+
+  const discountLine = (discount && couponCode)
+    ? `<p style="margin: 4px 0;"><strong>Discount (${couponCode})</strong> - ₦${discount.toLocaleString()}</p>`
+    : '';
+
+  const totalLine = total
+    ? `<p><strong>Total:</strong> ₦${total.toLocaleString()}</p>`
+    : '';
 
   const html = `
     <!DOCTYPE html>
@@ -322,10 +350,12 @@ export const sendOrderDeliveredEmail = async (
           <div class="content">
             <h2>${greeting}</h2>
             <p>Your order <strong>#${orderId}</strong> has been successfully delivered.</p>
+            ${discountLine}
+            ${totalLine}
             <p>We hope you enjoy your beverages! 🥤</p>
           </div>
           <div class="footer">
-            &copy; 2025 LotceWieth. All rights reserved.<br>
+            &copy; ${new Date().getFullYear()} LotceWieth. All rights reserved.<br>
             <a href="${CLIENT_URL}">Visit our store</a>
           </div>
         </div>
@@ -333,20 +363,20 @@ export const sendOrderDeliveredEmail = async (
     </body>
     </html>
   `;
-  const text = `Hi${name ? " " + name : ""}, your order #${orderId} has been delivered! We hope you enjoy your beverages.`;
+  const text = `Hi${name ? " " + name : ""}, your order #${orderId} has been delivered! ${discount && couponCode ? `Discount (${couponCode}): -₦${discount.toLocaleString()} ` : ''}${total ? `Total: ₦${total.toLocaleString()}` : ''}`;
 
   return sendEmail(email, "Order Delivered – LotceWieth", html, text);
 };
 
-/**
- * Generic status update email (Shipped/Delivered). Also accepts a name.
- */
 export const sendOrderStatusUpdateEmail = async (
   email: string,
   orderId: string,
   status: string,
   total: number,
   name?: string,
+  discount?: number,
+  couponCode?: string,
+  subtotal?: number,
 ) => {
   const statusMessages: Record<string, string> = {
     Shipped: name
@@ -362,7 +392,15 @@ export const sendOrderStatusUpdateEmail = async (
       ? `Hi ${name}, your order status is now ${status}`
       : `Your order status is now ${status}`);
 
-  const isFinal = status === "Delivered";
+  const isFinal = status === 'Delivered';
+
+  const discountLine = (discount && couponCode)
+    ? `<p style="margin: 8px 0; color: #4a5568;"><strong>Discount (${couponCode})</strong> - ₦${discount.toLocaleString()}</p>`
+    : '';
+
+  const subtotalLine = (subtotal && subtotal !== total)
+    ? `<p style="margin: 8px 0; color: #4a5568;"><strong>Subtotal</strong> ₦${subtotal.toLocaleString()}</p>`
+    : '';
 
   const html = `
     <!DOCTYPE html>
@@ -380,7 +418,7 @@ export const sendOrderStatusUpdateEmail = async (
         .content { padding: 40px 30px; }
         .content h2 { color: #2d3748; font-size: 22px; margin-top: 0; }
         .status-badge { display: inline-block; padding: 8px 16px; border-radius: 50px; font-weight: bold; font-size: 14px; background: ${
-          status === "Shipped" ? "#3b82f6" : "#34d399"
+          status === 'Shipped' ? '#3b82f6' : '#34d399'
         }; color: white; }
         .footer { background: #f9fafb; padding: 20px; text-align: center; color: #a0aec0; font-size: 13px; border-top: 1px solid #e2e8f0; }
         .footer a { color: #4a8f29; text-decoration: none; }
@@ -397,11 +435,15 @@ export const sendOrderStatusUpdateEmail = async (
             <h2>${message}</h2>
             <p>Your order <strong>#${orderId}</strong> has been updated to:</p>
             <div class="status-badge">${status}</div>
-            <p style="margin-top: 20px;"><strong>Total:</strong> ₦${total.toLocaleString()}</p>
+            <div style="margin-top: 20px;">
+              ${subtotalLine}
+              ${discountLine}
+              <p style="margin: 8px 0;"><strong>Total:</strong> ₦${total.toLocaleString()}</p>
+            </div>
             ${isFinal ? `<p>Your order has been delivered. Thank you for shopping with us!</p>` : `<p>We'll keep you updated on your order's progress.</p>`}
           </div>
           <div class="footer">
-            &copy; 2025 LotceWieth. All rights reserved.<br>
+            &copy; ${new Date().getFullYear()} LotceWieth. All rights reserved.<br>
             <a href="${CLIENT_URL}">Visit our store</a>
           </div>
         </div>
@@ -410,12 +452,12 @@ export const sendOrderStatusUpdateEmail = async (
     </html>
   `;
 
-  const text = `Hi${name ? " " + name : ""}, your order #${orderId} is now ${status}. Total: ₦${total.toLocaleString()}.`;
+  const text = `Hi${name ? " " + name : ""}, your order #${orderId} is now ${status}. ${subtotal ? `Subtotal: ₦${subtotal.toLocaleString()} ` : ''}${discount && couponCode ? `Discount (${couponCode}): -₦${discount.toLocaleString()} ` : ''}Total: ₦${total.toLocaleString()}.`;
 
   return sendEmail(email, `Order #${orderId} – Status Updated`, html, text);
 };
 
-// Admin notification – now uses order.name and order.phone when available
+// Admin notification – uses order.couponCode and order.discount
 export const sendAdminOrderNotification = async (
   order: any,
   action: "created" | "updated",
@@ -427,7 +469,6 @@ export const sendAdminOrderNotification = async (
     return;
   }
 
-  // 1. Try to get name and phone directly from the order document
   const orderName = order.name || "";
   const orderPhone = order.phone || "";
 
@@ -435,7 +476,6 @@ export const sendAdminOrderNotification = async (
   let userName = orderName || order.user?.name || "";
   let userPhone = orderPhone || order.user?.phone || "";
 
-  // 2. If user is only an ID (not populated), fetch full user to be safe
   if (!order.user?.email && order.user) {
     try {
       const User = (await import("../models/User")).User;
@@ -448,12 +488,7 @@ export const sendAdminOrderNotification = async (
     }
   }
 
-  // 3. Build a human-friendly customer label
-  const customerLabel = [
-    userName,
-    userEmail,
-    userPhone ? `📞 ${userPhone}` : "",
-  ]
+  const customerLabel = [userName, userEmail, userPhone ? `📞 ${userPhone}` : ""]
     .filter(Boolean)
     .join(" | ");
 
@@ -478,7 +513,6 @@ export const sendAdminOrderNotification = async (
           ? "blue"
           : "gray";
 
-  // Build coupon line if present
   const couponLine = order.couponCode
     ? `<p><strong>Coupon:</strong> ${order.couponCode} (-₦${(order.discount || 0).toLocaleString()})</p>`
     : "";

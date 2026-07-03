@@ -37,7 +37,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       }
     }
 
-    // 2. Build order document – ✅ include name, phone, couponCode and discount
+    // 2. Build order document – include name, phone, couponCode and discount
     const order = new Order({
       user: req.user!._id,
       name: req.user!.name || '',
@@ -62,8 +62,8 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
               whatsappNumber: process.env.WHATSAPP_NUMBER || '+2348000000000',
             }
           : undefined,
-      couponCode: couponCode || undefined,   // save coupon code if provided
-      discount: discount || 0,               // save discount amount if provided
+      couponCode: couponCode || undefined,
+      discount: discount || 0,
     });
 
     const createdOrder = await order.save();
@@ -140,14 +140,28 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
       };
       await order.save();
 
-      // ✅ Notify admin about status change
+      // Notify admin about status change
       await sendAdminOrderNotification(order, 'updated', 'Paid');
 
-      // Send email confirmation to user (already exists)
+      // Send email confirmation to user with full breakdown
       try {
         const user = await User.findById(order.user);
         if (user) {
-          await sendOrderConfirmation(user.email, order._id.toString(), order.totalPrice);
+          // Compute original subtotal from order items
+          const originalSubtotal = order.orderItems.reduce(
+            (sum, item) => sum + item.price * item.qty,
+            0
+          );
+
+          await sendOrderConfirmation(
+            user.email,
+            order._id.toString(),
+            order.totalPrice,          // final total
+            user.name,
+            order.discount || 0,
+            order.couponCode,
+            originalSubtotal
+          );
         }
       } catch (emailError) {
         console.error('Failed to send order confirmation email:', emailError);

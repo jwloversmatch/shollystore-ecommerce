@@ -126,12 +126,21 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
     if (['Shipped', 'Delivered'].includes(status)) {
       const populatedUser = order.user as unknown as { email?: string; name?: string; phone?: string } | null;
       if (populatedUser?.email) {
+        // Compute original subtotal from order items
+        const originalSubtotal = order.orderItems.reduce(
+          (sum, item) => sum + item.price * item.qty,
+          0
+        );
+
         await sendOrderStatusUpdateEmail(
           populatedUser.email,
           order._id.toString(),
           status,
           order.totalPrice,
           populatedUser.name,
+          order.discount || 0,
+          order.couponCode,
+          originalSubtotal
         );
       }
     }
