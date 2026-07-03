@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { updateProfile } from "../features/auth/authSlice";
 import { useUpdateProfileMutation } from "../features/api/apiSlice";
 import toast from "react-hot-toast";
+import api from "../services/axios";                         
 import {
   ShoppingBag,
   Clock,
@@ -23,7 +24,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { OrderRowSkeleton } from "../components/Skeletons";
-import SEO from '../components/SEO';
+import SEO from "../components/SEO";
 
 // ---------- Types ----------
 interface OrderItemDetail {
@@ -117,17 +118,8 @@ const Account = () => {
 
     const fetchOrders = async () => {
       try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/orders/my-orders`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          },
-        );
-        if (!res.ok) throw new Error("Failed to fetch orders");
-        const data = await res.json();
-        setOrders(data);
+        const res = await api.get("/orders/my-orders");    // ✅ using api
+        setOrders(res.data);
         setError(null);
       } catch {
         setError("Could not load your orders. Please try again.");
@@ -168,6 +160,10 @@ const Account = () => {
   if (loading) {
     return (
       <div className="p-4 md:p-6 pt-20 md:pt-24 max-w-6xl mx-auto space-y-8">
+        <SEO
+          title="My Account"
+          description="Manage your orders and profile settings."
+        />
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
             <OrderRowSkeleton key={i} />
@@ -177,17 +173,17 @@ const Account = () => {
     );
   }
 
-  <SEO
-  title="My Account"
-  description="Manage your orders and profile settings."
-/>
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="p-4 md:p-6 pt-20 md:pt-24 max-w-6xl mx-auto space-y-8"
     >
+      <SEO
+        title="My Account"
+        description="Manage your orders and profile settings."
+      />
+
       {/* Profile Header */}
       <motion.div
         initial={{ opacity: 0, x: -30 }}

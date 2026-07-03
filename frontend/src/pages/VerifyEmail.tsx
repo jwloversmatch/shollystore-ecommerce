@@ -11,6 +11,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../services/axios';          
 import SEO from '../components/SEO';
 
 // ---------- Animation variants (with literal types) ----------
@@ -70,10 +71,8 @@ const VerifyEmail = () => {
 
     const verify = async () => {
       try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/auth/verify-email?token=${token}`
-        );
-        const data = await res.json();
+        const res = await api.get(`/auth/verify-email?token=${token}`);   // ✅ axios
+        const data = res.data;
         if (isMounted.current) {
           if (data.success) {
             setStatus('success');
@@ -102,12 +101,8 @@ const VerifyEmail = () => {
     }
     setIsResending(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/resend-verification`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: resendEmail }),
-      });
-      const data = await res.json();
+      const res = await api.post('/auth/resend-verification', { email: resendEmail }); // ✅ axios
+      const data = res.data;
       if (data.success) {
         toast.success(data.message);
         navigate('/');
@@ -121,13 +116,12 @@ const VerifyEmail = () => {
     }
   };
 
-  <SEO
-  title="Verify Your Email"
-  description="Verify your email address to activate your LotceWieth account."
-/>
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative bg-gradient-to-br from-leaf-green/5 via-pastel-pink/30 to-blob-orange/10 overflow-hidden">
+      <SEO
+        title="Verify Your Email"
+        description="Verify your email address to activate your LotceWieth account."
+      />
       {/* Animated background blobs */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <motion.div
