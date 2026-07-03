@@ -276,7 +276,12 @@ export const sendOrderShippedEmail = async (
   `;
   const text = `Hi${name ? " " + name : ""}, your order #${orderId} has been shipped! You'll receive a delivery confirmation once it arrives.`;
 
-  return sendEmail(email, "Your Order Has Been Shipped – LotceWieth", html, text);
+  return sendEmail(
+    email,
+    "Your Order Has Been Shipped – LotceWieth",
+    html,
+    text,
+  );
 };
 
 export const sendOrderDeliveredEmail = async (
@@ -357,7 +362,7 @@ export const sendOrderStatusUpdateEmail = async (
       ? `Hi ${name}, your order status is now ${status}`
       : `Your order status is now ${status}`);
 
-  const isFinal = status === 'Delivered';
+  const isFinal = status === "Delivered";
 
   const html = `
     <!DOCTYPE html>
@@ -375,7 +380,7 @@ export const sendOrderStatusUpdateEmail = async (
         .content { padding: 40px 30px; }
         .content h2 { color: #2d3748; font-size: 22px; margin-top: 0; }
         .status-badge { display: inline-block; padding: 8px 16px; border-radius: 50px; font-weight: bold; font-size: 14px; background: ${
-          status === 'Shipped' ? '#3b82f6' : '#34d399'
+          status === "Shipped" ? "#3b82f6" : "#34d399"
         }; color: white; }
         .footer { background: #f9fafb; padding: 20px; text-align: center; color: #a0aec0; font-size: 13px; border-top: 1px solid #e2e8f0; }
         .footer a { color: #4a8f29; text-decoration: none; }
@@ -413,33 +418,33 @@ export const sendOrderStatusUpdateEmail = async (
 // Admin notification – now uses order.name and order.phone when available
 export const sendAdminOrderNotification = async (
   order: any,
-  action: 'created' | 'updated',
+  action: "created" | "updated",
   newStatus?: string,
 ) => {
   const adminEmail = process.env.ADMIN_EMAIL;
   if (!adminEmail) {
-    console.warn('⚠️ ADMIN_EMAIL not set. Admin notification skipped.');
+    console.warn("⚠️ ADMIN_EMAIL not set. Admin notification skipped.");
     return;
   }
 
   // 1. Try to get name and phone directly from the order document
-  const orderName = order.name || '';
-  const orderPhone = order.phone || '';
+  const orderName = order.name || "";
+  const orderPhone = order.phone || "";
 
-  let userEmail = order.user?.email || 'N/A';
-  let userName = orderName || order.user?.name || '';
-  let userPhone = orderPhone || order.user?.phone || '';
+  let userEmail = order.user?.email || "N/A";
+  let userName = orderName || order.user?.name || "";
+  let userPhone = orderPhone || order.user?.phone || "";
 
   // 2. If user is only an ID (not populated), fetch full user to be safe
   if (!order.user?.email && order.user) {
     try {
-      const User = (await import('../models/User')).User;
+      const User = (await import("../models/User")).User;
       const user = await User.findById(order.user);
-      userEmail = user?.email || 'N/A';
-      userName = userName || user?.name || '';
-      userPhone = userPhone || user?.phone || '';
+      userEmail = user?.email || "N/A";
+      userName = userName || user?.name || "";
+      userPhone = userPhone || user?.phone || "";
     } catch (error) {
-      console.error('Failed to fetch user for email notification:', error);
+      console.error("Failed to fetch user for email notification:", error);
     }
   }
 
@@ -447,42 +452,48 @@ export const sendAdminOrderNotification = async (
   const customerLabel = [
     userName,
     userEmail,
-    userPhone ? `📞 ${userPhone}` : '',
+    userPhone ? `📞 ${userPhone}` : "",
   ]
     .filter(Boolean)
-    .join(' | ');
+    .join(" | ");
 
   const itemsList = order.orderItems
     .map(
       (item: any) =>
         `${item.qty}x ${item.name} – ₦${(item.price * item.qty).toLocaleString()}`,
     )
-    .join('<br/>');
+    .join("<br/>");
 
   const subject =
-    action === 'created'
+    action === "created"
       ? `🛒 New Order #${order._id} Placed`
       : `🔄 Order #${order._id} Status Updated to ${newStatus || order.status}`;
 
   const statusColor =
-    order.status === 'Paid'
-      ? 'green'
-      : order.status === 'Pending'
-      ? 'orange'
-      : order.status === 'Shipped'
-      ? 'blue'
-      : 'gray';
+    order.status === "Paid"
+      ? "green"
+      : order.status === "Pending"
+        ? "orange"
+        : order.status === "Shipped"
+          ? "blue"
+          : "gray";
+
+  // Build coupon line if present
+  const couponLine = order.couponCode
+    ? `<p><strong>Coupon:</strong> ${order.couponCode} (-₦${(order.discount || 0).toLocaleString()})</p>`
+    : "";
 
   const html = `
     <h2>${subject}</h2>
     <p><strong>Order #:</strong> ${order._id}</p>
     <p><strong>Customer:</strong> ${customerLabel}</p>
     <p><strong>Total:</strong> ₦${order.totalPrice.toLocaleString()}</p>
-    <p><strong>Payment Method:</strong> ${order.paymentMethod || 'N/A'}</p>
+    ${couponLine}
+    <p><strong>Payment Method:</strong> ${order.paymentMethod || "N/A"}</p>
     <p><strong>Current Status:</strong> <strong style="color:${statusColor};">${order.status}</strong></p>
     <p><strong>Shipping Address:</strong><br/>
-      ${order.shippingAddress?.address || 'N/A'}, 
-      ${order.shippingAddress?.city || 'N/A'}
+      ${order.shippingAddress?.address || "N/A"}, 
+      ${order.shippingAddress?.city || "N/A"}
     </p>
     <h3>Items:</h3>
     <p>${itemsList}</p>
@@ -490,7 +501,7 @@ export const sendAdminOrderNotification = async (
     <p style="color:gray;">Manage this order in the admin dashboard.</p>
   `;
 
-  const text = `Order #${order._id} from ${customerLabel}. Status: ${order.status}. Total: ₦${order.totalPrice.toLocaleString()}`;
+  const text = `Order #${order._id} from ${customerLabel}. Status: ${order.status}. Total: ₦${order.totalPrice.toLocaleString()}${order.couponCode ? `. Coupon: ${order.couponCode} (-₦${(order.discount || 0).toLocaleString()})` : ""}`;
 
   return sendEmail(adminEmail, subject, html, text);
 };

@@ -20,6 +20,8 @@ export interface IOrder extends Document {
     bankName?: string;
     whatsappNumber?: string;
   };
+  couponCode?: string;       // ✅ added
+  discount?: number;         // ✅ added
 }
 
 const OrderSchema: Schema = new Schema({
@@ -46,13 +48,15 @@ const OrderSchema: Schema = new Schema({
     accountNumber: String,
     bankName: String,
     whatsappNumber: String,
-  }
+  },
+  couponCode: { type: String },        // ✅ new field
+  discount: { type: Number, default: 0 }, // ✅ new field
 }, { timestamps: true });
 
 // ---------- Indexes ----------
-OrderSchema.index({ user: 1, createdAt: -1 });        // getMyOrders – user's orders sorted by date
-OrderSchema.index({ status: 1, createdAt: -1 });      // admin orders filtered by status
-OrderSchema.index({ createdAt: -1 });                 // recent orders dashboard
-OrderSchema.index({ 'orderItems.product': 1 });       // top products aggregation
+OrderSchema.index({ user: 1, createdAt: -1 });
+OrderSchema.index({ status: 1, createdAt: -1 });
+OrderSchema.index({ createdAt: -1 });
+OrderSchema.index({ 'orderItems.product': 1 });
 
 export const Order = mongoose.model<IOrder>('Order', OrderSchema);

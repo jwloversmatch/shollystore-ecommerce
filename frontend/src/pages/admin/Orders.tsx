@@ -21,15 +21,16 @@ import {
   CreditCard,
   Calendar,
   Package,
+  Ticket,            // ✅ added for coupon display
 } from 'lucide-react';
 import { StatsCardSkeleton, OrderRowSkeleton } from '../../components/Skeletons';
 
-// ---------- Types (user object now includes name & phone) ----------
+// ---------- Types (now includes coupon fields) ----------
 interface OrderItem {
   _id: string;
-  user: { email: string; name?: string; phone?: string }; // 👈 profile name & phone
-  name?: string;                              // order snapshot name (fallback)
-  phone?: string;                             // order snapshot phone (fallback)
+  user: { email: string; name?: string; phone?: string };
+  name?: string;
+  phone?: string;
   totalPrice: number;
   status: string;
   createdAt: string;
@@ -41,6 +42,8 @@ interface OrderItem {
     postalCode?: string;
     country?: string;
   };
+  couponCode?: string;    // ✅ added
+  discount?: number;      // ✅ added
 }
 
 // ---------- Constants ----------
@@ -135,22 +138,23 @@ const Orders = () => {
     return { total, paid, pending };
   }, [orders]);
 
- if (isLoading) {
-  return (
-    <div className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <StatsCardSkeleton key={i} />
-        ))}
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <StatsCardSkeleton key={i} />
+          ))}
+        </div>
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-100">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <OrderRowSkeleton key={i} />
+          ))}
+        </div>
       </div>
-      <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-100">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <OrderRowSkeleton key={i} />
-        ))}
-      </div>
-    </div>
-  );
-}
+    );
+  }
+
   return (
     <motion.div
       variants={containerVariants}
@@ -292,6 +296,7 @@ const Orders = () => {
                 <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Total</th>
                 <th className="hidden sm:table-cell px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Date</th>
                 <th className="hidden sm:table-cell px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Payment</th>
+                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Discount</th>
                 <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                 <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Details</th>
               </tr>
@@ -308,12 +313,10 @@ const Orders = () => {
                 >
                   <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm">
                     <div className="flex flex-col">
-                      {/* Show current name from user profile if available, else order snapshot */}
                       <span className="font-medium text-gray-800">
                         {order.user?.name || order.name || 'N/A'}
                       </span>
                       <span className="text-gray-600">{order.user?.email}</span>
-                      {/* Show current phone from user profile if available, else order snapshot */}
                       {(order.user?.phone || order.phone) && (
                         <span className="text-gray-400 flex items-center gap-1 mt-0.5">
                           <Phone className="w-3 h-3" />
@@ -342,6 +345,16 @@ const Orders = () => {
                   </td>
                   <td className="hidden sm:table-cell px-4 sm:px-6 py-3 text-xs sm:text-sm text-gray-600 capitalize">
                     {PAYMENT_METHOD_LABELS[order.paymentMethod || ''] || '—'}
+                  </td>
+                  <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm">
+                    {order.couponCode ? (
+                      <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                        <Ticket className="w-3 h-3" />
+                        {order.couponCode} (-₦{order.discount?.toLocaleString() || 0})
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
                   </td>
                   <td className="px-4 sm:px-6 py-3">
                     <select
@@ -446,7 +459,7 @@ const Orders = () => {
                     )}
                   </div>
 
-                  {/* Customer info (updated with user name) */}
+                  {/* Customer info */}
                   <div className="bg-gray-50 rounded-xl p-4">
                     <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Customer</p>
                     <p className="font-medium text-gray-800">
@@ -459,6 +472,18 @@ const Orders = () => {
                       </p>
                     )}
                   </div>
+
+                  {/* Coupon Info (if any) */}
+                  {selectedOrder.couponCode && (
+                    <div className="bg-green-50 rounded-xl p-4 border border-green-100">
+                      <p className="text-xs text-green-600 uppercase tracking-wider mb-1 font-semibold">Discount Applied</p>
+                      <div className="flex items-center gap-2">
+                        <Ticket className="w-5 h-5 text-green-600" />
+                        <span className="font-medium text-green-800">{selectedOrder.couponCode}</span>
+                        <span className="text-green-700">(-₦{selectedOrder.discount?.toLocaleString() || 0})</span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Shipping Address */}
                   {selectedOrder.shippingAddress && (
@@ -504,7 +529,6 @@ const Orders = () => {
                       value={selectedOrder.status}
                       onChange={(e) => {
                         handleStatusChange(selectedOrder._id, e.target.value);
-                        // update the selectedOrder locally for immediate feedback
                         setSelectedOrder({
                           ...selectedOrder,
                           status: e.target.value,
