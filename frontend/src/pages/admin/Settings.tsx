@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import toast from 'react-hot-toast';
-import { useGetSettingsQuery, useUpdateSettingsMutation, useGetSettingsChangesQuery } from '../../features/api/apiSlice';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import toast from "react-hot-toast";
+import {
+  useGetSettingsQuery,
+  useUpdateSettingsMutation,
+  useGetSettingsChangesQuery,
+} from "../../features/api/apiSlice";
 import {
   ArrowLeft,
   Banknote,
@@ -15,16 +19,16 @@ import {
   Check,
   Home,
   History,
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import ConfirmationModal from '../../components/ConfirmationModal';
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import ConfirmationModal from "../../components/ConfirmationModal";
 
 // ---------- Zod Schema ----------
 const settingsSchema = z.object({
-  bankAccountName: z.string().min(1, 'Account name is required'),
-  bankAccountNumber: z.string().min(1, 'Account number is required'),
-  bankName: z.string().min(1, 'Bank name is required'),
-  whatsappNumber: z.string().min(1, 'WhatsApp number is required'),
+  bankAccountName: z.string().min(1, "Account name is required"),
+  bankAccountNumber: z.string().min(1, "Account number is required"),
+  bankName: z.string().min(1, "Bank name is required"),
+  whatsappNumber: z.string().min(1, "WhatsApp number is required"),
   heroTagline: z.string().optional(),
   heroTitle: z.string().optional(),
   heroDescription: z.string().optional(),
@@ -67,15 +71,15 @@ const Settings = () => {
   useEffect(() => {
     if (settings) {
       reset({
-        bankAccountName: settings.bankAccountName || '',
-        bankAccountNumber: settings.bankAccountNumber || '',
-        bankName: settings.bankName || '',
-        whatsappNumber: settings.whatsappNumber || '',
-        heroTagline: settings.heroTagline || '',
-        heroTitle: settings.heroTitle || '',
-        heroDescription: settings.heroDescription || '',
-        specialOfferTitle: settings.specialOfferTitle || '',
-        specialOfferText: settings.specialOfferText || '',
+        bankAccountName: settings.bankAccountName || "",
+        bankAccountNumber: settings.bankAccountNumber || "",
+        bankName: settings.bankName || "",
+        whatsappNumber: settings.whatsappNumber || "",
+        heroTagline: settings.heroTagline || "",
+        heroTitle: settings.heroTitle || "",
+        heroDescription: settings.heroDescription || "",
+        specialOfferTitle: settings.specialOfferTitle || "",
+        specialOfferText: settings.specialOfferText || "",
       });
     }
   }, [settings, reset]);
@@ -83,35 +87,35 @@ const Settings = () => {
   const onSubmit = async (data: SettingsFormData) => {
     try {
       await updateSettings(data).unwrap();
-      toast.success('Settings updated successfully!');
+      toast.success("Settings updated successfully!");
       refetch();
       setIsEditing(false);
     } catch (error) {
-      console.error('Failed to update settings:', error);
-      toast.error('Failed to update settings.');
+      console.error("Failed to update settings:", error);
+      toast.error("Failed to update settings.");
     }
   };
 
   const handleClearAll = async () => {
     try {
       await updateSettings({
-        bankAccountName: '',
-        bankAccountNumber: '',
-        bankName: '',
-        whatsappNumber: '',
-        heroTagline: '',
-        heroTitle: '',
-        heroDescription: '',
-        specialOfferTitle: '',
-        specialOfferText: '',
+        bankAccountName: "",
+        bankAccountNumber: "",
+        bankName: "",
+        whatsappNumber: "",
+        heroTagline: "",
+        heroTitle: "",
+        heroDescription: "",
+        specialOfferTitle: "",
+        specialOfferText: "",
       }).unwrap();
-      toast.success('Settings cleared!');
+      toast.success("Settings cleared!");
       refetch();
       setIsEditing(false);
       setClearModalOpen(false);
     } catch (error) {
-      console.error('Failed to clear settings:', error);
-      toast.error('Failed to clear settings.');
+      console.error("Failed to clear settings:", error);
+      toast.error("Failed to clear settings.");
     }
   };
 
@@ -128,7 +132,11 @@ const Settings = () => {
     );
   }
 
-  const hasSettings = settings?.bankAccountName || settings?.bankAccountNumber || settings?.bankName || settings?.whatsappNumber;
+  const hasSettings =
+    settings?.bankAccountName ||
+    settings?.bankAccountNumber ||
+    settings?.bankName ||
+    settings?.whatsappNumber;
 
   return (
     <motion.div
@@ -140,12 +148,14 @@ const Settings = () => {
       {/* Header */}
       <div className="flex items-center gap-4 mb-2">
         <button
-          onClick={() => navigate('/admin')}
+          onClick={() => navigate("/admin")}
           className="p-2 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200 text-gray-600"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Store Settings</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+          Store Settings
+        </h1>
       </div>
 
       {/* -------- VIEW MODE (not editing) -------- */}
@@ -166,24 +176,44 @@ const Settings = () => {
             </div>
             <div className="grid grid-cols-1 gap-3 text-sm">
               <div>
-                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">Tagline</span>
-                <p className="font-medium text-gray-800">{settings?.heroTagline || '—'}</p>
+                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                  Tagline
+                </span>
+                <p className="font-medium text-gray-800">
+                  {settings?.heroTagline || "—"}
+                </p>
               </div>
               <div>
-                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">Title</span>
-                <p className="font-medium text-gray-800">{settings?.heroTitle || '—'}</p>
+                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                  Title
+                </span>
+                <p className="font-medium text-gray-800">
+                  {settings?.heroTitle || "—"}
+                </p>
               </div>
               <div>
-                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">Description</span>
-                <p className="font-medium text-gray-800">{settings?.heroDescription || '—'}</p>
+                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                  Description
+                </span>
+                <p className="font-medium text-gray-800">
+                  {settings?.heroDescription || "—"}
+                </p>
               </div>
               <div>
-                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">Special Offer Title</span>
-                <p className="font-medium text-gray-800">{settings?.specialOfferTitle || '—'}</p>
+                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                  Special Offer Title
+                </span>
+                <p className="font-medium text-gray-800">
+                  {settings?.specialOfferTitle || "—"}
+                </p>
               </div>
               <div>
-                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">Special Offer Text</span>
-                <p className="font-medium text-gray-800">{settings?.specialOfferText || '—'}</p>
+                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                  Special Offer Text
+                </span>
+                <p className="font-medium text-gray-800">
+                  {settings?.specialOfferText || "—"}
+                </p>
               </div>
             </div>
           </div>
@@ -220,35 +250,53 @@ const Settings = () => {
                 <div className="flex items-start gap-3 p-4 bg-gray-50/50 rounded-xl border border-gray-100">
                   <Building className="w-5 h-5 text-leaf-green shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">Bank</p>
-                    <p className="font-medium text-gray-800">{settings?.bankName || '—'}</p>
+                    <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                      Bank
+                    </p>
+                    <p className="font-medium text-gray-800">
+                      {settings?.bankName || "—"}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-4 bg-gray-50/50 rounded-xl border border-gray-100">
                   <Banknote className="w-5 h-5 text-leaf-green shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">Account Name</p>
-                    <p className="font-medium text-gray-800">{settings?.bankAccountName || '—'}</p>
+                    <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                      Account Name
+                    </p>
+                    <p className="font-medium text-gray-800">
+                      {settings?.bankAccountName || "—"}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-4 bg-gray-50/50 rounded-xl border border-gray-100">
                   <Banknote className="w-5 h-5 text-leaf-green shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">Account Number</p>
-                    <p className="font-medium text-gray-800 font-mono">{settings?.bankAccountNumber || '—'}</p>
+                    <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                      Account Number
+                    </p>
+                    <p className="font-medium text-gray-800 font-mono">
+                      {settings?.bankAccountNumber || "—"}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-4 bg-gray-50/50 rounded-xl border border-gray-100">
                   <MessageCircle className="w-5 h-5 text-leaf-green shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">WhatsApp</p>
-                    <p className="font-medium text-gray-800">{settings?.whatsappNumber || '—'}</p>
+                    <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                      WhatsApp
+                    </p>
+                    <p className="font-medium text-gray-800">
+                      {settings?.whatsappNumber || "—"}
+                    </p>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl text-gray-500">
-                <span className="text-sm">No payment details configured yet.</span>
+                <span className="text-sm">
+                  No payment details configured yet.
+                </span>
               </div>
             )}
           </div>
@@ -273,42 +321,55 @@ const Settings = () => {
               </h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Hero Tagline</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Hero Tagline
+                  </label>
                   <input
-                    {...register('heroTagline')}
+                    {...register("heroTagline")}
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400"
                     placeholder="e.g. 📦 Bulk Beverage Store"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Hero Title</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Hero Title
+                    <span className="text-xs text-gray-400 ml-1">
+                      (Use " | " to make the second part green)
+                    </span>
+                  </label>
                   <input
-                    {...register('heroTitle')}
+                    {...register("heroTitle")}
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400"
-                    placeholder="e.g. Your Everyday Drink Superstore"
+                    placeholder="e.g. Your Everyday | Drink Superstore"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Hero Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Hero Description
+                  </label>
                   <textarea
-                    {...register('heroDescription')}
+                    {...register("heroDescription")}
                     rows={3}
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400 resize-none"
                     placeholder="A short description of your store..."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Special Offer Title</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Special Offer Title
+                  </label>
                   <input
-                    {...register('specialOfferTitle')}
+                    {...register("specialOfferTitle")}
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400"
                     placeholder="e.g. Stock Up & Save"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Special Offer Text</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Special Offer Text
+                  </label>
                   <textarea
-                    {...register('specialOfferText')}
+                    {...register("specialOfferText")}
                     rows={3}
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400 resize-none"
                     placeholder="e.g. Get ₦500 off your first bulk order..."
@@ -325,40 +386,64 @@ const Settings = () => {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bank Name
+                  </label>
                   <input
-                    {...register('bankName')}
-                    className={`w-full border ${errors.bankName ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400`}
+                    {...register("bankName")}
+                    className={`w-full border ${errors.bankName ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400`}
                     placeholder="e.g. GTBank"
                   />
-                  {errors.bankName && <p className="mt-1 text-sm text-red-600">• {errors.bankName.message}</p>}
+                  {errors.bankName && (
+                    <p className="mt-1 text-sm text-red-600">
+                      • {errors.bankName.message}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Account Name
+                  </label>
                   <input
-                    {...register('bankAccountName')}
-                    className={`w-full border ${errors.bankAccountName ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400`}
+                    {...register("bankAccountName")}
+                    className={`w-full border ${errors.bankAccountName ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400`}
                     placeholder="e.g. LotceWieth Store"
                   />
-                  {errors.bankAccountName && <p className="mt-1 text-sm text-red-600">• {errors.bankAccountName.message}</p>}
+                  {errors.bankAccountName && (
+                    <p className="mt-1 text-sm text-red-600">
+                      • {errors.bankAccountName.message}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Account Number
+                  </label>
                   <input
-                    {...register('bankAccountNumber')}
-                    className={`w-full border ${errors.bankAccountNumber ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400`}
+                    {...register("bankAccountNumber")}
+                    className={`w-full border ${errors.bankAccountNumber ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400`}
                     placeholder="0123456789"
                   />
-                  {errors.bankAccountNumber && <p className="mt-1 text-sm text-red-600">• {errors.bankAccountNumber.message}</p>}
+                  {errors.bankAccountNumber && (
+                    <p className="mt-1 text-sm text-red-600">
+                      • {errors.bankAccountNumber.message}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    WhatsApp Number
+                  </label>
                   <input
-                    {...register('whatsappNumber')}
-                    className={`w-full border ${errors.whatsappNumber ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400`}
+                    {...register("whatsappNumber")}
+                    className={`w-full border ${errors.whatsappNumber ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400`}
                     placeholder="+2348000000000"
                   />
-                  {errors.whatsappNumber && <p className="mt-1 text-sm text-red-600">• {errors.whatsappNumber.message}</p>}
+                  {errors.whatsappNumber && (
+                    <p className="mt-1 text-sm text-red-600">
+                      • {errors.whatsappNumber.message}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -401,28 +486,44 @@ const Settings = () => {
           className="flex items-center gap-2 text-sm font-medium text-leaf-green hover:underline mb-4"
         >
           <History className="w-4 h-4" />
-          {showChanges ? 'Hide Recent Changes' : 'Show Recent Changes'}
+          {showChanges ? "Hide Recent Changes" : "Show Recent Changes"}
         </button>
         {showChanges && (
           <div className="overflow-x-auto max-h-64 overflow-y-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50/50">
                 <tr>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">Field</th>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">Old</th>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">New</th>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">Admin</th>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">Date</th>
+                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">
+                    Field
+                  </th>
+                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">
+                    Old
+                  </th>
+                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">
+                    New
+                  </th>
+                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">
+                    Admin
+                  </th>
+                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">
+                    Date
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {changeLogs.map((log: ChangeLogItem) => (
                   <tr key={log._id}>
                     <td className="px-3 py-2 font-medium">{log.field}</td>
-                    <td className="px-3 py-2 text-gray-500 max-w-[150px] truncate">{log.oldValue}</td>
-                    <td className="px-3 py-2 text-gray-500 max-w-[150px] truncate">{log.newValue}</td>
+                    <td className="px-3 py-2 text-gray-500 max-w-[150px] truncate">
+                      {log.oldValue}
+                    </td>
+                    <td className="px-3 py-2 text-gray-500 max-w-[150px] truncate">
+                      {log.newValue}
+                    </td>
                     <td className="px-3 py-2">{log.adminEmail}</td>
-                    <td className="px-3 py-2 text-gray-400">{new Date(log.changedAt).toLocaleString()}</td>
+                    <td className="px-3 py-2 text-gray-400">
+                      {new Date(log.changedAt).toLocaleString()}
+                    </td>
                   </tr>
                 ))}
               </tbody>
