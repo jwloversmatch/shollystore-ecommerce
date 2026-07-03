@@ -12,6 +12,7 @@ import {
   Image,
   Tag,
   AlignRight,
+  BadgePercent,   // ✅ added
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -75,6 +76,13 @@ const Navbar = () => {
                     className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-leaf-green transition-colors"
                   >
                     <Tag className="w-4 h-4" /> Categories
+                  </Link>
+                  {/* ✅ Coupons link added */}
+                  <Link
+                    to="/admin/coupons"
+                    className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-leaf-green transition-colors"
+                  >
+                    <BadgePercent className="w-4 h-4" /> Coupons
                   </Link>
                   <Link
                     to="/admin/settings"
@@ -144,6 +152,14 @@ const Navbar = () => {
                           className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-leaf-green/10 hover:text-leaf-green rounded-xl transition-colors"
                         >
                           <Tag className="w-4 h-4" /> Categories
+                        </Link>
+                        {/* ✅ Mobile Coupons link added */}
+                        <Link
+                          to="/admin/coupons"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-leaf-green/10 hover:text-leaf-green rounded-xl transition-colors"
+                        >
+                          <BadgePercent className="w-4 h-4" /> Coupons
                         </Link>
                         <Link
                           to="/admin/settings"
