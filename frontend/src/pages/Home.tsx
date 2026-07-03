@@ -4,7 +4,7 @@ import {
   useGetProductsQuery,
   useGetHeroSlidesQuery,
   useGetCategoriesQuery,
-  useGetPublicSettingsQuery,                       // ✅ new
+  useGetPublicSettingsQuery,
 } from "../features/api/apiSlice";
 import ProductCard from "../components/ProductCard";
 import Footer from "./Footer";
@@ -90,14 +90,22 @@ const slideVariants = {
 
 // ---------- Component ----------
 const Home = () => {
-  const { data: products, isLoading: productsLoading } = useGetProductsQuery({});
-  const { data: heroSlides, isLoading: slidesLoading } = useGetHeroSlidesQuery({});
-  const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery({});
-  const { data: publicSettings } = useGetPublicSettingsQuery({});   // ✅ fetch settings
+  const { data: products, isLoading: productsLoading } = useGetProductsQuery(
+    {},
+  );
+  const { data: heroSlides, isLoading: slidesLoading } = useGetHeroSlidesQuery(
+    {},
+  );
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useGetCategoriesQuery({});
+  const { data: publicSettings } = useGetPublicSettingsQuery({});
 
   const isPageLoading = productsLoading || slidesLoading || categoriesLoading;
 
-  const displayProducts = useMemo<ProductItem[]>(() => products || [], [products]);
+  const displayProducts = useMemo<ProductItem[]>(
+    () => products || [],
+    [products],
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -126,7 +134,9 @@ const Home = () => {
   const handlePrev = () => {
     if (!heroSlides || heroSlides.length === 0) return;
     setDirection(-1);
-    setCurrentIndex((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+    setCurrentIndex(
+      (prev) => (prev - 1 + heroSlides.length) % heroSlides.length,
+    );
   };
 
   // Category list with counts
@@ -138,7 +148,9 @@ const Home = () => {
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { All: displayProducts.length };
     categories.forEach((cat: CategoryItem) => {
-      counts[cat.name] = displayProducts.filter((p) => p.category === cat.name).length;
+      counts[cat.name] = displayProducts.filter(
+        (p) => p.category === cat.name,
+      ).length;
     });
     return counts;
   }, [displayProducts, categories]);
@@ -150,7 +162,7 @@ const Home = () => {
     }
     if (searchTerm.trim()) {
       filtered = filtered.filter((p) =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
     return filtered.slice().sort((a, b) => b._id.localeCompare(a._id));
@@ -158,11 +170,13 @@ const Home = () => {
 
   // ---------- Dynamic homepage content from settings ----------
   const heroTagline = publicSettings?.heroTagline || "📦 Bulk Beverage Store";
-  const heroTitle = publicSettings?.heroTitle || "Your Everyday Drink Superstore";
+  const heroTitle =
+    publicSettings?.heroTitle || "Your Everyday Drink Superstore";
   const heroDescription =
     publicSettings?.heroDescription ||
     "From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in convenient packs.";
-  const specialOfferTitle = publicSettings?.specialOfferTitle || "Stock Up & Save";
+  const specialOfferTitle =
+    publicSettings?.specialOfferTitle || "Stock Up & Save";
   const specialOfferText =
     publicSettings?.specialOfferText ||
     "Get ₦500 off your first bulk order of ₦10,000 or more. Use code FIRST500";
@@ -171,7 +185,7 @@ const Home = () => {
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: heroTitle,               // ✅ dynamic store name
+    name: heroTitle,
     url: "https://shollystore-ecommerce.vercel.app",
     logo: "https://shollystore-ecommerce.vercel.app/logo.png",
     sameAs: [
@@ -194,7 +208,8 @@ const Home = () => {
     url: "https://shollystore-ecommerce.vercel.app",
     potentialAction: {
       "@type": "SearchAction",
-      target: "https://shollystore-ecommerce.vercel.app/search?q={search_term_string}",
+      target:
+        "https://shollystore-ecommerce.vercel.app/search?q={search_term_string}",
       "query-input": "required name=search_term_string",
     },
   };
@@ -260,10 +275,7 @@ const Home = () => {
             custom={1}
             className="text-5xl md:text-7xl font-extrabold text-gray-900 leading-[1.1]"
           >
-            Your Everyday{" "}
-            <span className="bg-gradient-to-r from-leaf-green to-emerald-500 bg-clip-text text-transparent">
-              {heroTitle}
-            </span>
+            {heroTitle}
           </motion.h1>
           <motion.p
             variants={{ hidden: fadeInUpHidden, visible: fadeInUpVisible }}
