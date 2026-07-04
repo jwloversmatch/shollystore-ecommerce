@@ -299,7 +299,7 @@ export const apiSlice = createApi({
       providesTags: ["Settings"],
     }),
 
-     getAddresses: builder.query({
+    getAddresses: builder.query({
       query: () => "/auth/addresses",
       providesTags: ["User"],
     }),
@@ -332,6 +332,33 @@ export const apiSlice = createApi({
         method: "PUT",
       }),
       invalidatesTags: ["User"],
+    }),
+
+    // Forgot password
+    forgotPassword: builder.mutation({
+      query: (email) => ({
+        url: "/auth/forgot-password",
+        method: "POST",
+        body: { email },
+      }),
+    }),
+
+    // Reset password
+    resetPassword: builder.mutation({
+      query: (data) => ({
+        url: "/auth/reset-password",
+        method: "POST",
+        body: data,
+      }),
+    }),
+
+    // Change password (authenticated)
+    changePassword: builder.mutation({
+      query: (data) => ({
+        url: "/auth/change-password",
+        method: "PUT",
+        body: data,
+      }),
     }),
   }),
 });
@@ -381,4 +408,7 @@ export const {
   useUpdateAddressMutation,
   useDeleteAddressMutation,
   useSetDefaultAddressMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
+  useChangePasswordMutation,
 } = apiSlice;

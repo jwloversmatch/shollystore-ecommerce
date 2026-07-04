@@ -1,19 +1,25 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
+export interface IAddress {
+  _id: string;
+  label: string;
+  address: string;
+  city: string;
+  postalCode?: string;
+  country?: string;
+  isDefault: boolean;
+}
+
 export interface User {
   _id: string;
   email: string;
   role: 'user' | 'admin';
   name?: string;
   phone?: string;
+  addresses?: IAddress[];
+  lastLogin?: string;
+  isVerified?: boolean;
   createdAt?: string;
-  token?: string;
-  shippingAddress?: {
-    address?: string;
-    city?: string;
-    postalCode?: string;
-    country?: string;
-  };
 }
 
 interface AuthState {
@@ -28,8 +34,9 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setCredentials: (state, action: PayloadAction<User>) => {
-      state.user = action.payload;
+    // Now accepts { user, token } from the new backend
+    setCredentials: (state, action: PayloadAction<{ user: User; token?: string }>) => {
+      state.user = action.payload.user;
       if (action.payload.token) {
         localStorage.setItem('token', action.payload.token);
       }

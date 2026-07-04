@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../store";
 import { motion, AnimatePresence } from "framer-motion";
-import { updateProfile } from "../features/auth/authSlice";
+import { updateProfile, logout } from "../features/auth/authSlice"; // ✅ added logout
 import {
   useUpdateProfileMutation,
   useGetAddressesQuery,
@@ -11,6 +11,7 @@ import {
   useUpdateAddressMutation,
   useDeleteAddressMutation,
   useSetDefaultAddressMutation,
+  useChangePasswordMutation, // ✅ added
 } from "../features/api/apiSlice";
 import toast from "react-hot-toast";
 import api from "../services/axios";
@@ -36,6 +37,7 @@ import {
   Edit3,
   Trash2,
   Check,
+  Lock, // ✅ added
 } from "lucide-react";
 import { OrderRowSkeleton } from "../components/Skeletons";
 import SEO from "../components/SEO";
@@ -138,7 +140,8 @@ const Account = () => {
     useUpdateProfileMutation();
 
   // ---------- Address management ----------
-  const { data: addresses = [], refetch: refetchAddresses } = useGetAddressesQuery({});
+  const { data: addresses = [], refetch: refetchAddresses } =
+    useGetAddressesQuery({});
   const [addAddress] = useAddAddressMutation();
   const [updateAddress] = useUpdateAddressMutation();
   const [deleteAddress] = useDeleteAddressMutation();
@@ -154,6 +157,13 @@ const Account = () => {
     country: "",
     isDefault: false,
   });
+
+  // ---------- Change Password ----------
+  const [changePassword, { isLoading: changingPassword }] =
+    useChangePasswordMutation();
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -190,11 +200,12 @@ const Account = () => {
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const updatedUser = await updateProfileApi({
+      const res = await updateProfileApi({
         name: editName,
         phone: editPhone,
       }).unwrap();
-      dispatch(updateProfile(updatedUser));
+      // Backend now returns { success, user }
+      dispatch(updateProfile(res.user));
       toast.success("Profile updated!");
       setEditing(false);
     } catch {
@@ -205,7 +216,14 @@ const Account = () => {
   // ---------- Address handlers ----------
   const openAddAddress = () => {
     setEditingAddressId(null);
-    setAddressForm({ label: "Home", address: "", city: "", postalCode: "", country: "", isDefault: false });
+    setAddressForm({
+      label: "Home",
+      address: "",
+      city: "",
+      postalCode: "",
+      country: "",
+      isDefault: false,
+    });
     setAddressModalOpen(true);
   };
 
@@ -354,8 +372,12 @@ const Account = () => {
             {!error && orders.length === 0 && (
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-10 text-center">
                 <ShoppingBag className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">No orders yet</h3>
-                <p className="text-gray-500 mb-6">Looks like you haven't placed any orders. Start shopping!</p>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  No orders yet
+                </h3>
+                <p className="text-gray-500 mb-6">
+                  Looks like you haven't placed any orders. Start shopping!
+                </p>
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
@@ -380,31 +402,44 @@ const Account = () => {
                     <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
                         <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wider">Order #</p>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider">
+                            Order #
+                          </p>
                           <p className="font-medium text-gray-800 text-sm mt-0.5">
                             {order._id.slice(-8).toUpperCase()}
                           </p>
                         </div>
                         <div className="hidden sm:block">
-                          <p className="text-xs text-gray-500 uppercase tracking-wider">Date</p>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider">
+                            Date
+                          </p>
                           <p className="font-medium text-gray-800 text-sm mt-0.5 flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                            {new Date(order.createdAt).toLocaleDateString("en-NG", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                            {new Date(order.createdAt).toLocaleDateString(
+                              "en-NG",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              },
+                            )}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wider">Status</p>
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold mt-1 ${color}`}>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider">
+                            Status
+                          </p>
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold mt-1 ${color}`}
+                          >
                             {icon}
                             {label}
                           </span>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wider">Total</p>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider">
+                            Total
+                          </p>
                           <p className="font-bold text-leaf-green text-sm mt-0.5">
                             ₦{order.totalPrice.toLocaleString()}
                             {order.couponCode && (
@@ -456,7 +491,9 @@ const Account = () => {
                     <User className="w-8 h-8 text-leaf-green" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-800">{user?.name || "User"}</h3>
+                    <h3 className="text-xl font-semibold text-gray-800">
+                      {user?.name || "User"}
+                    </h3>
                     <p className="text-gray-500 flex items-center gap-1">
                       <Mail className="w-4 h-4" />
                       {user?.email}
@@ -486,7 +523,9 @@ const Account = () => {
               {editing ? (
                 <form onSubmit={handleSaveProfile} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Full Name
+                    </label>
                     <input
                       type="text"
                       value={editName}
@@ -496,7 +535,9 @@ const Account = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone Number
+                    </label>
                     <input
                       type="tel"
                       value={editPhone}
@@ -520,19 +561,33 @@ const Account = () => {
               ) : (
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="bg-gray-50/60 rounded-xl p-4">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">Full Name</p>
-                    <p className="font-medium text-gray-800 mt-1">{user?.name || "Not set"}</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">
+                      Full Name
+                    </p>
+                    <p className="font-medium text-gray-800 mt-1">
+                      {user?.name || "Not set"}
+                    </p>
                   </div>
                   <div className="bg-gray-50/60 rounded-xl p-4">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">Phone Number</p>
-                    <p className="font-medium text-gray-800 mt-1">{user?.phone || "Not set"}</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">
+                      Phone Number
+                    </p>
+                    <p className="font-medium text-gray-800 mt-1">
+                      {user?.phone || "Not set"}
+                    </p>
                   </div>
                   <div className="bg-gray-50/60 rounded-xl p-4">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">Email Address</p>
-                    <p className="font-medium text-gray-800 mt-1 break-all">{user?.email}</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">
+                      Email Address
+                    </p>
+                    <p className="font-medium text-gray-800 mt-1 break-all">
+                      {user?.email}
+                    </p>
                   </div>
                   <div className="bg-gray-50/60 rounded-xl p-4">
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">Member Since</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">
+                      Member Since
+                    </p>
                     <p className="font-medium text-gray-800 mt-1">
                       {user?.createdAt
                         ? new Date(user.createdAt).toLocaleDateString("en-NG", {
@@ -544,6 +599,76 @@ const Account = () => {
                     </p>
                   </div>
                 </div>
+              )}
+            </div>
+
+            {/* Change Password */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-4">
+              <button
+                onClick={() => setShowChangePassword(!showChangePassword)}
+                className="text-sm font-medium text-leaf-green hover:underline flex items-center gap-2"
+              >
+                <Lock className="w-4 h-4" />
+                {showChangePassword ? "Hide" : "Change Password"}
+              </button>
+              {showChangePassword && (
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    try {
+                      await changePassword({
+                        currentPassword,
+                        newPassword,
+                      }).unwrap();
+                      toast.success("Password changed. Please log in again.");
+                      setShowChangePassword(false);
+                      dispatch(logout());
+                      navigate("/login");
+                    } catch (err: unknown) {
+                      const error = err as { data?: { message?: string } };
+                      toast.error(
+                        error?.data?.message || "Failed to change password",
+                      );
+                    }
+                  }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green"
+                      placeholder="Current password"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green"
+                      placeholder="New password (min. 6 characters)"
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <motion.button
+                      type="submit"
+                      disabled={changingPassword}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="px-6 py-2.5 bg-leaf-green text-white rounded-xl font-medium shadow-md hover:bg-green-700 transition disabled:opacity-60"
+                    >
+                      {changingPassword ? "Updating..." : "Update Password"}
+                    </motion.button>
+                  </div>
+                </form>
               )}
             </div>
 
@@ -582,7 +707,9 @@ const Account = () => {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="font-medium text-sm text-gray-800">{addr.label}</p>
+                            <p className="font-medium text-sm text-gray-800">
+                              {addr.label}
+                            </p>
                             {addr.isDefault && (
                               <span className="text-xs bg-leaf-green/10 text-leaf-green px-1.5 py-0.5 rounded-full font-medium">
                                 Default
@@ -643,21 +770,34 @@ const Account = () => {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
             >
-              <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+              <div
+                className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold text-gray-800">
                     {editingAddressId ? "Edit Address" : "New Address"}
                   </h2>
-                  <button onClick={() => setAddressModalOpen(false)} className="p-1 rounded-lg hover:bg-gray-100">
+                  <button
+                    onClick={() => setAddressModalOpen(false)}
+                    className="p-1 rounded-lg hover:bg-gray-100"
+                  >
                     <X className="w-5 h-5 text-gray-500" />
                   </button>
                 </div>
                 <form onSubmit={handleSaveAddress} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Label</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Label
+                    </label>
                     <select
                       value={addressForm.label}
-                      onChange={(e) => setAddressForm({ ...addressForm, label: e.target.value })}
+                      onChange={(e) =>
+                        setAddressForm({
+                          ...addressForm,
+                          label: e.target.value,
+                        })
+                      }
                       className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
                     >
                       <option value="Home">Home</option>
@@ -666,21 +806,32 @@ const Account = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Address
+                    </label>
                     <input
                       type="text"
                       value={addressForm.address}
-                      onChange={(e) => setAddressForm({ ...addressForm, address: e.target.value })}
+                      onChange={(e) =>
+                        setAddressForm({
+                          ...addressForm,
+                          address: e.target.value,
+                        })
+                      }
                       className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
                       placeholder="Street address"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      City
+                    </label>
                     <input
                       type="text"
                       value={addressForm.city}
-                      onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
+                      onChange={(e) =>
+                        setAddressForm({ ...addressForm, city: e.target.value })
+                      }
                       className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
                       placeholder="City"
                     />
@@ -690,10 +841,18 @@ const Account = () => {
                       type="checkbox"
                       id="isDefaultAddress"
                       checked={addressForm.isDefault}
-                      onChange={(e) => setAddressForm({ ...addressForm, isDefault: e.target.checked })}
+                      onChange={(e) =>
+                        setAddressForm({
+                          ...addressForm,
+                          isDefault: e.target.checked,
+                        })
+                      }
                       className="w-4 h-4 text-leaf-green focus:ring-leaf-green rounded"
                     />
-                    <label htmlFor="isDefaultAddress" className="text-sm text-gray-700">
+                    <label
+                      htmlFor="isDefaultAddress"
+                      className="text-sm text-gray-700"
+                    >
                       Set as default address
                     </label>
                   </div>
@@ -753,9 +912,13 @@ const Account = () => {
                 <div className="p-4 sm:p-6 space-y-6">
                   <div className="flex flex-wrap gap-3 items-center">
                     {(() => {
-                      const { icon, color, label } = getStatusInfo(selectedOrder.status);
+                      const { icon, color, label } = getStatusInfo(
+                        selectedOrder.status,
+                      );
                       return (
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${color}`}>
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${color}`}
+                        >
                           {icon}
                           {label}
                         </span>
@@ -763,11 +926,14 @@ const Account = () => {
                     })()}
                     <span className="text-sm text-gray-500 flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      {new Date(selectedOrder.createdAt).toLocaleDateString("en-NG", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
+                      {new Date(selectedOrder.createdAt).toLocaleDateString(
+                        "en-NG",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        },
+                      )}
                     </span>
                     {selectedOrder.paymentMethod && (
                       <span className="text-sm text-gray-500 flex items-center gap-1">
@@ -779,7 +945,9 @@ const Account = () => {
                   </div>
                   {selectedOrder.shippingAddress && (
                     <div className="bg-gray-50 rounded-xl p-4">
-                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Shipping Address</p>
+                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
+                        Shipping Address
+                      </p>
                       <p className="text-sm text-gray-800 flex items-start gap-2">
                         <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                         {selectedOrder.shippingAddress.address},{" "}
@@ -801,7 +969,9 @@ const Account = () => {
                           key={i}
                           className="flex justify-between items-center text-sm bg-gray-50 rounded-lg p-3"
                         >
-                          <span className="text-gray-700 font-medium">{item.name}</span>
+                          <span className="text-gray-700 font-medium">
+                            {item.name}
+                          </span>
                           <span className="text-gray-500">
                             {item.qty} × ₦{item.price.toLocaleString()}
                           </span>
@@ -814,7 +984,7 @@ const Account = () => {
                   {(() => {
                     const subtotal = selectedOrder.orderItems.reduce(
                       (sum, item) => sum + item.price * item.qty,
-                      0
+                      0,
                     );
                     const discount = selectedOrder.discount || 0;
                     const hasCoupon = !!selectedOrder.couponCode;
@@ -837,7 +1007,9 @@ const Account = () => {
                           </>
                         )}
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-800 font-semibold text-lg">Total</span>
+                          <span className="text-gray-800 font-semibold text-lg">
+                            Total
+                          </span>
                           <span className="text-2xl font-bold text-leaf-green">
                             ₦{selectedOrder.totalPrice.toLocaleString()}
                           </span>

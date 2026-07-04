@@ -20,7 +20,7 @@ import {
   Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import SEO from '../components/SEO';
+import SEO from "../components/SEO";
 
 // ---------- Zod Schema ----------
 const loginSchema = z.object({
@@ -30,7 +30,7 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-// ---------- Animation variants (with literal types) ----------
+// ---------- Animation variants ----------
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -86,13 +86,14 @@ const Login = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      const userData = await login({
+      const res = await login({
         email: data.email,
         password: data.password,
       }).unwrap();
-      dispatch(setCredentials(userData));
+      // Backend now returns { user, token, refreshToken }
+      dispatch(setCredentials({ user: res.user, token: res.token }));
       toast.success("Welcome back! 🎉");
-      if (userData.role === "admin") navigate("/admin");
+      if (res.user.role === "admin") navigate("/admin");
       else navigate(from);
     } catch (err) {
       console.error("Login error:", err);
@@ -102,13 +103,13 @@ const Login = () => {
 
   const errorMessage = (error as { data?: { message: string } })?.data?.message;
 
-  <SEO
-  title="Sign In"
-  description="Log in to your LotceWieth account to manage orders and track deliveries."
-/>
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative bg-gradient-to-br from-leaf-green/5 via-pastel-pink/30 to-blob-orange/10 overflow-hidden">
+      <SEO
+        title="Sign In"
+        description="Log in to your LotceWieth account to manage orders and track deliveries."
+      />
+
       {/* Animated background blobs */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <motion.div
@@ -194,10 +195,7 @@ const Login = () => {
             Your everyday drink superstore.
           </motion.p>
 
-          <motion.div
-            variants={itemFadeUp}
-            className="mt-8 flex gap-3"
-          >
+          <motion.div variants={itemFadeUp} className="mt-8 flex gap-3">
             <span className="px-4 py-1.5 bg-white/60 backdrop-blur-md rounded-full text-xs font-medium text-gray-700 shadow-sm">
               🚚 Free Delivery
             </span>
@@ -209,7 +207,11 @@ const Login = () => {
 
         {/* Right Panel – Form */}
         <div className="p-8 md:p-12 flex flex-col justify-center bg-white/90 backdrop-blur-sm">
-          <motion.div variants={containerVariants} initial="hidden" animate="visible">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
             <motion.h2
               variants={itemFadeUp}
               className="text-3xl font-bold text-gray-900 mb-2 text-center md:text-left"
@@ -339,6 +341,19 @@ const Login = () => {
                 className="text-leaf-green font-semibold hover:underline"
               >
                 Get Started
+              </Link>
+            </motion.p>
+
+            {/* Forgot Password Link */}
+            <motion.p
+              variants={itemFadeUp}
+              className="mt-4 text-center text-sm text-gray-500"
+            >
+              <Link
+                to="/forgot-password"
+                className="text-leaf-green font-medium hover:underline"
+              >
+                Forgot Password?
               </Link>
             </motion.p>
           </motion.div>

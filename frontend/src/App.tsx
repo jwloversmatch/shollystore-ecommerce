@@ -13,6 +13,8 @@ const Cart = React.lazy(() => import('./pages/Cart'));
 const Checkout = React.lazy(() => import('./pages/Checkout'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
+const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));      // ✅ new
+const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));        // ✅ new
 
 // --- Admin Pages ---
 const Dashboard = React.lazy(() => import('./pages/admin/Dashboard'));
@@ -48,6 +50,8 @@ function App() {
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />    {/* ✅ new */}
+            <Route path="/reset-password" element={<ResetPassword />} />      {/* ✅ new */}
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/account" element={<Account />} />
 
@@ -65,7 +69,7 @@ function App() {
               <Route path="/admin/coupons" element={<Coupons />} />
             </Route>
 
-            {/* ✅ Catch‑all – silently redirect to home */}
+            {/* Catch‑all – silently redirect to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
