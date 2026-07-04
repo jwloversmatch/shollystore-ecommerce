@@ -34,6 +34,7 @@ const settingsSchema = z.object({
   heroDescription: z.string().optional(),
   specialOfferTitle: z.string().optional(),
   specialOfferText: z.string().optional(),
+  landingMode: z.boolean().optional(),
 });
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
@@ -80,6 +81,7 @@ const Settings = () => {
         heroDescription: settings.heroDescription || "",
         specialOfferTitle: settings.specialOfferTitle || "",
         specialOfferText: settings.specialOfferText || "",
+        landingMode: settings.landingMode || false,
       });
     }
   }, [settings, reset]);
@@ -215,6 +217,15 @@ const Settings = () => {
                   {settings?.specialOfferText || "—"}
                 </p>
               </div>
+
+              <div>
+                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                  Landing Mode
+                </span>
+                <p className="font-medium text-gray-800">
+                  {settings?.landingMode ? "Yes" : "No"}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -342,6 +353,21 @@ const Settings = () => {
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400"
                     placeholder="e.g. Your Everyday | Drink Superstore"
                   />
+                </div>
+                {/* Landing Mode Toggle */}
+                <div className="flex items-center gap-2 mt-4">
+                  <input
+                    type="checkbox"
+                    id="landingMode"
+                    {...register("landingMode")}
+                    className="w-4 h-4 text-leaf-green focus:ring-leaf-green rounded"
+                  />
+                  <label
+                    htmlFor="landingMode"
+                    className="text-sm text-gray-700 font-medium"
+                  >
+                    Use landing page layout (full‑screen hero)
+                  </label>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

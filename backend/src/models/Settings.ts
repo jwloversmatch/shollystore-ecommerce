@@ -11,6 +11,7 @@ export interface ISettings extends Document {
   heroDescription: string;
   specialOfferTitle: string;
   specialOfferText: string;
+  landingMode: boolean;
 }
 
 const SettingsSchema: Schema = new Schema({
@@ -19,6 +20,7 @@ const SettingsSchema: Schema = new Schema({
   bankName: { type: String, default: '' },
   whatsappNumber: { type: String, default: '' },
   // --- new fields with defaults ---
+  landingMode: { type: Boolean, default: false },
   heroTagline: { type: String, default: '📦 Bulk Beverage Store' },
   heroTitle: { type: String, default: 'Your Everyday | Drink Superstore' },
   heroDescription: { type: String, default: 'From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in convenient packs.' },

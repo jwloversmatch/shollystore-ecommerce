@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingCart, ImageOff, Check } from 'lucide-react';
+import { ShoppingCart, Check } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import toast from 'react-hot-toast';
 import { addToCart } from '../features/cart/cartSlice';
@@ -12,187 +12,168 @@ interface ProductProps {
   image: string;
   category?: string;
   stock?: number;
-  // slug removed
   onClick?: () => void;
 }
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { type: 'spring' as const, stiffness: 300, damping: 25 },
-  },
-};
-
-const badgeSpring = {
-  rest: { scale: 1 },
-  hover: {
-    scale: 1.1,
-    transition: { type: 'spring' as const, stiffness: 400 },
-  },
-};
+const FALLBACK = 'https://via.placeholder.com/200x200?text=🍽';
 
 const ProductCard = ({
-  _id,
-  name,
-  price,
-  image,
-  category = 'General',
-  stock,
-  onClick,
+  _id, name, price, image, category = 'General', stock, onClick,
 }: ProductProps) => {
   const dispatch = useDispatch();
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  const [added, setAdded] = useState(false);
+  const [imgError, setImgError]   = useState(false);
+  const [added,    setAdded]      = useState(false);
 
   const isOutOfStock = stock !== undefined && stock === 0;
+  const accent       = isOutOfStock ? '#ef4444' : '#e8622a';
 
-  const handleAddToCart = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (isOutOfStock) {
-        toast.error('Sorry, this item is out of stock!');
-        return;
-      }
-      dispatch(addToCart({ _id, name, image, price, qty: 1, stock: stock ?? 999 }));
-      toast.success(`Added ${name} to cart!`);
-      setAdded(true);
-      setTimeout(() => setAdded(false), 1500);
-    },
-    [dispatch, _id, name, image, price, stock, isOutOfStock]
-  );
+  const handleAddToCart = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isOutOfStock) { toast.error('Out of stock!'); return; }
+    dispatch(addToCart({ _id, name, image, price, qty: 1, stock: stock ?? 999 }));
+    toast.success(`${name} added!`, { icon: '🛒' });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1800);
+  }, [dispatch, _id, name, image, price, stock, isOutOfStock]);
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
-      className="cursor-pointer group"
+    <motion.div
+      className="flex flex-col items-center"
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-20px' }}
+      whileHover="hover"
+      transition={{ type: 'spring', stiffness: 280, damping: 26 }}
     >
+      {/* ── Floating plate ── */}
       <motion.div
-        variants={cardVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-20px' }}
-        whileHover={isOutOfStock ? {} : { y: -4 }}
-        className="relative bg-white rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden border border-gray-100"
+        className="relative z-10 w-28 h-28 md:w-32 md:h-32"
+        variants={{ hover: { y: -12, scale: 1.06, rotate: 7 } }}
+        transition={{ type: 'spring', stiffness: 280, damping: 18 }}
       >
-        {/* Image container */}
-        <div className="relative w-full aspect-[4/3] bg-gray-100 overflow-hidden shrink-0">
-          {!imageLoaded && !imageError && (
-            <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%]" />
-          )}
-          {imageError ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
-              <ImageOff className="w-8 h-8 mb-1" />
-              <span className="text-xs">No image</span>
-            </div>
-          ) : (
-            <motion.img
-              src={image}
-              alt={name}
-              loading="lazy"
-              onLoad={() => setImageLoaded(true)}
-              onError={() => setImageError(true)}
-              className={`w-full h-full object-contain p-3 md:p-4 transition-all duration-500 ${
-                imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-              }`}
-              whileHover={{ scale: 1.08 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            />
-          )}
+        {/* Slow-spinning dashed outer ring */}
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
+          className="absolute -inset-3 rounded-full border-[1.5px] border-dashed pointer-events-none"
+          style={{ borderColor: `${accent}55` }}
+        />
+        {/* Static inner accent ring */}
+        <div
+          className="absolute -inset-1 rounded-full pointer-events-none"
+          style={{ boxShadow: `0 0 0 1.5px ${accent}44` }}
+        />
 
-          <motion.span
-            variants={badgeSpring}
-            initial="rest"
-            whileHover="hover"
-            className="absolute top-3 left-3 bg-white/90 backdrop-blur-md border border-white/40 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-gray-800 shadow-sm"
-          >
-            {category}
-          </motion.span>
-
-          {stock !== undefined && (
-            <motion.span
-              variants={badgeSpring}
-              initial="rest"
-              whileHover="hover"
-              className={`absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm border border-white/40 backdrop-blur-md ${
-                isOutOfStock ? 'bg-red-500 text-white' : 'bg-gray-900/80 text-white'
-              }`}
-            >
-              {isOutOfStock ? 'Out of Stock' : `${stock} in stock`}
-            </motion.span>
-          )}
-
+        {/* Image circle */}
+        <div
+          className="relative w-full h-full rounded-full overflow-hidden bg-[#1a1a1a]"
+          style={{ boxShadow: `0 0 0 3px ${accent}, 0 16px 40px rgba(0,0,0,0.6)` }}
+        >
+          <img
+            src={imgError ? FALLBACK : image}
+            alt={name}
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover"
+          />
           {isOutOfStock && (
-            <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
-              <span className="text-red-500 font-bold text-lg opacity-80">Out of Stock</span>
+            <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+              <span className="text-red-400 text-[10px] font-extrabold uppercase tracking-wider">Sold Out</span>
             </div>
           )}
         </div>
 
-        {/* Content */}
-        <div className="p-4 md:p-5 flex flex-col flex-1 justify-between">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={{
-              hidden: {},
-              visible: { transition: { staggerChildren: 0.08 } },
-            }}
-          >
-            <motion.h3
-              variants={{
-                hidden: { opacity: 0, y: 10 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-              }}
-              className="text-gray-800 font-bold text-base md:text-lg truncate group-hover:text-leaf-green transition-colors duration-300"
-            >
-              {name}
-            </motion.h3>
-            <motion.p
-              variants={{
-                hidden: { opacity: 0, scale: 0.9 },
-                visible: { opacity: 1, scale: 1, transition: { duration: 0.4 } },
-              }}
-              className="text-leaf-green font-bold text-xl md:text-2xl mt-1"
-            >
-              ₦{price.toLocaleString()}
-            </motion.p>
-          </motion.div>
+        {/* Stock pulse dot */}
+        <motion.div
+          animate={!isOutOfStock ? { scale: [1, 1.35, 1], opacity: [1, 0.6, 1] } : {}}
+          transition={{ duration: 2.2, repeat: Infinity }}
+          className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#111]"
+          style={{ background: isOutOfStock ? '#ef4444' : '#10b981' }}
+        />
+      </motion.div>
 
-          <div className="mt-3 md:mt-4">
-            {isOutOfStock ? (
-              <div className="w-full bg-red-50 text-red-600 py-2.5 md:py-3 rounded-xl text-center text-sm font-medium">
-                Unavailable
-              </div>
-            ) : (
-              <motion.button
-                onClick={handleAddToCart}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.95 }}
-                className="w-full relative overflow-hidden bg-black text-white py-2.5 md:py-3 rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                <span className="absolute inset-0 -translate-x-full group-hover/btn:translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 ease-in-out" />
-                <motion.span
-                  animate={added ? { rotate: [0, -10, 10, -10, 0] } : {}}
-                  transition={{ duration: 0.3 }}
-                >
-                  {added ? <Check className="w-4 h-4 md:w-5 md:h-5" /> : <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />}
-                </motion.span>
-                <span className="text-sm md:text-base">
-                  {added ? 'Added ✓' : 'Add to Cart'}
-                </span>
-              </motion.button>
-            )}
+      {/* ── Card body (overlaps circle by -mt) ── */}
+      <motion.div
+        onClick={onClick}
+        className="w-full -mt-14 pt-16 pb-5 px-4 md:px-5 rounded-[26px] cursor-pointer relative overflow-hidden"
+        style={{ background: 'linear-gradient(160deg,#1c1c1e 0%,#111111 100%)' }}
+        variants={{
+          hover: { boxShadow: `0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px ${accent}22` },
+        }}
+        transition={{ duration: 0.25 }}
+      >
+        {/* Subtle top glow matching accent */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-10 rounded-full blur-2xl pointer-events-none opacity-40"
+          style={{ background: accent }}
+        />
+
+        <div className="text-center relative z-10 space-y-1.5">
+          {/* Category */}
+          <p className="text-[9px] font-black uppercase tracking-[0.22em]" style={{ color: accent }}>
+            {category}
+          </p>
+
+          {/* Name */}
+          <h3 className="text-white font-bold text-sm md:text-[15px] leading-snug line-clamp-2">
+            {name}
+          </h3>
+
+          {/* Price */}
+          <div className="flex items-baseline justify-center gap-0.5 pt-1">
+            <span className="text-gray-500 text-xs pb-0.5">₦</span>
+            <motion.span
+              className="font-black text-[22px] md:text-[26px] tracking-tight text-white"
+              variants={{ hover: { color: accent } }}
+              transition={{ duration: 0.2 }}
+            >
+              {price.toLocaleString()}
+            </motion.span>
           </div>
+
+          {/* Stock tag */}
+          {stock !== undefined && (
+            <span
+              className="inline-block text-[9px] font-bold px-2.5 py-0.5 rounded-full"
+              style={{
+                background: isOutOfStock ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)',
+                color:      isOutOfStock ? '#f87171' : '#34d399',
+              }}
+            >
+              {isOutOfStock ? '✕ Out of stock' : `✓ ${stock} left`}
+            </span>
+          )}
         </div>
       </motion.div>
-    </div>
+
+      {/* ── Add to Cart — fully outside the card ── */}
+      <motion.button
+        onClick={handleAddToCart}
+        disabled={isOutOfStock}
+        whileTap={!isOutOfStock ? { scale: 0.91 } : {}}
+        variants={{
+          hover: !isOutOfStock
+            ? { y: -3, boxShadow: `0 14px 32px ${added ? 'rgba(16,185,129,0.4)' : `${accent}55`}` }
+            : {},
+        }}
+        className="mt-3.5 flex items-center gap-2 px-6 py-2.5 rounded-full text-[13px] font-bold tracking-wide transition-colors duration-300"
+        style={{
+          background: isOutOfStock ? '#1e1e1e' : added ? '#10b981' : accent,
+          color:      isOutOfStock ? '#4b4b4b' : 'white',
+          boxShadow:  isOutOfStock ? 'none' : added
+            ? '0 8px 22px rgba(16,185,129,0.32)'
+            : `0 8px 22px ${accent}44`,
+          cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+        }}
+      >
+        <motion.span
+          animate={added ? { rotate: [0, -14, 14, 0], scale: [1, 1.25, 1] } : {}}
+          transition={{ duration: 0.38 }}
+        >
+          {isOutOfStock ? '✕' : added ? <Check size={13} /> : <ShoppingCart size={13} />}
+        </motion.span>
+        {isOutOfStock ? 'Unavailable' : added ? 'Added!' : 'Add to Cart'}
+      </motion.button>
+    </motion.div>
   );
 };
 

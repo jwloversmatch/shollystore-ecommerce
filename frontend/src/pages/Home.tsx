@@ -58,11 +58,7 @@ const fadeInUpHidden = { opacity: 0, y: 40 };
 const fadeInUpVisible = (i = 0) => ({
   opacity: 1,
   y: 0,
-  transition: {
-    delay: i * 0.1,
-    duration: 0.6,
-    ease: "easeOut" as const,
-  },
+  transition: { delay: i * 0.1, duration: 0.6, ease: "easeOut" as const },
 });
 
 const staggerContainer = {
@@ -71,21 +67,9 @@ const staggerContainer = {
 };
 
 const slideVariants = {
-  enter: (dir: number) => ({
-    x: dir > 0 ? 200 : -200,
-    opacity: 0,
-    scale: 0.95,
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-    scale: 1,
-  },
-  exit: (dir: number) => ({
-    x: dir > 0 ? -200 : 200,
-    opacity: 0,
-    scale: 0.95,
-  }),
+  enter: (dir: number) => ({ x: dir > 0 ? 200 : -200, opacity: 0, scale: 0.95 }),
+  center: { x: 0, opacity: 1, scale: 1 },
+  exit: (dir: number) => ({ x: dir > 0 ? -200 : 200, opacity: 0, scale: 0.95 }),
 };
 
 // ---------- Component ----------
@@ -95,6 +79,7 @@ const Home = () => {
   const { data: categories = [], isLoading: categoriesLoading } = useGetCategoriesQuery({});
   const { data: publicSettings } = useGetPublicSettingsQuery({});
 
+  const landingMode = publicSettings?.landingMode || false;
   const isPageLoading = productsLoading || slidesLoading || categoriesLoading;
 
   const displayProducts = useMemo<ProductItem[]>(() => products || [], [products]);
@@ -105,10 +90,10 @@ const Home = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 
-  // Quick‑view modal
+  // Quick-view modal
   const [modalProduct, setModalProduct] = useState<ProductItem | null>(null);
 
-  // Auto‑slide
+  // Auto-slide
   useEffect(() => {
     if (!heroSlides || heroSlides.length === 0) return;
     const interval = setInterval(() => {
@@ -157,20 +142,26 @@ const Home = () => {
   }, [displayProducts, selectedCategory, searchTerm]);
 
   // ---------- Dynamic homepage content from settings ----------
-  const heroTagline = publicSettings?.heroTagline || "📦 Bulk Beverage Store";
-  const heroTitle = publicSettings?.heroTitle || "Your Everyday | Drink Superstore";
-  const heroDescription =
-    publicSettings?.heroDescription ||
-    "From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in convenient packs.";
+  const heroTagline       = publicSettings?.heroTagline      || "📦 Bulk Beverage Store";
+  const heroTitle         = publicSettings?.heroTitle        || "Your Everyday | Drink Superstore";
+  const heroDescription   = publicSettings?.heroDescription  || "From classic Fanta and Coke to refreshing Malt and premium bottled water — all available in convenient packs.";
   const specialOfferTitle = publicSettings?.specialOfferTitle || "Stock Up & Save";
-  const specialOfferText =
-    publicSettings?.specialOfferText ||
-    "Get ₦500 off your first bulk order of ₦10,000 or more. Use code FIRST500";
+  const specialOfferText  = publicSettings?.specialOfferText  || "Get ₦500 off your first bulk order of ₦10,000 or more. Use code FIRST500";
 
-  // Helper to split hero title for two‑color styling
   const [heroPart1, heroPart2] = heroTitle.includes("|")
     ? heroTitle.split("|").map((s: string) => s.trim())
     : [heroTitle, ""];
+
+  const heroHeading = heroPart2 ? (
+    <>
+      {heroPart1}{" "}
+      <span className="bg-gradient-to-r from-leaf-green to-emerald-500 bg-clip-text text-transparent">
+        {heroPart2}
+      </span>
+    </>
+  ) : (
+    heroTitle
+  );
 
   // ---------- JSON-LD Schemas ----------
   const organizationSchema = {
@@ -204,7 +195,7 @@ const Home = () => {
     },
   };
 
-  // Loading state – show skeleton grid
+  // Loading state
   if (isPageLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pastel-pink via-pastel-green to-white pt-20 pb-16 px-4 md:px-8">
@@ -244,145 +235,177 @@ const Home = () => {
         />
       </div>
 
-      {/* ========== 1. HERO SECTION ========== */}
-      <section className="relative max-w-7xl mx-auto px-6 pt-20 md:pt-24 pb-16 md:pb-20 grid md:grid-cols-2 items-center gap-12">
-        {/* Left Content – Staggered */}
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-          className="space-y-4"
-        >
+      {/* ========== 1. HERO — switches between landing mode and regular mode ========== */}
+      {landingMode ? (
+        /* ── Landing mode: full-screen centred hero, no carousel ── */
+        <section className="min-h-screen flex flex-col justify-center items-center px-6 text-center pt-20">
           <motion.span
-            variants={{ hidden: fadeInUpHidden, visible: fadeInUpVisible }}
-            custom={0}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             className="bg-white/60 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-medium text-blob-orange inline-block border border-white/40 shadow-sm"
           >
             {heroTagline}
           </motion.span>
+
           <motion.h1
-            variants={{ hidden: fadeInUpHidden, visible: fadeInUpVisible }}
-            custom={1}
-            className="text-5xl md:text-7xl font-extrabold text-gray-900 leading-[1.1]"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-5xl md:text-7xl font-extrabold text-gray-900 leading-[1.1] mt-6 max-w-3xl"
           >
-            {heroPart2 ? (
-              <>
-                {heroPart1}{" "}
-                <span className="bg-gradient-to-r from-leaf-green to-emerald-500 bg-clip-text text-transparent">
-                  {heroPart2}
-                </span>
-              </>
-            ) : (
-              heroTitle
-            )}
+            {heroHeading}
           </motion.h1>
+
           <motion.p
-            variants={{ hidden: fadeInUpHidden, visible: fadeInUpVisible }}
-            custom={2}
-            className="text-gray-600 text-lg md:text-xl max-w-md"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-gray-600 text-lg md:text-xl max-w-2xl mt-6"
           >
             {heroDescription}
           </motion.p>
-          <motion.div
-            variants={{ hidden: fadeInUpHidden, visible: fadeInUpVisible }}
-            custom={3}
+
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            whileHover={{ scale: 1.05, boxShadow: "0 10px 25px rgba(251, 146, 60, 0.4)" }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() =>
+              document.getElementById("products-grid")?.scrollIntoView({ behavior: "smooth" })
+            }
+            className="mt-10 bg-blob-orange text-white px-10 py-4 rounded-full font-bold shadow-lg transition-all flex items-center gap-2 group"
           >
-            <motion.button
-              whileHover={{
-                scale: 1.05,
-                boxShadow: "0 10px 25px rgba(251, 146, 60, 0.4)",
-              }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() =>
-                document
-                  .getElementById("products-grid")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-              className="bg-blob-orange text-white px-10 py-4 rounded-full font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2 group"
+            Browse Products
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </motion.button>
+        </section>
+      ) : (
+        /* ── Regular mode: two-column hero with image carousel ── */
+        <section className="relative max-w-7xl mx-auto px-6 pt-20 md:pt-24 pb-16 md:pb-20 grid md:grid-cols-2 items-center gap-12">
+          {/* Left: text + CTA */}
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="space-y-4"
+          >
+            <motion.span
+              variants={{ hidden: fadeInUpHidden, visible: fadeInUpVisible }}
+              custom={0}
+              className="bg-white/60 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-medium text-blob-orange inline-block border border-white/40 shadow-sm"
             >
-              Explore Our Range
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </motion.button>
-          </motion.div>
-        </motion.div>
+              {heroTagline}
+            </motion.span>
 
-        {/* Right: Carousel */}
-        <motion.div
-          initial={{ opacity: 0, x: 50 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="relative flex justify-center items-center h-[450px] md:h-[550px]"
-        >
+            <motion.h1
+              variants={{ hidden: fadeInUpHidden, visible: fadeInUpVisible }}
+              custom={1}
+              className="text-5xl md:text-7xl font-extrabold text-gray-900 leading-[1.1]"
+            >
+              {heroHeading}
+            </motion.h1>
+
+            <motion.p
+              variants={{ hidden: fadeInUpHidden, visible: fadeInUpVisible }}
+              custom={2}
+              className="text-gray-600 text-lg md:text-xl max-w-md"
+            >
+              {heroDescription}
+            </motion.p>
+
+            <motion.div
+              variants={{ hidden: fadeInUpHidden, visible: fadeInUpVisible }}
+              custom={3}
+            >
+              <motion.button
+                whileHover={{ scale: 1.05, boxShadow: "0 10px 25px rgba(251, 146, 60, 0.4)" }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() =>
+                  document.getElementById("products-grid")?.scrollIntoView({ behavior: "smooth" })
+                }
+                className="bg-blob-orange text-white px-10 py-4 rounded-full font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2 group"
+              >
+                Explore Our Range
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </motion.button>
+            </motion.div>
+          </motion.div>
+
+          {/* Right: carousel */}
           <motion.div
-            animate={{ y: [0, -12, 0] }}
-            transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
-            className="relative w-full max-w-lg aspect-square group"
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="relative flex justify-center items-center h-[450px] md:h-[550px]"
           >
-            {heroSlides && heroSlides.length > 0 ? (
-              <>
-                <AnimatePresence initial={false} custom={direction} mode="wait">
-                  <motion.img
-                    key={currentIndex}
-                    custom={direction}
-                    variants={slideVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    src={heroSlides[currentIndex].imageUrl}
-                    alt={heroSlides[currentIndex].title || "Hero slide"}
-                    onError={(e) => {
-                      e.currentTarget.src = PLACEHOLDER;
-                    }}
-                    className="w-full h-full object-contain drop-shadow-2xl absolute inset-0"
-                  />
-                </AnimatePresence>
-
-                {/* Navigation arrows */}
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={handlePrev}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white z-10"
-                >
-                  <ChevronLeft className="w-5 h-5 text-gray-800" />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={handleNext}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white z-10"
-                >
-                  <ChevronRight className="w-5 h-5 text-gray-800" />
-                </motion.button>
-
-                {/* Dots */}
-                <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-                  {heroSlides.map((_: HeroSlide, idx: number) => (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        setDirection(idx > currentIndex ? 1 : -1);
-                        setCurrentIndex(idx);
-                      }}
-                      className={`h-2 w-2 rounded-full transition-all duration-300 ${
-                        idx === currentIndex
-                          ? "bg-leaf-green w-8"
-                          : "bg-gray-300 hover:bg-gray-400"
-                      }`}
+            <motion.div
+              animate={{ y: [0, -12, 0] }}
+              transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+              className="relative w-full max-w-lg aspect-square group"
+            >
+              {heroSlides && heroSlides.length > 0 ? (
+                <>
+                  <AnimatePresence initial={false} custom={direction} mode="wait">
+                    <motion.img
+                      key={currentIndex}
+                      custom={direction}
+                      variants={slideVariants}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      src={heroSlides[currentIndex].imageUrl}
+                      alt={heroSlides[currentIndex].title || "Hero slide"}
+                      onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
+                      className="w-full h-full object-contain drop-shadow-2xl absolute inset-0"
                     />
-                  ))}
+                  </AnimatePresence>
+
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handlePrev}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white z-10"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-gray-800" />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleNext}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white z-10"
+                  >
+                    <ChevronRight className="w-5 h-5 text-gray-800" />
+                  </motion.button>
+
+                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                    {heroSlides.map((_: HeroSlide, idx: number) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setDirection(idx > currentIndex ? 1 : -1);
+                          setCurrentIndex(idx);
+                        }}
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          idx === currentIndex
+                            ? "bg-leaf-green w-8"
+                            : "w-2 bg-gray-300 hover:bg-gray-400"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-3xl text-gray-500">
+                  No hero slides yet.
                 </div>
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-3xl text-gray-500">
-                No hero slides yet.
-              </div>
-            )}
+              )}
+            </motion.div>
           </motion.div>
-        </motion.div>
-      </section>
+        </section>
+      )}
 
       {/* ========== 2. WHY CHOOSE US ========== */}
       <section className="max-w-7xl mx-auto px-4 md:px-6 py-16 md:py-20">
@@ -394,39 +417,16 @@ const Home = () => {
           className="grid grid-cols-2 md:grid-cols-4 gap-6"
         >
           {[
-            {
-              icon: <Package className="w-8 h-8" />,
-              title: "Bulk Packs",
-              desc: "Stock up for home, office, or events.",
-              color: "text-leaf-green",
-            },
-            {
-              icon: <Truck className="w-8 h-8" />,
-              title: "Fast Delivery",
-              desc: "Reliable delivery across Nigeria.",
-              color: "text-blob-orange",
-            },
-            {
-              icon: <CreditCard className="w-8 h-8" />,
-              title: "Secure Payments",
-              desc: "Paystack, Bank Transfer & WhatsApp.",
-              color: "text-blue-600",
-            },
-            {
-              icon: <Star className="w-8 h-8" />,
-              title: "Authentic Brands",
-              desc: "100% trusted and genuine products.",
-              color: "text-yellow-500",
-            },
+            { icon: <Package className="w-8 h-8" />, title: "Bulk Packs",        desc: "Stock up for home, office, or events.",    color: "text-leaf-green"  },
+            { icon: <Truck className="w-8 h-8" />,   title: "Fast Delivery",     desc: "Reliable delivery across Nigeria.",        color: "text-blob-orange" },
+            { icon: <CreditCard className="w-8 h-8" />, title: "Secure Payments", desc: "Paystack, Bank Transfer & WhatsApp.",     color: "text-blue-600"    },
+            { icon: <Star className="w-8 h-8" />,    title: "Authentic Brands",  desc: "100% trusted and genuine products.",      color: "text-yellow-500"  },
           ].map((item, idx) => (
             <motion.div
               key={idx}
               variants={{ hidden: fadeInUpHidden, visible: fadeInUpVisible }}
               custom={idx}
-              whileHover={{
-                y: -8,
-                boxShadow: "0 20px 30px -10px rgba(0,0,0,0.1)",
-              }}
+              whileHover={{ y: -8, boxShadow: "0 20px 30px -10px rgba(0,0,0,0.1)" }}
               className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-100 p-6 text-center transition-shadow"
             >
               <motion.div
@@ -446,9 +446,7 @@ const Home = () => {
       {/* ========== 3. SHOP BY CATEGORY ========== */}
       <section className="max-w-7xl mx-auto px-4 md:px-6 mt-8">
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
-            Shop by Category
-          </h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-800">Shop by Category</h2>
           {selectedCategory !== "All" && (
             <motion.button
               initial={{ opacity: 0 }}
@@ -504,17 +502,13 @@ const Home = () => {
         </motion.div>
       </section>
 
-      {/* ========== 4. PRODUCTS GRID (with search + original popLayout animation) ========== */}
-      <section
-        id="products-grid"
-        className="max-w-7xl mx-auto px-4 md:px-6 mt-12 md:mt-16"
-      >
+      {/* ========== 4. PRODUCTS GRID ========== */}
+      <section id="products-grid" className="max-w-7xl mx-auto px-4 md:px-6 mt-12 md:mt-16">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
             {selectedCategory === "All" ? "Our Best Sellers" : selectedCategory}
           </h2>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
-            {/* Search input */}
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -525,7 +519,6 @@ const Home = () => {
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-leaf-green text-sm bg-white/70"
               />
             </div>
-            {/* Category filter pills */}
             <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
               {categoryList.map((cat) => (
                 <button
@@ -544,11 +537,7 @@ const Home = () => {
           </div>
         </div>
 
-        {/* ✅ THE ORIGINAL ANIMATION – no AnimatePresence, cards appear instantly */}
-        <motion.div
-          layout
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
-        >
+        <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           <AnimatePresence mode="popLayout">
             {filteredProducts.map((product: ProductItem) => (
               <motion.div
@@ -563,9 +552,7 @@ const Home = () => {
                   _id={product._id}
                   name={product.name}
                   price={product.price}
-                  image={
-                    product.images?.[0] || "https://via.placeholder.com/150"
-                  }
+                  image={product.images?.[0] || "https://via.placeholder.com/150"}
                   category={product.category || "General"}
                   stock={product.stock}
                   onClick={() => setModalProduct(product)}
@@ -595,19 +582,12 @@ const Home = () => {
           <h2 className="text-3xl md:text-5xl font-extrabold text-gray-800 mb-4">
             {specialOfferTitle}
           </h2>
-          <p className="text-gray-600 text-lg mb-8 max-w-lg mx-auto">
-            {specialOfferText}
-          </p>
+          <p className="text-gray-600 text-lg mb-8 max-w-lg mx-auto">{specialOfferText}</p>
           <motion.button
-            whileHover={{
-              scale: 1.05,
-              boxShadow: "0 10px 25px rgba(74, 143, 41, 0.3)",
-            }}
+            whileHover={{ scale: 1.05, boxShadow: "0 10px 25px rgba(74, 143, 41, 0.3)" }}
             whileTap={{ scale: 0.97 }}
             onClick={() =>
-              document
-                .getElementById("products-grid")
-                ?.scrollIntoView({ behavior: "smooth" })
+              document.getElementById("products-grid")?.scrollIntoView({ behavior: "smooth" })
             }
             className="bg-leaf-green text-white px-10 py-4 rounded-full font-bold text-lg shadow-lg hover:bg-green-700 transition-all flex items-center gap-2 mx-auto"
           >
@@ -617,7 +597,7 @@ const Home = () => {
         </motion.div>
       </section>
 
-      {/* Quick‑view modal */}
+      {/* Quick-view modal */}
       <ProductQuickViewModal
         product={modalProduct}
         isOpen={!!modalProduct}
