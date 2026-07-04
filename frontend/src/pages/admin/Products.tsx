@@ -173,11 +173,9 @@ const Products = () => {
 
   // ---------- Derived Categories (for filter) ----------
   const filterCategories = useMemo(() => {
-    const all = (products as ProductItem[])
-      .map((p) => p.category)
-      .filter((c): c is string => typeof c === 'string' && c.length > 0);
-    return ['All', ...Array.from(new Set(all))];
-  }, [products]);
+  const names = categories.map((c: CategoryItem) => c.name);
+  return ['All', ...names];
+}, [categories]);
 
   // ---------- Filtered & Searched Products ----------
   const filteredProducts = useMemo(() => {

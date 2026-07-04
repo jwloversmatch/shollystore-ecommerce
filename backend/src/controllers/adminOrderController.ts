@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { Order } from '../models/Order';
 import { Product } from '../models/Product';
 import { User } from '../models/User';
-import { Coupon } from '../models/Coupon';   // ✅ added
+import { Coupon } from '../models/Coupon';
 import {
   sendAdminOrderNotification,
   sendOrderStatusUpdateEmail,
@@ -117,25 +117,27 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
     // 3. Update only the status field – bypasses full document validation
     await Order.updateOne({ _id: order._id }, { $set: { status } });
 
-    // 4. Update the in‑memory object for the rest of the function
-    order.status = status;
-
-    // 4b. ✅ Increment coupon usage if status is now Paid and wasn't paid via Paystack
-    if (status === 'Paid' && order.couponCode && !order.paymentResult) {
+    // 4. Increment coupon usedCount exactly once: when the order first transitions
+    //    to Paid, regardless of payment method (Paystack, COD, bank transfer, etc.)
+    //    The `order.status !== 'Paid'` guard prevents double-counting if an admin
+    //    somehow calls this endpoint again on an already-Paid order.
+    if (status === 'Paid' && order.status !== 'Paid' && order.couponCode) {
       await Coupon.updateOne(
         { code: order.couponCode.toUpperCase() },
         { $inc: { usedCount: 1 } }
       );
     }
 
-    // 5. Send admin notification (now has the new status)
+    // 5. Update the in-memory object for the rest of the function
+    order.status = status;
+
+    // 6. Send admin notification (now has the new status)
     await sendAdminOrderNotification(order, 'updated', status);
 
-    // 6. Notify the customer if shipped/delivered
+    // 7. Notify the customer if shipped/delivered
     if (['Shipped', 'Delivered'].includes(status)) {
       const populatedUser = order.user as unknown as { email?: string; name?: string; phone?: string } | null;
       if (populatedUser?.email) {
-        // Compute original subtotal from order items
         const originalSubtotal = order.orderItems.reduce(
           (sum, item) => sum + item.price * item.qty,
           0
@@ -154,7 +156,7 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
       }
     }
 
-    // 7. Return the updated order
+    // 8. Return the updated order
     res.json({ success: true, order });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
