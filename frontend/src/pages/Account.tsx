@@ -756,7 +756,7 @@ const Account = () => {
       {/* Address Modal (Add / Edit) */}
       <AnimatePresence>
         {addressModalOpen && (
-          <>
+          <div>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -876,14 +876,14 @@ const Account = () => {
                 </form>
               </div>
             </motion.div>
-          </>
+          </div>
         )}
       </AnimatePresence>
 
       {/* Order Details Modal (unchanged) */}
       <AnimatePresence>
         {selectedOrder && (
-          <>
+          <div>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -992,7 +992,7 @@ const Account = () => {
                     return (
                       <div className="pt-4 border-t border-gray-100 space-y-2">
                         {hasCoupon && (
-                          <>
+                          <div>
                             <div className="flex justify-between text-sm text-gray-600">
                               <span>Subtotal</span>
                               <span>₦{subtotal.toLocaleString()}</span>
@@ -1004,7 +1004,7 @@ const Account = () => {
                               </span>
                               <span>- ₦{discount.toLocaleString()}</span>
                             </div>
-                          </>
+                          </div>
                         )}
                         <div className="flex justify-between items-center">
                           <span className="text-gray-800 font-semibold text-lg">
@@ -1020,7 +1020,7 @@ const Account = () => {
                 </div>
               </div>
             </motion.div>
-          </>
+          </div>
         )}
       </AnimatePresence>
     </motion.div>

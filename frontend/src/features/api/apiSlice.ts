@@ -301,6 +301,18 @@ export const apiSlice = createApi({
 
     getAddresses: builder.query({
       query: () => "/auth/addresses",
+      transformResponse: (response: {
+        success: boolean;
+        addresses: {
+          _id: string;
+          label: string;
+          address: string;
+          city: string;
+          isDefault: boolean;
+          postalCode?: string;
+          country?: string;
+        }[];
+      }) => response.addresses,
       providesTags: ["User"],
     }),
     addAddress: builder.mutation({
