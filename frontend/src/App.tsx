@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { HelmetProvider } from 'react-helmet-async';
 
@@ -24,7 +24,6 @@ const Categories = React.lazy(() => import('./pages/admin/Categories'));
 const Account = React.lazy(() => import('./pages/Account'));
 const ProductDetail = React.lazy(() => import('./pages/ProductDetail'));
 const Coupons = React.lazy(() => import('./pages/admin/Coupons'));
-const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 import Settings from './pages/admin/Settings';
 
@@ -52,7 +51,7 @@ function App() {
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/account" element={<Account />} />
 
-            {/* ✅ Product Detail – public, no auth required */}
+            {/* Product Detail – public, no auth required */}
             <Route path="/product/:slug" element={<ProductDetail />} />
 
             {/* Protected Admin Routes */}
@@ -65,7 +64,9 @@ function App() {
               <Route path="/admin/categories" element={<Categories />} />
               <Route path="/admin/coupons" element={<Coupons />} />
             </Route>
-            <Route path="*" element={<NotFound />} />
+
+            {/* ✅ Catch‑all – silently redirect to home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </Router>
