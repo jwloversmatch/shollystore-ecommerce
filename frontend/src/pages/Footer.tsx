@@ -38,7 +38,7 @@ const socialIconSpring = {
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
-  // Quick links data
+  // Quick links data (unchanged)
   const quickLinks = [
     { name: 'Home', path: '/' },
     { name: 'Shop', path: '/shop' },
@@ -73,17 +73,17 @@ const Footer = () => {
           {/* Brand Column */}
           <motion.div variants={columnVariants} className="space-y-4">
             <Link to="/" className="text-2xl font-bold text-white tracking-tight">
-              Lotce<span className="text-leaf-green">Wieth</span>
+              Ires<span className="text-leaf-green">Kitchen</span>
             </Link>
             <p className="text-sm text-gray-400 leading-relaxed max-w-xs">
-              Bringing the coldest, most refreshing beverages straight to your
-              doorstep across Nigeria. Stay refreshed, stay chilled.
+              Savor the taste of home‑cooked Nigerian meals, grilled delights,
+              and refreshing drinks — delivered fresh to your doorstep.
             </p>
             <div className="flex gap-3 pt-2">
-              <SocialIcon href="https://facebook.com" icon={<FaFacebook size={20} />} />
-              <SocialIcon href="https://instagram.com" icon={<FaInstagram size={20} />} />
-              <SocialIcon href="https://twitter.com" icon={<FaTwitter size={20} />} />
-              <SocialIcon href="https://youtube.com" icon={<FaYoutube size={20} />} />
+              <SocialIcon href="https://facebook.com/ireskitchen" icon={<FaFacebook size={20} />} />
+              <SocialIcon href="https://instagram.com/ireskitchen" icon={<FaInstagram size={20} />} />
+              <SocialIcon href="https://twitter.com/ireskitchen" icon={<FaTwitter size={20} />} />
+              <SocialIcon href="https://youtube.com/@ireskitchen" icon={<FaYoutube size={20} />} />
             </div>
           </motion.div>
 
@@ -120,19 +120,19 @@ const Footer = () => {
               <li className="flex items-center gap-3">
                 <Phone size={18} className="text-leaf-green" />
                 <a
-                  href="tel:+2348000000000"
+                  href="tel:+2349012345678"
                   className="hover:text-leaf-green transition-colors"
                 >
-                  +234 800 000 0000
+                  +234 901 234 5678
                 </a>
               </li>
               <li className="flex items-center gap-3">
                 <Mail size={18} className="text-leaf-green" />
                 <a
-                  href="mailto:hello@lotcewieth.com"
+                  href="mailto:hello@ireskitchen.com"
                   className="hover:text-leaf-green transition-colors"
                 >
-                  hello@lotcewieth.com
+                  hello@ireskitchen.com
                 </a>
               </li>
             </ul>
@@ -140,9 +140,9 @@ const Footer = () => {
 
           {/* Newsletter */}
           <motion.div variants={columnVariants} className="md:col-span-2">
-            <h4 className="font-semibold text-white mb-4">Stay Fresh</h4>
+            <h4 className="font-semibold text-white mb-4">Stay Tasty</h4>
             <p className="text-sm text-gray-400 mb-4">
-              Subscribe to get updates on new arrivals and exclusive offers.
+              Subscribe for exclusive recipes, discounts, and new dish alerts.
             </p>
             <form className="flex flex-col sm:flex-row gap-3 w-full">
               <input
@@ -167,7 +167,7 @@ const Footer = () => {
           variants={columnVariants}
           className="mt-12 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500"
         >
-          <span>&copy; {currentYear} LotceWieth. All rights reserved.</span>
+          <span>&copy; {currentYear} Ires Kitchen. All rights reserved.</span>
           <div className="flex gap-6">
             <Link to="/privacy" className="hover:text-leaf-green transition-colors">
               Privacy Policy
