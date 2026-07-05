@@ -8,314 +8,420 @@ import { z } from "zod";
 import { useLoginMutation } from "../features/api/apiSlice";
 import { setCredentials } from "../features/auth/authSlice";
 import {
-  Mail,
-  Lock,
-  AlertCircle,
-  Eye,
-  EyeOff,
-  ArrowRight,
-  Sparkles,
-  Coffee,
-  GlassWater,
-  Loader2,
+  Mail, Lock, AlertCircle, Eye, EyeOff,
+  ArrowRight, Loader2, Flame, Shield, Zap, Star,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import SEO from "../components/SEO";
 
-// ---------- Zod Schema ----------
+// ─── Constants ────────────────────────────────────────────────────────────────
+const ACCENT = "#e8622a";
+
+// ─── Schema ───────────────────────────────────────────────────────────────────
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email:    z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
-
 type LoginFormData = z.infer<typeof loginSchema>;
 
-// ---------- Animation variants ----------
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.15, delayChildren: 0.2 },
-  },
-};
+// ─── Shared input class builder ────────────────────────────────────────────────
+const buildInputCls = (hasError: boolean, extraPr = "pr-4") =>
+  [
+    "w-full pl-11 py-3.5 rounded-xl text-sm text-white",
+    "bg-[#1c1c1c] placeholder-gray-600 outline-none transition-all duration-200",
+    extraPr,
+    hasError
+      ? "border border-red-500/50 ring-2 ring-red-500/10"
+      : "border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15",
+  ].join(" ");
 
-const itemFadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: "easeOut" as const },
-  },
-};
-
-const floatingIconAnimation = {
-  animate: {
-    y: [0, -8, 0],
-    rotate: [0, 5, -5, 0],
-    transition: {
-      repeat: Infinity,
-      duration: 5,
-      ease: "easeInOut" as const,
-    },
-  },
-};
-
-const shakeVariants = {
-  shake: {
-    x: [0, -12, 12, -12, 12, 0],
-    transition: { duration: 0.5 },
-  },
-};
-
+// ═══════════════════════════════════════════════════════════════════════════════
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const dispatch = useDispatch();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const dispatch  = useDispatch();
   const [login, { isLoading, error }] = useLoginMutation();
-
   const from = (location.state as { from?: string })?.from || "/";
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      const res = await login({
-        email: data.email,
-        password: data.password,
-      }).unwrap();
-      // Backend now returns { user, token, refreshToken }
+      const res = await login({ email: data.email, password: data.password }).unwrap();
       dispatch(setCredentials({ user: res.user, token: res.token }));
       toast.success("Welcome back! 🎉");
-      if (res.user.role === "admin") navigate("/admin");
-      else navigate(from);
+      navigate(res.user.role === "admin" ? "/admin" : from, { replace: true });
     } catch (err) {
-      console.error("Login error:", err);
+      console.error(err);
       toast.error("Login failed. Please check your credentials.");
     }
   };
 
-  const errorMessage = (error as { data?: { message: string } })?.data?.message;
+  const apiError = (error as { data?: { message: string } })?.data?.message;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative bg-gradient-to-br from-leaf-green/5 via-pastel-pink/30 to-blob-orange/10 overflow-hidden">
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-16 relative overflow-hidden"
+      style={{ background: "#0A0A0B" }}
+    >
       <SEO
         title="Sign In"
         description="Log in to your LotceWieth account to manage orders and track deliveries."
       />
 
-      {/* Animated background blobs */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <motion.div
-          animate={{
-            x: ["-10%", "10%", "-10%"],
-            y: ["-5%", "15%", "-5%"],
-          }}
-          transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
-          className="absolute top-10 -left-20 w-72 h-72 bg-leaf-green/20 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{
-            x: ["10%", "-10%", "10%"],
-            y: ["15%", "-10%", "15%"],
-          }}
-          transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
-          className="absolute bottom-10 -right-20 w-96 h-96 bg-blob-orange/20 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-          }}
-          transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-pastel-pink/10 rounded-full blur-3xl"
-        />
-      </div>
-
-      {/* Main card */}
+      {/* ── Ambient orbs ── */}
       <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="relative z-10 w-full max-w-5xl bg-white/80 backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden border border-white/50 grid md:grid-cols-2 min-h-[600px]"
+        animate={{ x: ["-12%", "12%", "-12%"], y: ["-8%", "10%", "-8%"] }}
+        transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
+        className="absolute pointer-events-none rounded-full blur-[130px]"
+        style={{
+          width: 640, height: 640,
+          top: -200, left: -200,
+          background: ACCENT, opacity: 0.07,
+        }}
+      />
+      <motion.div
+        animate={{ x: ["12%", "-12%", "12%"], y: ["12%", "-10%", "12%"] }}
+        transition={{ repeat: Infinity, duration: 38, ease: "linear" }}
+        className="absolute pointer-events-none rounded-full blur-[130px]"
+        style={{
+          width: 600, height: 600,
+          bottom: -200, right: -200,
+          background: "#10b981", opacity: 0.045,
+        }}
+      />
+
+      {/* ── Dot-grid texture ── */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: "radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+        }}
+      />
+
+      {/* ════════════════ MAIN CARD ════════════════════════════════════════════ */}
+      <motion.div
+        initial={{ opacity: 0, y: 28, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.55, ease: "easeOut" }}
+        className="relative z-10 w-full max-w-5xl rounded-3xl overflow-hidden grid md:grid-cols-[1fr_1.1fr]"
+        style={{
+          background: "#111111",
+          border: "1px solid rgba(255,255,255,0.07)",
+          boxShadow: "0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03)",
+          minHeight: 620,
+        }}
       >
-        {/* Left Panel – Immersive Visuals */}
-        <div className="relative hidden md:flex flex-col justify-center items-center p-10 bg-gradient-to-br from-leaf-green/20 via-pastel-pink/30 to-white/40 border-r border-white/40 overflow-hidden">
-          {/* Floating beverage icons */}
-          <motion.div
-            variants={floatingIconAnimation}
-            animate="animate"
-            className="absolute top-10 left-10 text-leaf-green/30"
-          >
-            <Coffee className="w-12 h-12" />
-          </motion.div>
-          <motion.div
-            variants={floatingIconAnimation}
-            animate="animate"
-            className="absolute bottom-10 right-10 text-blob-orange/30"
-          >
-            <GlassWater className="w-12 h-12" />
-          </motion.div>
-          <motion.div
-            variants={floatingIconAnimation}
-            animate="animate"
-            className="absolute top-1/2 right-5 text-yellow-500/20"
-          >
-            <Sparkles className="w-8 h-8" />
-          </motion.div>
 
-          {/* Main image with floating animation */}
-          <motion.div
-            animate={{ y: [0, -15, 0] }}
-            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-            className="relative z-10"
-          >
-            <img
-              src="https://images.unsplash.com/photo-1622483767020-b3e0f38c2fec?auto=format&fit=crop&w=600&q=80"
-              alt="Fresh Beverage Selection"
-              className="w-64 h-auto rounded-2xl shadow-2xl border-4 border-white/60 object-cover"
-            />
-          </motion.div>
+        {/* ══════ LEFT PANEL — brand & visual (desktop only) ═══════════════════ */}
+        <div
+          className="hidden md:flex flex-col justify-between p-10 lg:p-12 relative overflow-hidden"
+          style={{ background: "linear-gradient(148deg,#1c0a00 0%,#130800 40%,#0A0A0B 100%)" }}
+        >
+          {/* Top orange hairline */}
+          <div
+            className="absolute top-0 inset-x-0 h-px"
+            style={{ background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }}
+          />
+          {/* Ambient glow */}
+          <div
+            className="absolute top-0 right-0 w-60 h-60 rounded-full blur-[80px] pointer-events-none"
+            style={{ background: ACCENT, opacity: 0.07 }}
+          />
 
-          <motion.h2
-            variants={itemFadeUp}
-            className="mt-6 text-3xl font-bold text-gray-800 z-10 tracking-tight"
-          >
-            Lotce<span className="text-leaf-green">Wieth</span>
-          </motion.h2>
-          <motion.p
-            variants={itemFadeUp}
-            className="text-gray-600 text-center mt-2 z-10 max-w-[220px] text-sm"
-          >
-            Your everyday drink superstore.
-          </motion.p>
+          {/* Logo */}
+          <div>
+            <div className="flex items-center gap-2.5 mb-2">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ background: `${ACCENT}20` }}
+              >
+                <Flame className="w-5 h-5" style={{ color: ACCENT }} />
+              </div>
+              <span className="text-2xl font-black text-white tracking-tight">
+                Lotce<span style={{ color: ACCENT }}>Wieth</span>
+              </span>
+            </div>
+            <p className="text-gray-600 text-sm font-semibold pl-0.5">
+              Premium Food Experience
+            </p>
+          </div>
 
-          <motion.div variants={itemFadeUp} className="mt-8 flex gap-3">
-            <span className="px-4 py-1.5 bg-white/60 backdrop-blur-md rounded-full text-xs font-medium text-gray-700 shadow-sm">
-              🚚 Free Delivery
-            </span>
-            <span className="px-4 py-1.5 bg-white/60 backdrop-blur-md rounded-full text-xs font-medium text-gray-700 shadow-sm">
-              🔒 Secure Payment
-            </span>
-          </motion.div>
+          {/* Hero plate circle */}
+          <div className="flex flex-col items-center gap-7">
+            <div className="relative">
+              {/* Spinning outer ring */}
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-5 rounded-full border-2 border-dashed pointer-events-none"
+                style={{ borderColor: `${ACCENT}28` }}
+              />
+              {/* Static accent ring */}
+              <div
+                className="absolute -inset-2 rounded-full pointer-events-none"
+                style={{ boxShadow: `0 0 0 1px ${ACCENT}22` }}
+              />
+              {/* Image */}
+              <div
+                className="w-44 h-44 lg:w-48 lg:h-48 rounded-full overflow-hidden"
+                style={{
+                  boxShadow: `0 0 0 4px ${ACCENT}, 0 28px 64px rgba(0,0,0,0.75), 0 0 50px ${ACCENT}14`,
+                }}
+              >
+                <img
+                  src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=400&q=80"
+                  alt="Premium food"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              {/* Floating chips */}
+              <motion.div
+                animate={{ y: [-5, 5, -5] }}
+                transition={{ repeat: Infinity, duration: 3.6, ease: "easeInOut" }}
+                className="absolute -right-10 top-3 rounded-2xl px-3.5 py-2.5 border text-left"
+                style={{ background: "#1c1c1c", borderColor: "rgba(255,255,255,0.08)" }}
+              >
+                <div className="text-[9px] text-gray-600 font-extrabold uppercase tracking-wider">Rating</div>
+                <div className="text-sm font-black" style={{ color: "#F59E0B" }}>4.9 ★</div>
+              </motion.div>
+
+              <motion.div
+                animate={{ y: [5, -5, 5] }}
+                transition={{ repeat: Infinity, duration: 4.3, ease: "easeInOut" }}
+                className="absolute -left-12 bottom-4 rounded-2xl px-3.5 py-2.5 border text-left"
+                style={{ background: "#1c1c1c", borderColor: "rgba(255,255,255,0.08)" }}
+              >
+                <div className="text-[9px] text-gray-600 font-extrabold uppercase tracking-wider">Members</div>
+                <div className="text-sm font-black text-white">2K+</div>
+              </motion.div>
+            </div>
+
+            <div className="text-center">
+              <h3 className="text-white font-black text-xl tracking-tight mb-1">
+                Taste the Difference
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Premium ingredients, unbeatable prices.
+              </p>
+            </div>
+          </div>
+
+          {/* Feature list */}
+          <div className="flex flex-col gap-2.5">
+            {[
+              { icon: <Shield  className="w-3.5 h-3.5" />, label: "Secure & encrypted login"  },
+              { icon: <Zap     className="w-3.5 h-3.5" />, label: "Instant order tracking"    },
+              { icon: <Star    className="w-3.5 h-3.5" />, label: "Exclusive member deals"    },
+            ].map((f, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -14 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.25 + i * 0.1, duration: 0.4 }}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl border"
+                style={{
+                  background:   `${ACCENT}08`,
+                  borderColor:  `${ACCENT}1a`,
+                  color:        ACCENT,
+                }}
+              >
+                {f.icon}
+                <span className="text-xs font-semibold text-gray-400">{f.label}</span>
+              </motion.div>
+            ))}
+          </div>
         </div>
 
-        {/* Right Panel – Form */}
-        <div className="p-8 md:p-12 flex flex-col justify-center bg-white/90 backdrop-blur-sm">
+        {/* ══════ RIGHT PANEL — form ════════════════════════════════════════════ */}
+        <div
+          className="flex flex-col justify-center p-6 sm:p-8 md:p-10 lg:p-12"
+          style={{ background: "#141414" }}
+        >
+          {/* Mobile-only logo */}
           <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="md:hidden flex items-center gap-2 mb-8"
           >
-            <motion.h2
-              variants={itemFadeUp}
-              className="text-3xl font-bold text-gray-900 mb-2 text-center md:text-left"
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ background: `${ACCENT}20` }}
             >
-              Welcome Back
-            </motion.h2>
-            <motion.p
-              variants={itemFadeUp}
-              className="text-gray-500 mb-8 text-center md:text-left text-sm"
-            >
-              Enter your details to sign in.
-            </motion.p>
+              <Flame className="w-4 h-4" style={{ color: ACCENT }} />
+            </div>
+            <span className="text-xl font-black text-white tracking-tight">
+              Lotce<span style={{ color: ACCENT }}>Wieth</span>
+            </span>
+          </motion.div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              {/* Email */}
-              <motion.div variants={itemFadeUp}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none transition-colors group-focus-within:text-leaf-green" />
-                  <input
-                    type="email"
-                    {...register("email")}
-                    className={`w-full border ${
-                      errors.email ? "border-red-500" : "border-gray-200"
-                    } rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent transition-all placeholder:text-gray-400 bg-white/70 backdrop-blur-sm`}
-                    placeholder="you@example.com"
-                  />
-                </div>
+          {/* Heading block */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+          >
+            <p
+              className="text-[10px] font-extrabold uppercase tracking-[0.22em] mb-2"
+              style={{ color: ACCENT }}
+            >
+              Welcome back
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight">
+              Sign in to<br className="hidden sm:block" /> your account
+            </h2>
+            <p className="text-gray-600 text-sm mt-3">
+              No account yet?{" "}
+              <Link
+                to="/register"
+                className="font-bold transition-opacity hover:opacity-80"
+                style={{ color: ACCENT }}
+              >
+                Get started →
+              </Link>
+            </p>
+          </motion.div>
+
+          {/* ── Form ── */}
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5" noValidate>
+
+            {/* Email */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.16 }}
+            >
+              <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                  style={{ color: errors.email ? "#ef4444" : "#4b5563" }}
+                />
+                <input
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  {...register("email")}
+                  className={buildInputCls(!!errors.email)}
+                />
+              </div>
+              <AnimatePresence>
                 {errors.email && (
                   <motion.p
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-1 text-sm text-red-600 flex items-center gap-1"
+                    key="email-err"
+                    initial={{ opacity: 0, y: -4, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"
                   >
-                    <AlertCircle className="w-3 h-3" /> {errors.email.message}
+                    <AlertCircle className="w-3 h-3 shrink-0" />
+                    {errors.email.message}
                   </motion.p>
-                )}
-              </motion.div>
-
-              {/* Password */}
-              <motion.div variants={itemFadeUp}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    {...register("password")}
-                    className={`w-full border ${
-                      errors.password ? "border-red-500" : "border-gray-200"
-                    } rounded-xl pl-10 pr-10 py-3 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent transition-all placeholder:text-gray-400 bg-white/70 backdrop-blur-sm`}
-                    placeholder="••••••••"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-                {errors.password && (
-                  <motion.p
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-1 text-sm text-red-600 flex items-center gap-1"
-                  >
-                    <AlertCircle className="w-3 h-3" /> {errors.password.message}
-                  </motion.p>
-                )}
-              </motion.div>
-
-              {/* Error message */}
-              <AnimatePresence mode="wait">
-                {errorMessage && (
-                  <motion.div
-                    key="error"
-                    variants={shakeVariants}
-                    initial="shake"
-                    animate="shake"
-                    exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
-                    className="flex items-center gap-2 bg-red-50/90 backdrop-blur-sm text-red-600 text-sm p-3 rounded-xl border border-red-100"
-                  >
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{errorMessage || "Invalid credentials"}</span>
-                  </motion.div>
                 )}
               </AnimatePresence>
+            </motion.div>
 
-              {/* Submit button */}
+            {/* Password */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.21 }}
+            >
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500">
+                  Password
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-[11px] font-bold transition-opacity hover:opacity-75"
+                  style={{ color: ACCENT }}
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <Lock
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                  style={{ color: errors.password ? "#ef4444" : "#4b5563" }}
+                />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  {...register("password")}
+                  className={buildInputCls(!!errors.password, "pr-12")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(p => !p)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-300 transition-colors p-0.5"
+                >
+                  {showPassword
+                    ? <EyeOff className="w-4 h-4" />
+                    : <Eye    className="w-4 h-4" />}
+                </button>
+              </div>
+              <AnimatePresence>
+                {errors.password && (
+                  <motion.p
+                    key="pw-err"
+                    initial={{ opacity: 0, y: -4, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"
+                  >
+                    <AlertCircle className="w-3 h-3 shrink-0" />
+                    {errors.password.message}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* API error banner */}
+            <AnimatePresence>
+              {apiError && (
+                <motion.div
+                  key="api-err"
+                  initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.97 }}
+                  className="flex items-start gap-2.5 p-3.5 rounded-xl border text-sm"
+                  style={{
+                    background:  "rgba(239,68,68,0.07)",
+                    borderColor: "rgba(239,68,68,0.2)",
+                    color:       "#f87171",
+                  }}
+                >
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{apiError}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Submit button */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.28 }}
+            >
               <motion.button
-                variants={itemFadeUp}
-                whileHover={{ scale: 1.02, boxShadow: "0 10px 25px rgba(74, 143, 41, 0.3)" }}
-                whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-leaf-green text-white py-3.5 rounded-xl font-bold shadow-lg shadow-leaf-green/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+                whileHover={!isLoading ? { scale: 1.02, boxShadow: `0 18px 44px ${ACCENT}55` } : {}}
+                whileTap={!isLoading ? { scale: 0.98 } : {}}
+                className="w-full py-4 rounded-xl font-black text-white text-[15px] flex items-center justify-center gap-2.5 group transition-all disabled:opacity-55 disabled:cursor-not-allowed"
+                style={{
+                  background:  ACCENT,
+                  boxShadow:   `0 8px 24px ${ACCENT}44`,
+                }}
               >
                 {isLoading ? (
                   <>
@@ -329,34 +435,59 @@ const Login = () => {
                   </>
                 )}
               </motion.button>
-            </form>
+            </motion.div>
+          </form>
 
-            <motion.p
-              variants={itemFadeUp}
-              className="mt-6 text-center text-sm text-gray-600"
-            >
-              Don't have an account?{" "}
-              <Link
-                to="/register"
-                className="text-leaf-green font-semibold hover:underline"
-              >
-                Get Started
-              </Link>
-            </motion.p>
-
-            {/* Forgot Password Link */}
-            <motion.p
-              variants={itemFadeUp}
-              className="mt-4 text-center text-sm text-gray-500"
-            >
-              <Link
-                to="/forgot-password"
-                className="text-leaf-green font-medium hover:underline"
-              >
-                Forgot Password?
-              </Link>
-            </motion.p>
+          {/* Divider + social hint (cosmetic, non-functional) */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.38 }}
+            className="mt-6 flex items-center gap-3"
+          >
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+            <span className="text-[11px] text-gray-600 font-semibold shrink-0">or continue as</span>
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
           </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.42 }}
+            className="mt-4 flex gap-3"
+          >
+            <Link
+              to="/"
+              className="flex-1 py-3 rounded-xl text-sm font-bold text-gray-500 border border-white/[0.07] hover:border-white/[0.12] hover:text-gray-300 transition-all text-center"
+              style={{ background: "#1c1c1c" }}
+            >
+              Guest Browsing
+            </Link>
+            <Link
+              to="/register"
+              className="flex-1 py-3 rounded-xl text-sm font-bold border transition-all text-center"
+              style={{
+                background:  `${ACCENT}12`,
+                borderColor: `${ACCENT}30`,
+                color:       ACCENT,
+              }}
+            >
+              New Account
+            </Link>
+          </motion.div>
+
+          {/* Fine print */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="mt-7 text-center text-[11px] text-gray-700 leading-relaxed"
+          >
+            By signing in you agree to our{" "}
+            <Link to="/terms"   className="underline hover:text-gray-500 transition-colors">Terms</Link>
+            {" "}and{" "}
+            <Link to="/privacy" className="underline hover:text-gray-500 transition-colors">Privacy Policy</Link>
+          </motion.p>
         </div>
       </motion.div>
     </div>
