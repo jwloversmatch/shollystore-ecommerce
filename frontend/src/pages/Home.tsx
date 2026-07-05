@@ -105,10 +105,10 @@ const Home = () => {
   const organizationSchema = { "@context": "https://schema.org", "@type": "Organization", name: heroTitle.replace("|", "").trim(), url: "https://shollystore-ecommerce.vercel.app", logo: "https://shollystore-ecommerce.vercel.app/logo.png" };
   const websiteSchema = { "@context": "https://schema.org", "@type": "WebSite", url: "https://shollystore-ecommerce.vercel.app" };
 
-  // Loading screen – same exact padding as hero
+  // Loading screen – now with comfortable padding
   if (isPageLoading) {
     return (
-      <div className="min-h-screen bg-[#0A0A0B] pt-[61px] pb-16 px-4">
+      <div className="min-h-screen bg-[#0A0A0B] pt-20 pb-16 px-4">
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-10 pt-16">
           {Array.from({ length: 8 }).map((_, i) => <DarkSkeleton key={i} />)}
         </div>
@@ -135,7 +135,7 @@ const Home = () => {
       {/* ════════ HERO ═══════════════════════════════════════════════════════ */}
       {landingMode ? (
         /* Landing mode — full‑screen centred */
-        <section className="min-h-screen flex flex-col justify-center items-center px-6 text-center pt-[61px]">
+        <section className="min-h-screen flex flex-col justify-center items-center px-6 text-center pt-20">
           <motion.span initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold border"
             style={{ background:'rgba(232,98,42,0.12)', borderColor:'rgba(232,98,42,0.35)', color: ACCENT }}>
@@ -171,7 +171,7 @@ const Home = () => {
 
       ) : (
         /* Regular mode — two‑column with carousel */
-        <section className="relative max-w-7xl mx-auto px-6 pt-[61px] md:pt-28 pb-16 grid md:grid-cols-2 items-center gap-14">
+        <section className="relative max-w-7xl mx-auto px-6 pt-20 md:pt-28 pb-16 grid md:grid-cols-2 items-center gap-14">
 
           {/* Left: text */}
           <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-5">
