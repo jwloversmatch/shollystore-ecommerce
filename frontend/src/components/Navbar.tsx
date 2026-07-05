@@ -5,7 +5,7 @@ import { RootState } from '../store';
 import { logout } from '../features/auth/authSlice';
 import {
   ShoppingCart, User, LogOut, LayoutDashboard, Settings,
-  Image, Tag, BadgePercent, Home, MoreHorizontal, X, Flame,
+  Image, Tag, BadgePercent, Home, MoreHorizontal, X, ChefHat,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -98,9 +98,10 @@ const Navbar = () => {
         <div className="relative max-w-7xl mx-auto px-6 flex justify-between items-center py-4">
           {/* Logo */}
           <Link to={user?.role === 'admin' ? '/admin' : '/'}
-            className="text-2xl font-black text-white tracking-tight shrink-0 flex items-center gap-1.5">
-            <Flame className="w-5 h-5" style={{ color: ACCENT }} />
-            Lotce<span style={{ color: ACCENT }}>Wieth</span>
+            className="text-2xl font-black text-white tracking-tight shrink-0 flex items-center gap-2">
+            <ChefHat className="w-6 h-6" style={{ color: ACCENT }} />
+            <span>Ires</span>
+            <span style={{ color: ACCENT }}>Kitchen</span>
           </Link>
 
           {/* Admin links */}
@@ -160,7 +161,7 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* ══════ MOBILE — FIXED top bar (no longer reserves space) ══════════ */}
+      {/* ══════ MOBILE — FIXED top bar ═══════════════════════════════════ */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex justify-between items-center px-5 py-4"
         style={{
           background:     'rgba(10,10,11,0.92)',
@@ -169,8 +170,9 @@ const Navbar = () => {
         }}>
         <Link to={user?.role === 'admin' ? '/admin' : '/'}
           className="text-xl font-black text-white tracking-tight flex items-center gap-1.5">
-          <Flame className="w-4 h-4" style={{ color: ACCENT }} />
-          Lotce<span style={{ color: ACCENT }}>Wieth</span>
+          <ChefHat className="w-5 h-5" style={{ color: ACCENT }} />
+          <span>Ires</span>
+          <span style={{ color: ACCENT }}>Kitchen</span>
         </Link>
 
         {showCart && (
