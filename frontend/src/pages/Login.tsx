@@ -9,7 +9,7 @@ import { useLoginMutation } from "../features/api/apiSlice";
 import { setCredentials } from "../features/auth/authSlice";
 import {
   Mail, Lock, AlertCircle, Eye, EyeOff,
-  ArrowRight, Loader2, Flame, Shield, Zap, Star,
+  ArrowRight, Loader2, ChefHat, Shield, Zap, Star,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import SEO from "../components/SEO";
@@ -69,7 +69,7 @@ const Login = () => {
     >
       <SEO
         title="Sign In"
-        description="Log in to your LotceWieth account to manage orders and track deliveries."
+        description="Log in to your Ires Kitchen account to manage orders and track deliveries."
       />
 
       {/* ── Ambient orbs ── */}
@@ -140,10 +140,10 @@ const Login = () => {
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: `${ACCENT}20` }}
               >
-                <Flame className="w-5 h-5" style={{ color: ACCENT }} />
+                <ChefHat className="w-5 h-5" style={{ color: ACCENT }} />
               </div>
               <span className="text-2xl font-black text-white tracking-tight">
-                Lotce<span style={{ color: ACCENT }}>Wieth</span>
+                Ires<span style={{ color: ACCENT }}>Kitchen</span>
               </span>
             </div>
             <p className="text-gray-600 text-sm font-semibold pl-0.5">
@@ -254,10 +254,10 @@ const Login = () => {
               className="w-8 h-8 rounded-xl flex items-center justify-center"
               style={{ background: `${ACCENT}20` }}
             >
-              <Flame className="w-4 h-4" style={{ color: ACCENT }} />
+              <ChefHat className="w-4 h-4" style={{ color: ACCENT }} />
             </div>
             <span className="text-xl font-black text-white tracking-tight">
-              Lotce<span style={{ color: ACCENT }}>Wieth</span>
+              Ires<span style={{ color: ACCENT }}>Kitchen</span>
             </span>
           </motion.div>
 
@@ -438,7 +438,7 @@ const Login = () => {
             </motion.div>
           </form>
 
-          {/* Divider + social hint (cosmetic, non-functional) */}
+          {/* Divider + social hint */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
