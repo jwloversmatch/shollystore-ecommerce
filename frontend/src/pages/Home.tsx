@@ -66,7 +66,7 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.09 } },
 };
 
-// ── Dark skeleton cards matching the new ProductCard shape ───────────────────
+// ── Dark skeleton cards ──────────────────────────────────────────────────────
 const DarkSkeleton = () => (
   <div className="flex flex-col items-center gap-0 animate-pulse">
     <div className="w-28 h-28 rounded-full bg-[#1c1c1c] z-10" />
@@ -75,7 +75,6 @@ const DarkSkeleton = () => (
   </div>
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
 const Home = () => {
   const { data: products, isLoading: pLoad } = useGetProductsQuery({});
   const { data: heroSlides, isLoading: sLoad } = useGetHeroSlidesQuery({});
@@ -95,7 +94,6 @@ const Home = () => {
   const [direction, setDirection] = useState(0);
   const [modalProduct, setModalProduct] = useState<ProductItem | null>(null);
 
-  // Auto-slide
   useEffect(() => {
     if (!heroSlides?.length) return;
     const id = setInterval(() => {
@@ -142,7 +140,6 @@ const Home = () => {
     return f.slice().sort((a, b) => b._id.localeCompare(a._id));
   }, [displayProducts, selectedCategory, searchTerm]);
 
-  // Settings
   const heroTagline = publicSettings?.heroTagline || "🔥 Premium Food Store";
   const heroTitle = publicSettings?.heroTitle || "Taste the | Difference";
   const heroDescription =
@@ -158,7 +155,6 @@ const Home = () => {
     ? heroTitle.split("|").map((s: string) => s.trim())
     : [heroTitle, ""];
 
-  // Schemas
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -172,10 +168,10 @@ const Home = () => {
     url: "https://shollystore-ecommerce.vercel.app",
   };
 
-  // ── Dark loading screen (adjusted padding) ──────────────────────────────────
+  // Loading screen (adjusted padding)
   if (isPageLoading) {
     return (
-      <div className="min-h-screen bg-[#0A0A0B] pt-20 pb-16 px-4">
+      <div className="min-h-screen bg-[#0A0A0B] pt-[60px] pb-16 px-4">
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-10 pt-16">
           {Array.from({ length: 8 }).map((_, i) => (
             <DarkSkeleton key={i} />
@@ -187,7 +183,6 @@ const Home = () => {
 
   const categoryNames = categories.map((c: CategoryItem) => c.name);
 
-  // ═══════════════════════════════════════════════════════════════════════════
   return (
     <div className="min-h-screen bg-[#0A0A0B] relative overflow-x-hidden">
       <SEO
@@ -214,10 +209,10 @@ const Home = () => {
         />
       </div>
 
-      {/* ════════ 1. HERO ════════════════════════════════════════════════════ */}
+      {/* ════════ HERO ═══════════════════════════════════════════════════════ */}
       {landingMode ? (
-        /* Landing mode — full-screen, centred, no carousel */
-        <section className="min-h-screen flex flex-col justify-center items-center px-6 text-center pt-20">
+        /* Landing mode — full‑screen centred */
+        <section className="min-h-screen flex flex-col justify-center items-center px-6 text-center pt-[60px]">
           <motion.span
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -285,9 +280,8 @@ const Home = () => {
           </motion.button>
         </section>
       ) : (
-        /* Regular mode — two-column with circular plate carousel */
-        // Inside the regular hero section
-        <section className="relative max-w-7xl mx-auto px-6 pt-16 md:pt-28 pb-16 grid md:grid-cols-2 items-center gap-14">
+        /* Regular mode — two‑column with carousel */
+        <section className="relative max-w-7xl mx-auto px-6 pt-[60px] md:pt-28 pb-16 grid md:grid-cols-2 items-center gap-14">
           {/* Left: text */}
           <motion.div
             variants={stagger}
@@ -382,7 +376,7 @@ const Home = () => {
             </motion.div>
           </motion.div>
 
-          {/* Right: circular plate carousel */}
+          {/* Right: carousel */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
@@ -398,20 +392,17 @@ const Home = () => {
               }}
               className="relative"
             >
-              {/* Outer slow-spinning ring */}
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
                 className="absolute -inset-6 rounded-full border-2 border-dashed pointer-events-none"
                 style={{ borderColor: `${ACCENT}30` }}
               />
-              {/* Middle ring */}
               <div
                 className="absolute -inset-3 rounded-full pointer-events-none"
                 style={{ boxShadow: `0 0 0 1.5px ${ACCENT}25` }}
               />
 
-              {/* Main image circle */}
               <div
                 className="relative w-64 h-64 md:w-80 md:h-80 rounded-full overflow-hidden group"
                 style={{
@@ -462,7 +453,6 @@ const Home = () => {
                   </div>
                 )}
 
-                {/* Arrow controls */}
                 <button
                   onClick={handlePrev}
                   className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
@@ -477,7 +467,6 @@ const Home = () => {
                 </button>
               </div>
 
-              {/* Dot nav below circle */}
               {heroSlides && heroSlides.length > 1 && (
                 <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
                   {heroSlides.map((_: HeroSlide, i: number) => (
@@ -494,7 +483,6 @@ const Home = () => {
                 </div>
               )}
 
-              {/* Floating stat chips */}
               <motion.div
                 animate={{ y: [-4, 4, -4] }}
                 transition={{
@@ -535,7 +523,9 @@ const Home = () => {
         </section>
       )}
 
-      {/* ════════ 2. MARQUEE TICKER ══════════════════════════════════════════ */}
+      {/* ── MARQUEE, FEATURES, CATEGORIES, PRODUCTS, SPECIAL OFFER ── */}
+      {/* (rest of the component unchanged) */}
+
       {categoryNames.length > 0 && (
         <div
           className="w-full overflow-hidden py-3.5 mt-8"
@@ -563,7 +553,6 @@ const Home = () => {
         </div>
       )}
 
-      {/* ════════ 3. FEATURES ════════════════════════════════════════════════ */}
       <section className="bg-[#111111] py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <motion.div
@@ -616,7 +605,6 @@ const Home = () => {
                 }}
                 className="bg-[#141414] border border-white/5 rounded-2xl p-5 md:p-6 transition-all cursor-default relative overflow-hidden"
               >
-                {/* Subtle bg glow */}
                 <div
                   className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-100 transition-opacity"
                   style={{
@@ -645,7 +633,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ════════ 4. SHOP BY CATEGORY ════════════════════════════════════════ */}
       <section className="py-14 md:py-18 bg-[#0A0A0B]">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="flex justify-between items-end mb-8">
@@ -679,8 +666,6 @@ const Home = () => {
               </motion.button>
             )}
           </div>
-
-          {/* Horizontal scroll row */}
           <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar -mx-4 px-4">
             {categoryList.map((cat) => {
               const active = selectedCategory === cat;
@@ -721,10 +706,8 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ════════ 5. PRODUCTS GRID ═══════════════════════════════════════════ */}
       <section id="products-grid" className="bg-[#111111] py-14 md:py-18">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
-          {/* Header + controls */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
             <div>
               <p
@@ -738,7 +721,6 @@ const Home = () => {
               </h2>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-              {/* Dark search */}
               <div className="relative w-full sm:w-60">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
                 <input
@@ -750,7 +732,6 @@ const Home = () => {
                   style={{ borderColor: "rgba(255,255,255,0.07)" }}
                 />
               </div>
-              {/* Category pills */}
               <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
                 {categoryList.map((cat) => (
                   <button
@@ -774,7 +755,6 @@ const Home = () => {
             </div>
           </div>
 
-          {/* ── Grid — pt-16 gives room for floating plate circles ── */}
           <motion.div
             layout
             className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2 md:gap-x-6 pt-16"
@@ -829,7 +809,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ════════ 6. SPECIAL OFFER ═══════════════════════════════════════════ */}
       <section className="bg-[#0A0A0B] py-14 md:py-20 px-4 md:px-6">
         <div className="max-w-7xl mx-auto">
           <motion.div
@@ -843,14 +822,12 @@ const Home = () => {
                 "linear-gradient(140deg, #180a00 0%, #0A0A0B 45%, #001509 100%)",
             }}
           >
-            {/* Top accent line */}
             <div
               className="absolute top-0 inset-x-0 h-px"
               style={{
                 background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)`,
               }}
             />
-            {/* Bottom accent line */}
             <div
               className="absolute bottom-0 inset-x-0 h-px"
               style={{
@@ -858,8 +835,6 @@ const Home = () => {
                   "linear-gradient(90deg, transparent, #10b981, transparent)",
               }}
             />
-
-            {/* Spinning sparkle */}
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
@@ -876,8 +851,6 @@ const Home = () => {
             >
               <Sparkles className="w-6 h-6" />
             </motion.div>
-
-            {/* Badge */}
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               whileInView={{ scale: 1, opacity: 1 }}
@@ -892,7 +865,6 @@ const Home = () => {
             >
               <Flame className="w-3.5 h-3.5" /> Limited Offer
             </motion.div>
-
             <motion.h2
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -902,7 +874,6 @@ const Home = () => {
             >
               {specialOfferTitle}
             </motion.h2>
-
             <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -912,7 +883,6 @@ const Home = () => {
             >
               {specialOfferText}
             </motion.p>
-
             <motion.button
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
