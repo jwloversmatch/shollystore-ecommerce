@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { Settings } from '../models/Settings';
-import { SettingsChangeLog } from '../models/SettingsChangeLog';  
-import { AuthRequest } from '../middleware/auth';                  
+import { SettingsChangeLog } from '../models/SettingsChangeLog';
+import { AuthRequest } from '../middleware/auth';
 
 // @desc    Get public settings (unchanged)
 export const getSettings = async (req: Request, res: Response): Promise<void> => {
@@ -17,7 +17,7 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-// @desc    Update settings (now handles all fields + logs changes)
+// @desc    Update settings (handles all fields including landingMode + logs changes)
 export const updateSettings = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     let settings = await Settings.findOne();
@@ -28,7 +28,7 @@ export const updateSettings = async (req: AuthRequest, res: Response): Promise<v
     // Keep a shallow copy of the old document for comparison
     const oldSettings = settings.toObject() as Record<string, any>;
 
-    // List of all fields we want to track
+    // All fields we want to track and update
     const fieldsToTrack = [
       'bankAccountName',
       'bankAccountNumber',
@@ -39,24 +39,42 @@ export const updateSettings = async (req: AuthRequest, res: Response): Promise<v
       'heroDescription',
       'specialOfferTitle',
       'specialOfferText',
+      'landingMode',   // ✅ added
     ];
 
     const updatedFields: { field: string; oldValue: string; newValue: string }[] = [];
 
     for (const field of fieldsToTrack) {
-      if (req.body[field] !== undefined && req.body[field] !== (oldSettings[field] || '')) {
+      // Skip if the field is not present in the request body
+      if (req.body[field] === undefined) continue;
+
+      let newValue: any = req.body[field];
+
+      // Normalize boolean for landingMode (frontend may send string "true"/"false" or "on")
+      if (field === 'landingMode') {
+        newValue = newValue === true || newValue === 'true' || newValue === 'on';
+      }
+
+      // Convert old value to string safely (fallback to empty string if never set)
+      const oldValueStr = (oldSettings[field] != null) ? String(oldSettings[field]) : '';
+
+      // Convert new value to string for logging
+      const newValueStr = String(newValue);
+
+      if (newValueStr !== oldValueStr) {
         updatedFields.push({
           field,
-          oldValue: oldSettings[field] || '',
-          newValue: req.body[field],
+          oldValue: oldValueStr,
+          newValue: newValueStr,
         });
-        (settings as any)[field] = req.body[field];
+        // Apply the update to the settings document
+        (settings as any)[field] = newValue;
       }
     }
 
     const updatedSettings = await settings.save();
 
-    // Log changes asynchronously (we don't await to keep the request fast)
+    // Log changes asynchronously (wait to ensure logs are saved)
     if (updatedFields.length > 0) {
       const adminEmail = req.user?.email || 'unknown';
       const logs = updatedFields.map((change) => ({

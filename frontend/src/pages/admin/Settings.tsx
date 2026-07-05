@@ -110,6 +110,7 @@ const Settings = () => {
         heroDescription: "",
         specialOfferTitle: "",
         specialOfferText: "",
+        landingMode: false, // ✅ also reset landing mode
       }).unwrap();
       toast.success("Settings cleared!");
       refetch();
@@ -354,12 +355,16 @@ const Settings = () => {
                     placeholder="e.g. Your Everyday | Drink Superstore"
                   />
                 </div>
-                {/* Landing Mode Toggle */}
+                {/* ✅ FIXED: Landing Mode Toggle – now sends real boolean */}
                 <div className="flex items-center gap-2 mt-4">
                   <input
                     type="checkbox"
                     id="landingMode"
-                    {...register("landingMode")}
+                    value="true"
+                    {...register("landingMode", {
+                      setValueAs: (value) =>
+                        value === true || value === "true" || value === "on",
+                    })}
                     className="w-4 h-4 text-leaf-green focus:ring-leaf-green rounded"
                   />
                   <label

@@ -11,7 +11,7 @@ export interface ISettingsChangeLog extends Document {
 const SettingsChangeLogSchema: Schema = new Schema({
   adminEmail: { type: String, required: true },
   field: { type: String, required: true },
-  oldValue: { type: String, required: true },
+  oldValue: { type: String, required: false, default: "none" }, 
   newValue: { type: String, required: true },
   changedAt: { type: Date, default: Date.now },
 });
