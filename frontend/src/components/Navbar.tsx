@@ -84,16 +84,20 @@ const Navbar = () => {
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <>
-      {/* ══════ DESKTOP — sticky top pill (md+) ════════════════════════════ */}
-      <nav className="hidden md:block sticky top-4 z-50 max-w-7xl mx-auto px-6">
-        <div className="flex justify-between items-center px-6 py-4 rounded-2xl"
+      {/* ══════ DESKTOP — fixed top bar, overlays hero ═══════════════════════ */}
+      <nav className="hidden md:block fixed top-0 left-0 right-0 z-50">
+        {/* Full‑width backdrop that sits behind the content */}
+        <div
+          className="absolute inset-0"
           style={{
-            background:  'rgba(17,17,17,0.95)',
+            background: 'rgba(17,17,17,0.95)',
             backdropFilter: 'blur(20px)',
-            border:      '1px solid rgba(255,255,255,0.08)',
-            boxShadow:   '0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.04) inset',
-          }}>
-
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.04) inset',
+          }}
+        />
+        {/* Content constrained to the same width as the page */}
+        <div className="relative max-w-7xl mx-auto px-6 flex justify-between items-center py-4">
           {/* Logo */}
           <Link to={user?.role === 'admin' ? '/admin' : '/'}
             className="text-2xl font-black text-white tracking-tight shrink-0 flex items-center gap-1.5">
@@ -186,13 +190,7 @@ const Navbar = () => {
         )}
       </div>
 
-      {/* ══════ MOBILE — fixed bottom nav ════════════════════════════════════
-          Answer: YES, bottom nav is highly advisable on mobile for food/e-commerce:
-          • Thumb-reachable on large phones
-          • Follows native iOS / Android app patterns
-          • Frees the top of the screen for content
-          • Used by Uber Eats, Jumia Food, DoorDash, etc.
-      ══════════════════════════════════════════════════════════════════════ */}
+      {/* ══════ MOBILE — fixed bottom nav ════════════════════════════════════ */}
       <div className="md:hidden fixed bottom-0 inset-x-0 z-50"
         style={{
           background:    '#111111',
