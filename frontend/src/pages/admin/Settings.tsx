@@ -19,11 +19,13 @@ import {
   Check,
   Home,
   History,
-} from "lucide-react";
+  ToggleLeft,
+  ToggleRight,
+} from "lucide-react";   // ← added toggle icons
 import { motion, AnimatePresence } from "framer-motion";
 import ConfirmationModal from "../../components/ConfirmationModal";
 
-// ---------- Zod Schema ----------
+// ---------- Zod Schema (still required for the full edit form) ----------
 const settingsSchema = z.object({
   bankAccountName: z.string().min(1, "Account name is required"),
   bankAccountNumber: z.string().min(1, "Account number is required"),
@@ -86,6 +88,7 @@ const Settings = () => {
     }
   }, [settings, reset]);
 
+  // ---------- Form submit for the full edit mode ----------
   const onSubmit = async (data: SettingsFormData) => {
     try {
       await updateSettings(data).unwrap();
@@ -98,6 +101,20 @@ const Settings = () => {
     }
   };
 
+  // ---------- Independent Landing Mode toggle ----------
+  const toggleLandingMode = async () => {
+    const current = settings?.landingMode ?? false;
+    try {
+      await updateSettings({ landingMode: !current }).unwrap();
+      toast.success(`Landing mode ${!current ? "enabled" : "disabled"}`);
+      refetch();
+    } catch (error) {
+      console.error("Failed to toggle landing mode:", error);
+      toast.error("Failed to toggle landing mode.");
+    }
+  };
+
+  // ---------- Clear all settings ----------
   const handleClearAll = async () => {
     try {
       await updateSettings({
@@ -110,7 +127,7 @@ const Settings = () => {
         heroDescription: "",
         specialOfferTitle: "",
         specialOfferText: "",
-        landingMode: false, // ✅ also reset landing mode
+        landingMode: false,
       }).unwrap();
       toast.success("Settings cleared!");
       refetch();
@@ -219,13 +236,27 @@ const Settings = () => {
                 </p>
               </div>
 
+              {/* ✅ Landing Mode with dedicated toggle (works instantly) */}
               <div>
                 <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
                   Landing Mode
                 </span>
-                <p className="font-medium text-gray-800">
-                  {settings?.landingMode ? "Yes" : "No"}
-                </p>
+                <div className="flex items-center gap-3 mt-1">
+                  <p className="font-medium text-gray-800">
+                    {settings?.landingMode ? "Yes" : "No"}
+                  </p>
+                  <button
+                    onClick={toggleLandingMode}
+                    className="text-leaf-green hover:text-green-700 transition-colors"
+                    title="Toggle landing mode"
+                  >
+                    {settings?.landingMode ? (
+                      <ToggleRight className="w-6 h-6" />
+                    ) : (
+                      <ToggleLeft className="w-6 h-6" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -315,7 +346,7 @@ const Settings = () => {
         </motion.div>
       )}
 
-      {/* -------- EDIT MODE -------- */}
+      {/* -------- EDIT MODE (full form with bank details required) -------- */}
       <AnimatePresence>
         {isEditing && (
           <motion.div
@@ -325,7 +356,7 @@ const Settings = () => {
             transition={{ duration: 0.3 }}
             className="space-y-6"
           >
-            {/* Homepage Content Form */}
+            {/* Homepage Content Form (still includes landingMode checkbox but optional here) */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
               <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
                 <Home className="w-5 h-5 text-leaf-green" />
@@ -355,16 +386,12 @@ const Settings = () => {
                     placeholder="e.g. Your Everyday | Drink Superstore"
                   />
                 </div>
-                {/* ✅ FIXED: Landing Mode Toggle – now sends real boolean */}
+                {/* Landing Mode checkbox inside edit mode as well (optional) */}
                 <div className="flex items-center gap-2 mt-4">
                   <input
                     type="checkbox"
                     id="landingMode"
-                    value="true"
-                    {...register("landingMode", {
-                      setValueAs: (value) =>
-                        value === true || value === "true" || value === "on",
-                    })}
+                    {...register("landingMode")}
                     className="w-4 h-4 text-leaf-green focus:ring-leaf-green rounded"
                   />
                   <label
@@ -409,7 +436,7 @@ const Settings = () => {
               </div>
             </div>
 
-            {/* Payment Details Form */}
+            {/* Payment Details Form (required fields still validated) */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
               <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
                 <Banknote className="w-5 h-5 text-leaf-green" />
