@@ -1,218 +1,346 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useState } from 'react';
 import { RootState } from '../store';
 import { logout } from '../features/auth/authSlice';
 import {
-  ShoppingCart,
-  User,
-  LogOut,
-  LayoutDashboard,
-  Settings,
-  Image,
-  Tag,
-  AlignRight,
-  BadgePercent,   // ✅ added
+  ShoppingCart, User, LogOut, LayoutDashboard, Settings,
+  Image, Tag, BadgePercent, Home, MoreHorizontal, X, Flame,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+const ACCENT = '#e8622a';
+
+const ADMIN_LINKS = [
+  { to: '/admin',              label: 'Dashboard',  icon: <LayoutDashboard className="w-5 h-5" /> },
+  { to: '/admin/hero-slides',  label: 'Hero Slides', icon: <Image className="w-5 h-5" />          },
+  { to: '/admin/categories',   label: 'Categories', icon: <Tag className="w-5 h-5" />             },
+  { to: '/admin/coupons',      label: 'Coupons',    icon: <BadgePercent className="w-5 h-5" />    },
+  { to: '/admin/settings',     label: 'Settings',   icon: <Settings className="w-5 h-5" />        },
+];
+
+// ─── Bottom-nav button ────────────────────────────────────────────────────────
+interface NavBtnProps {
+  to: string; icon: React.ReactNode; label: string; active: boolean; badge?: number;
+}
+const NavBtn: React.FC<NavBtnProps> = ({ to, icon, label, active, badge }) => (
+  <Link to={to} className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] group">
+    {active && (
+      <motion.div
+        layoutId="bottom-nav-indicator"
+        className="absolute -top-2 left-1/2 -translate-x-1/2 w-5 h-[3px] rounded-full"
+        style={{ background: ACCENT }}
+        transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+      />
+    )}
+    <div className="relative transition-transform duration-150 group-active:scale-90"
+      style={{ color: active ? ACCENT : '#6b7280' }}>
+      {icon}
+      {(badge ?? 0) > 0 && (
+        <span className="absolute -top-1.5 -right-1.5 text-white text-[8px] font-black min-w-[14px] min-h-[14px] rounded-full flex items-center justify-center px-0.5"
+          style={{ background: ACCENT }}>
+          {badge}
+        </span>
+      )}
+    </div>
+    <span className="text-[9px] font-extrabold uppercase tracking-wide"
+      style={{ color: active ? ACCENT : '#6b7280' }}>
+      {label}
+    </span>
+  </Link>
+);
+
+// ─── Main component ───────────────────────────────────────────────────────────
 const Navbar = () => {
-  const { user } = useSelector((state: RootState) => state.auth);
-  const { cartItems } = useSelector((state: RootState) => state.cart);
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user }      = useSelector((s: RootState) => s.auth);
+  const { cartItems } = useSelector((s: RootState) => s.cart);
+  const dispatch      = useDispatch();
+  const navigate      = useNavigate();
+  const { pathname }  = useLocation();
+
+  const [adminDrawer, setAdminDrawer] = useState(false);
+
+  const totalQty = cartItems.reduce((acc, i) => acc + i.qty, 0);
+  const showCart = !user || user.role === 'user';
+
+  const isActive = (path: string) => {
+    if (path === '/')      return pathname === '/';
+    if (path === '/admin') return pathname === '/admin';
+    return pathname.startsWith(path);
+  };
 
   const handleLogout = () => {
     dispatch(logout());
     navigate('/');
+    setAdminDrawer(false);
   };
 
-  const showCart = !user || user.role === 'user';
+  const desktopLinkCls = (path: string) =>
+    `flex items-center gap-1.5 text-sm font-bold transition-colors duration-150 ${
+      isActive(path) ? 'text-[#e8622a]' : 'text-gray-500 hover:text-white'
+    }`;
 
+  // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <nav className="sticky top-4 z-50 max-w-7xl mx-auto px-6">
-      <div className="bg-white/80 backdrop-blur-md shadow-glass border border-white/40 rounded-2xl px-6 py-3 flex justify-between items-center relative">
-        {/* Logo */}
-        <Link
-          to={user?.role === 'admin' ? '/admin' : '/'}
-          className="text-2xl font-bold text-gray-800 tracking-tight"
-        >
-          Lotce<span className="text-leaf-green">Wieth</span>
-        </Link>
+    <>
+      {/* ══════ DESKTOP — sticky top pill (md+) ════════════════════════════ */}
+      <nav className="hidden md:block sticky top-4 z-50 max-w-7xl mx-auto px-6">
+        <div className="flex justify-between items-center px-6 py-4 rounded-2xl"
+          style={{
+            background:  'rgba(17,17,17,0.95)',
+            backdropFilter: 'blur(20px)',
+            border:      '1px solid rgba(255,255,255,0.08)',
+            boxShadow:   '0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.04) inset',
+          }}>
 
-        {/* Right Actions */}
-        <div className="flex items-center gap-6">
-          {showCart && (
-            <Link to="/cart" className="relative group">
-              <ShoppingCart className="w-6 h-6 text-gray-700 group-hover:text-leaf-green transition-colors" />
-              {cartItems.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-blob-orange text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                  {cartItems.reduce((acc, item) => acc + item.qty, 0)}
-                </span>
-              )}
+          {/* Logo */}
+          <Link to={user?.role === 'admin' ? '/admin' : '/'}
+            className="text-2xl font-black text-white tracking-tight shrink-0 flex items-center gap-1.5">
+            <Flame className="w-5 h-5" style={{ color: ACCENT }} />
+            Lotce<span style={{ color: ACCENT }}>Wieth</span>
+          </Link>
+
+          {/* Admin links */}
+          {user?.role === 'admin' && (
+            <div className="flex items-center gap-5">
+              {ADMIN_LINKS.map(l => (
+                <Link key={l.to} to={l.to} className={desktopLinkCls(l.to)}>
+                  {l.icon} {l.label}
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* User links */}
+          {user?.role === 'user' && (
+            <Link to="/account" className={desktopLinkCls('/account')}>
+              <User className="w-4 h-4" /> Account
             </Link>
           )}
 
-          {user ? (
-            <>
-              {/* Desktop Admin Links (hidden on mobile) */}
-              {user.role === 'admin' && (
-                <div className="hidden md:flex items-center gap-4">
-                  <Link
-                    to="/admin"
-                    className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-leaf-green transition-colors"
-                  >
-                    <LayoutDashboard className="w-4 h-4" /> Dashboard
-                  </Link>
-                  <Link
-                    to="/admin/hero-slides"
-                    className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-leaf-green transition-colors"
-                  >
-                    <Image className="w-4 h-4" /> Hero Slides
-                  </Link>
-                  <Link
-                    to="/admin/categories"
-                    className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-leaf-green transition-colors"
-                  >
-                    <Tag className="w-4 h-4" /> Categories
-                  </Link>
-                  {/* ✅ Coupons link added */}
-                  <Link
-                    to="/admin/coupons"
-                    className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-leaf-green transition-colors"
-                  >
-                    <BadgePercent className="w-4 h-4" /> Coupons
-                  </Link>
-                  <Link
-                    to="/admin/settings"
-                    className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-leaf-green transition-colors"
-                  >
-                    <Settings className="w-4 h-4" /> Settings
-                  </Link>
-                </div>
-              )}
+          {/* Right: cart + auth */}
+          <div className="flex items-center gap-4 shrink-0">
+            {showCart && (
+              <Link to="/cart" className="relative p-1">
+                <ShoppingCart className={`w-5 h-5 transition-colors ${isActive('/cart') ? 'text-[#e8622a]' : 'text-gray-500 hover:text-white'}`} />
+                <AnimatePresence>
+                  {totalQty > 0 && (
+                    <motion.span
+                      key="badge"
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      className="absolute -top-1 -right-1 text-white text-[9px] font-black min-w-[18px] min-h-[18px] rounded-full flex items-center justify-center px-1"
+                      style={{ background: ACCENT }}>
+                      {totalQty}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </Link>
+            )}
 
-              {/* Desktop User Links (visible for regular users) */}
-              {user.role === 'user' && (
-                <div className="hidden md:flex items-center gap-4">
-                  <Link
-                    to="/account"
-                    className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-leaf-green transition-colors"
-                  >
-                    <User className="w-4 h-4" /> Account
-                  </Link>
-                </div>
-              )}
-
-              {/* Desktop Logout (visible for all users) */}
-              <button
-                onClick={handleLogout}
-                className="hidden md:flex items-center gap-1 text-sm font-medium text-red-500 hover:text-red-700 transition-colors"
-              >
+            {user ? (
+              <motion.button onClick={handleLogout} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-1.5 text-sm font-bold text-gray-600 hover:text-red-400 transition-colors">
                 <LogOut className="w-4 h-4" /> Logout
-              </button>
+              </motion.button>
+            ) : (
+              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
+                <Link to="/login"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
+                  style={{ background: ACCENT, boxShadow: `0 4px 14px ${ACCENT}55` }}>
+                  <User className="w-4 h-4" /> Login
+                </Link>
+              </motion.div>
+            )}
+          </div>
+        </div>
+      </nav>
 
-              {/* Mobile Hamburger (only for admins) */}
-              {user.role === 'admin' && (
-                <div className="md:hidden relative">
-                  <button
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    className="p-1 text-gray-600 hover:text-leaf-green transition-colors"
-                  >
-                    <AlignRight className="w-6 h-6" />
-                  </button>
+      {/* ══════ MOBILE — slim top bar (logo + cart only) ════════════════════ */}
+      <div className="md:hidden sticky top-0 z-40 flex justify-between items-center px-5 py-4"
+        style={{
+          background:     'rgba(10,10,11,0.92)',
+          backdropFilter: 'blur(20px)',
+          borderBottom:   '1px solid rgba(255,255,255,0.06)',
+        }}>
+        <Link to={user?.role === 'admin' ? '/admin' : '/'}
+          className="text-xl font-black text-white tracking-tight flex items-center gap-1.5">
+          <Flame className="w-4 h-4" style={{ color: ACCENT }} />
+          Lotce<span style={{ color: ACCENT }}>Wieth</span>
+        </Link>
 
-                  <AnimatePresence>
-                    {mobileMenuOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-12 w-48 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 p-2 flex flex-col gap-1 z-50"
-                      >
-                        <Link
-                          to="/admin"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-leaf-green/10 hover:text-leaf-green rounded-xl transition-colors"
-                        >
-                          <LayoutDashboard className="w-4 h-4" /> Dashboard
-                        </Link>
-                        <Link
-                          to="/admin/hero-slides"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-leaf-green/10 hover:text-leaf-green rounded-xl transition-colors"
-                        >
-                          <Image className="w-4 h-4" /> Hero Slides
-                        </Link>
-                        <Link
-                          to="/admin/categories"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-leaf-green/10 hover:text-leaf-green rounded-xl transition-colors"
-                        >
-                          <Tag className="w-4 h-4" /> Categories
-                        </Link>
-                        {/* ✅ Mobile Coupons link added */}
-                        <Link
-                          to="/admin/coupons"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-leaf-green/10 hover:text-leaf-green rounded-xl transition-colors"
-                        >
-                          <BadgePercent className="w-4 h-4" /> Coupons
-                        </Link>
-                        <Link
-                          to="/admin/settings"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-leaf-green/10 hover:text-leaf-green rounded-xl transition-colors"
-                        >
-                          <Settings className="w-4 h-4" /> Settings
-                        </Link>
-                        <hr className="border-gray-100 my-1" />
-                        <button
-                          onClick={() => {
-                            setMobileMenuOpen(false);
-                            handleLogout();
-                          }}
-                          className="flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-xl transition-colors w-full text-left"
-                        >
-                          <LogOut className="w-4 h-4" /> Logout
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
+        {/* Cart (non-admin only) */}
+        {showCart && (
+          <Link to="/cart" className="relative p-1.5 rounded-xl transition-colors"
+            style={{ color: isActive('/cart') ? ACCENT : '#6b7280' }}>
+            <ShoppingCart className="w-5 h-5" />
+            {totalQty > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
+                style={{ background: ACCENT }}>
+                {totalQty}
+              </span>
+            )}
+          </Link>
+        )}
+      </div>
 
-              {/* Mobile Links for regular users (non‑admin) */}
-              {user.role === 'user' && (
-                <div className="md:hidden flex items-center gap-3">
-                  <Link
-                    to="/account"
-                    className="text-gray-600 hover:text-leaf-green transition-colors p-1"
-                  >
-                    <User className="w-5 h-5" />
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="text-red-500 hover:text-red-700 transition-colors p-1"
-                  >
-                    <LogOut className="w-5 h-5" />
-                  </button>
-                </div>
-              )}
-            </>
-          ) : (
-            <Link
-              to="/login"
-              className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-leaf-green transition-colors"
-            >
-              <User className="w-4 h-4" /> Login
-            </Link>
+      {/* ══════ MOBILE — fixed bottom nav ════════════════════════════════════
+          Answer: YES, bottom nav is highly advisable on mobile for food/e-commerce:
+          • Thumb-reachable on large phones
+          • Follows native iOS / Android app patterns
+          • Frees the top of the screen for content
+          • Used by Uber Eats, Jumia Food, DoorDash, etc.
+      ══════════════════════════════════════════════════════════════════════ */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-50"
+        style={{
+          background:    '#111111',
+          borderTop:     '1px solid rgba(255,255,255,0.07)',
+          paddingBottom: 'env(safe-area-inset-bottom, 6px)',
+        }}>
+        <div className="flex justify-around items-center px-2 pt-2 pb-1">
+
+          {/* Home */}
+          <NavBtn to={user?.role === 'admin' ? '/admin' : '/'} icon={<Home className="w-5 h-5" />}
+            label="Home" active={user?.role === 'admin' ? pathname === '/admin' : pathname === '/'} />
+
+          {/* Cart (user / guest) */}
+          {showCart && (
+            <NavBtn to="/cart" icon={<ShoppingCart className="w-5 h-5" />}
+              label="Cart" active={isActive('/cart')} badge={totalQty} />
+          )}
+
+          {/* Admin: quick link to categories */}
+          {user?.role === 'admin' && (
+            <NavBtn to="/admin/coupons" icon={<BadgePercent className="w-5 h-5" />}
+              label="Coupons" active={isActive('/admin/coupons')} />
+          )}
+
+          {/* User: account */}
+          {user?.role === 'user' && (
+            <NavBtn to="/account" icon={<User className="w-5 h-5" />}
+              label="Account" active={isActive('/account')} />
+          )}
+
+          {/* Guest: login */}
+          {!user && (
+            <NavBtn to="/login" icon={<User className="w-5 h-5" />}
+              label="Login" active={isActive('/login')} />
+          )}
+
+          {/* Admin: More → slides up a drawer with all admin links */}
+          {user?.role === 'admin' && (
+            <button onClick={() => setAdminDrawer(true)}
+              className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-colors duration-150"
+              style={{ color: adminDrawer ? ACCENT : '#6b7280' }}>
+              <MoreHorizontal className="w-5 h-5" />
+              <span className="text-[9px] font-extrabold uppercase tracking-wide">More</span>
+            </button>
+          )}
+
+          {/* User: logout */}
+          {user?.role === 'user' && (
+            <button onClick={handleLogout}
+              className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] text-gray-600 hover:text-red-400 transition-colors">
+              <LogOut className="w-5 h-5" />
+              <span className="text-[9px] font-extrabold uppercase tracking-wide">Logout</span>
+            </button>
           )}
         </div>
       </div>
-    </nav>
+
+      {/* ══════ ADMIN BOTTOM SHEET (mobile) ══════════════════════════════════ */}
+      <AnimatePresence>
+        {adminDrawer && (
+          <>
+            {/* Scrim */}
+            <motion.div
+              key="scrim"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] md:hidden"
+              style={{ background: 'rgba(0,0,0,0.72)' }}
+              onClick={() => setAdminDrawer(false)} />
+
+            {/* Sheet */}
+            <motion.div
+              key="sheet"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+              className="fixed bottom-0 inset-x-0 z-[70] rounded-t-3xl md:hidden"
+              style={{
+                background:  '#141414',
+                borderTop:   `1px solid rgba(255,255,255,0.09)`,
+                paddingBottom: 'env(safe-area-inset-bottom, 24px)',
+              }}>
+
+              {/* Drag handle */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+              </div>
+
+              {/* Sheet header */}
+              <div className="flex justify-between items-center px-6 py-4">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-widest" style={{ color: ACCENT }}>Admin</p>
+                  <h2 className="text-xl font-black text-white">Menu</h2>
+                </div>
+                <motion.button onClick={() => setAdminDrawer(false)}
+                  whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-white transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.07)' }}>
+                  <X className="w-4 h-4" />
+                </motion.button>
+              </div>
+
+              {/* Links grid */}
+              <div className="grid grid-cols-2 gap-3 px-5 pb-2">
+                {ADMIN_LINKS.map((l, i) => {
+                  const active = isActive(l.to);
+                  return (
+                    <motion.div key={l.to}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}>
+                      <Link to={l.to} onClick={() => setAdminDrawer(false)}
+                        className="flex items-center gap-3 p-4 rounded-2xl border transition-all"
+                        style={{
+                          background:  active ? `${ACCENT}15` : '#1c1c1c',
+                          borderColor: active ? `${ACCENT}40` : 'rgba(255,255,255,0.06)',
+                          color:       active ? ACCENT : '#9ca3af',
+                        }}>
+                        {l.icon}
+                        <span className="text-sm font-bold">{l.label}</span>
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Logout */}
+              <div className="px-5 pt-3 pb-2">
+                <motion.button onClick={handleLogout}
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold text-red-400 border border-red-500/20 transition-colors"
+                  style={{ background: 'rgba(239,68,68,0.06)' }}>
+                  <LogOut className="w-4 h-4" /> Sign Out
+                </motion.button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/*
+        ── Bottom spacer ─────────────────────────────────────────────────────
+        Adds breathing room so page content doesn't hide behind the fixed
+        bottom nav on mobile. Add  pb-20 md:pb-0  to your Footer or
+        outermost page wrapper if you prefer to control this per-page.
+      */}
+      <div className="md:hidden h-[72px]" aria-hidden />
+    </>
   );
 };
 
