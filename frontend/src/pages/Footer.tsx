@@ -23,7 +23,7 @@ const columnVariants = {
 
 const linkHover = {
   rest: { x: 0 },
-  hover: { x: 4, color: '#4a8f29', transition: { duration: 0.2 } },
+  hover: { x: 4, color: '#e8622a', transition: { duration: 0.2 } },
 };
 
 const socialIconSpring = {
@@ -38,7 +38,6 @@ const socialIconSpring = {
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
-  // Quick links data (unchanged)
   const quickLinks = [
     { name: 'Home', path: '/' },
     { name: 'Shop', path: '/shop' },
@@ -54,17 +53,17 @@ const Footer = () => {
       viewport={{ once: true, margin: '-20px' }}
       className="relative mt-20 bg-gray-900/90 backdrop-blur-xl border-t border-white/10 shadow-2xl overflow-hidden"
     >
-      {/* Subtle background glow */}
+      {/* Subtle background glow – now using the orange accent */}
       <div className="absolute inset-0 -z-10 pointer-events-none">
         <motion.div
           animate={{ x: ['-10%', '10%', '-10%'], y: ['-5%', '5%', '-5%'] }}
           transition={{ repeat: Infinity, duration: 25, ease: 'linear' }}
-          className="absolute top-0 -left-20 w-72 h-72 bg-leaf-green/10 rounded-full blur-3xl"
+          className="absolute top-0 -left-20 w-72 h-72 bg-[#e8622a]/10 rounded-full blur-3xl"
         />
         <motion.div
           animate={{ x: ['10%', '-10%', '10%'], y: ['10%', '-10%', '10%'] }}
           transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
-          className="absolute bottom-0 -right-20 w-96 h-96 bg-blob-orange/10 rounded-full blur-3xl"
+          className="absolute bottom-0 -right-20 w-96 h-96 bg-[#e8622a]/10 rounded-full blur-3xl"
         />
       </div>
 
@@ -73,7 +72,7 @@ const Footer = () => {
           {/* Brand Column */}
           <motion.div variants={columnVariants} className="space-y-4">
             <Link to="/" className="text-2xl font-bold text-white tracking-tight">
-              Ires<span className="text-leaf-green">Kitchen</span>
+              Ires<span className="text-[#e8622a]">Kitchen</span>
             </Link>
             <p className="text-sm text-gray-400 leading-relaxed max-w-xs">
               Savor the taste of home‑cooked Nigerian meals, grilled delights,
@@ -100,7 +99,7 @@ const Footer = () => {
                 >
                   <Link
                     to={item.path}
-                    className="block hover:text-leaf-green transition-colors duration-200"
+                    className="block hover:text-[#e8622a] transition-colors duration-200"
                   >
                     {item.name}
                   </Link>
@@ -114,23 +113,23 @@ const Footer = () => {
             <h4 className="font-semibold text-white mb-4">Contact Us</h4>
             <ul className="space-y-3 text-sm text-gray-400">
               <li className="flex items-center gap-3">
-                <MapPin size={18} className="text-leaf-green" />
+                <MapPin size={18} className="text-[#e8622a]" />
                 <span>Lagos, Nigeria</span>
               </li>
               <li className="flex items-center gap-3">
-                <Phone size={18} className="text-leaf-green" />
+                <Phone size={18} className="text-[#e8622a]" />
                 <a
                   href="tel:+2349012345678"
-                  className="hover:text-leaf-green transition-colors"
+                  className="hover:text-[#e8622a] transition-colors"
                 >
                   +234 901 234 5678
                 </a>
               </li>
               <li className="flex items-center gap-3">
-                <Mail size={18} className="text-leaf-green" />
+                <Mail size={18} className="text-[#e8622a]" />
                 <a
                   href="mailto:hello@ireskitchen.com"
-                  className="hover:text-leaf-green transition-colors"
+                  className="hover:text-[#e8622a] transition-colors"
                 >
                   hello@ireskitchen.com
                 </a>
@@ -148,13 +147,13 @@ const Footer = () => {
               <input
                 type="email"
                 placeholder="Your email"
-                className="flex-1 min-w-[160px] px-5 py-3.5 text-base bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-leaf-green placeholder:text-gray-500 text-gray-800"
+                className="flex-1 min-w-[160px] px-5 py-3.5 text-base bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#e8622a] placeholder:text-gray-500 text-gray-800"
               />
               <motion.button
                 type="submit"
-                whileHover={{ scale: 1.03, boxShadow: '0 8px 20px rgba(74, 143, 41, 0.3)' }}
+                whileHover={{ scale: 1.03, boxShadow: '0 8px 20px rgba(232,98,42,0.3)' }}
                 whileTap={{ scale: 0.98 }}
-                className="px-8 py-3.5 text-base bg-leaf-green text-white rounded-xl font-medium hover:bg-green-700 transition-colors whitespace-nowrap shrink-0"
+                className="px-8 py-3.5 text-base bg-[#e8622a] text-white rounded-xl font-medium hover:bg-[#c9511f] transition-colors whitespace-nowrap shrink-0"
               >
                 Subscribe
               </motion.button>
@@ -169,10 +168,10 @@ const Footer = () => {
         >
           <span>&copy; {currentYear} Ires Kitchen. All rights reserved.</span>
           <div className="flex gap-6">
-            <Link to="/privacy" className="hover:text-leaf-green transition-colors">
+            <Link to="/privacy" className="hover:text-[#e8622a] transition-colors">
               Privacy Policy
             </Link>
-            <Link to="/terms" className="hover:text-leaf-green transition-colors">
+            <Link to="/terms" className="hover:text-[#e8622a] transition-colors">
               Terms of Service
             </Link>
           </div>
@@ -182,7 +181,7 @@ const Footer = () => {
   );
 };
 
-// Helper component for social icons
+// Helper component for social icons – now orange hover
 const SocialIcon = ({ href, icon }: { href: string; icon: React.ReactNode }) => (
   <motion.a
     href={href}
@@ -191,7 +190,7 @@ const SocialIcon = ({ href, icon }: { href: string; icon: React.ReactNode }) => 
     variants={socialIconSpring}
     initial="rest"
     whileHover="hover"
-    className="p-2.5 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 text-gray-400 hover:text-leaf-green hover:border-leaf-green/50 transition-all duration-200"
+    className="p-2.5 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 text-gray-400 hover:text-[#e8622a] hover:border-[#e8622a]/50 transition-all duration-200"
   >
     {icon}
   </motion.a>
