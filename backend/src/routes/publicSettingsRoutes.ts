@@ -15,12 +15,14 @@ router.get('/', async (req, res) => {
       bankAccountNumber: settings.bankAccountNumber,
       bankName: settings.bankName,
       whatsappNumber: settings.whatsappNumber,
-      // ✅ added new fields
+      // ✅ existing homepage fields
       heroTagline: settings.heroTagline,
       heroTitle: settings.heroTitle,
       heroDescription: settings.heroDescription,
       specialOfferTitle: settings.specialOfferTitle,
       specialOfferText: settings.specialOfferText,
+      // ✅ ADD THIS LINE
+      landingMode: settings.landingMode,
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
