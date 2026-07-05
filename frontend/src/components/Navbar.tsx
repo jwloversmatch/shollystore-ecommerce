@@ -86,7 +86,6 @@ const Navbar = () => {
     <>
       {/* ══════ DESKTOP — fixed top bar, overlays hero ═══════════════════════ */}
       <nav className="hidden md:block fixed top-0 left-0 right-0 z-50">
-        {/* Full‑width backdrop that sits behind the content */}
         <div
           className="absolute inset-0"
           style={{
@@ -96,7 +95,6 @@ const Navbar = () => {
             boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.04) inset',
           }}
         />
-        {/* Content constrained to the same width as the page */}
         <div className="relative max-w-7xl mx-auto px-6 flex justify-between items-center py-4">
           {/* Logo */}
           <Link to={user?.role === 'admin' ? '/admin' : '/'}
@@ -162,8 +160,8 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* ══════ MOBILE — slim top bar (logo + cart only) ════════════════════ */}
-      <div className="md:hidden sticky top-0 z-40 flex justify-between items-center px-5 py-4"
+      {/* ══════ MOBILE — FIXED top bar (no longer reserves space) ══════════ */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex justify-between items-center px-5 py-4"
         style={{
           background:     'rgba(10,10,11,0.92)',
           backdropFilter: 'blur(20px)',
@@ -175,7 +173,6 @@ const Navbar = () => {
           Lotce<span style={{ color: ACCENT }}>Wieth</span>
         </Link>
 
-        {/* Cart (non-admin only) */}
         {showCart && (
           <Link to="/cart" className="relative p-1.5 rounded-xl transition-colors"
             style={{ color: isActive('/cart') ? ACCENT : '#6b7280' }}>
@@ -199,35 +196,29 @@ const Navbar = () => {
         }}>
         <div className="flex justify-around items-center px-2 pt-2 pb-1">
 
-          {/* Home */}
           <NavBtn to={user?.role === 'admin' ? '/admin' : '/'} icon={<Home className="w-5 h-5" />}
             label="Home" active={user?.role === 'admin' ? pathname === '/admin' : pathname === '/'} />
 
-          {/* Cart (user / guest) */}
           {showCart && (
             <NavBtn to="/cart" icon={<ShoppingCart className="w-5 h-5" />}
               label="Cart" active={isActive('/cart')} badge={totalQty} />
           )}
 
-          {/* Admin: quick link to categories */}
           {user?.role === 'admin' && (
             <NavBtn to="/admin/coupons" icon={<BadgePercent className="w-5 h-5" />}
               label="Coupons" active={isActive('/admin/coupons')} />
           )}
 
-          {/* User: account */}
           {user?.role === 'user' && (
             <NavBtn to="/account" icon={<User className="w-5 h-5" />}
               label="Account" active={isActive('/account')} />
           )}
 
-          {/* Guest: login */}
           {!user && (
             <NavBtn to="/login" icon={<User className="w-5 h-5" />}
               label="Login" active={isActive('/login')} />
           )}
 
-          {/* Admin: More → slides up a drawer with all admin links */}
           {user?.role === 'admin' && (
             <button onClick={() => setAdminDrawer(true)}
               className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-colors duration-150"
@@ -237,7 +228,6 @@ const Navbar = () => {
             </button>
           )}
 
-          {/* User: logout */}
           {user?.role === 'user' && (
             <button onClick={handleLogout}
               className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] text-gray-600 hover:text-red-400 transition-colors">
@@ -252,7 +242,6 @@ const Navbar = () => {
       <AnimatePresence>
         {adminDrawer && (
           <>
-            {/* Scrim */}
             <motion.div
               key="scrim"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -260,7 +249,6 @@ const Navbar = () => {
               style={{ background: 'rgba(0,0,0,0.72)' }}
               onClick={() => setAdminDrawer(false)} />
 
-            {/* Sheet */}
             <motion.div
               key="sheet"
               initial={{ y: '100%' }}
@@ -274,12 +262,10 @@ const Navbar = () => {
                 paddingBottom: 'env(safe-area-inset-bottom, 24px)',
               }}>
 
-              {/* Drag handle */}
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
               </div>
 
-              {/* Sheet header */}
               <div className="flex justify-between items-center px-6 py-4">
                 <div>
                   <p className="text-xs font-extrabold uppercase tracking-widest" style={{ color: ACCENT }}>Admin</p>
@@ -293,7 +279,6 @@ const Navbar = () => {
                 </motion.button>
               </div>
 
-              {/* Links grid */}
               <div className="grid grid-cols-2 gap-3 px-5 pb-2">
                 {ADMIN_LINKS.map((l, i) => {
                   const active = isActive(l.to);
@@ -317,7 +302,6 @@ const Navbar = () => {
                 })}
               </div>
 
-              {/* Logout */}
               <div className="px-5 pt-3 pb-2">
                 <motion.button onClick={handleLogout}
                   whileTap={{ scale: 0.97 }}
@@ -331,12 +315,6 @@ const Navbar = () => {
         )}
       </AnimatePresence>
 
-      {/*
-        ── Bottom spacer ─────────────────────────────────────────────────────
-        Adds breathing room so page content doesn't hide behind the fixed
-        bottom nav on mobile. Add  pb-20 md:pb-0  to your Footer or
-        outermost page wrapper if you prefer to control this per-page.
-      */}
       <div className="md:hidden h-[72px]" aria-hidden />
     </>
   );
