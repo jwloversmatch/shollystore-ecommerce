@@ -7,6 +7,8 @@ interface ChangePasswordCardProps {
   changingPassword: boolean;
 }
 
+const ACCENT = "#e8622a";
+
 const ChangePasswordCard = ({ onSubmit, changingPassword }: ChangePasswordCardProps) => {
   const [showForm, setShowForm] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -20,10 +22,13 @@ const ChangePasswordCard = ({ onSubmit, changingPassword }: ChangePasswordCardPr
   };
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-4">
+    <div className="rounded-2xl shadow-sm border p-6 sm:p-8 space-y-4"
+      style={{ background: "#141414", borderColor: "rgba(255,255,255,0.07)" }}
+    >
       <button
         onClick={() => setShowForm(!showForm)}
-        className="text-sm font-medium text-leaf-green hover:underline flex items-center gap-2"
+        className="text-sm font-medium hover:underline flex items-center gap-2"
+        style={{ color: ACCENT }}
       >
         <Lock className="w-4 h-4" />
         {showForm ? "Hide" : "Change Password"}
@@ -31,26 +36,28 @@ const ChangePasswordCard = ({ onSubmit, changingPassword }: ChangePasswordCardPr
       {showForm && (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-400 mb-1">
               Current Password
             </label>
             <input
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green"
+              className="w-full rounded-xl px-4 py-2.5 outline-none text-white placeholder-gray-500"
+              style={{ background: "#1c1c1c", border: "1px solid rgba(255,255,255,0.1)" }}
               placeholder="Current password"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-400 mb-1">
               New Password
             </label>
             <input
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green"
+              className="w-full rounded-xl px-4 py-2.5 outline-none text-white placeholder-gray-500"
+              style={{ background: "#1c1c1c", border: "1px solid rgba(255,255,255,0.1)" }}
               placeholder="New password (min. 6 characters)"
             />
           </div>
@@ -60,7 +67,8 @@ const ChangePasswordCard = ({ onSubmit, changingPassword }: ChangePasswordCardPr
               disabled={changingPassword}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="px-6 py-2.5 bg-leaf-green text-white rounded-xl font-medium shadow-md hover:bg-green-700 transition disabled:opacity-60"
+              className="px-6 py-2.5 text-white rounded-xl font-medium shadow-md transition disabled:opacity-60"
+              style={{ background: ACCENT }}
             >
               {changingPassword ? "Updating..." : "Update Password"}
             </motion.button>

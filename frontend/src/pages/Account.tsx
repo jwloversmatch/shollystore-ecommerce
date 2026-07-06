@@ -24,6 +24,7 @@ import OrderDetailModal from "./account/OrderDetailModal";
 
 import type { Order, IAddress } from "../types/account";
 
+
 const Account = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -187,7 +188,8 @@ const Account = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-4 md:p-6 pt-20 md:pt-24 max-w-6xl mx-auto space-y-8"
+      className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-6xl mx-auto space-y-8"
+      style={{ background: "#0A0A0B" }}
     >
       <SEO
         title="My Account"
@@ -196,13 +198,14 @@ const Account = () => {
 
       <AccountHeader user={user} />
 
-      <div className="flex gap-4 border-b border-gray-200">
+      {/* Tabs - dark themed */}
+      <div className="flex gap-4 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
         <button
           onClick={() => setActiveTab("orders")}
           className={`pb-3 px-1 text-sm font-semibold transition-colors border-b-2 ${
             activeTab === "orders"
-              ? "border-leaf-green text-leaf-green"
-              : "border-transparent text-gray-500 hover:text-gray-700"
+              ? "border-[#e8622a] text-[#e8622a]"
+              : "border-transparent text-gray-500 hover:text-gray-300"
           }`}
         >
           🧾 My Orders
@@ -211,8 +214,8 @@ const Account = () => {
           onClick={() => setActiveTab("profile")}
           className={`pb-3 px-1 text-sm font-semibold transition-colors border-b-2 ${
             activeTab === "profile"
-              ? "border-leaf-green text-leaf-green"
-              : "border-transparent text-gray-500 hover:text-gray-700"
+              ? "border-[#e8622a] text-[#e8622a]"
+              : "border-transparent text-gray-500 hover:text-gray-300"
           }`}
         >
           👤 Profile Settings
