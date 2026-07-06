@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { RootState } from "../store";
 import {
@@ -15,112 +15,110 @@ import {
 } from "../features/api/apiSlice";
 import { clearCart } from "../features/cart/cartSlice";
 import {
-  MapPin,
-  Building,
-  CreditCard,
-  Banknote,
-  MessageCircle,
-  X,
-  Home,
-  Briefcase,
+  MapPin, Building, CreditCard, Banknote, MessageCircle,
+  X, Home, Briefcase, CheckCircle, Flame, Tag, ArrowRight, Loader2, AlertCircle,
 } from "lucide-react";
 import SEO from "../components/SEO";
 
-// ---------- Types ----------
+// ─── Constants ─────────────────────────────────────────────────────────────────
+const ACCENT = "#e8622a";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface IAddress {
-  _id: string;
-  label: string;
-  address: string;
-  city: string;
-  postalCode?: string;
-  country?: string;
-  isDefault: boolean;
+  _id: string; label: string; address: string;
+  city: string; postalCode?: string; country?: string; isDefault: boolean;
 }
-
 interface CartItem {
-  _id: string;
-  name: string;
-  price: number;
-  qty: number;
-  image: string;
-  stock?: number;
+  _id: string; name: string; price: number; qty: number; image: string; stock?: number;
 }
+interface OrderResponse { _id: string; }
 
+// ─── Schema ───────────────────────────────────────────────────────────────────
 const checkoutSchema = z.object({
   address: z.string().min(5, "Address must be at least 5 characters"),
-  city: z.string().min(2, "City is required"),
+  city:    z.string().min(2, "City is required"),
 });
-
 type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
-interface OrderResponse {
-  _id: string;
-}
+// ─── Input class builder (matches Login / Register) ────────────────────────────
+const inputCls = (hasError: boolean) =>
+  [
+    "w-full pl-11 pr-4 py-3.5 rounded-xl text-sm text-white",
+    "bg-[#1c1c1c] placeholder-gray-600 outline-none transition-all duration-200",
+    hasError
+      ? "border border-red-500/50 ring-2 ring-red-500/10"
+      : "border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15",
+  ].join(" ");
 
+// ─── Ambient background ────────────────────────────────────────────────────────
+const AmbientBg = () => (
+  <>
+    <motion.div animate={{ x:["-12%","12%","-12%"], y:["-8%","8%","-8%"] }}
+      transition={{ repeat:Infinity, duration:30, ease:"linear" }}
+      className="fixed pointer-events-none rounded-full blur-[130px] -z-10"
+      style={{ width:640, height:640, top:-200, left:-200, background:ACCENT, opacity:0.065 }} />
+    <motion.div animate={{ x:["12%","-12%","12%"], y:["12%","-10%","12%"] }}
+      transition={{ repeat:Infinity, duration:38, ease:"linear" }}
+      className="fixed pointer-events-none rounded-full blur-[130px] -z-10"
+      style={{ width:600, height:600, bottom:-200, right:-200, background:"#10b981", opacity:0.04 }} />
+    <div className="fixed inset-0 pointer-events-none -z-10"
+      style={{ backgroundImage:"radial-gradient(rgba(255,255,255,0.022) 1px, transparent 1px)", backgroundSize:"28px 28px" }} />
+  </>
+);
+
+// ─── Payment method config ────────────────────────────────────────────────────
+const PAYMENT_METHODS = [
+  { id:"paystack",      label:"Paystack",      sub:"Card / Bank Transfer",  icon:<CreditCard  className="w-5 h-5" />, color:"#3b82f6" },
+  { id:"bank_transfer", label:"Bank Transfer", sub:"Manual bank deposit",   icon:<Banknote    className="w-5 h-5" />, color:"#10b981" },
+  { id:"whatsapp",      label:"WhatsApp Pay",  sub:"Chat to complete order",icon:<MessageCircle className="w-5 h-5"/>, color:"#25D366" },
+] as const;
+
+// ═══════════════════════════════════════════════════════════════════════════════
 const Checkout = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const dispatch = useDispatch();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const dispatch  = useDispatch();
 
-  const cart = useSelector((state: RootState) => state.cart);
-  const { user } = useSelector((state: RootState) => state.auth);
-  const [createOrder, { isLoading }] = useCreateOrderMutation();
-  const { data: publicSettings } = useGetPublicSettingsQuery({});
-  const [validateCoupon, { isLoading: isApplying }] = useValidateCouponMutation();
-  const { data: savedAddresses = [] } = useGetAddressesQuery({});
+  const cart      = useSelector((s: RootState) => s.cart);
+  const { user }  = useSelector((s: RootState) => s.auth);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<CheckoutFormData>({
-    resolver: zodResolver(checkoutSchema),
-  });
+  const [createOrder, { isLoading }]             = useCreateOrderMutation();
+  const { data: publicSettings }                 = useGetPublicSettingsQuery({});
+  const [validateCoupon, { isLoading:isApplying }] = useValidateCouponMutation();
+  const { data: savedAddresses = [] }            = useGetAddressesQuery({});
 
-  const [paymentMethod, setPaymentMethod] = useState<"paystack" | "bank_transfer" | "whatsapp">("paystack");
-  const [orderSuccess, setOrderSuccess] = useState(false);
-  const [orderData, setOrderData] = useState<OrderResponse | null>(null);
+  const { register, handleSubmit, reset, formState:{ errors } } =
+    useForm<CheckoutFormData>({ resolver: zodResolver(checkoutSchema) });
 
-  // ---------- Address selection ----------
+  const [paymentMethod, setPaymentMethod] = useState<"paystack"|"bank_transfer"|"whatsapp">("paystack");
+  const [orderSuccess, setOrderSuccess]   = useState(false);
+  const [orderData,    setOrderData]      = useState<OrderResponse | null>(null);
+
+  // Address state – no effect needed; initial state is fine.
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [isNewAddress, setIsNewAddress] = useState(false);
+  const [isNewAddress,       setIsNewAddress]      = useState(true);
 
-  // Pre-select default address on load
- useEffect(() => {
-  if (savedAddresses.length > 0) {
-    const defaultAddr = savedAddresses.find((a: IAddress) => a.isDefault) || savedAddresses[0];
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSelectedAddressId(defaultAddr._id);
+  // Helper to select a saved address and fill the form
+  const selectSavedAddress = (addr: IAddress) => {
+    setSelectedAddressId(addr._id);
     setIsNewAddress(false);
-  } else {
-    setSelectedAddressId(null);
+    reset({ address: addr.address, city: addr.city });
+  };
+
+  // Helper to switch to new address mode
+  const selectNewAddress = () => {
     setIsNewAddress(true);
-  }
-}, [savedAddresses]);
+    setSelectedAddressId(null);
+    reset({ address: "", city: "" });
+  };
 
-  // Fill form when a saved address is selected
-  useEffect(() => {
-    if (selectedAddressId && !isNewAddress) {
-      const addr = savedAddresses.find((a: IAddress) => a._id === selectedAddressId);
-      if (addr) {
-        reset({ address: addr.address, city: addr.city });
-      }
-    } else if (isNewAddress) {
-      reset({ address: "", city: "" });
-    }
-  }, [selectedAddressId, isNewAddress, savedAddresses, reset]);
-
-  // ---------- Coupon State ----------
-  const [couponCode, setCouponCode] = useState("");
+  // Coupon state
+  const [couponCode,     setCouponCode]     = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
-  const [couponError, setCouponError] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [couponError,    setCouponError]    = useState("");
+  const [appliedCoupon,  setAppliedCoupon]  = useState<string | null>(null);
 
-  const totalPrice = cart.cartItems.reduce(
-    (acc: number, item: CartItem) => acc + item.price * item.qty,
-    0,
-  );
+  const totalPrice = cart.cartItems.reduce((a: number, i: CartItem) => a + i.price * i.qty, 0);
   const finalTotal = totalPrice - couponDiscount;
 
   const handleApplyCoupon = async () => {
@@ -130,18 +128,15 @@ const Checkout = () => {
       const res = await validateCoupon({ code: couponCode, orderTotal: totalPrice }).unwrap();
       setCouponDiscount(res.coupon.discount);
       setAppliedCoupon(res.coupon.code);
-      toast.success(`Coupon applied – ₦${res.coupon.discount.toLocaleString()} off!`);
+      toast.success(`₦${res.coupon.discount.toLocaleString()} off applied!`);
     } catch (err: unknown) {
-      const error = err as { data?: { message?: string } };
-      setCouponError(error?.data?.message || "Invalid coupon");
+      const e = err as { data?: { message?: string } };
+      setCouponError(e?.data?.message || "Invalid coupon");
     }
   };
 
   const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponCode("");
-    setCouponDiscount(0);
-    setCouponError("");
+    setAppliedCoupon(null); setCouponCode(""); setCouponDiscount(0); setCouponError("");
   };
 
   const onSubmit = async (data: CheckoutFormData) => {
@@ -150,7 +145,6 @@ const Checkout = () => {
       navigate("/login", { state: { from: location.pathname } });
       return;
     }
-
     try {
       const result = await createOrder({
         orderItems: cart.cartItems,
@@ -162,298 +156,458 @@ const Checkout = () => {
       }).unwrap();
 
       dispatch(clearCart());
-
       if (paymentMethod === "paystack") {
         window.location.assign(result.paymentUrl);
       } else {
         setOrderSuccess(true);
         setOrderData(result.order);
       }
-    } catch (error) {
-      console.error("Checkout failed:", error);
+    } catch {
       toast.error("Failed to place order. Please try again.");
     }
   };
 
-  // ---------- Success Page ----------
+  // ══════ SUCCESS SCREEN ════════════════════════════════════════════════════════
   if (orderSuccess) {
-    const details = publicSettings || {
-      bankAccountName: "LotceWieth Store",
-      bankAccountNumber: "0123456789",
-      bankName: "GTBank",
-      whatsappNumber: "+2348000000000",
+    const d = publicSettings || {
+      bankAccountName: "LotceWieth Store", bankAccountNumber: "0123456789",
+      bankName: "GTBank", whatsappNumber: "+2348000000000",
     };
+    const waLink = `https://wa.me/${d.whatsappNumber?.replace(/\D/g, "")}`;
 
     return (
-      <div className="min-h-screen p-4 flex items-center justify-center bg-gradient-to-br from-pastel-pink via-pastel-green to-white">
+      <div className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden" style={{ background:"#0A0A0B" }}>
         <SEO title="Order Placed" description="Your order has been placed successfully." />
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-8 max-w-lg w-full border border-white/40"
-        >
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Order Placed!</h2>
-          <p className="text-gray-600 mb-6">
-            Your order <strong>#{orderData?._id}</strong> has been received. Please complete payment using the details below.
-          </p>
+        <AmbientBg />
 
-          {paymentMethod === "bank_transfer" && (
-            <div className="bg-pastel-green/50 p-4 rounded-xl border border-leaf-green/20 mb-6">
-              <h3 className="font-semibold text-gray-700 mb-2">Bank Transfer Details</h3>
-              <p className="text-sm text-gray-600"><strong>Bank:</strong> {details.bankName}</p>
-              <p className="text-sm text-gray-600"><strong>Account Name:</strong> {details.bankAccountName}</p>
-              <p className="text-sm text-gray-600"><strong>Account Number:</strong> <span className="font-bold text-leaf-green">{details.bankAccountNumber}</span></p>
-              <p className="text-xs text-gray-500 mt-4">
-                After transfer, send a screenshot of the receipt to our WhatsApp: <br />
-                <a href={`https://wa.me/${details.whatsappNumber.replace("+", "")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-1 text-leaf-green font-bold hover:underline">
-                  <MessageCircle className="w-4 h-4" /> {details.whatsappNumber}
-                </a>
-              </p>
+        <motion.div initial={{ opacity:0, scale:0.92, y:20 }} animate={{ opacity:1, scale:1, y:0 }}
+          transition={{ duration:0.55, ease:"easeOut" }}
+          className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10"
+          style={{ background:"#141414", border:"1px solid rgba(255,255,255,0.07)", boxShadow:"0 40px 90px rgba(0,0,0,0.65)" }}>
+
+          <div className="absolute top-0 inset-x-0 h-px rounded-t-3xl"
+            style={{ background:`linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
+
+          {/* Animated plate check */}
+          <div className="flex justify-center mb-6">
+            <div className="relative">
+              <motion.div animate={{ rotate:360 }} transition={{ duration:20, repeat:Infinity, ease:"linear" }}
+                className="absolute -inset-4 rounded-full border-2 border-dashed pointer-events-none"
+                style={{ borderColor:`${ACCENT}30` }} />
+              <motion.div initial={{ scale:0 }} animate={{ scale:1 }}
+                transition={{ type:"spring", stiffness:320, damping:22, delay:0.1 }}
+                className="w-20 h-20 rounded-full flex items-center justify-center"
+                style={{ background:`${ACCENT}15`, boxShadow:`0 0 0 3px ${ACCENT}` }}>
+                <CheckCircle className="w-9 h-9" style={{ color:ACCENT }} />
+              </motion.div>
             </div>
+          </div>
+
+          <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.2 }}
+            className="text-[10px] font-extrabold uppercase tracking-[0.22em] mb-2 text-center" style={{ color:ACCENT }}>
+            Order received
+          </motion.p>
+          <motion.h2 initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.25 }}
+            className="text-3xl font-black text-white mb-2 text-center leading-tight">
+            Order Placed!
+          </motion.h2>
+          <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.3 }}
+            className="text-gray-600 text-sm text-center mb-6">
+            Reference:{" "}
+            <span className="font-bold text-white font-mono text-xs px-2 py-0.5 rounded-lg" style={{ background:"#1c1c1c" }}>
+              #{orderData?._id}
+            </span>
+          </motion.p>
+
+          {/* Bank transfer details */}
+          {paymentMethod === "bank_transfer" && (
+            <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.35 }}
+              className="rounded-2xl p-5 mb-6 border"
+              style={{ background:"rgba(16,185,129,0.07)", borderColor:"rgba(16,185,129,0.25)" }}>
+              <p className="text-xs font-extrabold uppercase tracking-widest text-emerald-400 mb-3">Bank Transfer Details</p>
+              <div className="space-y-2 text-sm">
+                {[
+                  { label:"Bank",           val: d.bankName            },
+                  { label:"Account Name",   val: d.bankAccountName     },
+                  { label:"Account Number", val: d.bankAccountNumber, highlight:true },
+                ].map(row => (
+                  <div key={row.label} className="flex justify-between items-center">
+                    <span className="text-gray-500 font-medium">{row.label}</span>
+                    <span className={`font-bold ${row.highlight ? "text-emerald-400 font-mono tracking-widest text-base" : "text-white"}`}>
+                      {row.val}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 pt-3 border-t border-emerald-500/20">
+                <p className="text-xs text-gray-600 mb-2">Send transfer receipt to WhatsApp:</p>
+                <a href={waLink} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all"
+                  style={{ background:"#25D366", boxShadow:"0 4px 12px rgba(37,211,102,0.35)" }}>
+                  <MessageCircle className="w-4 h-4" /> {d.whatsappNumber}
+                </a>
+              </div>
+            </motion.div>
           )}
 
+          {/* WhatsApp details */}
           {paymentMethod === "whatsapp" && (
-            <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-200/40 mb-6">
-              <h3 className="font-semibold text-gray-700 mb-2">Pay via WhatsApp</h3>
-              <p className="text-sm text-gray-600">Contact us on WhatsApp to complete your payment and confirm your order.</p>
-              <p className="text-sm text-gray-600 mt-2">Our WhatsApp number: <span className="font-bold text-green-600">{details.whatsappNumber}</span></p>
-              <a href={`https://wa.me/${details.whatsappNumber.replace("+", "")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition">
+            <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.35 }}
+              className="rounded-2xl p-5 mb-6 border"
+              style={{ background:"rgba(37,211,102,0.07)", borderColor:"rgba(37,211,102,0.25)" }}>
+              <p className="text-xs font-extrabold uppercase tracking-widest mb-3" style={{ color:"#25D366" }}>WhatsApp Payment</p>
+              <p className="text-sm text-gray-500 mb-3 leading-relaxed">
+                Chat with us to confirm your order and complete payment.
+              </p>
+              <a href={waLink} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white w-full justify-center"
+                style={{ background:"#25D366", boxShadow:"0 6px 18px rgba(37,211,102,0.35)" }}>
                 <MessageCircle className="w-4 h-4" /> Chat on WhatsApp
               </a>
-            </div>
+            </motion.div>
           )}
 
-          <button onClick={() => navigate("/")} className="w-full bg-leaf-green text-white py-3 rounded-xl font-bold hover:bg-green-700 transition">
-            Continue Shopping
+          <motion.button initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.45 }}
+            whileHover={{ scale:1.03, boxShadow:`0 16px 40px ${ACCENT}55` }} whileTap={{ scale:0.97 }}
+            onClick={() => navigate("/")}
+            className="w-full py-4 rounded-xl font-black text-white text-[15px] flex items-center justify-center gap-2.5 group"
+            style={{ background:ACCENT, boxShadow:`0 8px 24px ${ACCENT}44` }}>
+            Continue Shopping <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </motion.button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ══════ EMPTY CART ════════════════════════════════════════════════════════════
+  if (cart.cartItems.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background:"#0A0A0B" }}>
+        <SEO title="Checkout" description="Complete your order securely." />
+        <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
+          className="text-center p-8">
+          <p className="text-gray-600 mb-4 text-lg">Your cart is empty.</p>
+          <button onClick={() => navigate("/")} className="font-bold hover:opacity-80 transition-opacity" style={{ color:ACCENT }}>
+            ← Back to Shop
           </button>
         </motion.div>
       </div>
     );
   }
 
-  // ---------- Empty Cart ----------
-  if (cart.cartItems.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Your cart is empty. Go back to shopping.
-      </div>
-    );
-  }
-
-  // ---------- Normal Checkout Page ----------
+  // ══════ MAIN CHECKOUT ═════════════════════════════════════════════════════════
   return (
-    <div
-      className="min-h-screen p-4 relative bg-cover bg-center bg-no-repeat flex items-center justify-center"
-      style={{ backgroundImage: "url(https://images.unsplash.com/photo-1506619216599-9d16d0903dfd?auto=format&fit=crop&w=1920&q=80)" }}
-    >
+    <div className="min-h-screen px-4 py-8 pb-28 md:pb-10 md:py-10 relative overflow-x-hidden" style={{ background:"#0A0A0B" }}>
       <SEO title="Checkout" description="Complete your order with secure payment options." />
-      <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-0"></div>
+      <AmbientBg />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-full max-w-6xl bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/40 grid md:grid-cols-2 min-h-[550px]"
-      >
-        {/* Left Side - Shipping & Payment */}
-        <div className="p-8 md:p-12 flex flex-col justify-center bg-white/90 backdrop-blur-sm border-r border-white/40">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Checkout</h2>
-          <p className="text-gray-500 mb-6 text-sm">Select a saved address or enter a new one.</p>
+      <div className="max-w-6xl mx-auto">
+        {/* Page header */}
+        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.45 }}
+          className="mb-7">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background:`${ACCENT}18` }}>
+              <Flame className="w-4 h-4" style={{ color:ACCENT }} />
+            </div>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color:ACCENT }}>Secure Checkout</p>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-black text-white">Complete Your Order</h1>
+        </motion.div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* ---------- Saved Addresses ---------- */}
-            {savedAddresses.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">Saved Addresses</label>
-                <div className="space-y-2">
-                  {savedAddresses.map((addr: IAddress) => (
-                    <label
-                      key={addr._id}
-                      className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition ${
-                        selectedAddressId === addr._id && !isNewAddress
-                          ? "border-leaf-green bg-leaf-green/5"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="savedAddress"
-                        checked={selectedAddressId === addr._id && !isNewAddress}
-                        onChange={() => {
-                          setSelectedAddressId(addr._id);
-                          setIsNewAddress(false);
-                        }}
-                        className="w-4 h-4 text-leaf-green focus:ring-leaf-green"
-                      />
-                      <div className="flex-1">
-                        <p className="font-medium text-sm text-gray-800 flex items-center gap-1.5">
-                          {addr.label === "Home" ? <Home className="w-3.5 h-3.5" /> : <Briefcase className="w-3.5 h-3.5" />}
-                          {addr.label}
-                          {addr.isDefault && <span className="text-xs text-leaf-green ml-1">(Default)</span>}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-0.5">{addr.address}, {addr.city}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-5 lg:gap-8 items-start">
+
+          {/* ═══ LEFT: Shipping + Payment ═══ */}
+          <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.1 }}>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+
+              {/* Saved addresses */}
+              {savedAddresses.length > 0 && (
+                <div className="rounded-2xl p-5 md:p-6" style={{ background:"#141414", border:"1px solid rgba(255,255,255,0.07)" }}>
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 mb-4">Delivery Address</p>
+                  <div className="space-y-2.5">
+                    {savedAddresses.map((addr: IAddress) => {
+                      const active = selectedAddressId === addr._id && !isNewAddress;
+                      return (
+                        <motion.label key={addr._id} whileHover={{ scale:1.01 }}
+                          className="flex items-center gap-3.5 p-3.5 rounded-xl border cursor-pointer transition-all"
+                          style={{
+                            background:   active ? `${ACCENT}0d` : "#1c1c1c",
+                            borderColor:  active ? ACCENT : "rgba(255,255,255,0.07)",
+                            boxShadow:    active ? `0 0 0 1px ${ACCENT}` : "none",
+                          }}>
+                          <input type="radio" name="savedAddress" className="sr-only"
+                            checked={active}
+                            onChange={() => selectSavedAddress(addr)} />
+                          {/* Custom radio */}
+                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+                            style={{ borderColor: active ? ACCENT : "#4b5563" }}>
+                            {active && <div className="w-2 h-2 rounded-full" style={{ background:ACCENT }} />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white font-bold text-sm flex items-center gap-1.5">
+                              {addr.label === "Home"
+                                ? <Home      className="w-3.5 h-3.5" style={{ color:ACCENT }} />
+                                : <Briefcase className="w-3.5 h-3.5" style={{ color:ACCENT }} />}
+                              {addr.label}
+                              {addr.isDefault && (
+                                <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                                  style={{ background:`${ACCENT}20`, color:ACCENT }}>Default</span>
+                              )}
+                            </p>
+                            <p className="text-gray-600 text-xs mt-0.5 truncate">{addr.address}, {addr.city}</p>
+                          </div>
+                        </motion.label>
+                      );
+                    })}
+
+                    {/* New address option */}
+                    <motion.label whileHover={{ scale:1.01 }}
+                      className="flex items-center gap-3.5 p-3.5 rounded-xl border cursor-pointer transition-all"
+                      style={{
+                        background:   isNewAddress ? `${ACCENT}0d` : "#1c1c1c",
+                        borderColor:  isNewAddress ? ACCENT : "rgba(255,255,255,0.07)",
+                        boxShadow:    isNewAddress ? `0 0 0 1px ${ACCENT}` : "none",
+                      }}>
+                      <input type="radio" name="savedAddress" className="sr-only" checked={isNewAddress}
+                        onChange={selectNewAddress} />
+                      <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+                        style={{ borderColor: isNewAddress ? ACCENT : "#4b5563" }}>
+                        {isNewAddress && <div className="w-2 h-2 rounded-full" style={{ background:ACCENT }} />}
                       </div>
-                    </label>
-                  ))}
-                  <label
-                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition ${
-                      isNewAddress ? "border-leaf-green bg-leaf-green/5" : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="savedAddress"
-                      checked={isNewAddress}
-                      onChange={() => {
-                        setIsNewAddress(true);
-                        setSelectedAddressId(null);
-                      }}
-                      className="w-4 h-4 text-leaf-green focus:ring-leaf-green"
-                    />
-                    <span className="text-sm text-gray-700">New address</span>
-                  </label>
-                </div>
-              </div>
-            )}
-
-            {/* ---------- Manual Address Inputs (only when "New address" is selected) ---------- */}
-            {isNewAddress && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Address</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-                    <input
-                      {...register("address")}
-                      className={`w-full border ${errors.address ? "border-red-500" : "border-gray-200"} rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent`}
-                      placeholder="123 Main Street, Lagos"
-                    />
-                  </div>
-                  {errors.address && <p className="mt-1 text-xs text-red-500">{errors.address.message}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                  <div className="relative">
-                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-                    <input
-                      {...register("city")}
-                      className={`w-full border ${errors.city ? "border-red-500" : "border-gray-200"} rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent`}
-                      placeholder="Lagos"
-                    />
-                  </div>
-                  {errors.city && <p className="mt-1 text-xs text-red-500">{errors.city.message}</p>}
-                </div>
-              </>
-            )}
-
-            {/* Payment Method */}
-            <div className="pt-2">
-              <label className="block text-sm font-medium text-gray-700 mb-3">Payment Method</label>
-              <div className="space-y-2">
-                <label className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-leaf-green cursor-pointer transition">
-                  <input type="radio" value="paystack" checked={paymentMethod === "paystack"} onChange={() => setPaymentMethod("paystack")} className="w-4 h-4 text-leaf-green focus:ring-leaf-green" />
-                  <CreditCard className="w-5 h-5 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700">Paystack (Card/Transfer)</span>
-                </label>
-                <label className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-leaf-green cursor-pointer transition">
-                  <input type="radio" value="bank_transfer" checked={paymentMethod === "bank_transfer"} onChange={() => setPaymentMethod("bank_transfer")} className="w-4 h-4 text-leaf-green focus:ring-leaf-green" />
-                  <Banknote className="w-5 h-5 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700">Bank Transfer</span>
-                </label>
-                <label className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-leaf-green cursor-pointer transition">
-                  <input type="radio" value="whatsapp" checked={paymentMethod === "whatsapp"} onChange={() => setPaymentMethod("whatsapp")} className="w-4 h-4 text-leaf-green focus:ring-leaf-green" />
-                  <MessageCircle className="w-5 h-5 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700">Pay via WhatsApp</span>
-                </label>
-              </div>
-            </div>
-
-            {paymentMethod === "paystack" && (
-              <div className="bg-pastel-green/50 p-4 rounded-xl border border-leaf-green/20 mt-2">
-                <p className="text-xs text-gray-700 flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-leaf-green" />
-                  Secured via Paystack. You will be redirected to complete payment.
-                </p>
-              </div>
-            )}
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-blob-orange text-white py-3.5 rounded-xl font-bold shadow-lg shadow-blob-orange/30 hover:shadow-blob-orange/50 transition-all disabled:opacity-60"
-            >
-              {isLoading ? "Processing..." : paymentMethod === "paystack" ? `Pay ₦${finalTotal.toLocaleString()}` : "Place Order"}
-            </motion.button>
-          </form>
-        </div>
-
-        {/* Right Side - Order Summary */}
-        <div className="p-8 md:p-12 flex flex-col justify-start bg-gray-50/50 backdrop-blur-sm">
-          <h3 className="text-xl font-bold text-gray-800 mb-6 border-b border-gray-200 pb-4">Order Summary</h3>
-          <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-            {cart.cartItems.map((item: CartItem) => (
-              <div key={item._id} className="flex justify-between items-center border-b border-gray-100 pb-3">
-                <div className="flex items-center gap-3">
-                  <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover border border-gray-200" />
-                  <div>
-                    <p className="font-medium text-gray-800 text-sm">{item.name}</p>
-                    <p className="text-xs text-gray-500">Qty: {item.qty}</p>
+                      <span className="text-sm font-bold text-gray-400">+ Enter new address</span>
+                    </motion.label>
                   </div>
                 </div>
-                <span className="text-sm font-bold text-gray-800">₦{(item.price * item.qty).toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Coupon Input */}
-          <div className="mt-4 border-t pt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Discount Code</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                disabled={!!appliedCoupon}
-                placeholder="Enter code"
-                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm disabled:bg-gray-100"
-              />
-              {!appliedCoupon ? (
-                <button type="button" onClick={handleApplyCoupon} disabled={isApplying || !couponCode.trim()} className="px-4 py-2.5 bg-leaf-green text-white rounded-xl font-medium text-sm disabled:opacity-50">
-                  {isApplying ? "..." : "Apply"}
-                </button>
-              ) : (
-                <button type="button" onClick={handleRemoveCoupon} className="px-4 py-2.5 bg-red-50 text-red-600 rounded-xl font-medium text-sm flex items-center gap-1">
-                  <X className="w-4 h-4" /> Remove
-                </button>
               )}
-            </div>
-            {couponError && <p className="text-xs text-red-500 mt-1">{couponError}</p>}
-          </div>
 
-          {/* Totals */}
-          <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Subtotal</span>
-              <span>₦{totalPrice.toLocaleString()}</span>
-            </div>
-            {couponDiscount > 0 && (
-              <div className="flex justify-between text-sm text-green-600">
-                <span>Discount</span>
-                <span>- ₦{couponDiscount.toLocaleString()}</span>
+              {/* New address inputs */}
+              <AnimatePresence>
+                {isNewAddress && (
+                  <motion.div key="new-addr"
+                    initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:"auto" }} exit={{ opacity:0, height:0 }}
+                    className="overflow-hidden">
+                    <div className="rounded-2xl p-5 md:p-6 space-y-4" style={{ background:"#141414", border:"1px solid rgba(255,255,255,0.07)" }}>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500">New Address</p>
+
+                      {/* Address */}
+                      <div>
+                        <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">Street Address</label>
+                        <div className="relative">
+                          <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                            style={{ color: errors.address ? "#ef4444" : "#4b5563" }} />
+                          <input {...register("address")} placeholder="123 Main Street, Lagos"
+                            className={inputCls(!!errors.address)} />
+                        </div>
+                        {errors.address && (
+                          <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold">
+                            <AlertCircle className="w-3 h-3" /> {errors.address.message}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* City */}
+                      <div>
+                        <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">City</label>
+                        <div className="relative">
+                          <Building className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                            style={{ color: errors.city ? "#ef4444" : "#4b5563" }} />
+                          <input {...register("city")} placeholder="Lagos"
+                            className={inputCls(!!errors.city)} />
+                        </div>
+                        {errors.city && (
+                          <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold">
+                            <AlertCircle className="w-3 h-3" /> {errors.city.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Payment method */}
+              <div className="rounded-2xl p-5 md:p-6" style={{ background:"#141414", border:"1px solid rgba(255,255,255,0.07)" }}>
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 mb-4">Payment Method</p>
+                <div className="space-y-2.5">
+                  {PAYMENT_METHODS.map((pm) => {
+                    const active = paymentMethod === pm.id;
+                    return (
+                      <motion.label key={pm.id} whileHover={{ scale:1.01 }}
+                        className="flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all"
+                        style={{
+                          background:  active ? `${pm.color}0d` : "#1c1c1c",
+                          borderColor: active ? pm.color : "rgba(255,255,255,0.07)",
+                          boxShadow:   active ? `0 0 0 1px ${pm.color}` : "none",
+                        }}>
+                        <input type="radio" className="sr-only" value={pm.id}
+                          checked={active} onChange={() => setPaymentMethod(pm.id as typeof paymentMethod)} />
+                        <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
+                          style={{ borderColor: active ? pm.color : "#4b5563" }}>
+                          {active && <div className="w-2 h-2 rounded-full" style={{ background:pm.color }} />}
+                        </div>
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                          style={{ background:`${pm.color}18`, color:pm.color }}>
+                          {pm.icon}
+                        </div>
+                        <div>
+                          <p className="text-white font-bold text-sm">{pm.label}</p>
+                          <p className="text-gray-600 text-xs">{pm.sub}</p>
+                        </div>
+                      </motion.label>
+                    );
+                  })}
+                </div>
+
+                {/* Paystack info */}
+                <AnimatePresence>
+                  {paymentMethod === "paystack" && (
+                    <motion.div key="ps-info"
+                      initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:"auto" }} exit={{ opacity:0, height:0 }}
+                      className="overflow-hidden">
+                      <div className="mt-3 flex items-start gap-2.5 p-3.5 rounded-xl border text-xs"
+                        style={{ background:"rgba(59,130,246,0.07)", borderColor:"rgba(59,130,246,0.22)", color:"#93c5fd" }}>
+                        <CreditCard className="w-4 h-4 shrink-0 mt-0.5" />
+                        You will be redirected to Paystack to complete payment securely.
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            )}
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Delivery</span>
-              <span className="text-leaf-green font-medium">Free</span>
+
+              {/* Submit */}
+              <motion.button type="submit" disabled={isLoading}
+                whileHover={!isLoading ? { scale:1.02, boxShadow:`0 18px 44px ${ACCENT}55` } : {}}
+                whileTap={!isLoading ? { scale:0.98 } : {}}
+                className="w-full py-4 rounded-xl font-black text-white text-[15px] flex items-center justify-center gap-2.5 transition-all disabled:opacity-55 disabled:cursor-not-allowed"
+                style={{ background:ACCENT, boxShadow:`0 8px 24px ${ACCENT}44` }}>
+                {isLoading ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Processing…</>
+                ) : paymentMethod === "paystack" ? (
+                  <><CreditCard className="w-5 h-5" /> Pay ₦{finalTotal.toLocaleString()}</>
+                ) : (
+                  <>Place Order <ArrowRight className="w-5 h-5" /></>
+                )}
+              </motion.button>
+            </form>
+          </motion.div>
+
+          {/* ═══ RIGHT: Order summary ═══ */}
+          <motion.div initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.18 }}
+            className="lg:sticky lg:top-24">
+            <div className="relative rounded-2xl p-5 md:p-6" style={{ background:"#141414", border:"1px solid rgba(255,255,255,0.07)", boxShadow:"0 20px 60px rgba(0,0,0,0.4)" }}>
+              <div className="absolute top-0 inset-x-0 h-px rounded-t-2xl"
+                style={{ background:`linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
+
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 mb-5">Order Summary</p>
+
+              {/* Items */}
+              <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1 mb-5"
+                style={{ scrollbarWidth:"thin", scrollbarColor:`${ACCENT}40 transparent` }}>
+                {cart.cartItems.map((item: CartItem) => (
+                  <div key={item._id} className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border" style={{ borderColor:"rgba(255,255,255,0.08)" }}>
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-semibold text-sm truncate">{item.name}</p>
+                      <p className="text-gray-600 text-xs">{item.qty} × ₦{item.price.toLocaleString()}</p>
+                    </div>
+                    <span className="font-black text-white text-sm shrink-0">₦{(item.price * item.qty).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Divider */}
+              <div className="h-px mb-5" style={{ background:"rgba(255,255,255,0.06)" }} />
+
+              {/* Coupon */}
+              <div className="mb-5">
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2.5 flex items-center gap-1.5">
+                  <Tag className="w-3 h-3" /> Discount Code
+                </p>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input type="text" value={couponCode}
+                      onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                      disabled={!!appliedCoupon}
+                      placeholder="Enter code"
+                      className="w-full px-4 py-3 rounded-xl text-sm text-white bg-[#1c1c1c] border border-white/[0.08] outline-none placeholder-gray-600 focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-mono tracking-widest" />
+                  </div>
+                  {!appliedCoupon ? (
+                    <motion.button type="button" onClick={handleApplyCoupon}
+                      disabled={isApplying || !couponCode.trim()}
+                      whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
+                      className="px-4 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 shrink-0"
+                      style={{ background:ACCENT }}>
+                      {isApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+                    </motion.button>
+                  ) : (
+                    <motion.button type="button" onClick={handleRemoveCoupon}
+                      whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
+                      className="px-4 py-3 rounded-xl text-sm font-bold transition-all shrink-0"
+                      style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.25)", color:"#f87171" }}>
+                      <X className="w-4 h-4" />
+                    </motion.button>
+                  )}
+                </div>
+                <AnimatePresence>
+                  {couponError && (
+                    <motion.p initial={{ opacity:0, y:-4 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+                      className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold">
+                      <AlertCircle className="w-3 h-3" /> {couponError}
+                    </motion.p>
+                  )}
+                  {appliedCoupon && (
+                    <motion.p initial={{ opacity:0, y:-4 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+                      className="mt-1.5 text-xs font-bold flex items-center gap-1" style={{ color:"#10b981" }}>
+                      <CheckCircle className="w-3 h-3" /> {appliedCoupon} applied
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Price breakdown */}
+              <div className="space-y-2.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500 font-medium">Subtotal</span>
+                  <span className="text-white font-bold">₦{totalPrice.toLocaleString()}</span>
+                </div>
+                <AnimatePresence>
+                  {couponDiscount > 0 && (
+                    <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:"auto" }} exit={{ opacity:0, height:0 }}
+                      className="flex justify-between overflow-hidden">
+                      <span className="font-medium" style={{ color:"#10b981" }}>Discount</span>
+                      <span className="font-bold" style={{ color:"#10b981" }}>- ₦{couponDiscount.toLocaleString()}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 font-medium">Delivery</span>
+                  <span className="font-bold" style={{ color:"#10b981" }}>Free</span>
+                </div>
+              </div>
+
+              <div className="h-px my-4" style={{ background:"rgba(255,255,255,0.06)" }} />
+
+              <div className="flex justify-between items-end">
+                <span className="text-gray-400 font-bold text-sm uppercase tracking-wider">Total</span>
+                <motion.span key={finalTotal}
+                  initial={{ scale:1.14, opacity:0.7 }} animate={{ scale:1, opacity:1 }}
+                  transition={{ type:"spring", stiffness:400, damping:20 }}
+                  className="text-3xl font-black" style={{ color:ACCENT }}>
+                  ₦{finalTotal.toLocaleString()}
+                </motion.span>
+              </div>
+
+              <div className="mt-5 flex items-center justify-center gap-2">
+                <AlertCircle className="w-3 h-3 text-gray-700 shrink-0" />
+                <span className="text-[11px] text-gray-700">Secured by Paystack · Nigeria</span>
+              </div>
             </div>
-            <div className="flex justify-between font-bold text-xl text-gray-900 mt-2">
-              <span>Total</span>
-              <span className="text-blob-orange">₦{finalTotal.toLocaleString()}</span>
-            </div>
-          </div>
+          </motion.div>
+
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

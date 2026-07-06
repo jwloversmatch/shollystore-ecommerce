@@ -4,63 +4,55 @@ import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { RootState } from '../store';
+import { removeFromCart, updateQuantity, clearCart } from '../features/cart/cartSlice';
 import {
-  removeFromCart,
-  updateQuantity,
-  clearCart,
-} from '../features/cart/cartSlice';
-import {
-  Trash2,
-  ShoppingBag,
-  Minus,
-  Plus,
-  ArrowLeft,
-  AlertCircle,
-  CreditCard,
-  Sparkles,
+  Trash2, ShoppingBag, Minus, Plus, ArrowLeft,
+  AlertCircle, CreditCard, Sparkles, Flame,
 } from 'lucide-react';
-import { CartItemSkeleton } from '../components/Skeletons';
 import SEO from '../components/SEO';
 
-// ---------- Animation Variants ----------
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
-  },
-};
+// ─── Constants ─────────────────────────────────────────────────────────────────
+const ACCENT = '#e8622a';
 
-const itemFadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { type: 'spring' as const, stiffness: 300, damping: 25 },
-  },
-};
+// ─── Rehydration type ─────────────────────────────────────────────────────────
+interface PersistState { _persist: { version: number; rehydrated: boolean } }
 
-interface PersistState {
-  _persist: {
-    version: number;
-    rehydrated: boolean;
-  };
-}
+// ─── Shared dark skeleton card ──────────────────────────────────────────────────
+const DarkCartSkeleton = () => (
+  <div className="animate-pulse flex items-center gap-4 p-5 rounded-2xl" style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.06)' }}>
+    <div className="w-20 h-20 rounded-xl shrink-0" style={{ background: '#1c1c1c' }} />
+    <div className="flex-1 space-y-3">
+      <div className="h-4 w-2/3 rounded-lg" style={{ background: '#1c1c1c' }} />
+      <div className="h-3 w-1/3 rounded-lg" style={{ background: '#1c1c1c' }} />
+    </div>
+    <div className="h-9 w-24 rounded-xl shrink-0" style={{ background: '#1c1c1c' }} />
+  </div>
+);
 
+// ─── Shared ambient background (moved outside Cart to avoid recreation) ────────
+const AmbientBg = () => (
+  <>
+    <motion.div animate={{ x:['-12%','12%','-12%'], y:['-8%','8%','-8%'] }} transition={{ repeat:Infinity, duration:30, ease:'linear' }}
+      className="fixed pointer-events-none rounded-full blur-[130px] -z-10"
+      style={{ width:600, height:600, top:-200, left:-200, background:ACCENT, opacity:0.06 }} />
+    <motion.div animate={{ x:['12%','-12%','12%'], y:['10%','-10%','10%'] }} transition={{ repeat:Infinity, duration:38, ease:'linear' }}
+      className="fixed pointer-events-none rounded-full blur-[130px] -z-10"
+      style={{ width:560, height:560, bottom:-200, right:-200, background:'#10b981', opacity:0.04 }} />
+  </>
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
 const Cart = () => {
   const [showClearModal, setShowClearModal] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const dispatch = useDispatch();
-  const { cartItems } = useSelector((state: RootState) => state.cart);
-  const { user } = useSelector((state: RootState) => state.auth);
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const dispatch  = useDispatch();
+  const { cartItems } = useSelector((s: RootState) => s.cart);
+  const { user }      = useSelector((s: RootState) => s.auth);
+  const isRehydrated  = useSelector((s: RootState & PersistState) => s._persist?.rehydrated);
 
-  // Check if Redux Persist has finished rehydrating
-  const isRehydrated = useSelector(
-  (state: RootState & PersistState) => state._persist?.rehydrated
-);
-  const totalItems = cartItems.reduce((acc, item) => acc + item.qty, 0);
-  const totalPrice = cartItems.reduce((acc, item) => acc + item.price * item.qty, 0);
+  const totalItems = cartItems.reduce((a, i) => a + i.qty, 0);
+  const totalPrice = cartItems.reduce((a, i) => a + i.price * i.qty, 0);
 
   const handleCheckout = () => {
     if (!user) {
@@ -71,86 +63,66 @@ const Cart = () => {
     navigate('/checkout');
   };
 
-  const handleQty = (id: string, currentQty: number, delta: number, stock: number) => {
-    const newQty = currentQty + delta;
-    if (newQty >= 1 && newQty <= stock) {
-      dispatch(updateQuantity({ _id: id, qty: newQty }));
-    }
+  const handleQty = (id: string, qty: number, delta: number, stock: number) => {
+    const next = qty + delta;
+    if (next >= 1 && next <= stock) dispatch(updateQuantity({ _id: id, qty: next }));
   };
 
-  const handleClearCart = () => {
-    if (cartItems.length === 0) return;
-    setShowClearModal(true);
-  };
-
-  const confirmClearCart = () => {
-    dispatch(clearCart());
-    setShowClearModal(false);
-  };
-
-  // ---------- Rehydration loading state ----------
+  // ══════ LOADING ══════════════════════════════════════════════════════════════
   if (isRehydrated === false) {
     return (
-      <div className="min-h-screen pt-16 md:pt-24 pb-16 px-4 md:px-8 flex flex-col items-center">
-        <div className="max-w-7xl w-full space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <CartItemSkeleton key={i} />
-          ))}
+      <div className="min-h-screen pt-20 pb-24 px-4 md:px-8" style={{ background:'#0A0A0B' }}>
+        <SEO title="Your Cart" description="Review your items and proceed to secure checkout." />
+        <div className="max-w-4xl mx-auto space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => <DarkCartSkeleton key={i} />)}
         </div>
       </div>
     );
   }
 
-  <SEO
-  title="Your Cart"
-  description="Review your items and proceed to secure checkout."
-/>
-
-  // ---------- Empty Cart ----------
+  // ══════ EMPTY CART ════════════════════════════════════════════════════════════
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pastel-pink/40 via-pastel-green/40 to-white overflow-hidden relative">
-        {/* Fixed background blobs – no overflow */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <motion.div
-            animate={{ scale: [1, 1.1, 1], x: ['-5%', '5%', '-5%'] }}
-            transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
-            className="absolute -top-32 -left-32 w-80 h-80 bg-leaf-green/20 rounded-full blur-3xl"
-          />
-          <motion.div
-            animate={{ scale: [1, 1.15, 1], x: ['5%', '-5%', '5%'] }}
-            transition={{ repeat: Infinity, duration: 25, ease: 'linear' }}
-            className="absolute -bottom-32 -right-32 w-96 h-96 bg-blob-orange/20 rounded-full blur-3xl"
-          />
-        </div>
+      <div className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden" style={{ background:'#0A0A0B' }}>
+        <SEO title="Your Cart" description="Review your items and proceed to secure checkout." />
+        <AmbientBg />
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="relative bg-white/80 backdrop-blur-xl p-8 sm:p-10 rounded-3xl shadow-2xl border border-white/50 max-w-sm w-full mx-4 text-center"
-        >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="inline-flex mx-auto mb-4"
-          >
-            <ShoppingBag className="w-16 h-16 text-gray-300" />
-          </motion.div>
-          <motion.h2 variants={itemFadeUp} className="text-2xl font-bold text-gray-800 mb-2">
-            Your cart is empty
-          </motion.h2>
-          <motion.p variants={itemFadeUp} className="text-gray-500 mb-6">
-            Looks like you haven't added anything to your cart yet.
-          </motion.p>
+        <motion.div initial={{ opacity:0, scale:0.93, y:20 }} animate={{ opacity:1, scale:1, y:0 }}
+          transition={{ duration:0.55, ease:'easeOut' }}
+          className="relative z-10 w-full max-w-sm text-center rounded-3xl p-10"
+          style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.07)', boxShadow:'0 40px 90px rgba(0,0,0,0.6)' }}>
+
+          {/* Accent top line */}
+          <div className="absolute top-0 inset-x-0 h-px rounded-t-3xl"
+            style={{ background:`linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
+
+          {/* Animated bag in plate ring */}
+          <div className="flex justify-center mb-6">
+            <div className="relative">
+              <motion.div animate={{ rotate:360 }} transition={{ duration:20, repeat:Infinity, ease:'linear' }}
+                className="absolute -inset-4 rounded-full border-2 border-dashed pointer-events-none"
+                style={{ borderColor:`${ACCENT}30` }} />
+              <div className="w-24 h-24 rounded-full flex items-center justify-center"
+                style={{ background:`${ACCENT}12`, boxShadow:`0 0 0 3px ${ACCENT}` }}>
+                <ShoppingBag className="w-10 h-10" style={{ color:ACCENT }} />
+              </div>
+            </div>
+          </div>
+
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] mb-3" style={{ color:ACCENT }}>
+            Empty
+          </p>
+          <h2 className="text-3xl font-black text-white mb-3 leading-tight">Your cart<br />is empty</h2>
+          <p className="text-gray-600 text-sm mb-8 leading-relaxed">
+            Looks like you haven't added anything yet. Browse our menu and pick something delicious!
+          </p>
+
           <motion.button
-            variants={itemFadeUp}
-            whileHover={{ scale: 1.03, boxShadow: '0 10px 25px rgba(251, 146, 60, 0.3)' }}
-            whileTap={{ scale: 0.97 }}
+            whileHover={{ scale:1.04, boxShadow:`0 16px 40px ${ACCENT}55` }}
+            whileTap={{ scale:0.97 }}
             onClick={() => navigate('/')}
-            className="bg-blob-orange text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 mx-auto"
-          >
+            className="w-full py-4 rounded-xl font-black text-white text-[15px] flex items-center justify-center gap-2.5 group"
+            style={{ background:ACCENT, boxShadow:`0 8px 24px ${ACCENT}44` }}>
             <Sparkles className="w-5 h-5" />
             Start Shopping
           </motion.button>
@@ -159,205 +131,261 @@ const Cart = () => {
     );
   }
 
-  // ---------- Cart with Items ----------
+  // ══════ CART WITH ITEMS ════════════════════════════════════════════════════════
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="min-h-screen bg-gradient-to-br from-pastel-pink/40 via-pastel-green/40 to-white pt-16 md:pt-24 pb-16 px-4 md:px-8 flex flex-col items-center relative overflow-x-hidden"
-    >
-      {/* Background blobs */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <motion.div
-          animate={{ scale: [1, 1.05, 1], x: ['-5%', '5%', '-5%'] }}
-          transition={{ repeat: Infinity, duration: 25, ease: 'linear' }}
-          className="absolute -top-32 -left-32 w-80 h-80 bg-leaf-green/20 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.1, 1], x: ['5%', '-5%', '5%'] }}
-          transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
-          className="absolute -bottom-32 -right-32 w-96 h-96 bg-blob-orange/20 rounded-full blur-3xl"
-        />
-      </div>
+    <div className="min-h-screen pt-4 pb-28 md:pb-16 px-4 md:px-6 relative overflow-x-hidden" style={{ background:'#0A0A0B' }}>
+      <SEO title="Your Cart" description="Review your items and proceed to secure checkout." />
+      <AmbientBg />
 
-      <div className="max-w-7xl w-full">
-        {/* Header */}
-        <motion.div variants={itemFadeUp} className="flex items-center justify-between gap-3 mb-6 md:mb-10">
-          <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
-            <button
+      <div className="max-w-7xl mx-auto">
+
+        {/* ── Header ── */}
+        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.45 }}
+          className="flex items-center justify-between gap-3 mb-6 md:mb-8 pt-2">
+
+          <div className="flex items-center gap-3 min-w-0">
+            <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
               onClick={() => navigate('/')}
-              className="flex items-center gap-1.5 text-gray-600 hover:text-gray-800 transition-colors bg-white/70 backdrop-blur-sm px-3 py-2 md:px-4 md:py-2 rounded-xl shadow-sm border border-white/40 shrink-0"
-            >
-              <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="text-xs md:text-sm font-medium whitespace-nowrap hidden sm:inline">
-                Continue Shopping
-              </span>
-            </button>
-            <h1 className="text-xl md:text-3xl font-bold text-gray-800 truncate">My Cart</h1>
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl shrink-0 text-gray-500 hover:text-white transition-colors"
+              style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.07)' }}>
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-xs font-bold hidden sm:inline">Continue Shopping</span>
+            </motion.button>
+            <div className="min-w-0">
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color:ACCENT }}>My Cart</p>
+              <h1 className="text-xl md:text-3xl font-black text-white leading-none truncate">
+                {totalItems} {totalItems === 1 ? 'item' : 'items'}
+              </h1>
+            </div>
           </div>
-          <button
-            onClick={handleClearCart}
-            className="flex items-center gap-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 md:px-4 md:py-2 rounded-xl transition-all bg-white/70 backdrop-blur-sm shadow-sm border border-white/40 shrink-0"
-          >
-            <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
-            <span className="hidden sm:inline text-xs md:text-sm font-medium">Clear All</span>
-          </button>
+
+          <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
+            onClick={() => cartItems.length > 0 && setShowClearModal(true)}
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl shrink-0 text-red-400 hover:text-red-300 transition-colors"
+            style={{ background:'rgba(239,68,68,0.07)', border:'1px solid rgba(239,68,68,0.18)' }}>
+            <Trash2 className="w-4 h-4" />
+            <span className="hidden sm:inline text-xs font-bold">Clear All</span>
+          </motion.button>
         </motion.div>
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10 w-full">
-          {/* Left: Cart Items */}
-          <motion.div variants={containerVariants} initial="hidden" animate="visible" className="lg:col-span-2 space-y-4">
+        {/* ── Main grid ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-8">
+
+          {/* ─── Cart items list ─── */}
+          <div className="lg:col-span-2 space-y-3">
             <AnimatePresence mode="popLayout">
-              {cartItems.map((item) => (
-                <motion.div
-                  key={item._id}
-                  layout
-                  variants={itemFadeUp}
-                  initial="hidden"
-                  animate="visible"
-                  exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-                  className="group bg-white/80 backdrop-blur-md rounded-2xl shadow-md border border-gray-100 p-4 md:p-5 hover:shadow-xl transition-shadow w-full flex flex-col sm:flex-row items-start sm:items-center gap-4"
-                >
+              {cartItems.map((item, idx) => (
+                <motion.div key={item._id} layout
+                  initial={{ opacity:0, y:20, scale:0.98 }}
+                  animate={{ opacity:1, y:0, scale:1 }}
+                  exit={{ opacity:0, scale:0.95, transition:{ duration:0.18 } }}
+                  transition={{ type:'spring', stiffness:300, damping:26, delay: idx * 0.05 }}
+                  className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 md:p-5 rounded-2xl transition-all"
+                  style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.07)' }}
+                  whileHover={{ borderColor:'rgba(255,255,255,0.12)' }}>
+
                   {/* Image */}
-                  <motion.img
-                    whileHover={{ scale: 1.05 }}
-                    src={item.image || 'https://via.placeholder.com/100'}
-                    alt={item.name}
-                    className="w-20 h-20 rounded-xl object-cover border border-gray-200 group-hover:border-leaf-green/30 transition-colors shrink-0"
-                  />
+                  <motion.div whileHover={{ scale:1.06 }} transition={{ type:'spring', stiffness:300, damping:20 }}
+                    className="w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden shrink-0"
+                    style={{ boxShadow:`0 0 0 2px transparent` }}>
+                    <img src={item.image || 'https://via.placeholder.com/100'}
+                      alt={item.name}
+                      className="w-full h-full object-cover" />
+                  </motion.div>
+
                   {/* Info */}
-                  <div className="flex-1 min-w-0 w-full sm:w-auto">
-                    <h3 className="font-bold text-base md:text-lg text-gray-800 group-hover:text-leaf-green transition-colors truncate">
+                  <div className="flex-1 min-w-0 w-full">
+                    <h3 className="font-bold text-base md:text-lg text-white truncate leading-tight transition-colors"
+                      style={{}}>
                       {item.name}
                     </h3>
-                    <p className="text-leaf-green font-semibold text-base md:text-lg mt-1">
-                      ₦{item.price.toLocaleString()}
+                    <p className="text-sm font-semibold mt-0.5" style={{ color:ACCENT }}>
+                      ₦{item.price.toLocaleString()} / unit
                     </p>
-                    {/* Quantity & Remove */}
-                    <div className="flex items-center justify-between mt-3 sm:mt-0 sm:ml-auto sm:w-auto">
-                      <div className="flex items-center gap-2">
-                        <motion.button
-                          whileTap={{ scale: 0.9 }}
+
+                    {/* Controls row */}
+                    <div className="flex items-center justify-between mt-3 gap-3 flex-wrap">
+                      {/* Qty pill */}
+                      <div className="flex items-center rounded-xl overflow-hidden"
+                        style={{ background:'#1c1c1c', border:'1px solid rgba(255,255,255,0.08)' }}>
+                        <motion.button whileTap={{ scale:0.88 }}
                           onClick={() => handleQty(item._id, item.qty, -1, item.stock)}
                           disabled={item.qty <= 1}
-                          className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
+                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                           <Minus className="w-3.5 h-3.5" />
                         </motion.button>
-                        <span className="font-semibold w-6 text-center text-sm">{item.qty}</span>
-                        <motion.button
-                          whileTap={{ scale: 0.9 }}
+
+                        <motion.span
+                          key={item.qty}
+                          initial={{ scale:1.4, opacity:0 }}
+                          animate={{ scale:1, opacity:1 }}
+                          transition={{ type:'spring', stiffness:400, damping:20 }}
+                          className="w-9 text-center font-black text-white text-sm select-none">
+                          {item.qty}
+                        </motion.span>
+
+                        <motion.button whileTap={{ scale:0.88 }}
                           onClick={() => handleQty(item._id, item.qty, 1, item.stock)}
                           disabled={item.qty >= item.stock}
-                          className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
+                          className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                           <Plus className="w-3.5 h-3.5" />
                         </motion.button>
                       </div>
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => dispatch(removeFromCart(item._id))}
-                        className="ml-3 flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span className="text-xs font-medium hidden sm:inline">Remove</span>
-                      </motion.button>
+
+                      {/* Subtotal + remove */}
+                      <div className="flex items-center gap-3 ml-auto">
+                        <div className="text-right">
+                          <p className="font-black text-white text-lg leading-none">
+                            ₦{(item.price * item.qty).toLocaleString()}
+                          </p>
+                          <p className="text-gray-600 text-[10px] mt-0.5">
+                            {item.qty} × ₦{item.price.toLocaleString()}
+                          </p>
+                        </div>
+                        <motion.button whileHover={{ scale:1.06 }} whileTap={{ scale:0.93 }}
+                          onClick={() => dispatch(removeFromCart(item._id))}
+                          className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors shrink-0"
+                          style={{ background:'rgba(239,68,68,0.09)', border:'1px solid rgba(239,68,68,0.2)', color:'#f87171' }}>
+                          <Trash2 className="w-4 h-4" />
+                        </motion.button>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
               ))}
             </AnimatePresence>
-          </motion.div>
+          </div>
 
-          {/* Right: Order Summary */}
-          <motion.div variants={itemFadeUp} className="lg:col-span-1">
-            <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-6 md:p-8 sticky top-6 w-full">
-              <h2 className="text-xl font-bold text-gray-800 mb-6 border-b border-gray-200 pb-4">
-                Order Summary
-              </h2>
-              <div className="space-y-3 mb-6 text-sm text-gray-600">
-                <div className="flex justify-between">
-                  <span>Subtotal ({totalItems} items)</span>
-                  <span>₦{totalPrice.toLocaleString()}</span>
+          {/* ─── Order summary ─── */}
+          <motion.div initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.15, duration:0.5 }}
+            className="lg:col-span-1">
+            <div className="relative rounded-2xl p-6 md:p-7 lg:sticky lg:top-24"
+              style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.07)', boxShadow:'0 20px 60px rgba(0,0,0,0.4)' }}>
+
+              {/* Top orange hairline */}
+              <div className="absolute top-0 inset-x-0 h-px rounded-t-2xl"
+                style={{ background:`linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
+
+              {/* Header */}
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background:`${ACCENT}18` }}>
+                  <Flame className="w-4 h-4" style={{ color:ACCENT }} />
                 </div>
-                <div className="flex justify-between">
-                  <span>Delivery</span>
-                  <span className="text-leaf-green font-medium">Free</span>
-                </div>
-                <div className="flex justify-between text-xs text-gray-400 pt-2 border-t border-gray-100">
-                  <span>Tax included</span>
-                  <span>₦0.00</span>
-                </div>
-              </div>
-              <div className="flex justify-between font-bold text-xl text-gray-800 mt-4 pt-4 border-t border-gray-200">
-                <span>Total</span>
-                <span className="text-blob-orange">₦{totalPrice.toLocaleString()}</span>
+                <h2 className="text-lg font-black text-white">Order Summary</h2>
               </div>
 
+              {/* Line items */}
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500 font-medium">Subtotal</span>
+                  <span className="text-white font-bold">₦{totalPrice.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500 font-medium">Items</span>
+                  <span className="text-white font-bold">{totalItems}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500 font-medium">Delivery</span>
+                  <span className="font-bold" style={{ color:'#10b981' }}>Free</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500 font-medium">Tax</span>
+                  <span className="text-gray-600 font-medium">Included</span>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="my-5 h-px" style={{ background:'rgba(255,255,255,0.06)' }} />
+
+              {/* Total */}
+              <div className="flex justify-between items-end">
+                <span className="text-gray-400 font-bold text-sm uppercase tracking-wider">Total</span>
+                <div className="text-right">
+                  <motion.span key={totalPrice}
+                    initial={{ scale:1.15, opacity:0.7 }} animate={{ scale:1, opacity:1 }}
+                    transition={{ type:'spring', stiffness:400, damping:20 }}
+                    className="block text-3xl font-black" style={{ color:ACCENT }}>
+                    ₦{totalPrice.toLocaleString()}
+                  </motion.span>
+                </div>
+              </div>
+
+              {/* Checkout button */}
               <motion.button
-                whileHover={{ scale: 1.02, boxShadow: '0 10px 25px rgba(74, 143, 41, 0.3)' }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale:1.02, boxShadow:`0 16px 40px ${ACCENT}55` }}
+                whileTap={{ scale:0.98 }}
                 onClick={handleCheckout}
-                className="w-full mt-6 bg-leaf-green text-white py-4 rounded-xl font-bold shadow-lg shadow-leaf-green/30 transition-all flex items-center justify-center gap-2"
-              >
+                className="w-full mt-6 py-4 rounded-xl font-black text-white text-[15px] flex items-center justify-center gap-2.5 group"
+                style={{ background:ACCENT, boxShadow:`0 8px 24px ${ACCENT}44` }}>
                 <CreditCard className="w-5 h-5" />
                 Proceed to Checkout
               </motion.button>
 
-              <div className="mt-6 flex items-center justify-center gap-2 text-xs text-gray-400">
-                <AlertCircle className="w-3 h-3" />
-                <span>Secure checkout via Paystack</span>
+              {/* Security note */}
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <AlertCircle className="w-3 h-3 text-gray-700 shrink-0" />
+                <span className="text-[11px] text-gray-700">Secure checkout via Paystack</span>
+              </div>
+
+              {/* Payment logos hint */}
+              <div className="mt-4 flex items-center justify-center gap-3">
+                {['💳', '🏦', '💬'].map((icon, i) => (
+                  <div key={i} className="w-9 h-6 rounded-md flex items-center justify-center text-sm"
+                    style={{ background:'#1c1c1c', border:'1px solid rgba(255,255,255,0.06)' }}>
+                    {icon}
+                  </div>
+                ))}
+                <span className="text-[10px] text-gray-700">Card · Bank · WhatsApp</span>
               </div>
             </div>
           </motion.div>
         </div>
       </div>
 
-      {/* Clear Cart Modal */}
+      {/* ══ Clear Cart Modal ════════════════════════════════════════════════════ */}
       <AnimatePresence>
         {showClearModal && (
           <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
-              onClick={() => setShowClearModal(false)}
-            />
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            >
-              <div
-                className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-white/50"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center gap-3 text-red-600 mb-2">
-                  <Trash2 className="w-6 h-6" />
-                  <h3 className="text-xl font-bold text-gray-800">Clear Cart?</h3>
+            <motion.div key="scrim"
+              initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+              className="fixed inset-0 z-50"
+              style={{ background:'rgba(0,0,0,0.72)', backdropFilter:'blur(8px)' }}
+              onClick={() => setShowClearModal(false)} />
+
+            <motion.div key="modal"
+              initial={{ scale:0.9, y:24, opacity:0 }} animate={{ scale:1, y:0, opacity:1 }} exit={{ scale:0.93, y:16, opacity:0 }}
+              transition={{ type:'spring', stiffness:320, damping:28 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="relative w-full max-w-sm rounded-2xl p-7"
+                style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.08)', boxShadow:'0 40px 90px rgba(0,0,0,0.6)' }}
+                onClick={e => e.stopPropagation()}>
+
+                {/* Red hairline */}
+                <div className="absolute top-0 inset-x-0 h-px rounded-t-2xl"
+                  style={{ background:'linear-gradient(90deg, transparent, rgba(239,68,68,0.6), transparent)' }} />
+
+                {/* Icon */}
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
+                  style={{ background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)' }}>
+                  <Trash2 className="w-6 h-6 text-red-400" />
                 </div>
-                <p className="text-gray-600 text-sm mb-6 pl-9">
-                  Are you sure you want to remove all items from your cart? This action cannot be undone.
+
+                <h3 className="text-2xl font-black text-white mb-2">Clear your cart?</h3>
+                <p className="text-gray-500 text-sm leading-relaxed mb-7">
+                  All {totalItems} {totalItems === 1 ? 'item' : 'items'} will be removed. This action cannot be undone.
                 </p>
-                <div className="flex justify-end gap-3">
-                  <button
+
+                <div className="flex gap-3">
+                  <motion.button whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                     onClick={() => setShowClearModal(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition"
-                  >
+                    className="flex-1 py-3.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white transition-colors"
+                    style={{ background:'#1c1c1c', border:'1px solid rgba(255,255,255,0.08)' }}>
                     Cancel
-                  </button>
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={confirmClearCart}
-                    className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 shadow-md transition"
-                  >
+                  </motion.button>
+                  <motion.button whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
+                    onClick={() => { dispatch(clearCart()); setShowClearModal(false); }}
+                    className="flex-1 py-3.5 rounded-xl text-sm font-bold text-white"
+                    style={{ background:'rgba(239,68,68,0.9)', boxShadow:'0 6px 18px rgba(239,68,68,0.3)' }}>
                     Clear Cart
                   </motion.button>
                 </div>
@@ -366,7 +394,7 @@ const Cart = () => {
           </>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 };
 
