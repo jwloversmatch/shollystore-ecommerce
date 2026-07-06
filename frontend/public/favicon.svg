@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Chef hat shape -->
+  <path d="M12 40c0-4 4-8 8-8h24c4 0 8 4 8 8v4H12v-4z" fill="#e8622a" />
+  <!-- Puffy top -->
+  <path d="M16 40c0-6 6-12 16-12s16 6 16 12" fill="#e8622a" />
+  <path d="M20 40c0-4 5-8 12-8s12 4 12 8" fill="#fff" />
+  <!-- Hat brim -->
+  <rect x="8" y="44" width="48" height="4" rx="2" fill="#fff" />
+  <!-- Detail lines -->
+  <path d="M24 36h4m8 0h4M28 32h8" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+</svg>
