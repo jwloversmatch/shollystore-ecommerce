@@ -2,687 +2,484 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  useGetAdminStatsQuery,
-  useUpdateOrderStatusMutation,
-  useGetProductsQuery,
-  useDeleteProductMutation,
-  useGetSalesAnalyticsQuery,
-  useGetTopProductsQuery,
-  useGetUsersQuery,
-  useUpdateUserRoleMutation,
-  useUpdateStockMutation,
+  useGetAdminStatsQuery, useUpdateOrderStatusMutation, useGetProductsQuery,
+  useDeleteProductMutation, useGetSalesAnalyticsQuery, useGetTopProductsQuery,
+  useGetUsersQuery, useUpdateUserRoleMutation, useUpdateStockMutation,
   useGetOrderCustomerCountQuery,
 } from "../../features/api/apiSlice";
 import {
-  TrendingUp,
-  ShoppingBag,
-  AlertTriangle,
-  Package,
-  Users,
-  RefreshCw,
-  PlusCircle,
-  ArrowRight,
-  BarChart3,
-  PieChart,
-  Shield,
-  Minus,
-  Plus,
-  Trash2,
+  TrendingUp, ShoppingBag, AlertTriangle, Package, Users, RefreshCw,
+  PlusCircle, ArrowRight, BarChart3, PieChart, Shield, Minus, Plus, Trash2, Flame,
 } from "lucide-react";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart as RePieChart,
-  Pie,
-  Cell,
-  Legend,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart as RePieChart, Pie, Cell, Legend,
 } from "recharts";
 import ConfirmationModal from "../../components/ConfirmationModal";
-import SEO from '../../components/SEO';
+import SEO from "../../components/SEO";
 
-// ---------- Interfaces ----------
-interface OrderItem {
-  _id: string;
-  user: { email: string };
-  totalPrice: number;
-  status: string;
-  createdAt?: string;
-  paymentMethod?: string;
-}
+// ─── Constants ─────────────────────────────────────────────────────────────────
+const ACCENT = "#e8622a";
 
-interface ProductItem {
-  _id: string;
-  name: string;
-  price: number;
-  images?: string[];
-  category?: string;
-  stock: number;
-}
-
-interface CategorySale {
-  _id: string;
-  totalSales: number;
-  revenue: number;
-}
-
-interface TopProduct {
-  _id: string;
-  name: string;
-  images: string[];
-  price: number;
-  totalQuantity: number;
-  totalRevenue: number;
-}
-
-interface UserData {
-  _id: string;
-  email: string;
-  role: "user" | "admin";
-}
-
-// ---------- Animation Variants ----------
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
-  },
+const STATUS_DARK: Record<string, { bg: string; text: string; border: string }> = {
+  Pending:   { bg:"rgba(251,191,36,0.10)",  text:"#fbbf24", border:"rgba(251,191,36,0.3)"  },
+  Paid:      { bg:"rgba(52,211,153,0.10)",  text:"#34d399", border:"rgba(52,211,153,0.3)"  },
+  Shipped:   { bg:"rgba(96,165,250,0.10)",  text:"#60a5fa", border:"rgba(96,165,250,0.3)"  },
+  Delivered: { bg:"rgba(156,163,175,0.10)", text:"#9ca3af", border:"rgba(156,163,175,0.25)"},
+};
+const STATUS_PIE: Record<string, string> = {
+  Pending:"#fbbf24", Paid:"#34d399", Shipped:"#60a5fa", Delivered:"#6b7280",
+};
+const CHART_COLORS = ["#e8622a","#10b981","#3b82f6","#f59e0b","#8b5cf6","#ec4899"];
+const PAYMENT_LABELS: Record<string, string> = {
+  paystack:"Paystack", bank_transfer:"Bank Transfer", whatsapp:"WhatsApp",
 };
 
-const itemFadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { type: "spring" as const, stiffness: 300, damping: 25 },
-  },
+// ─── Interfaces ────────────────────────────────────────────────────────────────
+interface OrderItem  { _id:string; user:{email:string}; totalPrice:number; status:string; createdAt?:string; paymentMethod?:string; }
+interface ProductItem{ _id:string; name:string; price:number; images?:string[]; category?:string; stock:number; }
+interface CategorySale{ _id:string; totalSales:number; revenue:number; }
+interface TopProduct { _id:string; name:string; images:string[]; price:number; totalQuantity:number; totalRevenue:number; }
+interface UserData   { _id:string; email:string; role:"user"|"admin"; }
+
+// Custom tooltip prop types (matches what recharts actually passes)
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number; name: string; dataKey?: string }>;
+  label?: string;
+}
+
+// ─── Animation variants ────────────────────────────────────────────────────────
+const stagger  = { hidden:{}, visible:{ transition:{ staggerChildren:0.08, delayChildren:0.05 } } };
+const fadeUp   = { hidden:{opacity:0,y:20}, visible:{ opacity:1, y:0, transition:{ type:"spring" as const, stiffness:280, damping:24 } } };
+
+// ─── Reusable dark card shell ──────────────────────────────────────────────────
+const DarkCard = ({ children, className="" }: { children:React.ReactNode; className?:string }) => (
+  <div className={`rounded-2xl overflow-hidden ${className}`}
+    style={{ background:"#141414", border:"1px solid rgba(255,255,255,0.07)", boxShadow:"0 8px 32px rgba(0,0,0,0.35)" }}>
+    {children}
+  </div>
+);
+
+// ─── Dark chart tooltip ────────────────────────────────────────────────────────
+const ChartTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+  if (!active || !payload?.length) return null;
+  const val = payload[0].value as number;
+  const isRevenue = payload[0].dataKey === "revenue";
+  return (
+    <div className="rounded-xl px-4 py-3 text-sm" style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.1)", boxShadow:"0 12px 30px rgba(0,0,0,0.5)" }}>
+      <p className="text-gray-500 font-semibold text-xs mb-1.5 uppercase tracking-wider">{label || payload[0].name}</p>
+      <p className="font-black text-lg" style={{ color:ACCENT }}>
+        {isRevenue ? `₦${val?.toLocaleString()}` : val}
+      </p>
+    </div>
+  );
 };
 
-// ---------- Constants ----------
-const STATUS_COLORS: Record<string, string> = {
-  Pending: "bg-yellow-100 text-yellow-700",
-  Paid: "bg-green-100 text-green-700",
-  Shipped: "bg-blue-100 text-blue-700",
-  Delivered: "bg-gray-100 text-gray-700",
+const PieTooltip = ({ active, payload }: CustomTooltipProps) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-xl px-3 py-2 text-sm" style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.1)" }}>
+      <p className="font-bold" style={{ color: STATUS_PIE[payload[0].name] || ACCENT }}>{payload[0].name}</p>
+      <p className="text-white font-black">{payload[0].value}</p>
+    </div>
+  );
 };
 
-const STATUS_BG: Record<string, string> = {
-  Pending: "#fbbf24",
-  Paid: "#34d399",
-  Shipped: "#60a5fa",
-  Delivered: "#9ca3af",
-};
-
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  paystack: "Paystack",
-  bank_transfer: "Bank Transfer",
-  whatsapp: "WhatsApp",
-};
-
-// ---------- Dashboard Component ----------
+// ═══════════════════════════════════════════════════════════════════════════════
 const Dashboard = () => {
   const navigate = useNavigate();
-
-  // Delete modal state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [productToDelete,  setProductToDelete]  = useState<string | null>(null);
 
-  const {
-    data: statsData,
-    isLoading: statsLoading,
-    refetch: refetchStats,
-  } = useGetAdminStatsQuery({});
-  const {
-    data: productsData,
-    isLoading: productsLoading,
-    refetch: refetchProducts,
-  } = useGetProductsQuery({});
-  const {
-    data: analyticsData,
-    isLoading: analyticsLoading,
-    refetch: refetchAnalytics,
-  } = useGetSalesAnalyticsQuery({});
-  const { data: topProductsData, refetch: refetchTopProducts } =
-    useGetTopProductsQuery({});
-  const { data: orderCustomerData } = useGetOrderCustomerCountQuery({});
-  const realTotalCustomers = orderCustomerData?.count || 0;
+  const { data:statsData,    isLoading:statsLoading,    refetch:refetchStats    } = useGetAdminStatsQuery({});
+  const { data:productsData, isLoading:productsLoading, refetch:refetchProducts } = useGetProductsQuery({});
+  const { data:analyticsData,isLoading:analyticsLoading,refetch:refetchAnalytics} = useGetSalesAnalyticsQuery({});
+  const { data:topProductsData, refetch:refetchTopProducts } = useGetTopProductsQuery({});
+  const { data:orderCustomerData }                           = useGetOrderCustomerCountQuery({});
+  const { data:usersData, refetch:refetchUsers }             = useGetUsersQuery({});
 
-  const [updateStatus] = useUpdateOrderStatusMutation();
+  const [updateStatus]  = useUpdateOrderStatusMutation();
   const [deleteProduct] = useDeleteProductMutation();
-  const [updateUserRole] = useUpdateUserRoleMutation();
-  const [updateStock] = useUpdateStockMutation();
+  const [updateUserRole]= useUpdateUserRoleMutation();
+  const [updateStock]   = useUpdateStockMutation();
 
-  // Normalize data
-  const stats = statsData || { orders: [], totalRevenue: 0 };
-  const products = useMemo<ProductItem[]>(() => productsData || [], [productsData]);
-  const analytics = analyticsData || { totalRevenue: 0, totalOrders: 0, categorySales: [] };
-  const realTopProducts: TopProduct[] = topProductsData || [];
-  const { data: usersData, refetch: refetchUsers } = useGetUsersQuery({});
+  const stats      = statsData   || { orders:[], totalRevenue:0 };
+  const products   = useMemo<ProductItem[]>(() => productsData || [], [productsData]);
+  const analytics  = analyticsData || { totalRevenue:0, totalOrders:0, categorySales:[] };
+  const topProducts: TopProduct[] = topProductsData || [];
   const users: UserData[] = usersData || [];
 
-  const lowStockCount = useMemo(() => products.filter((p) => p.stock < 5).length, [products]);
+  const lowStockCount = useMemo(() => products.filter(p => p.stock < 5).length, [products]);
+  const realCustomers  = orderCustomerData?.count || 0;
 
-  const statusDistribution = stats.orders?.reduce(
-    (acc: Record<string, number>, order: OrderItem) => {
-      acc[order.status] = (acc[order.status] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
+  const statusPieData = useMemo(() => {
+    const dist: Record<string,number> = {};
+    (stats.orders || []).forEach((o: OrderItem) => { dist[o.status] = (dist[o.status] || 0) + 1; });
+    return Object.entries(dist).map(([name, value]) => ({ name, value }));
+  }, [stats.orders]);
 
-  const statusPieData = useMemo(
-    () =>
-      Object.entries(statusDistribution || {}).map(([key, value]) => ({
-        name: key,
-        value,
-      })),
-    [statusDistribution]
-  );
+  const sortedProducts = useMemo(() => [...products].sort((a,b) => b._id.localeCompare(a._id)), [products]);
 
-  const sortedProducts = useMemo(() => {
-    return [...products].sort((a, b) => b._id.localeCompare(a._id));
-  }, [products]);
+  const handleDeleteClick  = (id: string) => { setProductToDelete(id); setDeleteModalOpen(true); };
+  const confirmDelete      = async () => { if (!productToDelete) return; await deleteProduct(productToDelete); refetchProducts(); setDeleteModalOpen(false); setProductToDelete(null); };
+  const handleStatusChange = async (id: string, status: string) => { try { await updateStatus({ id, status }).unwrap(); refetchStats(); } catch { /* Handle error silently */ } };
+  const handleStockUpdate  = async (id: string, cur: number, delta: number) => { try { await updateStock({ id, stock: Math.max(0, cur + delta) }).unwrap(); refetchProducts(); } catch { /* Handle error silently */ } };
+  const handleRoleUpdate   = async (id: string, role: "user"|"admin") => { try { await updateUserRole({ id, role }).unwrap(); refetchUsers(); } catch { /* Handle error silently */ } };
+  const handleRefresh      = () => { refetchStats(); refetchProducts(); refetchAnalytics(); refetchTopProducts(); refetchUsers(); };
 
-  // Handlers
-  const handleDeleteClick = (id: string) => {
-    setProductToDelete(id);
-    setDeleteModalOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!productToDelete) return;
-    await deleteProduct(productToDelete);
-    refetchProducts();
-    setDeleteModalOpen(false);
-    setProductToDelete(null);
-  };
-
-  const handleStatusChange = async (orderId: string, newStatus: string) => {
-    try {
-      await updateStatus({ id: orderId, status: newStatus }).unwrap();
-      refetchStats();
-    } catch (error) {
-      console.error("Failed to update status:", error);
-    }
-  };
-
-  const handleStockUpdate = async (id: string, currentStock: number, delta: number) => {
-    const newStock = Math.max(0, currentStock + delta);
-    try {
-      await updateStock({ id, stock: newStock }).unwrap();
-      refetchProducts();
-    } catch (error) {
-      console.error("Failed to update stock:", error);
-    }
-  };
-
-  const handleRoleUpdate = async (userId: string, newRole: "user" | "admin") => {
-    try {
-      await updateUserRole({ id: userId, role: newRole }).unwrap();
-      refetchUsers();
-    } catch (error) {
-      console.error("Failed to update role:", error);
-    }
-  };
-
-  const handleRefresh = () => {
-    refetchStats();
-    refetchProducts();
-    refetchAnalytics();
-    refetchTopProducts();
-    refetchUsers();
-  };
-
-  // Loading state – smooth spinner
+  // ══════ LOADING ══════════════════════════════════════════════════════════════
   if (statsLoading || productsLoading || analyticsLoading) {
     return (
-      <div className="p-6 flex justify-center items-center min-h-[80vh]">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-          className="h-16 w-16 rounded-full border-4 border-leaf-green/30 border-t-leaf-green"
-        />
+      <div className="min-h-screen flex items-center justify-center" style={{ background:"#0A0A0B" }}>
+        <SEO title="Admin Dashboard" description="Manage your store." />
+        <div className="text-center space-y-4">
+          <motion.div animate={{ rotate:360 }} transition={{ repeat:Infinity, duration:1, ease:"linear" }}
+            className="w-14 h-14 rounded-full border-4 mx-auto"
+            style={{ borderColor:`${ACCENT}30`, borderTopColor:ACCENT }} />
+          <p className="text-gray-600 text-sm font-semibold">Loading dashboard…</p>
+        </div>
       </div>
     );
   }
 
-  <SEO
-  title="Admin Dashboard"
-  description="Manage your store, track sales, oversee orders & users."
-/>
-
+  // ══════ MAIN DASHBOARD ════════════════════════════════════════════════════════
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="p-4 md:p-6 pt-16 md:pt-24 max-w-7xl mx-auto space-y-6 md:space-y-8"
-    >
-      {/* Delete Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        onConfirm={confirmDelete}
-        title="Delete Product"
-        message="Are you sure you want to delete this product? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        type="danger"
-      />
+    <motion.div variants={stagger} initial="hidden" animate="visible"
+      className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-7xl mx-auto space-y-5 md:space-y-6 pb-28 md:pb-10"
+      style={{ background:"#0A0A0B" }}>
+      <SEO title="Admin Dashboard" description="Manage your store, track sales, oversee orders & users." />
 
-      {/* Header with subtle gradient */}
-      <motion.div variants={itemFadeUp} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <ConfirmationModal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}
+        onConfirm={confirmDelete} title="Delete Product"
+        message="Are you sure? This action cannot be undone." confirmText="Delete" cancelText="Cancel" type="danger" />
+
+      {/* ── Header ── */}
+      <motion.div variants={fadeUp} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-            Command Center
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage your store, track sales, oversee orders & users.
-          </p>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background:`${ACCENT}18` }}>
+              <Flame className="w-4 h-4" style={{ color:ACCENT }} />
+            </div>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color:ACCENT }}>Admin</p>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black text-white">Command Center</h1>
+          <p className="text-gray-600 text-sm mt-0.5">Real-time overview of your store.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={handleRefresh}
-            className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2.5 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all text-sm font-medium text-gray-700"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Refresh Data
+        <div className="flex items-center gap-3 flex-wrap">
+          <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }} onClick={handleRefresh}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white transition-colors"
+            style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.08)" }}>
+            <RefreshCw className="w-4 h-4" /> Refresh
           </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
+          <motion.button whileHover={{ scale:1.04, boxShadow:`0 12px 28px ${ACCENT}55` }} whileTap={{ scale:0.96 }}
             onClick={() => navigate("/admin/products")}
-            className="flex items-center gap-2 bg-leaf-green text-white px-5 py-2.5 rounded-xl font-medium shadow-lg hover:shadow-leaf-green/30 transition-all text-sm"
-          >
-            <PlusCircle className="w-4 h-4" />
-            Add Product
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white text-sm"
+            style={{ background:ACCENT, boxShadow:`0 6px 18px ${ACCENT}44` }}>
+            <PlusCircle className="w-4 h-4" /> Add Product
           </motion.button>
         </div>
       </motion.div>
 
-      {/* Stat Cards – premium glass morphism with staggered entrance */}
-      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      {/* ── Stat Cards ── */}
+      <motion.div variants={stagger} initial="hidden" animate="visible"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          {
-            title: "Total Revenue",
-            value: `₦${stats.totalRevenue.toLocaleString()}`,
-            icon: <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />,
-            color: "text-leaf-green",
-            bg: "bg-leaf-green/10",
-            border: "border-leaf-green/20",
-          },
-          {
-            title: "Total Orders",
-            value: stats.orders?.length || 0,
-            icon: <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />,
-            color: "text-blue-600",
-            bg: "bg-blue-100",
-            border: "border-blue-200",
-          },
-          {
-            title: "Ordering Customers",
-            value: realTotalCustomers,
-            icon: <Users className="w-5 h-5 sm:w-6 sm:h-6" />,
-            color: "text-purple-600",
-            bg: "bg-purple-100",
-            border: "border-purple-200",
-          },
-          {
-            title: "Low Stock Alerts",
-            value: lowStockCount,
-            icon: <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6" />,
-            color: "text-red-600",
-            bg: "bg-red-100",
-            border: "border-red-200",
-          },
-        ].map((stat, idx) => (
-          <motion.div
-            key={idx}
-            variants={itemFadeUp}
-            className={`relative bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border ${stat.border} p-4 sm:p-6 transition-all duration-300 flex items-center justify-between overflow-hidden`}
-          >
-            <div>
-              <p className="text-[10px] sm:text-xs uppercase font-bold tracking-widest text-gray-500">
-                {stat.title}
-              </p>
-              <p className={`text-lg sm:text-2xl font-bold mt-1 sm:mt-2 ${stat.color}`}>
-                {stat.value}
-              </p>
+          { label:"Total Revenue",     value:`₦${stats.totalRevenue.toLocaleString()}`, icon:<TrendingUp className="w-5 h-5"/>, color:"#e8622a", bg:"rgba(232,98,42,0.12)"  },
+          { label:"Recent Orders",     value: stats.orders?.length || 0,                icon:<ShoppingBag className="w-5 h-5"/>, color:"#3b82f6", bg:"rgba(59,130,246,0.12)" },
+          { label:"Customers",         value: realCustomers,                             icon:<Users className="w-5 h-5"/>,       color:"#8b5cf6", bg:"rgba(139,92,246,0.12)"  },
+          { label:"Low Stock Alerts",  value: lowStockCount,                             icon:<AlertTriangle className="w-5 h-5"/>,color:"#ef4444", bg:"rgba(239,68,68,0.12)"  },
+        ].map((s, i) => (
+          <motion.div key={i} variants={fadeUp}
+            className="relative rounded-2xl p-4 md:p-5 overflow-hidden"
+            style={{ background:"#141414", border:`1px solid ${s.color}22`, boxShadow:`0 8px 24px rgba(0,0,0,0.3)` }}>
+            {/* Glow blob */}
+            <div className="absolute -bottom-6 -right-6 w-20 h-20 rounded-full blur-2xl pointer-events-none" style={{ background:s.color, opacity:0.18 }} />
+            <div className="flex items-start justify-between relative z-10">
+              <div>
+                <p className="text-[9px] md:text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-600 mb-2">{s.label}</p>
+                <p className="text-xl md:text-3xl font-black text-white leading-none">{s.value}</p>
+              </div>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background:s.bg, color:s.color }}>
+                {s.icon}
+              </div>
             </div>
-            <div className={`${stat.bg} p-2.5 sm:p-3 rounded-xl backdrop-blur-sm`}>
-              {stat.icon}
-            </div>
-            <div className={`absolute -top-10 -right-10 w-24 h-24 ${stat.bg} blur-2xl opacity-40`} />
           </motion.div>
         ))}
       </motion.div>
 
-      {/* Charts + Top Products Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Category Sales Bar Chart */}
-        <motion.div
-          variants={itemFadeUp}
-          className="lg:col-span-2 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6"
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm sm:text-lg font-bold text-gray-800 flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-blob-orange" />
-              Sales by Category
-            </h2>
-          </div>
-          {analytics.categorySales.length === 0 ? (
-            <p className="text-gray-400 text-center py-12 text-sm">No paid orders yet.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={analytics.categorySales} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-                <XAxis dataKey="_id" tick={{ fontSize: 10, fill: "#6b7280" }} axisLine={false} tickLine={false} />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "#6b7280" }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(value: number) => `₦${value.toLocaleString()}`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "rgba(255,255,255,0.95)",
-                    backdropFilter: "blur(8px)",
-                    borderRadius: "12px",
-                    border: "none",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                  }}
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload as CategorySale;
-                      return (
-                        <div className="bg-white/90 backdrop-blur-md rounded-lg p-3 shadow-lg border border-gray-100">
-                          <p className="text-sm font-medium text-gray-800">{data._id}</p>
-                          <p className="text-sm text-leaf-green font-semibold">₦{data.revenue.toLocaleString()}</p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Bar dataKey="revenue" fill="#4a8f29" radius={[8, 8, 0, 0]} barSize={30}>
-                  {analytics.categorySales.map((_: CategorySale, index: number) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={index === 0 ? "#ffa687" : index === 1 ? "#4a8f29" : "#60a5fa"}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+      {/* ── Charts row ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        {/* Bar chart — Sales by Category */}
+        <motion.div variants={fadeUp} className="lg:col-span-2">
+          <DarkCard>
+            <div className="flex justify-between items-center px-5 py-4 border-b" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
+              <h2 className="font-black text-white flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" style={{ color:ACCENT }} /> Sales by Category
+              </h2>
+              <p className="text-[10px] text-gray-600 font-semibold uppercase tracking-wider">Revenue (₦)</p>
+            </div>
+            <div className="p-5">
+              {analytics.categorySales.length === 0 ? (
+                <p className="text-gray-700 text-center py-14 text-sm">No paid orders yet.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={230}>
+                  <BarChart data={analytics.categorySales} margin={{ top:8, right:0, left:0, bottom:0 }}>
+                    <XAxis dataKey="_id" tick={{ fontSize:10, fill:"#6b7280" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize:10, fill:"#6b7280" }} axisLine={false} tickLine={false}
+                      tickFormatter={(v:number) => `₦${(v/1000).toFixed(0)}k`} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill:"rgba(255,255,255,0.04)" }} />
+                    <Bar dataKey="revenue" radius={[8,8,0,0]} barSize={28}>
+                      {analytics.categorySales.map((_:CategorySale, i:number) => (
+                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </DarkCard>
         </motion.div>
 
-        {/* Order Status Pie Chart */}
-        <motion.div
-          variants={itemFadeUp}
-          className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6"
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm sm:text-lg font-bold text-gray-800 flex items-center gap-2">
-              <PieChart className="w-5 h-5 text-leaf-green" />
-              Order Status
-            </h2>
-          </div>
-          {statusPieData.length === 0 ? (
-            <p className="text-gray-400 text-center py-12 text-sm">No orders yet.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <RePieChart>
-                <Pie data={statusPieData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={2} dataKey="value">
-                  {statusPieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={STATUS_BG[entry.name] || "#9ca3af"} />
-                  ))}
-                </Pie>
-                <Legend
-                  verticalAlign="middle"
-                  align="right"
-                  layout="vertical"
-                  iconType="circle"
-                  formatter={(value: string) => (
-                    <span className="text-xs sm:text-sm font-medium text-gray-700">{value}</span>
-                  )}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "rgba(255,255,255,0.95)",
-                    backdropFilter: "blur(8px)",
-                    borderRadius: "12px",
-                    border: "none",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                  }}
-                />
-              </RePieChart>
-            </ResponsiveContainer>
-          )}
+        {/* Pie chart — Order Status */}
+        <motion.div variants={fadeUp}>
+          <DarkCard className="h-full">
+            <div className="flex justify-between items-center px-5 py-4 border-b" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
+              <h2 className="font-black text-white flex items-center gap-2">
+                <PieChart className="w-4 h-4" style={{ color:"#10b981" }} /> Order Status
+              </h2>
+            </div>
+            <div className="p-5">
+              {statusPieData.length === 0 ? (
+                <p className="text-gray-700 text-center py-14 text-sm">No orders yet.</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <RePieChart>
+                    <Pie data={statusPieData} cx="50%" cy="50%" innerRadius={48} outerRadius={68} paddingAngle={3} dataKey="value">
+                      {statusPieData.map((e, i) => (
+                        <Cell key={i} fill={STATUS_PIE[e.name] || "#6b7280"} />
+                      ))}
+                    </Pie>
+                    <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle"
+                      formatter={(v:string) => <span style={{ color:"#9ca3af", fontSize:11, fontWeight:700 }}>{v}</span>} />
+                    <Tooltip content={<PieTooltip />} />
+                  </RePieChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </DarkCard>
         </motion.div>
       </div>
 
-      {/* Quick Inventory + Top Products */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Inventory */}
-        <motion.div variants={itemFadeUp} className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm sm:text-lg font-bold text-gray-800 flex items-center gap-2">
-              <Package className="w-5 h-5 text-leaf-green" />
-              Quick Inventory
-            </h2>
-            <button
-              onClick={() => navigate("/admin/products")}
-              className="text-xs sm:text-sm font-medium text-leaf-green hover:underline flex items-center gap-1"
-            >
-              View all <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-          <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
-            {sortedProducts.slice(0, 5).map((p) => (
-              <div key={p._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-leaf-green/50 transition group">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={p.images?.[0] || "https://via.placeholder.com/40"}
-                    alt={p.name}
-                    className="w-10 h-10 rounded-lg object-cover border border-gray-200"
-                    onError={(e) => { e.currentTarget.src = "https://via.placeholder.com/40"; }}
-                  />
-                  <div>
-                    <p className="font-medium text-sm text-gray-800">{p.name}</p>
-                    <span className="text-[10px] px-2 py-0.5 bg-pastel-green text-leaf-green rounded-full font-bold uppercase tracking-wider">
-                      {p.category}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm">
-                    <button
-                      onClick={() => handleStockUpdate(p._id, p.stock, -1)}
-                      className="p-1.5 hover:bg-red-50 text-red-500 transition"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="px-2 text-sm font-semibold text-gray-700 min-w-[20px] text-center">{p.stock}</span>
-                    <button
-                      onClick={() => handleStockUpdate(p._id, p.stock, 1)}
-                      className="p-1.5 hover:bg-leaf-green/10 text-leaf-green transition"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
-                  </div>
-                  {p.stock < 5 && (
-                    <span className="text-[10px] px-2 py-0.5 bg-red-100 text-red-600 rounded-full font-bold">Low</span>
-                  )}
-                  <button
-                    onClick={() => handleDeleteClick(p._id)}
-                    className="text-gray-400 hover:text-red-500 transition ml-1"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
+      {/* ── Quick Inventory + Top Products ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-        {/* Top Selling Products */}
-        <motion.div variants={itemFadeUp} className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm sm:text-lg font-bold text-gray-800 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blob-orange" />
-              Top Selling
-            </h2>
-            <span className="text-[10px] sm:text-xs text-gray-400">Based on real orders</span>
-          </div>
-          {realTopProducts.length === 0 ? (
-            <p className="text-gray-400 text-center py-12 text-sm">No sales data yet.</p>
-          ) : (
-            <div className="space-y-2.5">
-              {realTopProducts.slice(0, 5).map((p, idx) => (
-                <div key={p._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-leaf-green/10 flex items-center justify-center text-xs font-bold text-leaf-green">
-                      {idx + 1}
-                    </div>
-                    <img
-                      src={p.images?.[0] || "https://via.placeholder.com/40"}
-                      alt={p.name}
-                      className="w-10 h-10 rounded-lg object-cover border border-gray-200"
-                      onError={(e) => { e.currentTarget.src = "https://via.placeholder.com/40"; }}
-                    />
-                    <div>
-                      <p className="font-medium text-sm text-gray-800">{p.name}</p>
-                      <p className="text-[10px] text-gray-500">Qty: {p.totalQuantity}</p>
-                    </div>
+        {/* Quick Inventory */}
+        <motion.div variants={fadeUp}>
+          <DarkCard>
+            <div className="flex justify-between items-center px-5 py-4 border-b" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
+              <h2 className="font-black text-white flex items-center gap-2">
+                <Package className="w-4 h-4" style={{ color:ACCENT }} /> Quick Inventory
+              </h2>
+              <button onClick={() => navigate("/admin/products")}
+                className="text-xs font-bold flex items-center gap-1 hover:opacity-75 transition-opacity" style={{ color:ACCENT }}>
+                View all <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+            <div className="p-4 space-y-2 max-h-72 overflow-y-auto"
+              style={{ scrollbarWidth:"thin", scrollbarColor:`${ACCENT}40 transparent` }}>
+              {sortedProducts.slice(0,6).map(p => (
+                <div key={p._id} className="flex items-center gap-3 p-3 rounded-xl transition-all"
+                  style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border" style={{ borderColor:"rgba(255,255,255,0.08)" }}>
+                    <img src={p.images?.[0] || "https://via.placeholder.com/40"} alt={p.name}
+                      className="w-full h-full object-cover"
+                      onError={e => { e.currentTarget.src="https://via.placeholder.com/40"; }} />
                   </div>
-                  <span className="text-sm font-semibold text-gray-700">₦{p.price.toLocaleString()}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-semibold text-sm truncate">{p.name}</p>
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                      style={{ background:`${ACCENT}15`, color:ACCENT }}>{p.category}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Stock pill */}
+                    <div className="flex items-center rounded-xl overflow-hidden"
+                      style={{ background:"#111", border:"1px solid rgba(255,255,255,0.08)" }}>
+                      <motion.button whileTap={{ scale:0.85 }} onClick={() => handleStockUpdate(p._id, p.stock, -1)}
+                        className="w-7 h-7 flex items-center justify-center text-red-400 hover:bg-red-500/10 transition-colors">
+                        <Minus className="w-3 h-3" />
+                      </motion.button>
+                      <span className={`w-8 text-center text-xs font-black ${p.stock < 5 ? "text-red-400" : "text-white"}`}>{p.stock}</span>
+                      <motion.button whileTap={{ scale:0.85 }} onClick={() => handleStockUpdate(p._id, p.stock, 1)}
+                        className="w-7 h-7 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+                        <Plus className="w-3 h-3" />
+                      </motion.button>
+                    </div>
+                    {p.stock < 5 && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full font-extrabold"
+                        style={{ background:"rgba(239,68,68,0.12)", color:"#f87171" }}>Low</span>
+                    )}
+                    <motion.button whileTap={{ scale:0.9 }} onClick={() => handleDeleteClick(p._id)}
+                      className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-700 hover:text-red-400 transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </motion.button>
+                  </div>
                 </div>
               ))}
             </div>
-          )}
+          </DarkCard>
+        </motion.div>
+
+        {/* Top Selling */}
+        <motion.div variants={fadeUp}>
+          <DarkCard>
+            <div className="flex justify-between items-center px-5 py-4 border-b" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
+              <h2 className="font-black text-white flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" style={{ color:ACCENT }} /> Top Selling
+              </h2>
+              <span className="text-[10px] text-gray-600 font-semibold uppercase tracking-wider">By orders</span>
+            </div>
+            <div className="p-4 space-y-2.5">
+              {topProducts.length === 0 ? (
+                <p className="text-gray-700 text-center py-14 text-sm">No sales data yet.</p>
+              ) : topProducts.slice(0,5).map((p, idx) => (
+                <div key={p._id} className="flex items-center gap-3 p-3 rounded-xl"
+                  style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black shrink-0"
+                    style={{ background:`${ACCENT}18`, color:ACCENT }}>
+                    {idx + 1}
+                  </div>
+                  <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
+                    <img src={p.images?.[0] || "https://via.placeholder.com/40"} alt={p.name}
+                      className="w-full h-full object-cover"
+                      onError={e => { e.currentTarget.src="https://via.placeholder.com/40"; }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-semibold text-sm truncate">{p.name}</p>
+                    <p className="text-gray-600 text-xs">{p.totalQuantity} units sold</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-white font-black text-sm">₦{p.price.toLocaleString()}</p>
+                    <p className="text-gray-600 text-[10px]">₦{p.totalRevenue.toLocaleString()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DarkCard>
         </motion.div>
       </div>
 
-      {/* Recent Orders Table */}
-      <motion.div variants={itemFadeUp} className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center">
-          <h2 className="text-sm sm:text-xl font-semibold text-gray-800">Recent Orders</h2>
-          <button
-            onClick={() => navigate("/admin/orders")}
-            className="text-xs sm:text-sm font-medium text-leaf-green hover:underline flex items-center gap-1"
-          >
-            View all <ArrowRight className="w-3 h-3" />
-          </button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50/50">
-              <tr>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">User</th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Total</th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Date</th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Payment</th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {stats.orders?.slice(0, 5).map((order: OrderItem) => (
-                <motion.tr
-                  key={order._id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.2 }}
-                  whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
-                  className="transition-colors"
-                >
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm">{order.user?.email}</td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 font-medium text-xs sm:text-sm text-gray-800">
-                    ₦{order.totalPrice.toLocaleString()}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm text-gray-500">
-                    {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "—"}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-xs font-medium text-gray-600 capitalize">
-                    {PAYMENT_METHOD_LABELS[order.paymentMethod || ""] || "—"}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4">
-                    <select
-                      value={order.status}
-                      onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                      className={`px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold border-0 focus:ring-2 focus:ring-leaf-green ${STATUS_COLORS[order.status]} cursor-pointer outline-none transition-all`}
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Paid">Paid</option>
-                      <option value="Shipped">Shipped</option>
-                      <option value="Delivered">Delivered</option>
-                    </select>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* ── Recent Orders Table ── */}
+      <motion.div variants={fadeUp}>
+        <DarkCard>
+          <div className="flex justify-between items-center px-5 py-4 border-b" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
+            <h2 className="font-black text-white flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4" style={{ color:"#3b82f6" }} /> Recent Orders
+            </h2>
+            <button onClick={() => navigate("/admin/orders")}
+              className="text-xs font-bold flex items-center gap-1 hover:opacity-75 transition-opacity" style={{ color:ACCENT }}>
+              View all <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead style={{ background:"rgba(255,255,255,0.03)" }}>
+                <tr>
+                  {["Customer","Total","Date","Payment","Status"].map(h => (
+                    <th key={h} className="px-5 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(stats.orders || []).slice(0,5).map((order: OrderItem) => (
+                  <tr key={order._id} className="border-t transition-colors hover:bg-white/[0.015]"
+                    style={{ borderColor:"rgba(255,255,255,0.05)" }}>
+                    <td className="px-5 py-3.5 text-sm text-gray-400 max-w-[160px] truncate">{order.user?.email}</td>
+                    <td className="px-5 py-3.5 text-sm font-black text-white">₦{order.totalPrice.toLocaleString()}</td>
+                    <td className="px-5 py-3.5 text-xs text-gray-600">
+                      {order.createdAt ? new Date(order.createdAt).toLocaleDateString("en-NG", { day:"numeric", month:"short" }) : "—"}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ background:"rgba(255,255,255,0.06)", color:"#9ca3af" }}>
+                        {PAYMENT_LABELS[order.paymentMethod || ""] || "—"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <select value={order.status}
+                        onChange={e => handleStatusChange(order._id, e.target.value)}
+                        className="text-xs font-bold px-2.5 py-1.5 rounded-xl outline-none cursor-pointer transition-all appearance-none"
+                        style={{
+                          background: STATUS_DARK[order.status]?.bg   || "rgba(255,255,255,0.07)",
+                          color:      STATUS_DARK[order.status]?.text  || "#fff",
+                          border:     `1px solid ${STATUS_DARK[order.status]?.border || "rgba(255,255,255,0.1)"}`,
+                        }}>
+                        {["Pending","Paid","Shipped","Delivered"].map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </DarkCard>
       </motion.div>
 
-      {/* User Management Section */}
-      <motion.div variants={itemFadeUp} className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center">
-          <h2 className="text-sm sm:text-xl font-semibold text-gray-800 flex items-center gap-2">
-            <Shield className="w-5 h-5 text-blue-600" />
-            User Management
-          </h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50/50">
-              <tr>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Email</th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Role</th>
-                <th className="px-4 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {users.slice(0, 10).map((u) => (
-                <motion.tr
-                  key={u._id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.2 }}
-                  whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
-                  className="transition-colors"
-                >
-                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm">{u.email}</td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4">
-                    <span
-                      className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold ${
-                        u.role === "admin" ? "bg-leaf-green/20 text-leaf-green" : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {u.role === "admin" ? "Admin" : "User"}
-                    </span>
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 sm:py-4">
-                    <select
-                      value={u.role}
-                      onChange={(e) => handleRoleUpdate(u._id, e.target.value as "user" | "admin")}
-                      className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-gray-200 text-[10px] sm:text-sm font-medium outline-none focus:ring-2 focus:ring-leaf-green bg-white cursor-pointer transition-all"
-                    >
-                      <option value="user">User</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* ── User Management ── */}
+      <motion.div variants={fadeUp}>
+        <DarkCard>
+          <div className="flex justify-between items-center px-5 py-4 border-b" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
+            <h2 className="font-black text-white flex items-center gap-2">
+              <Shield className="w-4 h-4" style={{ color:"#8b5cf6" }} /> User Management
+            </h2>
+            <span className="text-[10px] text-gray-600 font-semibold">{users.length} users</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead style={{ background:"rgba(255,255,255,0.03)" }}>
+                <tr>
+                  {["Email","Current Role","Change Role"].map(h => (
+                    <th key={h} className="px-5 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {users.slice(0,10).map((u: UserData) => (
+                  <tr key={u._id} className="border-t transition-colors hover:bg-white/[0.015]"
+                    style={{ borderColor:"rgba(255,255,255,0.05)" }}>
+                    <td className="px-5 py-3.5 text-sm text-gray-400 max-w-[200px] truncate">{u.email}</td>
+                    <td className="px-5 py-3.5">
+                      <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider"
+                        style={{
+                          background: u.role === "admin" ? `${ACCENT}15` : "rgba(156,163,175,0.1)",
+                          color:      u.role === "admin" ? ACCENT : "#9ca3af",
+                          border:     `1px solid ${u.role === "admin" ? `${ACCENT}30` : "rgba(156,163,175,0.2)"}`,
+                        }}>
+                        {u.role}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <select value={u.role}
+                        onChange={e => handleRoleUpdate(u._id, e.target.value as "user"|"admin")}
+                        className="text-xs font-bold px-3 py-1.5 rounded-xl outline-none cursor-pointer transition-all"
+                        style={{
+                          background: "#1c1c1c",
+                          color:      "#9ca3af",
+                          border:     "1px solid rgba(255,255,255,0.08)",
+                        }}>
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </DarkCard>
       </motion.div>
+
     </motion.div>
   );
 };
