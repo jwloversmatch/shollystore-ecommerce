@@ -5,602 +5,472 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
 import {
-  useGetSettingsQuery,
-  useUpdateSettingsMutation,
-  useGetSettingsChangesQuery,
+  useGetSettingsQuery, useUpdateSettingsMutation, useGetSettingsChangesQuery,
 } from "../../features/api/apiSlice";
 import {
-  ArrowLeft,
-  Banknote,
-  MessageCircle,
-  Building,
-  Pencil,
-  Trash2,
-  Check,
-  Home,
-  History,
-  ToggleLeft,
-  ToggleRight,
-} from "lucide-react";   // ← added toggle icons
+  ArrowLeft, Banknote, MessageCircle, Building, Pencil, Trash2,
+  Check, Home, History, Flame, AlertCircle, Loader2, ChevronDown,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ConfirmationModal from "../../components/ConfirmationModal";
 
-// ---------- Zod Schema (still required for the full edit form) ----------
-const settingsSchema = z.object({
-  bankAccountName: z.string().min(1, "Account name is required"),
-  bankAccountNumber: z.string().min(1, "Account number is required"),
-  bankName: z.string().min(1, "Bank name is required"),
-  whatsappNumber: z.string().min(1, "WhatsApp number is required"),
-  heroTagline: z.string().optional(),
-  heroTitle: z.string().optional(),
-  heroDescription: z.string().optional(),
-  specialOfferTitle: z.string().optional(),
-  specialOfferText: z.string().optional(),
-  landingMode: z.boolean().optional(),
-});
+// ─── Constants ─────────────────────────────────────────────────────────────────
+const ACCENT = "#e8622a";
 
+// ─── Schema ───────────────────────────────────────────────────────────────────
+const settingsSchema = z.object({
+  bankAccountName:   z.string().min(1, "Account name is required"),
+  bankAccountNumber: z.string().min(1, "Account number is required"),
+  bankName:          z.string().min(1, "Bank name is required"),
+  whatsappNumber:    z.string().min(1, "WhatsApp number is required"),
+  heroTagline:       z.string().optional(),
+  heroTitle:         z.string().optional(),
+  heroDescription:   z.string().optional(),
+  specialOfferTitle: z.string().optional(),
+  specialOfferText:  z.string().optional(),
+  landingMode:       z.boolean().optional(),
+});
 type SettingsFormData = z.infer<typeof settingsSchema>;
 
-// ---------- Audit log item type ----------
 interface ChangeLogItem {
-  _id: string;
-  field: string;
-  oldValue: string;
-  newValue: string;
-  adminEmail: string;
-  changedAt: string;
+  _id: string; field: string; oldValue: string;
+  newValue: string; adminEmail: string; changedAt: string;
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const inputCls = (hasError: boolean) =>
+  ["w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none transition-all duration-200",
+    hasError
+      ? "border border-red-500/50 ring-2 ring-red-500/10"
+      : "border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15",
+  ].join(" ");
+
+const textareaCls = (hasError: boolean) =>
+  ["w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none resize-none transition-all duration-200",
+    hasError
+      ? "border border-red-500/50 ring-2 ring-red-500/10"
+      : "border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15",
+  ].join(" ");
+
+// ─── Dark card shell ─────────────────────────────────────────────────────────
+const DarkCard = ({ children, accentColor = ACCENT }: { children: React.ReactNode; accentColor?: string }) => (
+  <div className="relative rounded-2xl overflow-hidden"
+    style={{ background:"#141414", border:"1px solid rgba(255,255,255,0.07)", boxShadow:"0 8px 32px rgba(0,0,0,0.35)" }}>
+    {/* Top hairline */}
+    <div className="absolute top-0 inset-x-0 h-px"
+      style={{ background:`linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
+    {children}
+  </div>
+);
+
+// ─── Animated toggle switch ────────────────────────────────────────────────────
+const Toggle = ({ on, onToggle, disabled }: { on: boolean; onToggle: () => void; disabled?: boolean }) => (
+  <button type="button" onClick={onToggle} disabled={disabled}
+    className="relative w-11 h-6 rounded-full transition-colors duration-300 shrink-0 disabled:opacity-50"
+    style={{ background: on ? ACCENT : "#2d2d2d", boxShadow: on ? `0 0 10px ${ACCENT}55` : "none" }}>
+    <motion.div
+      animate={{ x: on ? 20 : 2 }}
+      transition={{ type:"spring", stiffness:500, damping:32 }}
+      className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-md" />
+  </button>
+);
+
+// ─── Info row (view mode) ─────────────────────────────────────────────────────
+const InfoRow = ({ label, value, mono }: { label: string; value?: string; mono?: boolean }) => (
+  <div className="p-4 rounded-xl" style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.06)" }}>
+    <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-gray-600 mb-1.5">{label}</p>
+    <p className={`text-white font-semibold text-sm ${mono ? "font-mono tracking-widest" : ""}`}>
+      {value || <span className="text-gray-700">—</span>}
+    </p>
+  </div>
+);
+
+// ─── Section label ────────────────────────────────────────────────────────────
+const SectionLabel = ({ icon, label, color = ACCENT }: { icon: React.ReactNode; label: string; color?: string }) => (
+  <div className="flex items-center gap-2.5 mb-5">
+    <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background:`${color}18`, color }}>
+      {icon}
+    </div>
+    <h2 className="text-lg font-black text-white">{label}</h2>
+  </div>
+);
+
+// ─── Form label ───────────────────────────────────────────────────────────────
+const Label = ({ children, hint }: { children: React.ReactNode; hint?: string }) => (
+  <div className="flex items-baseline gap-2 mb-2">
+    <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500">{children}</label>
+    {hint && <span className="text-gray-700 text-[10px] normal-case tracking-normal">{hint}</span>}
+  </div>
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
 const Settings = () => {
   const navigate = useNavigate();
-  const [isEditing, setIsEditing] = useState(false);
-  const [clearModalOpen, setClearModalOpen] = useState(false);
-  const [showChanges, setShowChanges] = useState(false);
+  const [isEditing,     setIsEditing]     = useState(false);
+  const [clearModal,    setClearModal]    = useState(false);
+  const [showAudit,     setShowAudit]     = useState(false);
 
-  const { data: settings, isLoading, refetch } = useGetSettingsQuery({});
-  const [updateSettings, { isLoading: updating }] = useUpdateSettingsMutation();
-  const { data: changeLogs = [] } = useGetSettingsChangesQuery({});
+  const { data:settings, isLoading, refetch } = useGetSettingsQuery({});
+  const [updateSettings, { isLoading:updating }] = useUpdateSettingsMutation();
+  const { data:changeLogs = [] }               = useGetSettingsChangesQuery({});
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<SettingsFormData>({
-    resolver: zodResolver(settingsSchema),
-  });
+  const { register, handleSubmit, reset, formState:{ errors } } =
+    useForm<SettingsFormData>({ resolver: zodResolver(settingsSchema) });
 
-  // Pre‑fill form when settings load
   useEffect(() => {
     if (settings) {
       reset({
-        bankAccountName: settings.bankAccountName || "",
+        bankAccountName:   settings.bankAccountName   || "",
         bankAccountNumber: settings.bankAccountNumber || "",
-        bankName: settings.bankName || "",
-        whatsappNumber: settings.whatsappNumber || "",
-        heroTagline: settings.heroTagline || "",
-        heroTitle: settings.heroTitle || "",
-        heroDescription: settings.heroDescription || "",
+        bankName:          settings.bankName          || "",
+        whatsappNumber:    settings.whatsappNumber    || "",
+        heroTagline:       settings.heroTagline       || "",
+        heroTitle:         settings.heroTitle         || "",
+        heroDescription:   settings.heroDescription   || "",
         specialOfferTitle: settings.specialOfferTitle || "",
-        specialOfferText: settings.specialOfferText || "",
-        landingMode: settings.landingMode || false,
+        specialOfferText:  settings.specialOfferText  || "",
+        landingMode:       settings.landingMode       || false,
       });
     }
   }, [settings, reset]);
 
-  // ---------- Form submit for the full edit mode ----------
   const onSubmit = async (data: SettingsFormData) => {
     try {
       await updateSettings(data).unwrap();
-      toast.success("Settings updated successfully!");
-      refetch();
-      setIsEditing(false);
-    } catch (error) {
-      console.error("Failed to update settings:", error);
-      toast.error("Failed to update settings.");
-    }
+      toast.success("Settings updated!");
+      refetch(); setIsEditing(false);
+    } catch { toast.error("Failed to update settings."); }
   };
 
-  // ---------- Independent Landing Mode toggle ----------
   const toggleLandingMode = async () => {
-    const current = settings?.landingMode ?? false;
     try {
-      await updateSettings({ landingMode: !current }).unwrap();
-      toast.success(`Landing mode ${!current ? "enabled" : "disabled"}`);
+      await updateSettings({ landingMode: !settings?.landingMode }).unwrap();
+      toast.success(`Landing mode ${!settings?.landingMode ? "enabled" : "disabled"}`);
       refetch();
-    } catch (error) {
-      console.error("Failed to toggle landing mode:", error);
-      toast.error("Failed to toggle landing mode.");
-    }
+    } catch { toast.error("Failed to toggle landing mode."); }
   };
 
-  // ---------- Clear all settings ----------
   const handleClearAll = async () => {
     try {
       await updateSettings({
-        bankAccountName: "",
-        bankAccountNumber: "",
-        bankName: "",
-        whatsappNumber: "",
-        heroTagline: "",
-        heroTitle: "",
-        heroDescription: "",
-        specialOfferTitle: "",
-        specialOfferText: "",
-        landingMode: false,
+        bankAccountName:"", bankAccountNumber:"", bankName:"", whatsappNumber:"",
+        heroTagline:"", heroTitle:"", heroDescription:"",
+        specialOfferTitle:"", specialOfferText:"", landingMode:false,
       }).unwrap();
-      toast.success("Settings cleared!");
-      refetch();
-      setIsEditing(false);
-      setClearModalOpen(false);
-    } catch (error) {
-      console.error("Failed to clear settings:", error);
-      toast.error("Failed to clear settings.");
-    }
+      toast.success("Settings cleared!"); refetch(); setIsEditing(false); setClearModal(false);
+    } catch { toast.error("Failed to clear settings."); }
   };
 
-  // ---------- Loading skeleton ----------
+  const hasPayment = !!(settings?.bankAccountName || settings?.bankAccountNumber || settings?.bankName || settings?.whatsappNumber);
+
+  // ══════ LOADING ══════════════════════════════════════════════════════════════
   if (isLoading) {
     return (
-      <div className="p-4 md:p-6 pt-20 md:pt-24 max-w-4xl mx-auto space-y-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 w-48 bg-gray-200 rounded" />
-          <div className="h-64 bg-white/80 rounded-2xl border border-gray-100" />
-          <div className="h-64 bg-white/80 rounded-2xl border border-gray-100" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background:"#0A0A0B" }}>
+        <div className="text-center space-y-4">
+          <motion.div animate={{ rotate:360 }} transition={{ repeat:Infinity, duration:1, ease:"linear" }}
+            className="w-12 h-12 rounded-full border-4 mx-auto"
+            style={{ borderColor:`${ACCENT}30`, borderTopColor:ACCENT }} />
+          <p className="text-gray-600 text-sm font-semibold">Loading settings…</p>
         </div>
       </div>
     );
   }
 
-  const hasSettings =
-    settings?.bankAccountName ||
-    settings?.bankAccountNumber ||
-    settings?.bankName ||
-    settings?.whatsappNumber;
-
+  // ══════ MAIN PAGE ═════════════════════════════════════════════════════════════
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="p-4 md:p-6 pt-20 md:pt-24 max-w-4xl mx-auto space-y-6"
-    >
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-2">
-        <button
-          onClick={() => navigate("/admin")}
-          className="p-2 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200 text-gray-600"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-          Store Settings
-        </h1>
+    <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.45 }}
+      className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-4xl mx-auto space-y-5 pb-28 md:pb-10"
+      style={{ background:"#0A0A0B" }}>
+
+      <ConfirmationModal isOpen={clearModal} onClose={() => setClearModal(false)}
+        onConfirm={handleClearAll} title="Clear All Settings?"
+        message="This will remove all payment details and homepage content. This cannot be undone."
+        confirmText="Clear All" cancelText="Cancel" type="danger" />
+
+      {/* ── Page Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <motion.button whileHover={{ scale:1.06 }} whileTap={{ scale:0.94 }}
+            onClick={() => navigate("/admin")}
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:text-white transition-colors shrink-0"
+            style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.08)" }}>
+            <ArrowLeft className="w-5 h-5" />
+          </motion.button>
+          <div>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <Flame className="w-3.5 h-3.5" style={{ color:ACCENT }} />
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color:ACCENT }}>Admin</p>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black text-white leading-none">Store Settings</h1>
+          </div>
+        </div>
+
+        {/* Header actions (view mode only) */}
+        {!isEditing && (
+          <div className="flex items-center gap-3">
+            {hasPayment && (
+              <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
+                onClick={() => setClearModal(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-red-400 transition-colors"
+                style={{ background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.2)" }}>
+                <Trash2 className="w-4 h-4" /> Clear All
+              </motion.button>
+            )}
+            <motion.button whileHover={{ scale:1.04, boxShadow:`0 10px 24px ${ACCENT}55` }} whileTap={{ scale:0.96 }}
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
+              style={{ background:ACCENT, boxShadow:`0 6px 18px ${ACCENT}44` }}>
+              <Pencil className="w-4 h-4" /> Edit Settings
+            </motion.button>
+          </div>
+        )}
       </div>
 
-      {/* -------- VIEW MODE (not editing) -------- */}
-      {!isEditing && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
-          className="space-y-6"
-        >
-          {/* Homepage Content Preview */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 hover:shadow-lg transition-shadow">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Home className="w-5 h-5 text-leaf-green" />
-                Homepage Content
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 gap-3 text-sm">
-              <div>
-                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                  Tagline
-                </span>
-                <p className="font-medium text-gray-800">
-                  {settings?.heroTagline || "—"}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                  Title
-                </span>
-                <p className="font-medium text-gray-800">
-                  {settings?.heroTitle || "—"}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                  Description
-                </span>
-                <p className="font-medium text-gray-800">
-                  {settings?.heroDescription || "—"}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                  Special Offer Title
-                </span>
-                <p className="font-medium text-gray-800">
-                  {settings?.specialOfferTitle || "—"}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                  Special Offer Text
-                </span>
-                <p className="font-medium text-gray-800">
-                  {settings?.specialOfferText || "—"}
-                </p>
-              </div>
+      {/* ════ VIEW MODE ══════════════════════════════════════════════════════════ */}
+      <AnimatePresence mode="wait">
+        {!isEditing && (
+          <motion.div key="view"
+            initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-12 }}
+            transition={{ duration:0.3 }}
+            className="space-y-5">
 
-              {/* ✅ Landing Mode with dedicated toggle (works instantly) */}
-              <div>
-                <span className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                  Landing Mode
-                </span>
-                <div className="flex items-center gap-3 mt-1">
-                  <p className="font-medium text-gray-800">
-                    {settings?.landingMode ? "Yes" : "No"}
-                  </p>
-                  <button
-                    onClick={toggleLandingMode}
-                    className="text-leaf-green hover:text-green-700 transition-colors"
-                    title="Toggle landing mode"
-                  >
-                    {settings?.landingMode ? (
-                      <ToggleRight className="w-6 h-6" />
-                    ) : (
-                      <ToggleLeft className="w-6 h-6" />
-                    )}
-                  </button>
+            {/* Homepage Content */}
+            <DarkCard>
+              <div className="p-6 md:p-7">
+                <SectionLabel icon={<Home className="w-4 h-4" />} label="Homepage Content" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                  <InfoRow label="Hero Tagline"    value={settings?.heroTagline}       />
+                  <InfoRow label="Hero Title"       value={settings?.heroTitle}         />
+                  <InfoRow label="Special Offer Title" value={settings?.specialOfferTitle} />
                 </div>
-              </div>
-            </div>
-          </div>
+                <InfoRow label="Hero Description"  value={settings?.heroDescription}  />
+                <div className="mt-3">
+                  <InfoRow label="Special Offer Text" value={settings?.specialOfferText} />
+                </div>
 
-          {/* Payment Details Preview */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 hover:shadow-lg transition-shadow">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <Banknote className="w-5 h-5 text-leaf-green" />
-                Payment Details
-              </h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors px-3 py-1.5 rounded-lg hover:bg-blue-50 border border-transparent hover:border-blue-200"
-                >
-                  <Pencil className="w-4 h-4" />
-                  Edit All Settings
-                </button>
-                {hasSettings && (
-                  <button
-                    onClick={() => setClearModalOpen(true)}
-                    className="flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-800 transition-colors px-3 py-1.5 rounded-lg hover:bg-red-50 border border-transparent hover:border-red-200"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Clear All
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {hasSettings ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex items-start gap-3 p-4 bg-gray-50/50 rounded-xl border border-gray-100">
-                  <Building className="w-5 h-5 text-leaf-green shrink-0 mt-0.5" />
+                {/* Landing Mode Toggle */}
+                <div className="mt-4 flex items-center justify-between p-4 rounded-xl"
+                  style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.06)" }}>
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                      Bank
-                    </p>
-                    <p className="font-medium text-gray-800">
-                      {settings?.bankName || "—"}
+                    <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-gray-600 mb-1">Landing Mode</p>
+                    <p className="text-white font-semibold text-sm">
+                      {settings?.landingMode ? "Enabled — Full-screen hero" : "Disabled — Regular layout"}
                     </p>
                   </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 bg-gray-50/50 rounded-xl border border-gray-100">
-                  <Banknote className="w-5 h-5 text-leaf-green shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                      Account Name
-                    </p>
-                    <p className="font-medium text-gray-800">
-                      {settings?.bankAccountName || "—"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 bg-gray-50/50 rounded-xl border border-gray-100">
-                  <Banknote className="w-5 h-5 text-leaf-green shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                      Account Number
-                    </p>
-                    <p className="font-medium text-gray-800 font-mono">
-                      {settings?.bankAccountNumber || "—"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 bg-gray-50/50 rounded-xl border border-gray-100">
-                  <MessageCircle className="w-5 h-5 text-leaf-green shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                      WhatsApp
-                    </p>
-                    <p className="font-medium text-gray-800">
-                      {settings?.whatsappNumber || "—"}
-                    </p>
-                  </div>
+                  <Toggle on={!!settings?.landingMode} onToggle={toggleLandingMode} />
                 </div>
               </div>
-            ) : (
-              <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl text-gray-500">
-                <span className="text-sm">
-                  No payment details configured yet.
-                </span>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      )}
+            </DarkCard>
 
-      {/* -------- EDIT MODE (full form with bank details required) -------- */}
-      <AnimatePresence>
-        {isEditing && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6"
-          >
-            {/* Homepage Content Form (still includes landingMode checkbox but optional here) */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-              <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-                <Home className="w-5 h-5 text-leaf-green" />
-                Homepage Content
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Hero Tagline
-                  </label>
-                  <input
-                    {...register("heroTagline")}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400"
-                    placeholder="e.g. 📦 Bulk Beverage Store"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Hero Title
-                    <span className="text-xs text-gray-400 ml-1">
-                      (Use " | " to make the second part green)
-                    </span>
-                  </label>
-                  <input
-                    {...register("heroTitle")}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400"
-                    placeholder="e.g. Your Everyday | Drink Superstore"
-                  />
-                </div>
-                {/* Landing Mode checkbox inside edit mode as well (optional) */}
-                <div className="flex items-center gap-2 mt-4">
-                  <input
-                    type="checkbox"
-                    id="landingMode"
-                    {...register("landingMode")}
-                    className="w-4 h-4 text-leaf-green focus:ring-leaf-green rounded"
-                  />
-                  <label
-                    htmlFor="landingMode"
-                    className="text-sm text-gray-700 font-medium"
-                  >
-                    Use landing page layout (full‑screen hero)
-                  </label>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Hero Description
-                  </label>
-                  <textarea
-                    {...register("heroDescription")}
-                    rows={3}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400 resize-none"
-                    placeholder="A short description of your store..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Special Offer Title
-                  </label>
-                  <input
-                    {...register("specialOfferTitle")}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400"
-                    placeholder="e.g. Stock Up & Save"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Special Offer Text
-                  </label>
-                  <textarea
-                    {...register("specialOfferText")}
-                    rows={3}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400 resize-none"
-                    placeholder="e.g. Get ₦500 off your first bulk order..."
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Payment Details Form (required fields still validated) */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
-              <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-                <Banknote className="w-5 h-5 text-leaf-green" />
-                Payment Details
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Bank Name
-                  </label>
-                  <input
-                    {...register("bankName")}
-                    className={`w-full border ${errors.bankName ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400`}
-                    placeholder="e.g. GTBank"
-                  />
-                  {errors.bankName && (
-                    <p className="mt-1 text-sm text-red-600">
-                      • {errors.bankName.message}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Account Name
-                  </label>
-                  <input
-                    {...register("bankAccountName")}
-                    className={`w-full border ${errors.bankAccountName ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400`}
-                    placeholder="e.g. LotceWieth Store"
-                  />
-                  {errors.bankAccountName && (
-                    <p className="mt-1 text-sm text-red-600">
-                      • {errors.bankAccountName.message}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Account Number
-                  </label>
-                  <input
-                    {...register("bankAccountNumber")}
-                    className={`w-full border ${errors.bankAccountNumber ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400`}
-                    placeholder="0123456789"
-                  />
-                  {errors.bankAccountNumber && (
-                    <p className="mt-1 text-sm text-red-600">
-                      • {errors.bankAccountNumber.message}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    WhatsApp Number
-                  </label>
-                  <input
-                    {...register("whatsappNumber")}
-                    className={`w-full border ${errors.whatsappNumber ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green transition-all placeholder:text-gray-400`}
-                    placeholder="+2348000000000"
-                  />
-                  {errors.whatsappNumber && (
-                    <p className="mt-1 text-sm text-red-600">
-                      • {errors.whatsappNumber.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit(onSubmit)}
-                disabled={updating}
-                className="px-6 py-2.5 bg-leaf-green text-white rounded-xl font-medium shadow-lg hover:shadow-leaf-green/30 transition disabled:opacity-60 flex items-center gap-2"
-              >
-                {updating ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Saving...
-                  </>
+            {/* Payment Details */}
+            <DarkCard accentColor="#10b981">
+              <div className="p-6 md:p-7">
+                <SectionLabel icon={<Banknote className="w-4 h-4" />} label="Payment Details" color="#10b981" />
+                {hasPayment ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex items-start gap-3 p-4 rounded-xl" style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.06)" }}>
+                      <Building className="w-4 h-4 mt-0.5 shrink-0" style={{ color:"#10b981" }} />
+                      <div>
+                        <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-gray-600 mb-1">Bank</p>
+                        <p className="text-white font-semibold text-sm">{settings?.bankName || "—"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-4 rounded-xl" style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.06)" }}>
+                      <Banknote className="w-4 h-4 mt-0.5 shrink-0" style={{ color:"#10b981" }} />
+                      <div>
+                        <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-gray-600 mb-1">Account Name</p>
+                        <p className="text-white font-semibold text-sm">{settings?.bankAccountName || "—"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-4 rounded-xl" style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.06)" }}>
+                      <Banknote className="w-4 h-4 mt-0.5 shrink-0" style={{ color:"#10b981" }} />
+                      <div>
+                        <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-gray-600 mb-1">Account Number</p>
+                        <p className="text-white font-semibold text-sm font-mono tracking-widest">{settings?.bankAccountNumber || "—"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-4 rounded-xl" style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.06)" }}>
+                      <MessageCircle className="w-4 h-4 mt-0.5 shrink-0" style={{ color:"#25D366" }} />
+                      <div>
+                        <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-gray-600 mb-1">WhatsApp</p>
+                        <p className="text-white font-semibold text-sm">{settings?.whatsappNumber || "—"}</p>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
-                  <>
-                    <Check className="w-4 h-4" />
-                    Save All Settings
-                  </>
+                  <div className="flex items-center gap-3 p-5 rounded-xl text-gray-600"
+                    style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.06)" }}>
+                    <AlertCircle className="w-5 h-5 shrink-0" />
+                    <p className="text-sm">No payment details configured yet. Click <strong className="text-white">Edit Settings</strong> to add them.</p>
+                  </div>
                 )}
-              </button>
+              </div>
+            </DarkCard>
+          </motion.div>
+        )}
+
+        {/* ════ EDIT MODE ════════════════════════════════════════════════════════ */}
+        {isEditing && (
+          <motion.div key="edit"
+            initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-12 }}
+            transition={{ duration:0.3 }}
+            className="space-y-5">
+
+            {/* Homepage Content Form */}
+            <DarkCard>
+              <div className="p-6 md:p-7">
+                <SectionLabel icon={<Home className="w-4 h-4" />} label="Homepage Content" />
+                <div className="space-y-4">
+                  <div>
+                    <Label>Hero Tagline</Label>
+                    <input {...register("heroTagline")} placeholder="e.g. 🔥 Premium Food Store" className={inputCls(false)} />
+                  </div>
+                  <div>
+                    <Label hint='Use " | " to split title into two colours'>Hero Title</Label>
+                    <input {...register("heroTitle")} placeholder='e.g. Taste the | Difference' className={inputCls(false)} />
+                  </div>
+                  <div>
+                    <Label>Hero Description</Label>
+                    <textarea {...register("heroDescription")} rows={3} placeholder="A short description of your store…" className={textareaCls(false)} />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Special Offer Title</Label>
+                      <input {...register("specialOfferTitle")} placeholder="e.g. Today's Special" className={inputCls(false)} />
+                    </div>
+                    <div>
+                      <Label>Special Offer Text</Label>
+                      <input {...register("specialOfferText")} placeholder="e.g. Get ₦500 off orders over ₦10k" className={inputCls(false)} />
+                    </div>
+                  </div>
+
+                  {/* Landing Mode toggle in edit mode */}
+                  <div className="flex items-center justify-between p-4 rounded-xl"
+                    style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.07)" }}>
+                    <div>
+                      <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-1">Landing Mode</p>
+                      <p className="text-gray-400 text-xs">Show full-screen hero instead of the regular layout</p>
+                    </div>
+                    <Toggle on={!!settings?.landingMode} onToggle={toggleLandingMode} />
+                  </div>
+                </div>
+              </div>
+            </DarkCard>
+
+            {/* Payment Details Form */}
+            <DarkCard accentColor="#10b981">
+              <div className="p-6 md:p-7">
+                <SectionLabel icon={<Banknote className="w-4 h-4" />} label="Payment Details" color="#10b981" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Bank Name</Label>
+                    <input {...register("bankName")} placeholder="e.g. GTBank" className={inputCls(!!errors.bankName)} />
+                    {errors.bankName && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.bankName.message}</p>}
+                  </div>
+                  <div>
+                    <Label>Account Name</Label>
+                    <input {...register("bankAccountName")} placeholder="e.g. LotceWieth Store" className={inputCls(!!errors.bankAccountName)} />
+                    {errors.bankAccountName && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.bankAccountName.message}</p>}
+                  </div>
+                  <div>
+                    <Label>Account Number</Label>
+                    <input {...register("bankAccountNumber")} placeholder="0123456789" className={inputCls(!!errors.bankAccountNumber) + " font-mono tracking-widest"} />
+                    {errors.bankAccountNumber && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.bankAccountNumber.message}</p>}
+                  </div>
+                  <div>
+                    <Label>WhatsApp Number</Label>
+                    <input {...register("whatsappNumber")} placeholder="+2348000000000" className={inputCls(!!errors.whatsappNumber)} />
+                    {errors.whatsappNumber && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.whatsappNumber.message}</p>}
+                  </div>
+                </div>
+              </div>
+            </DarkCard>
+
+            {/* Save / Cancel */}
+            <div className="flex justify-end gap-3 pb-2">
+              <motion.button type="button" whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
+                onClick={() => setIsEditing(false)}
+                className="px-5 py-3 rounded-xl text-sm font-bold text-gray-500 hover:text-white transition-colors"
+                style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.08)" }}>
+                Cancel
+              </motion.button>
+              <motion.button type="button" onClick={handleSubmit(onSubmit)} disabled={updating}
+                whileHover={!updating ? { scale:1.03, boxShadow:`0 14px 36px ${ACCENT}55` } : {}}
+                whileTap={!updating ? { scale:0.97 } : {}}
+                className="flex items-center gap-2.5 px-7 py-3 rounded-xl font-black text-white text-sm transition-all disabled:opacity-55"
+                style={{ background:ACCENT, boxShadow:`0 6px 18px ${ACCENT}44` }}>
+                {updating ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
+                ) : (
+                  <><Check className="w-4 h-4" /> Save All Settings</>
+                )}
+              </motion.button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Audit Log */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-6">
-        <button
-          onClick={() => setShowChanges(!showChanges)}
-          className="flex items-center gap-2 text-sm font-medium text-leaf-green hover:underline mb-4"
-        >
-          <History className="w-4 h-4" />
-          {showChanges ? "Hide Recent Changes" : "Show Recent Changes"}
+      {/* ── Audit Log ── */}
+      <div className="rounded-2xl overflow-hidden"
+        style={{ background:"#141414", border:"1px solid rgba(255,255,255,0.07)" }}>
+        <button onClick={() => setShowAudit(v => !v)}
+          className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-white/[0.02] transition-colors">
+          <span className="flex items-center gap-2.5 text-sm font-black text-gray-400">
+            <History className="w-4 h-4" style={{ color:"#8b5cf6" }} /> Audit Log
+            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full"
+              style={{ background:"rgba(139,92,246,0.12)", color:"#8b5cf6" }}>
+              {changeLogs.length}
+            </span>
+          </span>
+          <motion.div animate={{ rotate: showAudit ? 180 : 0 }} transition={{ duration:0.25 }}>
+            <ChevronDown className="w-4 h-4 text-gray-600" />
+          </motion.div>
         </button>
-        {showChanges && (
-          <div className="overflow-x-auto max-h-64 overflow-y-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50/50">
-                <tr>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">
-                    Field
-                  </th>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">
-                    Old
-                  </th>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">
-                    New
-                  </th>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">
-                    Admin
-                  </th>
-                  <th className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase">
-                    Date
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {changeLogs.map((log: ChangeLogItem) => (
-                  <tr key={log._id}>
-                    <td className="px-3 py-2 font-medium">{log.field}</td>
-                    <td className="px-3 py-2 text-gray-500 max-w-[150px] truncate">
-                      {log.oldValue}
-                    </td>
-                    <td className="px-3 py-2 text-gray-500 max-w-[150px] truncate">
-                      {log.newValue}
-                    </td>
-                    <td className="px-3 py-2">{log.adminEmail}</td>
-                    <td className="px-3 py-2 text-gray-400">
-                      {new Date(log.changedAt).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+
+        <AnimatePresence>
+          {showAudit && (
+            <motion.div initial={{ height:0, opacity:0 }} animate={{ height:"auto", opacity:1 }} exit={{ height:0, opacity:0 }}
+              transition={{ duration:0.3 }}
+              className="overflow-hidden border-t" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
+              <div className="overflow-x-auto max-h-64 overflow-y-auto"
+                style={{ scrollbarWidth:"thin", scrollbarColor:`${ACCENT}40 transparent` }}>
+                <table className="w-full text-left">
+                  <thead style={{ background:"rgba(255,255,255,0.03)" }}>
+                    <tr>
+                      {["Field","Old Value","New Value","Admin","Date"].map(h => (
+                        <th key={h} className="px-5 py-3 text-[9px] font-extrabold uppercase tracking-widest text-gray-600">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {changeLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-5 py-8 text-center text-gray-700 text-sm">No changes logged yet.</td>
+                      </tr>
+                    ) : changeLogs.map((log: ChangeLogItem) => (
+                      <tr key={log._id} className="border-t transition-colors hover:bg-white/[0.015]"
+                        style={{ borderColor:"rgba(255,255,255,0.05)" }}>
+                        <td className="px-5 py-3">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ background:"rgba(139,92,246,0.1)", color:"#a78bfa" }}>{log.field}</span>
+                        </td>
+                        <td className="px-5 py-3 text-gray-600 text-xs max-w-[100px] truncate">{log.oldValue || "—"}</td>
+                        <td className="px-5 py-3 text-white text-xs max-w-[100px] truncate">{log.newValue || "—"}</td>
+                        <td className="px-5 py-3 text-gray-500 text-xs truncate max-w-[120px]">{log.adminEmail}</td>
+                        <td className="px-5 py-3 text-gray-700 text-xs whitespace-nowrap">
+                          {new Date(log.changedAt).toLocaleString("en-NG", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Clear All Modal */}
-      <ConfirmationModal
-        isOpen={clearModalOpen}
-        onClose={() => setClearModalOpen(false)}
-        onConfirm={handleClearAll}
-        title="Clear All Settings?"
-        message="This will remove all payment details and homepage content. Are you sure?"
-        confirmText="Clear All"
-        cancelText="Cancel"
-        type="danger"
-      />
     </motion.div>
   );
 };
