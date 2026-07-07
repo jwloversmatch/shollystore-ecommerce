@@ -24,7 +24,10 @@ interface Coupon {
   usedCount: number;
 }
 
-// ---------- Shared formatting helper ----------
+// ─── Constants ─────────────────────────────────────────────────────────────────
+const ACCENT = '#e8622a';
+
+// ─── Shared formatting helper (unchanged) ─────────────────────────────────────
 const formatWithCommas = (raw: string): string => {
   if (!raw) return '';
   const [intPart, decPart] = raw.split('.');
@@ -32,22 +35,11 @@ const formatWithCommas = (raw: string): string => {
   return decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
 };
 
-/**
- * Reusable hook: manages a single numeric text input with live comma
- * formatting, decimal support (≤ 2 places), and cursor-position restoration.
- *
- * Usage:
- *   const myInput = useFormattedInput('0');
- *   <input {...myInput.inputProps} className="..." />
- *   // read cleaned value as: Number(myInput.raw)
- *   // set programmatically: myInput.set('5000')
- */
 function useFormattedInput(initial: string | number = '') {
   const [raw, setRaw] = useState(String(initial));
   const inputRef = useRef<HTMLInputElement>(null);
   const pendingCursor = useRef<number | null>(null);
 
-  // Restore cursor position BEFORE the browser paints (prevents jump-to-end flicker)
   useLayoutEffect(() => {
     if (pendingCursor.current !== null && inputRef.current) {
       inputRef.current.setSelectionRange(pendingCursor.current, pendingCursor.current);
@@ -58,11 +50,7 @@ function useFormattedInput(initial: string | number = '') {
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const el = e.target;
     const cursor = el.selectionStart ?? el.value.length;
-
-    // How many real chars (non-commas) were before the cursor in the old string?
     const nonCommasBefore = el.value.slice(0, cursor).replace(/,/g, '').length;
-
-    // Strip commas → clean: digits + one decimal point + max 2 decimal places
     const stripped = el.value.replace(/,/g, '');
     let cleaned = '';
     let seenDot = false;
@@ -79,8 +67,6 @@ function useFormattedInput(initial: string | number = '') {
         cleaned += ch;
       }
     }
-
-    // Find where the cursor lands in the newly formatted string
     const formatted = formatWithCommas(cleaned);
     let charCount = 0;
     let newCursor = formatted.length;
@@ -93,12 +79,10 @@ function useFormattedInput(initial: string | number = '') {
         }
       }
     }
-
     pendingCursor.current = newCursor;
     setRaw(cleaned);
   };
 
-  /** Call this to programmatically set the raw value (e.g. when opening a drawer) */
   const set = (val: string | number) => setRaw(String(val));
 
   return {
@@ -114,7 +98,7 @@ function useFormattedInput(initial: string | number = '') {
   };
 }
 
-// ---------- Component ----------
+// ─── Component ────────────────────────────────────────────────────────────────
 const Coupons = () => {
   const navigate = useNavigate();
   const { data: coupons = [], isLoading, refetch } = useGetCouponsQuery({});
@@ -127,7 +111,6 @@ const Coupons = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [couponToDelete, setCouponToDelete] = useState<string | null>(null);
 
-  // Formatted inputs — managed outside RHF so commas work cleanly
   const discountAmountInput = useFormattedInput(10);
   const minOrderAmountInput = useFormattedInput(0);
 
@@ -167,7 +150,6 @@ const Coupons = () => {
     try {
       const payload = {
         ...data,
-        // Read directly from our formatted-input state, not from RHF
         discountAmount: Number(discountAmountInput.raw),
         minOrderAmount: Number(minOrderAmountInput.raw) || 0,
         usageLimit: Number(data.usageLimit) || 0,
@@ -201,19 +183,90 @@ const Coupons = () => {
     setCouponToDelete(null);
   };
 
+  // ══════ LOADING SKELETON ═════════════════════════════════════════════════════
   if (isLoading) {
     return (
-      <div className="min-h-screen flex justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-leaf-green" />
+      <div
+        className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6"
+        style={{ background: '#0A0A0B' }}
+      >
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+            <div className="h-6 w-32 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+          </div>
+          <div className="h-10 w-28 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+        </div>
+
+        {/* Table card skeleton */}
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: '#141414',
+            border: '1px solid rgba(255,255,255,0.07)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+          }}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead style={{ background: 'rgba(255,255,255,0.03)' }}>
+                <tr>
+                  {['Code','Type','Amount','Min Order','Usage','Active','Actions'].map((h) => (
+                    <th key={h} className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 4 }).map((_, idx) => (
+                  <tr
+                    key={idx}
+                    className="border-t"
+                    style={{ borderColor: 'rgba(255,255,255,0.05)' }}
+                  >
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="h-4 w-16 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="h-4 w-20 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="h-4 w-16 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="h-4 w-24 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="h-4 w-12 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="h-5 w-12 rounded-full bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="flex justify-end gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     );
   }
 
+  // ══════ MAIN PAGE ════════════════════════════════════════════════════════════
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6"
+      className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6"
+      style={{ background: '#0A0A0B' }}
     >
       <ConfirmationModal
         isOpen={deleteModalOpen}
@@ -226,84 +279,118 @@ const Coupons = () => {
         type="danger"
       />
 
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.94 }}
             onClick={() => navigate('/admin')}
-            className="p-2 rounded-xl hover:bg-gray-100 border border-gray-200 text-gray-600"
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:text-white transition-colors shrink-0"
+            style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.08)' }}
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Coupons</h1>
+          </motion.button>
+          <div>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: `${ACCENT}18` }}>
+                <span className="text-[10px] font-extrabold" style={{ color: ACCENT }}>C</span>
+              </div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: ACCENT }}>
+                Admin
+              </p>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black text-white leading-none">Coupons</h1>
+          </div>
         </div>
         <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
+          whileHover={{ scale: 1.04, boxShadow: `0 12px 28px ${ACCENT}55` }}
+          whileTap={{ scale: 0.96 }}
           onClick={() => openDrawer()}
-          className="flex items-center gap-2 bg-leaf-green text-white px-4 py-2.5 rounded-xl font-medium shadow-lg hover:shadow-leaf-green/30 transition text-sm"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white text-sm"
+          style={{ background: ACCENT, boxShadow: `0 6px 18px ${ACCENT}44` }}
         >
-          <Plus className="w-4 h-4" /> Add Coupon
+          <Plus className="w-4 h-4" />
+          Add Coupon
         </motion.button>
       </div>
 
-      <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Table */}
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{
+          background: '#141414',
+          border: '1px solid rgba(255,255,255,0.07)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+        }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-gray-50/50">
+            <thead style={{ background: 'rgba(255,255,255,0.03)' }}>
               <tr>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase">Code</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase">Type</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase">Amount</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase">Min Order</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase">Usage</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase">Active</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase">Actions</th>
+                <th className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">Code</th>
+                <th className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">Type</th>
+                <th className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">Amount</th>
+                <th className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">Min Order</th>
+                <th className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">Usage</th>
+                <th className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">Active</th>
+                <th className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {coupons.map((coupon: Coupon) => (
                 <motion.tr
                   key={coupon._id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="hover:bg-gray-50 transition-colors"
+                  className="border-t transition-colors hover:bg-white/[0.015]"
+                  style={{ borderColor: 'rgba(255,255,255,0.05)' }}
                 >
-                  <td className="px-4 sm:px-6 py-3 font-medium text-sm">{coupon.code}</td>
-                  <td className="px-4 sm:px-6 py-3 text-sm capitalize">{coupon.discountType}</td>
-                  <td className="px-4 sm:px-6 py-3 text-sm">
+                  <td className="px-4 sm:px-6 py-3 font-semibold text-sm text-white">{coupon.code}</td>
+                  <td className="px-4 sm:px-6 py-3 text-sm capitalize text-gray-400">{coupon.discountType}</td>
+                  <td className="px-4 sm:px-6 py-3 text-sm text-gray-300">
                     {coupon.discountType === 'percentage'
                       ? `${coupon.discountAmount}%`
                       : `₦${coupon.discountAmount.toLocaleString()}`}
                   </td>
-                  <td className="px-4 sm:px-6 py-3 text-sm">₦{(coupon.minOrderAmount || 0).toLocaleString()}</td>
-                  <td className="px-4 sm:px-6 py-3 text-sm">
+                  <td className="px-4 sm:px-6 py-3 text-sm text-gray-300">
+                    ₦{(coupon.minOrderAmount || 0).toLocaleString()}
+                  </td>
+                  <td className="px-4 sm:px-6 py-3 text-sm text-gray-300">
                     {coupon.usedCount}
                     {coupon.usageLimit > 0 ? ` / ${coupon.usageLimit}` : ''}
                   </td>
                   <td className="px-4 sm:px-6 py-3">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-bold ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold ${
                         coupon.isActive
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-500'
+                          ? ''
+                          : ''
                       }`}
+                      style={
+                        coupon.isActive
+                          ? { background: `${ACCENT}15`, color: ACCENT, border: `1px solid ${ACCENT}30` }
+                          : { background: 'rgba(255,255,255,0.06)', color: '#6b7280', border: '1px solid rgba(255,255,255,0.08)' }
+                      }
                     >
                       {coupon.isActive ? 'Yes' : 'No'}
                     </span>
                   </td>
-                  <td className="px-4 sm:px-6 py-3 text-right space-x-1">
-                    <button
-                      onClick={() => openDrawer(coupon)}
-                      className="text-blue-600 hover:text-blue-800 p-1.5 rounded-lg hover:bg-blue-50"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClick(coupon._id)}
-                      className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  <td className="px-4 sm:px-6 py-3 text-right">
+                    <div className="flex justify-end gap-1">
+                      <button
+                        onClick={() => openDrawer(coupon)}
+                        className="p-1.5 rounded-lg text-blue-400 hover:text-blue-300 transition-colors hover:bg-blue-500/10"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(coupon._id)}
+                        className="p-1.5 rounded-lg text-red-400 hover:text-red-300 transition-colors hover:bg-red-500/10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </motion.tr>
               ))}
@@ -312,7 +399,7 @@ const Coupons = () => {
         </div>
       </div>
 
-      {/* Slide‑in Drawer for Add/Edit */}
+      {/* Slide‑in Drawer (dark) */}
       <AnimatePresence>
         {drawerOpen && (
           <>
@@ -320,7 +407,7 @@ const Coupons = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
               onClick={closeDrawer}
             />
             <motion.div
@@ -328,90 +415,106 @@ const Coupons = () => {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed right-0 top-0 h-full w-full max-w-full sm:max-w-md bg-white/95 backdrop-blur-xl shadow-2xl z-50 overflow-y-auto p-6"
+              className="fixed right-0 top-0 h-full w-full max-w-full sm:max-w-md shadow-2xl z-50 overflow-y-auto p-6"
+              style={{
+                background: '#141414',
+                borderLeft: '1px solid rgba(255,255,255,0.08)',
+              }}
             >
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold">
+                <h2 className="text-xl font-black text-white">
                   {editingCoupon ? 'Edit Coupon' : 'New Coupon'}
                 </h2>
-                <button onClick={closeDrawer} className="p-2 rounded-full hover:bg-gray-100">
+                <button
+                  onClick={closeDrawer}
+                  className="p-2 rounded-xl hover:bg-white/5 transition text-gray-500 hover:text-white"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
+                  <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">Code</label>
                   <input
                     {...register('code', { required: true })}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
                     placeholder="e.g., SAVE10"
+                    className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 transition-all"
                   />
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">Type</label>
                     <select
                       {...register('discountType')}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                      className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 transition-all appearance-none"
                     >
                       <option value="percentage">Percentage</option>
                       <option value="fixed">Fixed Amount</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                    <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">Amount</label>
                     <input
                       {...discountAmountInput.inputProps}
                       placeholder="0"
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                      className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 transition-all"
                     />
                   </div>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Min Order Amount (₦)</label>
+                  <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">Min Order Amount (₦)</label>
                   <input
                     {...minOrderAmountInput.inputProps}
                     placeholder="0"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                    className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 transition-all"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Usage Limit (0 = unlimited)</label>
+                  <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">Usage Limit (0 = unlimited)</label>
                   <input
                     type="number"
                     {...register('usageLimit')}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                    className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 transition-all"
                   />
                 </div>
+
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     {...register('isActive')}
-                    className="w-4 h-4 text-leaf-green focus:ring-leaf-green"
+                    className="w-4 h-4 rounded focus:ring-0 text-leaf-green bg-[#1c1c1c] border-gray-600 accent-[#e8622a]"
                   />
-                  <label className="text-sm font-medium text-gray-700">Active</label>
+                  <label className="text-sm font-bold text-gray-300">Active</label>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date (optional)</label>
+                  <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">Expiry Date (optional)</label>
                   <input
                     type="date"
                     {...register('expiresAt')}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                    className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 transition-all"
                   />
                 </div>
-                <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
+
+                <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
                   <button
                     type="button"
                     onClick={closeDrawer}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition"
+                    className="px-5 py-3 rounded-xl text-sm font-bold text-gray-500 hover:text-white transition-colors"
+                    style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.08)' }}
                   >
                     Cancel
                   </button>
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.03, boxShadow: `0 14px 36px ${ACCENT}55` }}
+                    whileTap={{ scale: 0.97 }}
                     type="submit"
-                    className="px-4 py-2 bg-leaf-green text-white rounded-xl font-medium shadow-md hover:bg-green-700 transition disabled:opacity-60"
+                    className="px-5 py-3 rounded-xl font-black text-white text-sm transition-all"
+                    style={{ background: ACCENT, boxShadow: `0 6px 18px ${ACCENT}44` }}
                   >
                     Save
                   </motion.button>

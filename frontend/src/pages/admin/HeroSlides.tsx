@@ -24,6 +24,10 @@ import {
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../../components/ConfirmationModal';
 
+// ─── Constants ─────────────────────────────────────────────────────────────────
+const ACCENT = '#e8622a';
+
+// ─── Interfaces ────────────────────────────────────────────────────────────────
 interface HeroSlide {
   _id: string;
   imageUrl: string;
@@ -52,6 +56,8 @@ const itemFadeUp = {
     transition: { type: 'spring' as const, stiffness: 300, damping: 25 },
   },
 };
+
+
 
 const HeroSlides = () => {
   const navigate = useNavigate();
@@ -158,59 +164,77 @@ const HeroSlides = () => {
     refetch();
   };
 
-  // ══════ LOADING SKELETON ════════════════════════════════════════════════════
+  // ══════ LOADING SKELETON (dark theme) ═════════════════════════════════════════
   if (isLoading) {
     return (
-      <div className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6">
+      <div
+        className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6"
+        style={{ background: '#0A0A0B' }}
+      >
         {/* Header skeleton */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-gray-200 animate-pulse" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
             <div className="space-y-1.5">
-              <div className="h-4 w-24 bg-gray-200 animate-pulse rounded" />
-              <div className="h-3 w-40 bg-gray-200 animate-pulse rounded" />
+              <div className="h-5 w-32 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+              <div className="h-3 w-48 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
             </div>
           </div>
-          <div className="h-10 w-28 bg-gray-200 animate-pulse rounded-xl" />
+          <div className="h-10 w-28 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
         </div>
 
         {/* Table skeleton card */}
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: '#141414',
+            border: '1px solid rgba(255,255,255,0.07)',
+          }}
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead className="bg-gray-50/50">
+              <thead style={{ background: 'rgba(255,255,255,0.03)' }}>
                 <tr>
                   {['Image', 'Title', 'Subtitle', 'Active', 'Order', 'Actions'].map((heading) => (
-                    <th key={heading} className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                    <th
+                      key={heading}
+                      className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600"
+                    >
                       {heading}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {Array.from({ length: 4 }).map((_, idx) => (
-                  <tr key={idx}>
+                  <tr
+                    key={idx}
+                    className="border-t"
+                    style={{ borderColor: 'rgba(255,255,255,0.05)' }}
+                  >
                     <td className="px-4 sm:px-6 py-3">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-gray-200 animate-pulse" />
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
                     </td>
                     <td className="px-4 sm:px-6 py-3">
-                      <div className="h-4 w-32 bg-gray-200 animate-pulse rounded" />
+                      <div className="h-4 w-32 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
                     </td>
                     <td className="px-4 sm:px-6 py-3">
-                      <div className="h-4 w-48 bg-gray-200 animate-pulse rounded" />
+                      <div className="h-4 w-48 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
                     </td>
                     <td className="px-4 sm:px-6 py-3">
-                      <div className="h-5 w-16 bg-gray-200 animate-pulse rounded-full" />
+                      <div className="h-5 w-16 rounded-full bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
                     </td>
                     <td className="px-4 sm:px-6 py-3">
-                      <div className="h-4 w-8 bg-gray-200 animate-pulse rounded" />
+                      <div className="h-4 w-8 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
                     </td>
                     <td className="px-4 sm:px-6 py-3">
                       <div className="flex justify-end gap-1">
-                        <div className="w-8 h-8 bg-gray-200 animate-pulse rounded-lg" />
-                        <div className="w-8 h-8 bg-gray-200 animate-pulse rounded-lg" />
-                        <div className="w-8 h-8 bg-gray-200 animate-pulse rounded-lg" />
-                        <div className="w-8 h-8 bg-gray-200 animate-pulse rounded-lg" />
+                        {Array.from({ length: 4 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="w-8 h-8 rounded-lg bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse"
+                          />
+                        ))}
                       </div>
                     </td>
                   </tr>
@@ -223,13 +247,14 @@ const HeroSlides = () => {
     );
   }
 
-  // ══════ MAIN PAGE ════════════════════════════════════════════════════════════
+  // ══════ MAIN PAGE (dark theme) ════════════════════════════════════════════════
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6"
+      className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6"
+      style={{ background: '#0A0A0B' }}
     >
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
@@ -246,22 +271,34 @@ const HeroSlides = () => {
       {/* Header */}
       <motion.div variants={itemFadeUp} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-4">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.94 }}
             onClick={() => navigate('/admin')}
-            className="p-2 rounded-xl hover:bg-gray-100 border border-gray-200 text-gray-600"
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:text-white transition-colors shrink-0"
+            style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.08)' }}
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </motion.button>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Hero Slides</h1>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1">Manage homepage hero carousel slides</p>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: `${ACCENT}18` }}>
+                <ToggleRight className="w-3 h-3" style={{ color: ACCENT }} />
+              </div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: ACCENT }}>
+                Admin
+              </p>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black text-white leading-none">Hero Slides</h1>
+            <p className="text-gray-600 text-sm mt-0.5">Manage homepage hero carousel slides</p>
           </div>
         </div>
         <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
+          whileHover={{ scale: 1.04, boxShadow: `0 12px 28px ${ACCENT}55` }}
+          whileTap={{ scale: 0.96 }}
           onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 bg-leaf-green text-white px-4 py-2.5 rounded-xl font-medium shadow-lg hover:shadow-leaf-green/30 transition-all text-sm"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white text-sm"
+          style={{ background: ACCENT, boxShadow: `0 6px 18px ${ACCENT}44` }}
         >
           <Plus className="w-4 h-4" />
           Add Slide
@@ -269,28 +306,37 @@ const HeroSlides = () => {
       </motion.div>
 
       {/* Table */}
-      <motion.div variants={itemFadeUp} className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <motion.div
+        variants={itemFadeUp}
+        className="rounded-2xl overflow-hidden"
+        style={{
+          background: '#141414',
+          border: '1px solid rgba(255,255,255,0.07)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+        }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-gray-50/50">
+            <thead style={{ background: 'rgba(255,255,255,0.03)' }}>
               <tr>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Image</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Title</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Subtitle</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Active</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Order</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider text-right">Actions</th>
+                <th className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">Image</th>
+                <th className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">Title</th>
+                <th className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">Subtitle</th>
+                <th className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">Active</th>
+                <th className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">Order</th>
+                <th className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {slides.map((slide: HeroSlide, idx: number) => (
                 <motion.tr
                   key={slide._id}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.2, delay: idx * 0.05 }}
-                  whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
-                  className="transition-colors"
+                  whileHover={{ backgroundColor: 'rgba(255,255,255,0.015)' }}
+                  className="border-t transition-colors"
+                  style={{ borderColor: 'rgba(255,255,255,0.05)' }}
                 >
                   <td className="px-4 sm:px-6 py-3">
                     <img
@@ -300,45 +346,53 @@ const HeroSlides = () => {
                       onError={(e) => {
                         e.currentTarget.src = PLACEHOLDER_IMAGE;
                       }}
-                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover border border-gray-200 shadow-sm"
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover border"
+                      style={{ borderColor: 'rgba(255,255,255,0.08)' }}
                     />
                   </td>
-                  <td className="px-4 sm:px-6 py-3 font-medium text-sm text-gray-800">{slide.title}</td>
-                  <td className="px-4 sm:px-6 py-3 text-sm text-gray-600">{slide.subtitle}</td>
+                  <td className="px-4 sm:px-6 py-3 font-semibold text-sm text-white">{slide.title}</td>
+                  <td className="px-4 sm:px-6 py-3 text-sm text-gray-400">{slide.subtitle}</td>
                   <td className="px-4 sm:px-6 py-3">
                     <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${
-                        slide.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold ${
+                        slide.isActive
+                          ? ''
+                          : ''
                       }`}
+                      style={
+                        slide.isActive
+                          ? { background: `${ACCENT}15`, color: ACCENT, border: `1px solid ${ACCENT}30` }
+                          : { background: 'rgba(255,255,255,0.06)', color: '#6b7280', border: '1px solid rgba(255,255,255,0.08)' }
+                      }
                     >
                       {slide.isActive ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
                       {slide.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="px-4 sm:px-6 py-3 text-sm text-gray-600">{slide.order}</td>
+                  <td className="px-4 sm:px-6 py-3 text-sm text-gray-400">{slide.order}</td>
                   <td className="px-4 sm:px-6 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => moveSlide(slide._id, 'up')}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition"
+                        className="p-1.5 rounded-lg text-gray-600 hover:text-white transition"
                       >
                         <ArrowUp className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => moveSlide(slide._id, 'down')}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition"
+                        className="p-1.5 rounded-lg text-gray-600 hover:text-white transition"
                       >
                         <ArrowDown className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleOpenModal(slide)}
-                        className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 hover:text-blue-800 transition"
+                        className="p-1.5 rounded-lg hover:bg-blue-500/10 text-blue-400 hover:text-blue-300 transition"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteClick(slide._id)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-red-600 hover:text-red-800 transition"
+                        className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-400 hover:text-red-300 transition"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -351,7 +405,7 @@ const HeroSlides = () => {
         </div>
       </motion.div>
 
-      {/* Modal for Add/Edit */}
+      {/* Modal for Add/Edit (dark theme) */}
       <AnimatePresence>
         {isModalOpen && (
           <>
@@ -359,7 +413,7 @@ const HeroSlides = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
               onClick={handleCloseModal}
             />
             <motion.div
@@ -369,42 +423,51 @@ const HeroSlides = () => {
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
             >
-              <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-6 max-w-lg w-full border border-white/40">
+              <div
+                className="rounded-2xl p-6 max-w-lg w-full border"
+                style={{
+                  background: '#141414',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  boxShadow: '0 40px 90px rgba(0,0,0,0.65)',
+                }}
+              >
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-gray-800">
+                  <h2 className="text-xl font-black text-white">
                     {editingSlide ? 'Edit Slide' : 'Add New Slide'}
                   </h2>
                   <button
                     onClick={handleCloseModal}
-                    className="p-2 rounded-xl hover:bg-gray-100 transition"
+                    className="p-2 rounded-xl hover:bg-white/5 transition text-gray-500 hover:text-white"
                   >
-                    <X className="w-5 h-5 text-gray-600" />
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">Title</label>
                     <input
                       type="text"
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                      className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Subtitle</label>
+                    <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">Subtitle</label>
                     <input
                       type="text"
                       value={formData.subtitle}
                       onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                      className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                    <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">Image</label>
                     <div className="flex items-center gap-4">
                       <label className="flex-1 cursor-pointer">
-                        <div className="flex items-center gap-2 px-4 py-3 border border-dashed border-gray-300 rounded-xl hover:border-leaf-green transition text-sm text-gray-500">
+                        <div className="flex items-center gap-2 px-4 py-3 border border-dashed rounded-xl transition text-sm text-gray-500 hover:text-gray-300"
+                          style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+                        >
                           <UploadCloud className="w-5 h-5" />
                           {file ? file.name : 'Click to upload image'}
                         </div>
@@ -419,52 +482,57 @@ const HeroSlides = () => {
                         <img
                           src={file ? URL.createObjectURL(file) : formData.imageUrl}
                           alt="Preview"
-                          className="w-14 h-14 rounded-lg object-cover border border-gray-200"
+                          className="w-14 h-14 rounded-lg object-cover border"
+                          style={{ borderColor: 'rgba(255,255,255,0.08)' }}
                         />
                       )}
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
+                    <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">Order</label>
                     <input
                       type="number"
                       value={formData.order}
                       onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
+                      className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 transition-all"
                     />
                   </div>
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        formData.isActive ? 'bg-leaf-green' : 'bg-gray-300'
-                      }`}
+                      className="relative w-11 h-6 rounded-full transition-colors duration-300 shrink-0"
+                      style={{
+                        background: formData.isActive ? ACCENT : '#2d2d2d',
+                        boxShadow: formData.isActive ? `0 0 10px ${ACCENT}55` : 'none',
+                      }}
                     >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          formData.isActive ? 'translate-x-6' : 'translate-x-1'
-                        }`}
+                      <motion.div
+                        animate={{ x: formData.isActive ? 20 : 2 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+                        className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-md"
                       />
                     </button>
-                    <span className="text-sm font-medium text-gray-700">
+                    <span className="text-sm font-bold text-white">
                       {formData.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
-                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                  <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
                     <button
                       type="button"
                       onClick={handleCloseModal}
-                      className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm font-medium"
+                      className="px-5 py-3 rounded-xl text-sm font-bold text-gray-500 hover:text-white transition-colors"
+                      style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.08)' }}
                     >
                       Cancel
                     </button>
                     <motion.button
                       type="submit"
                       disabled={uploading}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="px-5 py-2.5 bg-leaf-green text-white rounded-xl font-medium shadow-md hover:bg-green-700 transition disabled:opacity-60 text-sm flex items-center gap-2"
+                      whileHover={!uploading ? { scale: 1.03, boxShadow: `0 14px 36px ${ACCENT}55` } : {}}
+                      whileTap={!uploading ? { scale: 0.97 } : {}}
+                      className="px-5 py-3 rounded-xl font-black text-white text-sm flex items-center gap-2 transition-all disabled:opacity-55"
+                      style={{ background: ACCENT, boxShadow: `0 6px 18px ${ACCENT}44` }}
                     >
                       {uploading ? (
                         <>
