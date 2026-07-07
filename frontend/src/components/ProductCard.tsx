@@ -17,6 +17,25 @@ interface ProductProps {
 
 const FALLBACK = 'https://via.placeholder.com/200x200?text=🍽';
 
+// ── CSS keyframes (place in your global CSS file) ─────────────────────────────
+/*
+@keyframes spin-ring {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.animate-spin-ring {
+  animation: spin-ring 14s linear infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%      { transform: scale(1.35); opacity: 0.6; }
+}
+.animate-pulse-dot {
+  animation: pulse-dot 2.2s ease-in-out infinite;
+}
+*/
+
 const ProductCard = ({
   _id, name, price, image, category = 'General', stock, onClick,
 }: ProductProps) => {
@@ -43,21 +62,20 @@ const ProductCard = ({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-20px' }}
       whileHover="hover"
-      transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+      transition={{ type: 'spring', stiffness: 200, damping: 22 }}  // slightly lighter for mobile
     >
       {/* ── Floating plate ── */}
       <motion.div
         className="relative z-10 w-28 h-28 md:w-32 md:h-32"
         variants={{ hover: { y: -12, scale: 1.06, rotate: 7 } }}
-        transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 18 }}
       >
-        {/* Slow-spinning dashed outer ring */}
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 14, repeat: Infinity, ease: 'linear' }}
-          className="absolute -inset-3 rounded-full border-[1.5px] border-dashed pointer-events-none"
+        {/* Slow-spinning dashed outer ring – now pure CSS */}
+        <div
+          className="absolute -inset-3 rounded-full border-[1.5px] border-dashed pointer-events-none animate-spin-ring"
           style={{ borderColor: `${accent}55` }}
         />
+
         {/* Static inner accent ring */}
         <div
           className="absolute -inset-1 rounded-full pointer-events-none"
@@ -82,11 +100,11 @@ const ProductCard = ({
           )}
         </div>
 
-        {/* Stock pulse dot */}
-        <motion.div
-          animate={!isOutOfStock ? { scale: [1, 1.35, 1], opacity: [1, 0.6, 1] } : {}}
-          transition={{ duration: 2.2, repeat: Infinity }}
-          className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#111]"
+        {/* Stock pulse dot – now pure CSS */}
+        <div
+          className={`absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#111] ${
+            isOutOfStock ? '' : 'animate-pulse-dot'
+          }`}
           style={{ background: isOutOfStock ? '#ef4444' : '#10b981' }}
         />
       </motion.div>
@@ -95,7 +113,7 @@ const ProductCard = ({
       <motion.div
         onClick={onClick}
         className="w-full -mt-14 pt-16 pb-5 px-4 md:px-5 rounded-[26px] cursor-pointer relative overflow-hidden"
-        style={{ background: 'linear-gradient(160deg,#1c1c1e 0%,#111111 100%)' }}
+        style={{ background: 'linear-gradient(160deg,#1c1c1e 0%,#111111 100%)', willChange: 'transform' }}
         variants={{
           hover: { boxShadow: `0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px ${accent}22` },
         }}
