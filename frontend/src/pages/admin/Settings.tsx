@@ -52,18 +52,16 @@ const textareaCls = (hasError: boolean) =>
       : "border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15",
   ].join(" ");
 
-// ─── Dark card shell ─────────────────────────────────────────────────────────
+// ─── Reusable components ──────────────────────────────────────────────────────
 const DarkCard = ({ children, accentColor = ACCENT }: { children: React.ReactNode; accentColor?: string }) => (
   <div className="relative rounded-2xl overflow-hidden"
     style={{ background:"#141414", border:"1px solid rgba(255,255,255,0.07)", boxShadow:"0 8px 32px rgba(0,0,0,0.35)" }}>
-    {/* Top hairline */}
     <div className="absolute top-0 inset-x-0 h-px"
       style={{ background:`linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
     {children}
   </div>
 );
 
-// ─── Animated toggle switch ────────────────────────────────────────────────────
 const Toggle = ({ on, onToggle, disabled }: { on: boolean; onToggle: () => void; disabled?: boolean }) => (
   <button type="button" onClick={onToggle} disabled={disabled}
     className="relative w-11 h-6 rounded-full transition-colors duration-300 shrink-0 disabled:opacity-50"
@@ -75,7 +73,6 @@ const Toggle = ({ on, onToggle, disabled }: { on: boolean; onToggle: () => void;
   </button>
 );
 
-// ─── Info row (view mode) ─────────────────────────────────────────────────────
 const InfoRow = ({ label, value, mono }: { label: string; value?: string; mono?: boolean }) => (
   <div className="p-4 rounded-xl" style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.06)" }}>
     <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-gray-600 mb-1.5">{label}</p>
@@ -85,7 +82,6 @@ const InfoRow = ({ label, value, mono }: { label: string; value?: string; mono?:
   </div>
 );
 
-// ─── Section label ────────────────────────────────────────────────────────────
 const SectionLabel = ({ icon, label, color = ACCENT }: { icon: React.ReactNode; label: string; color?: string }) => (
   <div className="flex items-center gap-2.5 mb-5">
     <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background:`${color}18`, color }}>
@@ -95,7 +91,6 @@ const SectionLabel = ({ icon, label, color = ACCENT }: { icon: React.ReactNode; 
   </div>
 );
 
-// ─── Form label ───────────────────────────────────────────────────────────────
 const Label = ({ children, hint }: { children: React.ReactNode; hint?: string }) => (
   <div className="flex items-baseline gap-2 mb-2">
     <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500">{children}</label>
@@ -163,21 +158,83 @@ const Settings = () => {
 
   const hasPayment = !!(settings?.bankAccountName || settings?.bankAccountNumber || settings?.bankName || settings?.whatsappNumber);
 
-  // ══════ LOADING ══════════════════════════════════════════════════════════════
+  // ══════ LOADING SKELETON ═════════════════════════════════════════════════════
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background:"#0A0A0B" }}>
-        <div className="text-center space-y-4">
-          <motion.div animate={{ rotate:360 }} transition={{ repeat:Infinity, duration:1, ease:"linear" }}
-            className="w-12 h-12 rounded-full border-4 mx-auto"
-            style={{ borderColor:`${ACCENT}30`, borderTopColor:ACCENT }} />
-          <p className="text-gray-600 text-sm font-semibold">Loading settings…</p>
+      <div
+        className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-4xl mx-auto space-y-5 pb-28 md:pb-10"
+        style={{ background: "#0A0A0B" }}
+      >
+        {/* Header skeleton */}
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+          <div className="space-y-1.5">
+            <div className="h-3 w-20 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+            <div className="h-6 w-40 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+          </div>
+        </div>
+
+        {/* Homepage Content card skeleton */}
+        <div className="relative rounded-2xl overflow-hidden p-6 md:p-7 space-y-4"
+          style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+            <div className="h-5 w-40 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-4 rounded-xl" style={{ background: "#1c1c1c" }}>
+              <div className="h-3 w-20 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse mb-2" />
+              <div className="h-5 w-3/4 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+            </div>
+            <div className="p-4 rounded-xl" style={{ background: "#1c1c1c" }}>
+              <div className="h-3 w-20 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse mb-2" />
+              <div className="h-5 w-3/4 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+            </div>
+          </div>
+          <div className="p-4 rounded-xl" style={{ background: "#1c1c1c" }}>
+            <div className="h-3 w-24 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse mb-2" />
+            <div className="h-5 w-full rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+          </div>
+          <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: "#1c1c1c" }}>
+            <div className="space-y-1">
+              <div className="h-3 w-24 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+              <div className="h-4 w-48 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+            </div>
+            <div className="w-11 h-6 rounded-full bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+          </div>
+        </div>
+
+        {/* Payment Details card skeleton */}
+        <div className="relative rounded-2xl overflow-hidden p-6 md:p-7 space-y-4"
+          style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+            <div className="h-5 w-36 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="p-4 rounded-xl flex items-start gap-3" style={{ background: "#1c1c1c" }}>
+                <div className="w-4 h-4 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse shrink-0 mt-0.5" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3 w-20 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                  <div className="h-5 w-3/4 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Audit log placeholder */}
+        <div className="rounded-2xl p-5 flex items-center gap-3"
+          style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="w-4 h-4 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+          <div className="h-4 w-24 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
         </div>
       </div>
     );
   }
 
-  // ══════ MAIN PAGE ═════════════════════════════════════════════════════════════
+  // ══════ MAIN PAGE ════════════════════════════════════════════════════════════
   return (
     <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.45 }}
       className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-4xl mx-auto space-y-5 pb-28 md:pb-10"
@@ -206,7 +263,6 @@ const Settings = () => {
           </div>
         </div>
 
-        {/* Header actions (view mode only) */}
         {!isEditing && (
           <div className="flex items-center gap-3">
             {hasPayment && (
@@ -249,7 +305,6 @@ const Settings = () => {
                   <InfoRow label="Special Offer Text" value={settings?.specialOfferText} />
                 </div>
 
-                {/* Landing Mode Toggle */}
                 <div className="mt-4 flex items-center justify-between p-4 rounded-xl"
                   style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.06)" }}>
                   <div>
@@ -345,7 +400,6 @@ const Settings = () => {
                     </div>
                   </div>
 
-                  {/* Landing Mode toggle in edit mode */}
                   <div className="flex items-center justify-between p-4 rounded-xl"
                     style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.07)" }}>
                     <div>

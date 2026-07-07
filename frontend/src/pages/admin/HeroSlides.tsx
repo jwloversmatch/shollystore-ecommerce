@@ -61,7 +61,6 @@ const HeroSlides = () => {
   const [deleteSlide] = useDeleteHeroSlideMutation();
   const [uploadImage] = useUploadImageMutation();
 
-  // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null);
   const [formData, setFormData] = useState({
@@ -74,7 +73,6 @@ const HeroSlides = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Delete confirmation modal state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [slideToDelete, setSlideToDelete] = useState<string | null>(null);
 
@@ -160,18 +158,72 @@ const HeroSlides = () => {
     refetch();
   };
 
+  // ══════ LOADING SKELETON ════════════════════════════════════════════════════
   if (isLoading) {
     return (
-      <div className="min-h-screen flex justify-center items-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-          className="rounded-full h-12 w-12 border-4 border-leaf-green/30 border-t-leaf-green"
-        />
+      <div className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6">
+        {/* Header skeleton */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-gray-200 animate-pulse" />
+            <div className="space-y-1.5">
+              <div className="h-4 w-24 bg-gray-200 animate-pulse rounded" />
+              <div className="h-3 w-40 bg-gray-200 animate-pulse rounded" />
+            </div>
+          </div>
+          <div className="h-10 w-28 bg-gray-200 animate-pulse rounded-xl" />
+        </div>
+
+        {/* Table skeleton card */}
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-gray-50/50">
+                <tr>
+                  {['Image', 'Title', 'Subtitle', 'Active', 'Order', 'Actions'].map((heading) => (
+                    <th key={heading} className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                      {heading}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {Array.from({ length: 4 }).map((_, idx) => (
+                  <tr key={idx}>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-gray-200 animate-pulse" />
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="h-4 w-32 bg-gray-200 animate-pulse rounded" />
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="h-4 w-48 bg-gray-200 animate-pulse rounded" />
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="h-5 w-16 bg-gray-200 animate-pulse rounded-full" />
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="h-4 w-8 bg-gray-200 animate-pulse rounded" />
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="flex justify-end gap-1">
+                        <div className="w-8 h-8 bg-gray-200 animate-pulse rounded-lg" />
+                        <div className="w-8 h-8 bg-gray-200 animate-pulse rounded-lg" />
+                        <div className="w-8 h-8 bg-gray-200 animate-pulse rounded-lg" />
+                        <div className="w-8 h-8 bg-gray-200 animate-pulse rounded-lg" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     );
   }
 
+  // ══════ MAIN PAGE ════════════════════════════════════════════════════════════
   return (
     <motion.div
       variants={containerVariants}

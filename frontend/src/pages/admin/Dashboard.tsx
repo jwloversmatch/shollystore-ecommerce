@@ -17,6 +17,13 @@ import {
 } from "recharts";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import SEO from "../../components/SEO";
+import {
+  StatsCardSkeleton,
+  ChartSkeleton,
+  OrderRowSkeleton,
+  TableRowSkeleton,
+  DarkCardSkeleton,
+} from "../../components/Skeletons";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
@@ -42,7 +49,6 @@ interface CategorySale{ _id:string; totalSales:number; revenue:number; }
 interface TopProduct { _id:string; name:string; images:string[]; price:number; totalQuantity:number; totalRevenue:number; }
 interface UserData   { _id:string; email:string; role:"user"|"admin"; }
 
-// Custom tooltip prop types (matches what recharts actually passes)
 interface CustomTooltipProps {
   active?: boolean;
   payload?: Array<{ value: number; name: string; dataKey?: string }>;
@@ -61,7 +67,7 @@ const DarkCard = ({ children, className="" }: { children:React.ReactNode; classN
   </div>
 );
 
-// ─── Dark chart tooltip ────────────────────────────────────────────────────────
+// ─── Dark chart tooltips ───────────────────────────────────────────────────────
 const ChartTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (!active || !payload?.length) return null;
   const val = payload[0].value as number;
@@ -128,17 +134,114 @@ const Dashboard = () => {
   const handleRoleUpdate   = async (id: string, role: "user"|"admin") => { try { await updateUserRole({ id, role }).unwrap(); refetchUsers(); } catch { /* Handle error silently */ } };
   const handleRefresh      = () => { refetchStats(); refetchProducts(); refetchAnalytics(); refetchTopProducts(); refetchUsers(); };
 
-  // ══════ LOADING ══════════════════════════════════════════════════════════════
+  // ══════ LOADING SKELETON ═════════════════════════════════════════════════════
   if (statsLoading || productsLoading || analyticsLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background:"#0A0A0B" }}>
+      <div
+        className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-7xl mx-auto space-y-5 md:space-y-6 pb-28 md:pb-10"
+        style={{ background: "#0A0A0B" }}
+      >
         <SEO title="Admin Dashboard" description="Manage your store." />
-        <div className="text-center space-y-4">
-          <motion.div animate={{ rotate:360 }} transition={{ repeat:Infinity, duration:1, ease:"linear" }}
-            className="w-14 h-14 rounded-full border-4 mx-auto"
-            style={{ borderColor:`${ACCENT}30`, borderTopColor:ACCENT }} />
-          <p className="text-gray-600 text-sm font-semibold">Loading dashboard…</p>
+
+        {/* Header skeleton */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="space-y-2">
+            <div className="h-5 w-32 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+            <div className="h-8 w-48 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+          </div>
+          <div className="flex gap-3">
+            <div className="h-10 w-24 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+            <div className="h-10 w-32 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+          </div>
         </div>
+
+        {/* Stat cards skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatsCardSkeleton key={i} dark />
+          ))}
+        </div>
+
+        {/* Charts skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="lg:col-span-2">
+            <DarkCardSkeleton>
+              <div className="p-5">
+                <div className="h-6 w-40 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse mb-4" />
+                <ChartSkeleton height={230} />
+              </div>
+            </DarkCardSkeleton>
+          </div>
+          <div>
+            <DarkCardSkeleton>
+              <div className="p-5">
+                <div className="h-6 w-32 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse mb-4" />
+                <ChartSkeleton height={200} />
+              </div>
+            </DarkCardSkeleton>
+          </div>
+        </div>
+
+        {/* Quick Inventory + Top Products skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <DarkCardSkeleton>
+            <div className="p-5">
+              <div className="h-6 w-40 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse mb-4" />
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                  <div className="flex-1 space-y-1">
+                    <div className="h-4 w-3/4 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                    <div className="h-3 w-1/4 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-16 h-8 rounded-lg bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                    <div className="w-6 h-6 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DarkCardSkeleton>
+          <DarkCardSkeleton>
+            <div className="p-5">
+              <div className="h-6 w-40 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse mb-4" />
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3">
+                  <div className="w-7 h-7 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                  <div className="flex-1 space-y-1">
+                    <div className="h-4 w-3/4 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                    <div className="h-3 w-1/4 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                  </div>
+                  <div className="text-right">
+                    <div className="h-4 w-16 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
+                    <div className="h-3 w-12 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse mt-1" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DarkCardSkeleton>
+        </div>
+
+        {/* Recent Orders skeleton */}
+        <DarkCardSkeleton>
+          <div className="p-5">
+            <div className="h-6 w-40 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse mb-4" />
+            {Array.from({ length: 5 }).map((_, i) => (
+              <OrderRowSkeleton key={i} dark />
+            ))}
+          </div>
+        </DarkCardSkeleton>
+
+        {/* User Management skeleton */}
+        <DarkCardSkeleton>
+          <div className="p-5">
+            <div className="h-6 w-48 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse mb-4" />
+            {Array.from({ length: 3 }).map((_, i) => (
+              <TableRowSkeleton key={i} cols={3} dark />
+            ))}
+          </div>
+        </DarkCardSkeleton>
       </div>
     );
   }
@@ -193,7 +296,6 @@ const Dashboard = () => {
           <motion.div key={i} variants={fadeUp}
             className="relative rounded-2xl p-4 md:p-5 overflow-hidden"
             style={{ background:"#141414", border:`1px solid ${s.color}22`, boxShadow:`0 8px 24px rgba(0,0,0,0.3)` }}>
-            {/* Glow blob */}
             <div className="absolute -bottom-6 -right-6 w-20 h-20 rounded-full blur-2xl pointer-events-none" style={{ background:s.color, opacity:0.18 }} />
             <div className="flex items-start justify-between relative z-10">
               <div>
@@ -210,8 +312,6 @@ const Dashboard = () => {
 
       {/* ── Charts row ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-        {/* Bar chart — Sales by Category */}
         <motion.div variants={fadeUp} className="lg:col-span-2">
           <DarkCard>
             <div className="flex justify-between items-center px-5 py-4 border-b" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
@@ -242,7 +342,6 @@ const Dashboard = () => {
           </DarkCard>
         </motion.div>
 
-        {/* Pie chart — Order Status */}
         <motion.div variants={fadeUp}>
           <DarkCard className="h-full">
             <div className="flex justify-between items-center px-5 py-4 border-b" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
@@ -274,8 +373,6 @@ const Dashboard = () => {
 
       {/* ── Quick Inventory + Top Products ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-        {/* Quick Inventory */}
         <motion.div variants={fadeUp}>
           <DarkCard>
             <div className="flex justify-between items-center px-5 py-4 border-b" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
@@ -303,7 +400,6 @@ const Dashboard = () => {
                       style={{ background:`${ACCENT}15`, color:ACCENT }}>{p.category}</span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {/* Stock pill */}
                     <div className="flex items-center rounded-xl overflow-hidden"
                       style={{ background:"#111", border:"1px solid rgba(255,255,255,0.08)" }}>
                       <motion.button whileTap={{ scale:0.85 }} onClick={() => handleStockUpdate(p._id, p.stock, -1)}
@@ -331,7 +427,6 @@ const Dashboard = () => {
           </DarkCard>
         </motion.div>
 
-        {/* Top Selling */}
         <motion.div variants={fadeUp}>
           <DarkCard>
             <div className="flex justify-between items-center px-5 py-4 border-b" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
