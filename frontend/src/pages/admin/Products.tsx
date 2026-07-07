@@ -6,241 +6,135 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import {
-  useGetProductsQuery,
-  useDeleteProductMutation,
-  useCreateProductMutation,
-  useUpdateProductMutation,
-  useUploadImageMutation,
-  useUpdateStockMutation,
-  useGetCategoriesQuery,
-  useSendMarketingEmailMutation,
+  useGetProductsQuery, useDeleteProductMutation, useCreateProductMutation,
+  useUpdateProductMutation, useUploadImageMutation, useUpdateStockMutation,
+  useGetCategoriesQuery, useSendMarketingEmailMutation,
 } from '../../features/api/apiSlice';
 import {
-  Search,
-  Trash2,
-  Edit2,
-  Plus,
-  X,
-  UploadCloud,
-  AlertCircle,
-  ArrowLeft,
-  Minus,
-  Mail,
+  Search, Trash2, Edit2, Plus, X, UploadCloud, AlertCircle,
+  ArrowLeft, Minus, Mail, Flame, Loader2, Package,
 } from 'lucide-react';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import { ProductRowSkeleton } from '../../components/Skeletons';
 
-// ---------- Types ----------
+// ─── Constants ─────────────────────────────────────────────────────────────────
+const ACCENT      = '#e8622a';
+const PLACEHOLDER = 'https://via.placeholder.com/150';
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
 interface ProductItem {
-  _id: string;
-  name: string;
-  slug?: string;
-  images?: string[];
-  price: number;
-  stock: number;
-  description?: string;
-  category?: string;
-  createdAt?: string;
+  _id: string; name: string; slug?: string; images?: string[];
+  price: number; stock: number; description?: string; category?: string; createdAt?: string;
 }
+interface CategoryItem { _id: string; name: string; slug: string; }
 
-interface CategoryItem {
-  _id: string;
-  name: string;
-  slug: string;
-}
-
-// ---------- Zod Validation Schema ----------
+// ─── Schema ───────────────────────────────────────────────────────────────────
 const productSchema = z.object({
-  name: z.string().min(1, 'Product name is required'),
-  price: z
-    .string()
-    .min(1, 'Price is required')
-    .refine((val) => Number(val) > 0, 'Price must be greater than 0'),
-  stock: z
-    .string()
-    .min(1, 'Stock is required')
-    .refine((val) => Number(val) >= 0, 'Stock cannot be negative'),
-  category: z.string().min(1, 'Category is required'),
+  name:        z.string().min(1, 'Product name is required'),
+  price:       z.string().min(1, 'Price is required').refine(v => Number(v) > 0, 'Price must be greater than 0'),
+  stock:       z.string().min(1, 'Stock is required').refine(v => Number(v) >= 0, 'Stock cannot be negative'),
+  category:    z.string().min(1, 'Category is required'),
   description: z.string().optional(),
 });
-
 type ProductFormData = z.infer<typeof productSchema>;
 
-// ---------- Animation Variants ----------
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
-  },
-};
+// ─── Input helpers ────────────────────────────────────────────────────────────
+const buildInputCls = (hasError: boolean) =>
+  ['w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none transition-all border',
+    hasError
+      ? 'border-red-500/50 ring-2 ring-red-500/10'
+      : 'border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15',
+  ].join(' ');
 
-const itemFadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { type: 'spring' as const, stiffness: 300, damping: 25 },
-  },
-};
-
-// ---------- Helpers ----------
-/**
- * Formats a raw numeric string (digits + optional decimal) into a
- * comma-separated display string.
- *   "5000"     → "5,000"
- *   "5000.5"   → "5,000.5"
- *   "5000.50"  → "5,000.50"
- *   ""         → ""
- */
+// ─── Price formatter ──────────────────────────────────────────────────────────
 const formatPriceInput = (raw: string): string => {
   if (!raw) return '';
   const [intPart, decPart] = raw.split('.');
-  const formattedInt = (intPart || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  return decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
+  const fmtInt = (intPart || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return decPart !== undefined ? `${fmtInt}.${decPart}` : fmtInt;
 };
 
-// ---------- Component ----------
+// ─── Shared drawer label ──────────────────────────────────────────────────────
+const DLabel = ({ children }: { children: React.ReactNode }) => (
+  <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">{children}</p>
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
 const Products = () => {
   const navigate = useNavigate();
-  const {
-    data: products = [],
-    isLoading,
-  } = useGetProductsQuery({});
-  const { data: categories = [] } = useGetCategoriesQuery({});
-  const [deleteProduct] = useDeleteProductMutation();
-  const [createProduct] = useCreateProductMutation();
-  const [updateProduct] = useUpdateProductMutation();
-  const [uploadImage] = useUploadImageMutation();
-  const [updateStock] = useUpdateStockMutation();
+
+  const { data: products = [], isLoading } = useGetProductsQuery({});
+  const { data: categories = [] }          = useGetCategoriesQuery({});
+  const [deleteProduct]                    = useDeleteProductMutation();
+  const [createProduct]                    = useCreateProductMutation();
+  const [updateProduct]                    = useUpdateProductMutation();
+  const [uploadImage]                      = useUploadImageMutation();
+  const [updateStock]                      = useUpdateStockMutation();
   const [sendMarketingEmail, { isLoading: isSendingMarketing }] = useSendMarketingEmailMutation();
 
-  // ---------- UI State ----------
-  const [searchTerm, setSearchTerm] = useState('');
+  // UI state
+  const [searchTerm,     setSearchTerm]     = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
-  const [showLowStock, setShowLowStock] = useState(false);
+  const [showLowStock,   setShowLowStock]   = useState(false);
 
-  // ---------- Modal / Drawer State ----------
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  // Drawer state
+  const [isDrawerOpen,   setIsDrawerOpen]   = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  const [uploading,      setUploading]      = useState(false);
+  const [file,           setFile]           = useState<File | null>(null);
+  const [notifyCustomers,setNotifyCustomers]= useState(false);
 
-  // ---------- Confirmation Modal State ----------
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalAction, setModalAction] = useState<{
-    type: 'delete';
-    id: string;
-  } | null>(null);
+  // Delete modal
+  const [modalOpen,   setModalOpen]   = useState(false);
+  const [modalAction, setModalAction] = useState<{ type:'delete'; id:string } | null>(null);
 
-  // ---------- Marketing Modal State ----------
-  const [marketingModalOpen, setMarketingModalOpen] = useState(false);
-  const [selectedProductForMarketing, setSelectedProductForMarketing] = useState<ProductItem | null>(null);
-  const [marketingType, setMarketingType] = useState<'new_arrival' | 'back_in_stock'>('new_arrival');
-  const [customMessage, setCustomMessage] = useState('');
+  // Marketing modal
+  const [marketingOpen,   setMarketingOpen]   = useState(false);
+  const [marketingProduct,setMarketingProduct]= useState<ProductItem | null>(null);
+  const [marketingType,   setMarketingType]   = useState<'new_arrival'|'back_in_stock'>('new_arrival');
+  const [customMessage,   setCustomMessage]   = useState('');
 
-  // Notify on new product
-  const [notifyCustomers, setNotifyCustomers] = useState(false);
+  // Form
+  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } =
+    useForm<ProductFormData>({ resolver: zodResolver(productSchema) });
 
-  // ---------- React Hook Form ----------
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
-  });
-
-  // ---------- Price input state & refs ----------
-  // rawPrice holds the clean numeric string, e.g. "5000" or "5000.50"
-  const [rawPrice, setRawPrice] = useState('');
-  const priceInputRef = useRef<HTMLInputElement>(null);
+  // Price input
+  const [rawPrice,       setRawPrice]       = useState('');
+  const priceInputRef    = useRef<HTMLInputElement>(null);
   const pendingCursorRef = useRef<number | null>(null);
 
-  // After every render, restore the cursor position we calculated during onChange.
-  // useLayoutEffect fires synchronously before the browser paints, preventing flicker.
   useLayoutEffect(() => {
     if (pendingCursorRef.current !== null && priceInputRef.current) {
-      priceInputRef.current.setSelectionRange(
-        pendingCursorRef.current,
-        pendingCursorRef.current,
-      );
+      priceInputRef.current.setSelectionRange(pendingCursorRef.current, pendingCursorRef.current);
       pendingCursorRef.current = null;
     }
   });
 
-  // ---------- Derived Categories (for filter) ----------
-  const filterCategories = useMemo(() => {
-  const names = categories.map((c: CategoryItem) => c.name);
-  return ['All', ...names];
-}, [categories]);
+  const filterCategories = useMemo(() => ['All', ...categories.map((c: CategoryItem) => c.name)], [categories]);
 
-  // ---------- Filtered & Searched Products ----------
   const filteredProducts = useMemo(() => {
-    let filtered = products;
-
-    if (categoryFilter !== 'All') {
-      filtered = filtered.filter((p: ProductItem) => p.category === categoryFilter);
-    }
-
-    if (searchTerm) {
-      filtered = filtered.filter((p: ProductItem) =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (showLowStock) {
-      filtered = filtered.filter((p: ProductItem) => p.stock < 5);
-    }
-
-    return filtered.slice().sort((a: ProductItem, b: ProductItem) =>
-      b._id.localeCompare(a._id)
-    );
+    let f = products;
+    if (categoryFilter !== 'All') f = f.filter((p: ProductItem) => p.category === categoryFilter);
+    if (searchTerm)               f = f.filter((p: ProductItem) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    if (showLowStock)             f = f.filter((p: ProductItem) => p.stock < 5);
+    return f.slice().sort((a: ProductItem, b: ProductItem) => b._id.localeCompare(a._id));
   }, [products, searchTerm, categoryFilter, showLowStock]);
 
-  // ---------- Handlers ----------
+  // Handlers
   const handleOpenDrawer = (product?: ProductItem) => {
     if (product) {
       setEditingProduct(product);
-      reset({
-        name: product.name,
-        price: product.price.toString(),
-        stock: product.stock.toString(),
-        category: product.category || '',
-        description: product.description || '',
-      });
+      reset({ name:product.name, price:product.price.toString(), stock:product.stock.toString(), category:product.category||'', description:product.description||'' });
       setRawPrice(product.price.toString());
-      setFile(null);
-      setNotifyCustomers(false);
     } else {
       setEditingProduct(null);
-      reset({
-        name: '',
-        price: '',
-        stock: '',
-        category: '',
-        description: '',
-      });
+      reset({ name:'', price:'', stock:'', category:'', description:'' });
       setRawPrice('');
-      setFile(null);
-      setNotifyCustomers(false);
     }
-    setIsDrawerOpen(true);
+    setFile(null); setNotifyCustomers(false); setIsDrawerOpen(true);
   };
 
-  const handleCloseDrawer = () => {
-    setIsDrawerOpen(false);
-    setEditingProduct(null);
-    setFile(null);
-    setNotifyCustomers(false);
-  };
-
-  const handleDeleteClick = (id: string) => {
-    setModalAction({ type: 'delete', id });
-    setModalOpen(true);
-  };
+  const handleCloseDrawer = () => { setIsDrawerOpen(false); setEditingProduct(null); setFile(null); setNotifyCustomers(false); };
 
   const confirmDelete = async () => {
     if (!modalAction || modalAction.type !== 'delete') return;
@@ -248,73 +142,28 @@ const Products = () => {
     setModalAction(null);
   };
 
-  const handleQuickStock = async (id: string, currentStock: number, delta: number) => {
-    const newStock = Math.max(0, currentStock + delta);
-    try {
-      await updateStock({ id, stock: newStock }).unwrap();
-    } catch (error) {
-      console.error('Stock update failed:', error);
-    }
+  const handleQuickStock = async (id: string, cur: number, delta: number) => {
+    try { await updateStock({ id, stock: Math.max(0, cur + delta) }).unwrap(); } catch { /* empty */ }
   };
 
-  /**
-   * Live price change handler.
-   *
-   * On each keystroke:
-   * 1. Strip commas from the current displayed value to get the raw input.
-   * 2. Clean it: keep digits, allow one `.`, max 2 decimal places.
-   * 3. Reformat with commas.
-   * 4. Compute where the cursor should land in the new formatted string
-   *    by counting how many non-comma characters were before the old cursor.
-   * 5. Schedule cursor restoration via useLayoutEffect.
-   */
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const el = e.target;
-
-    // Where was the cursor in the *displayed* (comma-included) string?
     const cursor = el.selectionStart ?? el.value.length;
-
-    // How many real (non-comma) characters were before the cursor?
     const nonCommasBefore = el.value.slice(0, cursor).replace(/,/g, '').length;
-
-    // Strip commas, then clean to: digits + one decimal point + ≤2 decimal places
     const stripped = el.value.replace(/,/g, '');
-    let cleaned = '';
-    let seenDot = false;
-    let decCount = 0;
+    let cleaned = ''; let seenDot = false; let decCount = 0;
     for (const ch of stripped) {
       if (ch >= '0' && ch <= '9') {
-        if (seenDot) {
-          if (decCount < 2) { cleaned += ch; decCount++; }
-        } else {
-          cleaned += ch;
-        }
-      } else if (ch === '.' && !seenDot) {
-        seenDot = true;
-        cleaned += ch;
-      }
+        if (seenDot) { if (decCount < 2) { cleaned += ch; decCount++; } } else { cleaned += ch; }
+      } else if (ch === '.' && !seenDot) { seenDot = true; cleaned += ch; }
     }
-
-    // Compute cursor position in the newly formatted string
     const newFormatted = formatPriceInput(cleaned);
-    let charCount = 0;
-    let newCursor = newFormatted.length; // default: end of string
+    let charCount = 0; let newCursor = newFormatted.length;
     for (let i = 0; i < newFormatted.length; i++) {
-      if (newFormatted[i] !== ',') {
-        charCount++;
-        if (charCount === nonCommasBefore) {
-          newCursor = i + 1;
-          break;
-        }
-      }
+      if (newFormatted[i] !== ',') { charCount++; if (charCount === nonCommasBefore) { newCursor = i + 1; break; } }
     }
-
-    // Schedule cursor restoration (runs after React re-render in useLayoutEffect)
     pendingCursorRef.current = newCursor;
-
-    // Update state & RHF (cleaned = "5000.50", Number() works fine for validation)
-    setRawPrice(cleaned);
-    setValue('price', cleaned, { shouldValidate: true });
+    setRawPrice(cleaned); setValue('price', cleaned, { shouldValidate: true });
   };
 
   const onSubmit = async (data: ProductFormData) => {
@@ -322,465 +171,374 @@ const Products = () => {
       let imageUrl = editingProduct?.images?.[0] || '';
       if (file) {
         setUploading(true);
-        const formData = new FormData();
-        formData.append('image', file);
-        const uploadRes = await uploadImage(formData).unwrap();
-        imageUrl = uploadRes.url;
-        setUploading(false);
+        const fd = new FormData(); fd.append('image', file);
+        const res = await uploadImage(fd).unwrap();
+        imageUrl = res.url; setUploading(false);
       }
-
-      const productData = {
-        name: data.name,
-        price: Number(data.price),
-        stock: Number(data.stock),
-        description: data.description || '',
-        category: data.category,
-        images: imageUrl ? [imageUrl] : [],
-        slug: data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      };
-
-      if (editingProduct) {
-        await updateProduct({
-          id: editingProduct._id,
-          ...productData,
-        }).unwrap();
-      } else {
-        await createProduct({ ...productData, notifyCustomers }).unwrap();
-      }
-
+      const payload = { name:data.name, price:Number(data.price), stock:Number(data.stock), description:data.description||'', category:data.category, images:imageUrl?[imageUrl]:[], slug:data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-') };
+      if (editingProduct) { await updateProduct({ id:editingProduct._id, ...payload }).unwrap(); }
+      else                { await createProduct({ ...payload, notifyCustomers }).unwrap(); }
       handleCloseDrawer();
     } catch (err) {
-      const error = err as { data?: { message: string } };
-      console.error('Failed to save product:', error.data?.message || error);
-      toast.error('Error saving product. Please try again.');
+      const e = err as { data?: { message:string } };
+      toast.error(e.data?.message || 'Error saving product.');
     }
-  };
-
-  // Marketing email handlers
-  const openMarketingModal = (product: ProductItem, type: 'new_arrival' | 'back_in_stock') => {
-    setSelectedProductForMarketing(product);
-    setMarketingType(type);
-    setCustomMessage('');
-    setMarketingModalOpen(true);
   };
 
   const handleSendMarketing = async () => {
-    if (!selectedProductForMarketing) return;
+    if (!marketingProduct) return;
     try {
-      await sendMarketingEmail({
-        type: marketingType,
-        productId: selectedProductForMarketing._id,
-        customMessage: marketingType === 'new_arrival' ? customMessage : undefined,
-      }).unwrap();
-      toast.success('Emails sent to customers!');
-      setMarketingModalOpen(false);
-    } catch (error: unknown) {
-      const err = error as { data?: { message?: string } };
-      toast.error(err?.data?.message || 'Failed to send emails');
+      await sendMarketingEmail({ type:marketingType, productId:marketingProduct._id, customMessage:marketingType==='new_arrival'?customMessage:undefined }).unwrap();
+      toast.success('Emails sent!'); setMarketingOpen(false);
+    } catch (err) {
+      const e = err as { data?: { message?:string } };
+      toast.error(e?.data?.message || 'Failed to send emails');
     }
   };
 
-  const placeholderImage = 'https://via.placeholder.com/150';
-
-  // ---------- Loading state ----------
+  // ══════ LOADING ══════════════════════════════════════════════════════════════
   if (isLoading) {
     return (
-      <div className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6">
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-100">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <ProductRowSkeleton key={i} />
-          ))}
+      <div className="p-4 md:p-6 pt-16 md:pt-24 max-w-7xl mx-auto space-y-5 pb-28 md:pb-10" style={{ background:'#0A0A0B' }}>
+        <div className="rounded-2xl overflow-hidden" style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.07)' }}>
+          {Array.from({ length: 8 }).map((_, i) => <ProductRowSkeleton key={i} dark />)}
         </div>
       </div>
     );
   }
 
-  // ---------- Render ----------
+  // ══════ MAIN PAGE ═════════════════════════════════════════════════════════════
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6 md:space-y-8"
-    >
-      {/* --- Confirmation Modal --- */}
-      <ConfirmationModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onConfirm={confirmDelete}
-        title="Delete Product"
-        message="Are you sure you want to delete this product? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        type="danger"
-      />
+    <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ duration:0.4 }}
+      className="p-4 md:p-6 pt-16 md:pt-24 max-w-7xl mx-auto space-y-5 pb-28 md:pb-10"
+      style={{ background:'#0A0A0B' }}>
 
-      {/* --- Header --- */}
-      <motion.div variants={itemFadeUp} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button
+      <ConfirmationModal isOpen={modalOpen} onClose={() => setModalOpen(false)}
+        onConfirm={confirmDelete} title="Delete Product"
+        message="Are you sure you want to delete this product? This action cannot be undone."
+        confirmText="Delete" cancelText="Cancel" type="danger" />
+
+      {/* ── Header ── */}
+      <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.05 }}
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <motion.button whileHover={{ scale:1.06 }} whileTap={{ scale:0.94 }}
             onClick={() => navigate('/admin')}
-            className="p-2 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200 text-gray-600"
-            aria-label="Go back to dashboard"
-          >
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 hover:text-white transition-colors shrink-0"
+            style={{ background:'#1c1c1c', border:'1px solid rgba(255,255,255,0.08)' }}>
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </motion.button>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Products</h1>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1">Manage your product catalog</p>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <Flame className="w-3 h-3" style={{ color:ACCENT }} />
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color:ACCENT }}>Admin</p>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black text-white leading-none">Products</h1>
+            <p className="text-gray-600 text-xs mt-0.5">{products.length} products in catalog</p>
           </div>
         </div>
-
-        <div className="flex justify-end w-full sm:w-auto">
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => handleOpenDrawer()}
-            className="flex items-center gap-2 bg-leaf-green text-white px-4 py-2.5 rounded-xl font-medium shadow-lg hover:shadow-leaf-green/30 transition-all text-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Add Product
-          </motion.button>
-        </div>
+        <motion.button whileHover={{ scale:1.04, boxShadow:`0 12px 28px ${ACCENT}55` }} whileTap={{ scale:0.96 }}
+          onClick={() => handleOpenDrawer()}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white text-sm shrink-0"
+          style={{ background:ACCENT, boxShadow:`0 6px 18px ${ACCENT}44` }}>
+          <Plus className="w-4 h-4" /> Add Product
+        </motion.button>
       </motion.div>
 
-      {/* --- Filters & Search --- */}
-      <motion.div
-        variants={itemFadeUp}
-        className="flex flex-col sm:flex-row gap-3 sm:gap-4 bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 p-4"
-      >
+      {/* ── Filter bar ── */}
+      <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.1 }}
+        className="flex flex-col sm:flex-row gap-3 rounded-2xl p-4"
+        style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.07)' }}>
+
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Search products..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-leaf-green text-sm bg-white/70"
-          />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 pointer-events-none" />
+          <input type="text" placeholder="Search products…" value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none border border-white/[0.08] focus:border-[#e8622a]/60 transition-all" />
         </div>
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-leaf-green bg-white text-sm"
-        >
-          {filterCategories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
+
+        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+          className="px-4 py-2.5 rounded-xl text-sm text-white outline-none border border-white/[0.08] cursor-pointer"
+          style={{ background:'#1c1c1c' }}>
+          {filterCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
         </select>
-        <button
-          onClick={() => setShowLowStock(!showLowStock)}
-          className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap border ${
-            showLowStock
-              ? 'bg-red-100 text-red-700 border-red-300 ring-2 ring-red-200'
-              : 'bg-white text-gray-600 border-gray-200 hover:border-red-300'
-          }`}
-        >
-          {showLowStock ? 'Showing Low Stock' : 'Low Stock'}
+
+        <button onClick={() => setShowLowStock(v => !v)}
+          className="px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all border"
+          style={{
+            background:   showLowStock ? 'rgba(239,68,68,0.12)' : '#1c1c1c',
+            color:        showLowStock ? '#f87171' : '#6b7280',
+            borderColor:  showLowStock ? 'rgba(239,68,68,0.35)' : 'rgba(255,255,255,0.08)',
+            boxShadow:    showLowStock ? '0 0 0 1px rgba(239,68,68,0.2)' : 'none',
+          }}>
+          {showLowStock ? '⚠ Low Stock' : 'Low Stock'}
         </button>
       </motion.div>
 
-      {/* --- Product Table (scrollable, no pagination) --- */}
-      <motion.div
-        variants={itemFadeUp}
-        className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
-      >
-        <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+      {/* ── Products table ── */}
+      <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.15 }}
+        className="rounded-2xl overflow-hidden"
+        style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.07)', boxShadow:'0 8px 32px rgba(0,0,0,0.35)' }}>
+        <div className="overflow-x-auto max-h-[600px] overflow-y-auto" style={{ scrollbarWidth:'thin', scrollbarColor:`${ACCENT}40 transparent` }}>
           <table className="w-full text-left">
-            <thead className="bg-gray-50/50 sticky top-0 z-10">
+            <thead className="sticky top-0 z-10" style={{ background:'#1c1c1c', borderBottom:'1px solid rgba(255,255,255,0.07)' }}>
               <tr>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Image</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Price</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Stock</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">Category</th>
-                <th className="px-4 sm:px-6 py-3 text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider text-right">Actions</th>
+                {['Image','Name','Price','Stock','Category','Actions'].map((h,i) => (
+                  <th key={h} className={`px-4 sm:px-5 py-3.5 text-[9px] font-extrabold uppercase tracking-widest text-gray-600 ${i === 5 ? 'text-right' : ''}`}>{h}</th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 sm:px-6 py-8 text-center text-gray-500 text-sm">
-                    No products found.
+                  <td colSpan={6} className="px-5 py-16 text-center">
+                    <Package className="w-10 h-10 text-gray-700 mx-auto mb-3" />
+                    <p className="text-gray-600 text-sm font-semibold">No products found.</p>
                   </td>
                 </tr>
-              ) : (
-                filteredProducts.map((product: ProductItem, idx: number) => (
-                  <motion.tr
-                    key={product._id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.2, delay: idx * 0.03 }}
-                    whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
-                    className="transition-colors"
-                  >
-                    <td className="px-4 sm:px-6 py-3">
-                      <img
-                        src={product.images?.[0] || placeholderImage}
-                        alt={product.name}
-                        loading="lazy"
-                        onError={(e) => { e.currentTarget.src = placeholderImage; }}
-                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-gray-200 shadow-sm"
-                      />
-                    </td>
-                    <td className="px-4 sm:px-6 py-3 font-medium text-xs sm:text-sm text-gray-800">
-                      {product.name}
-                    </td>
-                    <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm text-gray-700">
-                      ₦{product.price.toLocaleString()}
-                    </td>
-                    <td className="px-4 sm:px-6 py-3">
-                      <div className="flex items-center gap-1 sm:gap-2">
-                        <motion.button
-                          whileTap={{ scale: 0.9 }}
+              ) : filteredProducts.map((product: ProductItem, idx: number) => (
+                <motion.tr key={product._id}
+                  initial={{ opacity:0 }} animate={{ opacity:1 }}
+                  transition={{ duration:0.18, delay:idx * 0.025 }}
+                  className="border-t transition-colors hover:bg-white/[0.015] group"
+                  style={{ borderColor:'rgba(255,255,255,0.05)' }}>
+
+                  {/* Image */}
+                  <td className="px-4 sm:px-5 py-3">
+                    <div className="w-11 h-11 rounded-xl overflow-hidden border shrink-0" style={{ borderColor:'rgba(255,255,255,0.08)' }}>
+                      <img src={product.images?.[0] || PLACEHOLDER} alt={product.name} loading="lazy"
+                        onError={e => { e.currentTarget.src = PLACEHOLDER; }}
+                        className="w-full h-full object-cover" />
+                    </div>
+                  </td>
+
+                  {/* Name */}
+                  <td className="px-4 sm:px-5 py-3">
+                    <p className="font-bold text-white text-sm max-w-[180px] truncate">{product.name}</p>
+                  </td>
+
+                  {/* Price */}
+                  <td className="px-4 sm:px-5 py-3">
+                    <span className="font-black text-sm" style={{ color:ACCENT }}>₦{product.price.toLocaleString()}</span>
+                  </td>
+
+                  {/* Stock */}
+                  <td className="px-4 sm:px-5 py-3">
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex items-center rounded-xl overflow-hidden" style={{ background:'#1c1c1c', border:'1px solid rgba(255,255,255,0.08)' }}>
+                        <motion.button whileTap={{ scale:0.85 }}
                           onClick={() => handleQuickStock(product._id, product.stock, -1)}
-                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition"
-                        >
-                          <Minus className="w-3.5 h-3.5" />
+                          className="w-7 h-7 flex items-center justify-center text-red-400 hover:bg-red-500/10 transition-colors">
+                          <Minus className="w-3 h-3" />
                         </motion.button>
-                        <span className={`font-semibold text-sm ${product.stock < 5 ? 'text-red-600' : 'text-gray-700'}`}>
+                        <span className={`w-8 text-center text-sm font-black ${product.stock < 5 ? 'text-red-400' : 'text-white'}`}>
                           {product.stock}
                         </span>
-                        <motion.button
-                          whileTap={{ scale: 0.9 }}
+                        <motion.button whileTap={{ scale:0.85 }}
                           onClick={() => handleQuickStock(product._id, product.stock, 1)}
-                          className="p-1.5 rounded-lg hover:bg-leaf-green/10 text-leaf-green transition"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
+                          className="w-7 h-7 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+                          <Plus className="w-3 h-3" />
                         </motion.button>
-                        {product.stock < 5 && (
-                          <span className="text-[10px] px-2 py-0.5 bg-red-100 text-red-600 rounded-full font-bold">
-                            Low
-                          </span>
-                        )}
                       </div>
-                    </td>
-                    <td className="px-4 sm:px-6 py-3">
-                      <span className="text-[10px] px-2 py-0.5 bg-pastel-green text-leaf-green rounded-full font-bold uppercase tracking-wider">
-                        {product.category}
-                      </span>
-                    </td>
-                    <td className="px-4 sm:px-6 py-3 text-right">
-                      <button
+                      {product.stock < 5 && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full font-extrabold"
+                          style={{ background:'rgba(239,68,68,0.12)', color:'#f87171' }}>Low</span>
+                      )}
+                    </div>
+                  </td>
+
+                  {/* Category */}
+                  <td className="px-4 sm:px-5 py-3">
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full"
+                      style={{ background:`${ACCENT}14`, color:ACCENT, border:`1px solid ${ACCENT}25` }}>
+                      {product.category}
+                    </span>
+                  </td>
+
+                  {/* Actions */}
+                  <td className="px-4 sm:px-5 py-3 text-right">
+                    <div className="flex items-center justify-end gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                      <motion.button whileHover={{ scale:1.1 }} whileTap={{ scale:0.9 }}
                         onClick={() => handleOpenDrawer(product)}
-                        className="text-blue-600 hover:text-blue-800 transition p-1.5 rounded-lg hover:bg-blue-50"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(product._id)}
-                        className="text-gray-400 hover:text-red-600 transition p-1.5 rounded-lg hover:bg-red-50 ml-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => openMarketingModal(product, product.stock > 0 ? 'new_arrival' : 'back_in_stock')}
-                        className="text-leaf-green hover:text-green-700 transition p-1.5 rounded-lg hover:bg-leaf-green/10 ml-1"
+                        className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors"
+                        style={{ background:'rgba(59,130,246,0.1)', color:'#60a5fa', border:'1px solid rgba(59,130,246,0.2)' }}>
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </motion.button>
+                      <motion.button whileHover={{ scale:1.1 }} whileTap={{ scale:0.9 }}
+                        onClick={() => { setModalAction({ type:'delete', id:product._id }); setModalOpen(true); }}
+                        className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors"
+                        style={{ background:'rgba(239,68,68,0.08)', color:'#f87171', border:'1px solid rgba(239,68,68,0.18)' }}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </motion.button>
+                      <motion.button whileHover={{ scale:1.1 }} whileTap={{ scale:0.9 }}
+                        onClick={() => { setMarketingProduct(product); setMarketingType(product.stock > 0 ? 'new_arrival' : 'back_in_stock'); setCustomMessage(''); setMarketingOpen(true); }}
                         title="Notify customers"
-                      >
-                        <Mail className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </motion.tr>
-                ))
-              )}
+                        className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors"
+                        style={{ background:'rgba(16,185,129,0.1)', color:'#34d399', border:'1px solid rgba(16,185,129,0.2)' }}>
+                        <Mail className="w-3.5 h-3.5" />
+                      </motion.button>
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
             </tbody>
           </table>
         </div>
       </motion.div>
 
-      {/* --- Slide‑in Drawer (Add/Edit) --- */}
+      {/* ══ Slide-in Drawer (Add / Edit) ═══════════════════════════════════════ */}
       <AnimatePresence>
         {isDrawerOpen && (
           <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-              onClick={handleCloseDrawer}
-            />
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed right-0 top-0 h-full w-full max-w-full sm:max-w-xl bg-white/95 backdrop-blur-xl shadow-2xl z-50 overflow-y-auto p-6"
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  {editingProduct ? 'Edit Product' : 'Add New Product'}
-                </h2>
-                <button onClick={handleCloseDrawer} className="p-2 rounded-full hover:bg-gray-100 transition">
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
+            <motion.div key="scrim" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+              className="fixed inset-0 z-40" style={{ background:'rgba(0,0,0,0.68)', backdropFilter:'blur(8px)' }}
+              onClick={handleCloseDrawer} />
+
+            <motion.div key="drawer"
+              initial={{ x:'100%' }} animate={{ x:0 }} exit={{ x:'100%' }}
+              transition={{ type:'spring', damping:30, stiffness:300 }}
+              className="fixed right-0 top-0 h-full w-full max-w-xl z-50 overflow-y-auto"
+              style={{ background:'#141414', borderLeft:'1px solid rgba(255,255,255,0.08)', boxShadow:'-20px 0 60px rgba(0,0,0,0.6)' }}>
+
+              {/* Drawer header */}
+              <div className="sticky top-0 z-10 flex justify-between items-center px-6 py-5 border-b"
+                style={{ background:'#141414', borderColor:'rgba(255,255,255,0.07)' }}>
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color:ACCENT }}>
+                    {editingProduct ? 'Editing' : 'New Product'}
+                  </p>
+                  <h2 className="text-xl font-black text-white leading-tight">
+                    {editingProduct ? editingProduct.name : 'Add New Product'}
+                  </h2>
+                </div>
+                <motion.button whileHover={{ scale:1.1 }} whileTap={{ scale:0.9 }}
+                  onClick={handleCloseDrawer}
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-white transition-colors"
+                  style={{ background:'rgba(255,255,255,0.07)' }}>
+                  <X className="w-4 h-4" />
+                </motion.button>
               </div>
 
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              {/* Form */}
+              <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
+
                 {/* Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                  <input
-                    {...register('name')}
-                    className={`w-full border ${errors.name ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent`}
-                    placeholder="e.g. Organic Apple Juice"
-                  />
-                  {errors.name && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" /> {errors.name.message}
-                    </p>
-                  )}
+                  <DLabel>Product Name</DLabel>
+                  <input {...register('name')} placeholder="e.g. Organic Apple Juice"
+                    className={buildInputCls(!!errors.name)} />
+                  {errors.name && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.name.message}</p>}
                 </div>
 
-                {/* Price & Stock */}
+                {/* Price + Stock */}
                 <div className="grid grid-cols-2 gap-4">
-                  {/* Price – live comma formatting with decimal support */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Price (₦)</label>
-                    <input
-                      ref={priceInputRef}
-                      type="text"
-                      inputMode="decimal"
-                      value={formatPriceInput(rawPrice)}
-                      onChange={handlePriceChange}
-                      className={`w-full border ${errors.price ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent`}
-                      placeholder="0.00"
-                    />
-                    {errors.price && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> {errors.price.message}
-                      </p>
-                    )}
+                    <DLabel>Price (₦)</DLabel>
+                    <input ref={priceInputRef} type="text" inputMode="decimal"
+                      value={formatPriceInput(rawPrice)} onChange={handlePriceChange} placeholder="0.00"
+                      className={buildInputCls(!!errors.price)} />
+                    {errors.price && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.price.message}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      {...register('stock')}
-                      className={`w-full border ${errors.stock ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent`}
-                      placeholder="20"
-                    />
-                    {errors.stock && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> {errors.stock.message}
-                      </p>
-                    )}
+                    <DLabel>Stock</DLabel>
+                    <input type="number" min="0" step="1" {...register('stock')} placeholder="20"
+                      className={buildInputCls(!!errors.stock)} />
+                    {errors.stock && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.stock.message}</p>}
                   </div>
                 </div>
 
                 {/* Category */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                  <select
-                    {...register('category')}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green bg-white"
-                  >
+                  <DLabel>Category</DLabel>
+                  <select {...register('category')}
+                    className="w-full px-4 py-3.5 rounded-xl text-sm text-white outline-none border border-white/[0.08] focus:border-[#e8622a]/70 transition-all cursor-pointer"
+                    style={{ background:'#1c1c1c' }}>
+                    <option value="" className="text-gray-600">Select a category…</option>
                     {categories.map((cat: CategoryItem) => (
-                      <option key={cat._id} value={cat.name}>
-                        {cat.name}
-                      </option>
+                      <option key={cat._id} value={cat.name}>{cat.name}</option>
                     ))}
                   </select>
-                  {errors.category && (
-                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" /> {errors.category.message}
-                    </p>
-                  )}
+                  {errors.category && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.category.message}</p>}
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <textarea
-                    {...register('description')}
-                    rows={3}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent resize-none"
-                    placeholder="Brief product description..."
-                  />
+                  <DLabel>Description</DLabel>
+                  <textarea {...register('description')} rows={3} placeholder="Brief product description…"
+                    className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none resize-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/12 transition-all" />
                 </div>
 
-                {/* Image Upload */}
+                {/* Image upload */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
-                  <div className="flex flex-col gap-3">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setFile(e.target.files?.[0] || null)}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:bg-leaf-green/10 file:text-leaf-green hover:file:bg-leaf-green/20"
-                    />
+                  <DLabel>Product Image</DLabel>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed cursor-pointer transition-colors hover:border-[#e8622a]/40"
+                      style={{ background:'rgba(255,255,255,0.03)', borderColor:'rgba(255,255,255,0.12)' }}>
+                      <UploadCloud className="w-5 h-5 text-gray-600 shrink-0" />
+                      <span className="text-sm text-gray-600 flex-1 truncate">
+                        {file ? file.name : 'Click to choose an image…'}
+                      </span>
+                      <input type="file" accept="image/*" className="hidden"
+                        onChange={e => setFile(e.target.files?.[0] || null)} />
+                    </label>
+
                     {uploading && (
-                      <div className="flex items-center gap-2 text-sm text-blue-600">
-                        <UploadCloud className="w-4 h-4 animate-pulse" />
-                        Uploading...
+                      <div className="flex items-center gap-2 text-sm" style={{ color:'#60a5fa' }}>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Uploading…
                       </div>
                     )}
                     {file && (
-                      <div className="mt-2">
-                        <span className="text-xs text-gray-500">New image preview:</span>
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt="Preview"
-                          className="mt-1 w-20 h-20 rounded-lg object-cover border border-gray-200"
-                        />
+                      <div>
+                        <p className="text-[10px] text-gray-600 mb-1.5 uppercase font-bold tracking-wider">Preview</p>
+                        <img src={URL.createObjectURL(file)} alt="Preview"
+                          className="w-20 h-20 rounded-xl object-cover border" style={{ borderColor:'rgba(255,255,255,0.1)' }} />
                       </div>
                     )}
                     {editingProduct?.images?.[0] && !file && (
-                      <div className="mt-2">
-                        <span className="text-xs text-gray-500">Current image:</span>
-                        <img
-                          src={editingProduct.images[0]}
-                          alt="Current"
-                          loading="lazy"
-                          onError={(e) => { e.currentTarget.src = placeholderImage; }}
-                          className="mt-1 w-20 h-20 rounded-lg object-cover border border-gray-200"
-                        />
+                      <div>
+                        <p className="text-[10px] text-gray-600 mb-1.5 uppercase font-bold tracking-wider">Current</p>
+                        <img src={editingProduct.images[0]} alt="Current" loading="lazy"
+                          onError={e => { e.currentTarget.src = PLACEHOLDER; }}
+                          className="w-20 h-20 rounded-xl object-cover border" style={{ borderColor:'rgba(255,255,255,0.1)' }} />
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Checkbox – only for new product */}
+                {/* Notify toggle (new product only) */}
                 {!editingProduct && (
-                  <div className="flex items-center gap-2 mt-4">
-                    <input
-                      type="checkbox"
-                      id="notifyCustomers"
-                      checked={notifyCustomers}
-                      onChange={(e) => setNotifyCustomers(e.target.checked)}
-                      className="w-4 h-4 text-leaf-green focus:ring-leaf-green rounded"
-                    />
-                    <label htmlFor="notifyCustomers" className="text-sm text-gray-700 font-medium">
-                      Notify customers of new arrival
-                    </label>
+                  <div className="flex items-center justify-between p-4 rounded-xl border"
+                    style={{ background:'rgba(255,255,255,0.03)', borderColor:'rgba(255,255,255,0.07)' }}>
+                    <div>
+                      <p className="text-white text-sm font-bold">Notify customers</p>
+                      <p className="text-gray-600 text-xs">Send a new arrival email to all subscribers</p>
+                    </div>
+                    <button type="button" onClick={() => setNotifyCustomers(v => !v)}
+                      className="relative w-11 h-6 rounded-full transition-colors duration-300 shrink-0"
+                      style={{ background: notifyCustomers ? ACCENT : '#2d2d2d' }}>
+                      <motion.div animate={{ x: notifyCustomers ? 20 : 2 }}
+                        transition={{ type:'spring', stiffness:500, damping:32 }}
+                        className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-md" />
+                    </button>
                   </div>
                 )}
 
-                {/* Actions */}
-                <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
-                  <button
-                    type="button"
+                {/* Footer actions */}
+                <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor:'rgba(255,255,255,0.07)' }}>
+                  <motion.button type="button" whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                     onClick={handleCloseDrawer}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition"
-                  >
+                    className="px-5 py-3 rounded-xl text-sm font-bold text-gray-500 hover:text-white transition-colors"
+                    style={{ background:'#1c1c1c', border:'1px solid rgba(255,255,255,0.08)' }}>
                     Cancel
-                  </button>
-                  <motion.button
-                    type="submit"
-                    disabled={isSubmitting || uploading}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="px-4 py-2 bg-leaf-green text-white rounded-xl font-medium shadow-lg hover:shadow-leaf-green/30 transition disabled:opacity-60"
-                  >
-                    {isSubmitting || uploading
-                      ? 'Saving...'
-                      : editingProduct
-                      ? 'Update Product'
-                      : 'Save Product'}
+                  </motion.button>
+                  <motion.button type="submit" disabled={isSubmitting || uploading}
+                    whileHover={!(isSubmitting||uploading) ? { scale:1.03, boxShadow:`0 12px 28px ${ACCENT}55` } : {}}
+                    whileTap={!(isSubmitting||uploading) ? { scale:0.97 } : {}}
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-black text-white text-sm transition-all disabled:opacity-55"
+                    style={{ background:ACCENT, boxShadow:`0 6px 18px ${ACCENT}44` }}>
+                    {(isSubmitting || uploading)
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
+                      : editingProduct ? 'Update Product' : 'Save Product'}
                   </motion.button>
                 </div>
               </form>
@@ -789,42 +547,48 @@ const Products = () => {
         )}
       </AnimatePresence>
 
-      {/* --- Marketing Email Modal --- */}
+      {/* ══ Marketing Email Modal ════════════════════════════════════════════════ */}
       <AnimatePresence>
-        {marketingModalOpen && selectedProductForMarketing && (
+        {marketingOpen && marketingProduct && (
           <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
-              onClick={() => setMarketingModalOpen(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            >
-              <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-gray-800">Notify Customers</h2>
-                  <button onClick={() => setMarketingModalOpen(false)} className="p-1 rounded-lg hover:bg-gray-100">
-                    <X className="w-5 h-5 text-gray-500" />
-                  </button>
+            <motion.div key="mscrim" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+              className="fixed inset-0 z-50" style={{ background:'rgba(0,0,0,0.72)', backdropFilter:'blur(8px)' }}
+              onClick={() => setMarketingOpen(false)} />
+            <motion.div key="mmodal"
+              initial={{ opacity:0, scale:0.93, y:20 }} animate={{ opacity:1, scale:1, y:0 }} exit={{ opacity:0, scale:0.93, y:20 }}
+              transition={{ type:'spring', stiffness:300, damping:26 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="relative w-full max-w-md rounded-2xl p-6"
+                style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.08)', boxShadow:'0 40px 90px rgba(0,0,0,0.6)' }}
+                onClick={e => e.stopPropagation()}>
+                <div className="absolute top-0 inset-x-0 h-px rounded-t-2xl"
+                  style={{ background:`linear-gradient(90deg, transparent, #10b981, transparent)` }} />
+
+                <div className="flex justify-between items-center mb-5">
+                  <div>
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] mb-0.5" style={{ color:'#10b981' }}>Email Campaign</p>
+                    <h2 className="text-xl font-black text-white">Notify Customers</h2>
+                  </div>
+                  <motion.button whileHover={{ scale:1.1 }} whileTap={{ scale:0.9 }}
+                    onClick={() => setMarketingOpen(false)}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-500 hover:text-white transition-colors"
+                    style={{ background:'rgba(255,255,255,0.07)' }}>
+                    <X className="w-4 h-4" />
+                  </motion.button>
                 </div>
-                <p className="text-sm text-gray-600 mb-4">
-                  You are about to send an email about <strong>{selectedProductForMarketing.name}</strong> to all customers.
+
+                <p className="text-sm text-gray-500 mb-5 leading-relaxed">
+                  Sending email to all customers about{' '}
+                  <strong className="text-white">{marketingProduct.name}</strong>.
                 </p>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                    <select
-                      value={marketingType}
-                      onChange={(e) => setMarketingType(e.target.value as 'new_arrival' | 'back_in_stock')}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
-                    >
+                    <DLabel>Email Type</DLabel>
+                    <select value={marketingType}
+                      onChange={e => setMarketingType(e.target.value as 'new_arrival'|'back_in_stock')}
+                      className="w-full px-4 py-3 rounded-xl text-sm text-white outline-none border border-white/[0.08] focus:border-emerald-500/60 cursor-pointer"
+                      style={{ background:'#1c1c1c' }}>
                       <option value="new_arrival">New Arrival</option>
                       <option value="back_in_stock">Back in Stock</option>
                     </select>
@@ -832,31 +596,26 @@ const Products = () => {
 
                   {marketingType === 'new_arrival' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Custom Message (optional)</label>
-                      <textarea
-                        value={customMessage}
-                        onChange={(e) => setCustomMessage(e.target.value)}
-                        rows={3}
-                        className="w-full border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-leaf-green text-sm"
-                        placeholder="Write a short message..."
-                      />
+                      <DLabel>Custom Message (optional)</DLabel>
+                      <textarea value={customMessage} onChange={e => setCustomMessage(e.target.value)} rows={3}
+                        placeholder="Write a short message for customers…"
+                        className="w-full px-4 py-3 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none resize-none border border-white/[0.08] focus:border-emerald-500/60 transition-all" />
                     </div>
                   )}
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                    <button
-                      onClick={() => setMarketingModalOpen(false)}
-                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm"
-                    >
+                  <div className="flex justify-end gap-3 pt-3 border-t" style={{ borderColor:'rgba(255,255,255,0.06)' }}>
+                    <motion.button whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
+                      onClick={() => setMarketingOpen(false)}
+                      className="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:text-white transition-colors"
+                      style={{ background:'#1c1c1c', border:'1px solid rgba(255,255,255,0.08)' }}>
                       Cancel
-                    </button>
-                    <button
-                      onClick={handleSendMarketing}
-                      disabled={isSendingMarketing}
-                      className="px-4 py-2 bg-leaf-green text-white rounded-xl font-medium shadow-md hover:bg-green-700 transition disabled:opacity-60 text-sm flex items-center gap-2"
-                    >
-                      {isSendingMarketing ? 'Sending...' : 'Send Emails'}
-                    </button>
+                    </motion.button>
+                    <motion.button onClick={handleSendMarketing} disabled={isSendingMarketing}
+                      whileHover={!isSendingMarketing ? { scale:1.04 } : {}} whileTap={!isSendingMarketing ? { scale:0.97 } : {}}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-55"
+                      style={{ background:'#10b981', boxShadow:'0 6px 18px rgba(16,185,129,0.35)' }}>
+                      {isSendingMarketing ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</> : <><Mail className="w-4 h-4" /> Send Emails</>}
+                    </motion.button>
                   </div>
                 </div>
               </div>
