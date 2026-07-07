@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "../store";
@@ -12,9 +12,9 @@ import {
   useDeleteAddressMutation,
   useSetDefaultAddressMutation,
   useChangePasswordMutation,
+  useGetMyOrdersQuery,
 } from "../features/api/apiSlice";
 import toast from "react-hot-toast";
-import api from "../services/axios";
 import SEO from "../components/SEO";
 
 import AccountHeader from "./account/AccountHeader";
@@ -24,16 +24,22 @@ import OrderDetailModal from "./account/OrderDetailModal";
 
 import type { Order, IAddress } from "../types/account";
 
-
 const Account = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  // orders
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Orders – no argument needed
+  const {
+    data: orders = [],
+    isLoading: loading,
+    isError,
+  } = useGetMyOrdersQuery();
+
+  const error = isError
+    ? "Could not load your orders. Please try again."
+    : null;
+
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   // tabs
@@ -69,27 +75,11 @@ const Account = () => {
   const [changePassword, { isLoading: changingPassword }] =
     useChangePasswordMutation();
 
-  useEffect(() => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-
-    const fetchOrders = async () => {
-      try {
-        const res = await api.get("/orders/my-orders");
-        setOrders(res.data);
-        setError(null);
-      } catch {
-        setError("Could not load your orders. Please try again.");
-        toast.error("Failed to load orders");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrders();
-  }, [user, navigate]);
+  // Redirect if not authenticated
+  if (!user) {
+    navigate("/login");
+    return null;
+  }
 
   const startEditing = () => {
     setEditName(user?.name || "");
@@ -116,7 +106,10 @@ const Account = () => {
 
   const handleChangePassword = async (current: string, newPw: string) => {
     try {
-      await changePassword({ currentPassword: current, newPassword: newPw }).unwrap();
+      await changePassword({
+        currentPassword: current,
+        newPassword: newPw,
+      }).unwrap();
       toast.success("Password changed. Please log in again.");
       dispatch(logout());
       navigate("/login");
@@ -199,7 +192,10 @@ const Account = () => {
       <AccountHeader user={user} />
 
       {/* Tabs - dark themed */}
-      <div className="flex gap-4 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+      <div
+        className="flex gap-4 border-b"
+        style={{ borderColor: "rgba(255,255,255,0.08)" }}
+      >
         <button
           onClick={() => setActiveTab("orders")}
           className={`pb-3 px-1 text-sm font-semibold transition-colors border-b-2 ${

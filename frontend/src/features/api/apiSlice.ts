@@ -1,4 +1,18 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import type { Order } from "../../types/account";
+
+// ─── Response types for the new endpoints ──────────────────────────────────────
+interface VerifyPaymentResponse {
+  status: boolean;
+  message: string;
+  data: {
+    amount: number;
+    currency: string;
+    status: string;
+    reference: string;
+    metadata: Record<string, unknown>;   // no `any`
+  };
+}
 
 export const apiSlice = createApi({
   reducerPath: "api",
@@ -252,7 +266,6 @@ export const apiSlice = createApi({
       }),
     }),
 
-    // ✅ New: Send marketing email (new arrival / back-in-stock)
     sendMarketingEmail: builder.mutation({
       query: (data) => ({
         url: "/admin/marketing/send",
@@ -266,7 +279,6 @@ export const apiSlice = createApi({
       providesTags: ["Product"],
     }),
 
-    // Inside endpoints
     getCoupons: builder.query({
       query: () => "/admin/coupons",
       providesTags: ["Coupon"],
@@ -346,7 +358,6 @@ export const apiSlice = createApi({
       invalidatesTags: ["User"],
     }),
 
-    // Forgot password
     forgotPassword: builder.mutation({
       query: (email) => ({
         url: "/auth/forgot-password",
@@ -355,7 +366,6 @@ export const apiSlice = createApi({
       }),
     }),
 
-    // Reset password
     resetPassword: builder.mutation({
       query: (data) => ({
         url: "/auth/reset-password",
@@ -364,13 +374,21 @@ export const apiSlice = createApi({
       }),
     }),
 
-    // Change password (authenticated)
     changePassword: builder.mutation({
       query: (data) => ({
         url: "/auth/change-password",
         method: "PUT",
         body: data,
       }),
+    }),
+
+    verifyPayment: builder.query<VerifyPaymentResponse, string>({
+      query: (reference: string) => `/orders/verify/${reference}`,
+    }),
+
+    getMyOrders: builder.query<Order[], void>({
+      query: () => "/orders/my-orders",
+      providesTags: ["Order"],
     }),
   }),
 });
@@ -423,4 +441,7 @@ export const {
   useForgotPasswordMutation,
   useResetPasswordMutation,
   useChangePasswordMutation,
+  useVerifyPaymentQuery,
+  useLazyVerifyPaymentQuery,
+  useGetMyOrdersQuery,
 } = apiSlice;
