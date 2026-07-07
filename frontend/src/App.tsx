@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { HelmetProvider } from 'react-helmet-async';
+import { motion } from 'framer-motion';
 
 // Import Navbar and AdminRoute synchronously
 import Navbar from './components/Navbar';
@@ -13,8 +14,8 @@ const Cart = React.lazy(() => import('./pages/Cart'));
 const Checkout = React.lazy(() => import('./pages/Checkout'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
-const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));      // ✅ new
-const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));        // ✅ new
+const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
 
 // --- Admin Pages ---
 const Dashboard = React.lazy(() => import('./pages/admin/Dashboard'));
@@ -29,10 +30,24 @@ const Coupons = React.lazy(() => import('./pages/admin/Coupons'));
 
 import Settings from './pages/admin/Settings';
 
-// A beautiful fallback loading skeleton
+// ─── Constants ─────────────────────────────────────────────────────────────────
+const ACCENT = "#e8622a";
+
+// Dark-themed loading fallback (no white flash)
 const LoadingFallback = () => (
-  <div className="min-h-[60vh] flex justify-center items-center">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-leaf-green"></div>
+  <div
+    className="min-h-screen flex justify-center items-center"
+    style={{ background: "#0A0A0B" }}
+  >
+    <motion.div
+      animate={{ rotate: 360 }}
+      transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+      className="w-12 h-12 rounded-full border-4"
+      style={{
+        borderColor: `${ACCENT}30`,
+        borderTopColor: ACCENT,
+      }}
+    />
   </div>
 );
 
@@ -50,12 +65,12 @@ function App() {
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />    {/* ✅ new */}
-            <Route path="/reset-password" element={<ResetPassword />} />      {/* ✅ new */}
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/account" element={<Account />} />
 
-            {/* Product Detail – public, no auth required */}
+            {/* Product Detail – public */}
             <Route path="/product/:slug" element={<ProductDetail />} />
 
             {/* Protected Admin Routes */}
