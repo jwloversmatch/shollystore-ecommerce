@@ -17,7 +17,7 @@ const ACCENT = '#e8622a';
 // ─── Rehydration type ─────────────────────────────────────────────────────────
 interface PersistState { _persist: { version: number; rehydrated: boolean } }
 
-// ─── Shared dark skeleton card ──────────────────────────────────────────────────
+// ─── Skeleton loading card ────────────────────────────────────────────────────
 const DarkCartSkeleton = () => (
   <div className="animate-pulse flex items-center gap-4 p-5 rounded-2xl" style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.06)' }}>
     <div className="w-20 h-20 rounded-xl shrink-0" style={{ background: '#1c1c1c' }} />
@@ -29,7 +29,7 @@ const DarkCartSkeleton = () => (
   </div>
 );
 
-// ─── Shared ambient background (moved outside Cart to avoid recreation) ────────
+// ─── Ambient background orbs (reused) ────────────────────────────────────────
 const AmbientBg = () => (
   <>
     <motion.div animate={{ x:['-12%','12%','-12%'], y:['-8%','8%','-8%'] }} transition={{ repeat:Infinity, duration:30, ease:'linear' }}
@@ -68,7 +68,7 @@ const Cart = () => {
     if (next >= 1 && next <= stock) dispatch(updateQuantity({ _id: id, qty: next }));
   };
 
-  // ══════ LOADING ══════════════════════════════════════════════════════════════
+  // ══════ LOADING (rehydration) ═══════════════════════════════════════════════
   if (isRehydrated === false) {
     return (
       <div className="min-h-screen pt-20 pb-24 px-4 md:px-8" style={{ background:'#0A0A0B' }}>
@@ -80,7 +80,7 @@ const Cart = () => {
     );
   }
 
-  // ══════ EMPTY CART ════════════════════════════════════════════════════════════
+  // ══════ EMPTY CART ═══════════════════════════════════════════════════════════
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden" style={{ background:'#0A0A0B' }}>
@@ -96,7 +96,7 @@ const Cart = () => {
           <div className="absolute top-0 inset-x-0 h-px rounded-t-3xl"
             style={{ background:`linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
 
-          {/* Animated bag in plate ring */}
+          {/* Animated bag icon */}
           <div className="flex justify-center mb-6">
             <div className="relative">
               <motion.div animate={{ rotate:360 }} transition={{ duration:20, repeat:Infinity, ease:'linear' }}
@@ -110,28 +110,28 @@ const Cart = () => {
           </div>
 
           <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] mb-3" style={{ color:ACCENT }}>
-            Empty
+            Your Cart
           </p>
-          <h2 className="text-3xl font-black text-white mb-3 leading-tight">Your cart<br />is empty</h2>
+          <h2 className="text-3xl font-black text-white mb-3 leading-tight">It's empty right now</h2>
           <p className="text-gray-600 text-sm mb-8 leading-relaxed">
-            Looks like you haven't added anything yet. Browse our menu and pick something delicious!
+            Looks like you haven't added anything yet. Explore our catalog and find something you'll love!
           </p>
 
           <motion.button
             whileHover={{ scale:1.04, boxShadow:`0 16px 40px ${ACCENT}55` }}
             whileTap={{ scale:0.97 }}
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/shop')}
             className="w-full py-4 rounded-xl font-black text-white text-[15px] flex items-center justify-center gap-2.5 group"
             style={{ background:ACCENT, boxShadow:`0 8px 24px ${ACCENT}44` }}>
             <Sparkles className="w-5 h-5" />
-            Start Shopping
+            Browse Products
           </motion.button>
         </motion.div>
       </div>
     );
   }
 
-  // ══════ CART WITH ITEMS ════════════════════════════════════════════════════════
+  // ══════ CART WITH ITEMS ═══════════════════════════════════════════════════════
   return (
     <div className="min-h-screen pt-4 pb-28 md:pb-16 px-4 md:px-6 relative overflow-x-hidden" style={{ background:'#0A0A0B' }}>
       <SEO title="Your Cart" description="Review your items and proceed to secure checkout." />
@@ -145,7 +145,7 @@ const Cart = () => {
 
           <div className="flex items-center gap-3 min-w-0">
             <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/shop')}
               className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl shrink-0 text-gray-500 hover:text-white transition-colors"
               style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.07)' }}>
               <ArrowLeft className="w-4 h-4" />
@@ -195,8 +195,7 @@ const Cart = () => {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0 w-full">
-                    <h3 className="font-bold text-base md:text-lg text-white truncate leading-tight transition-colors"
-                      style={{}}>
+                    <h3 className="font-bold text-base md:text-lg text-white truncate leading-tight transition-colors">
                       {item.name}
                     </h3>
                     <p className="text-sm font-semibold mt-0.5" style={{ color:ACCENT }}>
@@ -262,7 +261,7 @@ const Cart = () => {
             <div className="relative rounded-2xl p-6 md:p-7 lg:sticky lg:top-24"
               style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.07)', boxShadow:'0 20px 60px rgba(0,0,0,0.4)' }}>
 
-              {/* Top orange hairline */}
+              {/* Top hairline */}
               <div className="absolute top-0 inset-x-0 h-px rounded-t-2xl"
                 style={{ background:`linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
 
