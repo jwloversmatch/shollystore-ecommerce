@@ -5,6 +5,7 @@ import { Bell, BellOff, Loader2 } from 'lucide-react';
 import { RootState } from '../store';
 
 const ACCENT = '#e8622a';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';   // ✅ added
 
 const urlBase64ToUint8Array = (base64String: string) => {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -16,7 +17,6 @@ const urlBase64ToUint8Array = (base64String: string) => {
 const PushNotificationManager = () => {
   const { user } = useSelector((s: RootState) => s.auth);
 
-  // Initial permission is read synchronously – no effect needed
   const [permission, setPermission] = useState<NotificationPermission>(() =>
     'Notification' in window ? Notification.permission : 'default'
   );
@@ -25,7 +25,6 @@ const PushNotificationManager = () => {
 
   const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string;
 
-  // Moved above the effect to avoid immutability warning
   const checkSubscription = useCallback(async () => {
     if ('serviceWorker' in navigator) {
       const reg = await navigator.serviceWorker.getRegistration();
@@ -34,7 +33,6 @@ const PushNotificationManager = () => {
     }
   }, []);
 
-  // Only runs once after mount
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     checkSubscription();
@@ -64,7 +62,8 @@ const PushNotificationManager = () => {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
 
-      await fetch('/api/push/subscribe', {
+      // ✅ Correct URL
+      await fetch(`${API_BASE}/push/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(subscription.toJSON()),
@@ -85,7 +84,8 @@ const PushNotificationManager = () => {
       const subscription = await reg?.pushManager.getSubscription();
       if (subscription) {
         await subscription.unsubscribe();
-        await fetch('/api/push/unsubscribe', {
+        // ✅ Correct URL
+        await fetch(`${API_BASE}/push/unsubscribe`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ endpoint: subscription.endpoint }),

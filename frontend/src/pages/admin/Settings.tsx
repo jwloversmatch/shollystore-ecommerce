@@ -117,37 +117,38 @@ const Settings = () => {
   const [sendingPush, setSendingPush] = useState(false);
 
   const handleSendPush = async () => {
-    if (!pushTitle.trim() || !pushBody.trim()) {
-      toast.error("Title and body are required");
-      return;
-    }
-    const token = localStorage.getItem("token");
-    setSendingPush(true);
-    try {
-      const res = await fetch("/api/push/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title: pushTitle.trim(),
-          body: pushBody.trim(),
-          url: pushUrl.trim() || undefined,
-        }),
-      });
-      if (!res.ok) throw new Error("Failed to send");
-      toast.success("Push notification sent!");
-      setPushTitle("");
-      setPushBody("");
-      setPushUrl("");
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
-      toast.error("Failed to send push notification");
-    } finally {
-      setSendingPush(false);
-    }
-  };
+  if (!pushTitle.trim() || !pushBody.trim()) {
+    toast.error("Title and body are required");
+    return;
+  }
+  const token = localStorage.getItem("token");
+  setSendingPush(true);
+  try {
+    // ✅ Use the correct backend URL
+    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const res = await fetch(`${API_BASE}/push/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        title: pushTitle.trim(),
+        body: pushBody.trim(),
+        url: pushUrl.trim() || undefined,
+      }),
+    });
+    if (!res.ok) throw new Error("Failed to send");
+    toast.success("Push notification sent!");
+    setPushTitle("");
+    setPushBody("");
+    setPushUrl("");
+  } catch (err) {
+    toast.error("Failed to send push notification");
+  } finally {
+    setSendingPush(false);
+  }
+};
 
   const { register, handleSubmit, reset, formState:{ errors } } =
     useForm<SettingsFormData>({ resolver: zodResolver(settingsSchema) });
