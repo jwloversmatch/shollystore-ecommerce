@@ -22,7 +22,7 @@ const ACCENT      = '#e8622a';
 const PLACEHOLDER = 'https://via.placeholder.com/150';
 
 // ─── Types – use the shared type from types/home ──────────────────────────────
-import type { ProductItem } from '../../types/home';
+import type { ProductItem } from '../../types/home'; // ✅ no local interface
 interface CategoryItem {
   _id: string;
   name: string;
@@ -70,41 +70,13 @@ const getCategoryId = (cat: ProductItem['category']): string => {
   return typeof cat === 'string' ? cat : cat._id;
 };
 
-// Helper: build grouped categories for the product form
-const buildGroupedCategories = (
-  categories: CategoryItem[]
-): { topLevel: CategoryItem[]; childrenMap: Record<string, CategoryItem[]> } => {
-  const topLevel: CategoryItem[] = [];
-  const childrenMap: Record<string, CategoryItem[]> = {};
-
-  categories.forEach((cat) => {
-    if (!cat.parent) {
-      topLevel.push(cat);
-    } else {
-      if (!childrenMap[cat.parent]) {
-        childrenMap[cat.parent] = [];
-      }
-      childrenMap[cat.parent].push(cat);
-    }
-  });
-
-  // Sort top‑level alphabetically
-  topLevel.sort((a, b) => a.name.localeCompare(b.name));
-
-  // Sort children arrays
-  Object.keys(childrenMap).forEach((parentId) => {
-    childrenMap[parentId].sort((a, b) => a.name.localeCompare(b.name));
-  });
-
-  return { topLevel, childrenMap };
-};
-
 // ═══════════════════════════════════════════════════════════════════════════════
 const Products = () => {
   const navigate = useNavigate();
 
   // ✅ Fetch all products for admin
   const { data: productsData, isLoading } = useGetProductsQuery({ limit: 9999 });
+  // Memoize the product array so it's stable across renders
   const products = useMemo<ProductItem[]>(
     () => productsData?.products ?? [],
     [productsData?.products]
@@ -117,10 +89,6 @@ const Products = () => {
   const [uploadImage]                      = useUploadImageMutation();
   const [updateStock]                      = useUpdateStockMutation();
   const [sendMarketingEmail, { isLoading: isSendingMarketing }] = useSendMarketingEmailMutation();
-
-  // Build grouped categories for the drawer dropdown
-  const { topLevel: topCategories, childrenMap: subCategoriesMap } =
-    useMemo(() => buildGroupedCategories(categories as CategoryItem[]), [categories]);
 
   const [searchTerm,     setSearchTerm]     = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
@@ -522,24 +490,14 @@ const Products = () => {
                   </div>
                 </div>
 
-                {/* ── Grouped category dropdown ── */}
                 <div>
                   <DLabel>Category</DLabel>
-                  <select
-                    {...register('category')}
+                  <select {...register('category')}
                     className="w-full px-4 py-3.5 rounded-xl text-sm text-white outline-none border border-white/[0.08] focus:border-[#e8622a]/70 transition-all cursor-pointer"
-                    style={{ background: '#1c1c1c' }}
-                  >
+                    style={{ background:'#1c1c1c' }}>
                     <option value="" className="text-gray-600">Select a category…</option>
-                    {topCategories.map((parent) => (
-                      <optgroup key={parent._id} label={parent.name}>
-                        <option value={parent._id}>{parent.name} (All)</option>
-                        {(subCategoriesMap[parent._id] || []).map((sub) => (
-                          <option key={sub._id} value={sub._id}>
-                            ↳ {sub.name}
-                          </option>
-                        ))}
-                      </optgroup>
+                    {categories.map((cat: CategoryItem) => (
+                      <option key={cat._id} value={cat._id}>{cat.name}</option>
                     ))}
                   </select>
                   {errors.category && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.category.message}</p>}
