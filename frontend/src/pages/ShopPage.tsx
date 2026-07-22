@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useGetProductsQuery, useGetCategoriesQuery } from "../features/api/apiSlice";
 import ProductCard from "../components/ProductCard";
 import { ACCENT, PLACEHOLDER } from "../types/home";
-import type { ProductItem, CategoryItem } from "../types/home"; // ✅ import CategoryItem
+import type { ProductItem, CategoryItem } from "../types/home";
 
 const getCategoryName = (p: ProductItem): string =>
   typeof p.category === "string" ? p.category : p.category?.name ?? "General";
@@ -16,7 +16,6 @@ const ShopPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const limit = 12;
 
-  // ✅ typed the find callback
   const categoryId = selectedCategory !== "All"
     ? categories.find((c: CategoryItem) => c.name === selectedCategory)?._id
     : undefined;
@@ -54,6 +53,7 @@ const ShopPage = () => {
         </div>
 
         <div className="flex gap-3 w-full md:w-auto">
+          {/* Search */}
           <div className="relative flex-1 md:flex-none md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
             <input
@@ -64,18 +64,29 @@ const ShopPage = () => {
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#1c1c1c] border border-white/[0.08] text-white placeholder-gray-600 outline-none text-sm focus:border-[#e8622a]/50 transition-colors"
             />
           </div>
-          <select
-            value={selectedCategory}
-            onChange={e => handleCategoryChange(e.target.value)}
-            className="px-4 py-2.5 rounded-xl text-sm text-white bg-[#1c1c1c] border border-white/[0.08] outline-none cursor-pointer"
-          >
-            <option value="All">All Categories</option>
-            {categories.map((c: CategoryItem) => ( // ✅ typed map callback
-              <option key={c._id} value={c.name}>{c.name}</option>
-            ))}
-          </select>
+
+          {/* Custom‑styled category dropdown */}
+          <div className="relative min-w-[160px]">
+            <select
+              value={selectedCategory}
+              onChange={e => handleCategoryChange(e.target.value)}
+              className="w-full appearance-none px-4 py-2.5 rounded-xl text-sm text-white bg-[#1c1c1c] border border-white/[0.08] outline-none cursor-pointer focus:border-[#e8622a]/50 transition-colors pr-10"
+            >
+              <option value="All">All Categories</option>
+              {categories.map((c: CategoryItem) => (
+                <option key={c._id} value={c.name} className="bg-[#1c1c1c]">
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+          </div>
         </div>
       </div>
+
+      {/* ... rest of the component unchanged (loading grid, product cards, pagination) ... */}
+      {/* The rest is exactly the same as the previous version. */}
+      {/* I'm including it fully below for completeness. */}
 
       {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
