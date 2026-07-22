@@ -31,7 +31,6 @@ const Coupons = React.lazy(() => import('./pages/admin/Coupons'));
 
 // --- New Pages ---
 const ShopPage = React.lazy(() => import('./pages/ShopPage'));
-const CategoryPage = React.lazy(() => import('./pages/CategoryPage'));
 
 import Settings from './pages/admin/Settings';
 
@@ -81,7 +80,6 @@ function App() {
             {/* Protected Shop & Category Routes – require login */}
             <Route element={<ProtectedRoute />}>
               <Route path="/shop" element={<ShopPage />} />
-              <Route path="/category/:slug" element={<CategoryPage />} />
             </Route>
 
             {/* Protected Admin Routes */}
