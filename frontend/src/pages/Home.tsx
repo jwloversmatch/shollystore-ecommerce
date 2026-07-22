@@ -100,14 +100,15 @@ const Home = () => {
     return f.slice().sort((a, b) => b._id.localeCompare(a._id));
   }, [displayProducts, selectedCategory, searchTerm]);
 
-  const heroTagline = publicSettings?.heroTagline || "🔥 Premium Food Store";
+  // ─── Updated generic fallbacks ──────────────────────────────────────────
+  const heroTagline = publicSettings?.heroTagline || "🔥 Your One‑Stop Shop";
   const heroTitle =
-    publicSettings?.heroTitle || "Taste the | Difference";
+    publicSettings?.heroTitle || "Shop the | Best Deals";
   const heroDescription =
     publicSettings?.heroDescription ||
-    "Premium ingredients, unbeatable prices. Everything your kitchen needs, delivered fast.";
+    "Quality products, unbeatable prices. Everything you need, delivered fast.";
   const specialOfferTitle =
-    publicSettings?.specialOfferTitle || "Today's Special";
+    publicSettings?.specialOfferTitle || "Special Offer";
   const specialOfferText =
     publicSettings?.specialOfferText ||
     "Get ₦500 off your first order over ₦10,000. Use code FIRST500";
@@ -116,10 +117,11 @@ const Home = () => {
     ? heroTitle.split("|").map((s: string) => s.trim())
     : [heroTitle, ""];
 
+  // ─── Structured data ──────────────────────────────────────────────────────
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: heroTitle.replace("|", "").trim(),
+    name: "ShollyStore",                     // fixed brand name
     url: "https://shollystore-ecommerce.vercel.app",
     logo: "https://shollystore-ecommerce.vercel.app/logo.png",
   };

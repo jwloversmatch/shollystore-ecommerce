@@ -5,12 +5,13 @@ import { RootState } from '../store';
 import { logout } from '../features/auth/authSlice';
 import {
   ShoppingCart, User, LogOut, LayoutDashboard, Settings,
-  Image, Tag, BadgePercent, Home, MoreHorizontal, X, ChefHat,
+  Image, Tag, BadgePercent, Home, MoreHorizontal, X, Store,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT = '#e8622a';
+const BRAND_NAME = 'ShollyStore';
 
 const ADMIN_LINKS = [
   { to: '/admin',              label: 'Dashboard',  icon: <LayoutDashboard className="w-5 h-5" /> },
@@ -99,9 +100,8 @@ const Navbar = () => {
           {/* Logo */}
           <Link to={user?.role === 'admin' ? '/admin' : '/'}
             className="text-2xl font-black text-white tracking-tight shrink-0 flex items-center gap-2">
-            <ChefHat className="w-6 h-6" style={{ color: ACCENT }} />
-            <span>Ires</span>
-            <span style={{ color: ACCENT }}>Kitchen</span>
+            <Store className="w-6 h-6" style={{ color: ACCENT }} />
+            <span>{BRAND_NAME}</span>
           </Link>
 
           {/* Admin links */}
@@ -170,9 +170,8 @@ const Navbar = () => {
         }}>
         <Link to={user?.role === 'admin' ? '/admin' : '/'}
           className="text-xl font-black text-white tracking-tight flex items-center gap-1.5">
-          <ChefHat className="w-5 h-5" style={{ color: ACCENT }} />
-          <span>Ires</span>
-          <span style={{ color: ACCENT }}>Kitchen</span>
+          <Store className="w-5 h-5" style={{ color: ACCENT }} />
+          <span>{BRAND_NAME}</span>
         </Link>
 
         {showCart && (

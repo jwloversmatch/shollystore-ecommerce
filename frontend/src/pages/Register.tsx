@@ -7,9 +7,13 @@ import { z } from "zod";
 import { useRegisterMutation } from "../features/api/apiSlice";
 import {
   Mail, Lock, AlertCircle, Eye, EyeOff, User, Phone,
-  ArrowRight, Loader2, ChefHat, CheckCircle, Users, Package, Star,
+  ArrowRight, Loader2, Store, CheckCircle, Users, Package, Star,
 } from "lucide-react";
 import SEO from "../components/SEO";
+
+// ─── Brand constants ──────────────────────────────────────────────────────────
+const BRAND_NAME = "ShollyStore";
+const BRAND_TAGLINE = "Join Our Community";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
@@ -41,7 +45,7 @@ const buildInputCls = (hasError: boolean, extraPl = "pl-11", extraPr = "pr-4") =
       : "border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15",
   ].join(" ");
 
-// ── Dark background with orbs (moved outside to avoid re-creation) ───────────
+// ── Dark background with orbs ─────────────────────────────────────────────────
 const DarkBg = () => (
   <>
     <motion.div
@@ -101,7 +105,7 @@ const Register = () => {
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden" style={{ background: "#0A0A0B" }}>
-        <SEO title="Check Your Email" description="Please verify your email to activate your Ires Kitchen account." />
+        <SEO title="Check Your Email" description={`Please verify your email to activate your ${BRAND_NAME} account.`} />
         <DarkBg />
 
         <motion.div
@@ -212,7 +216,7 @@ const Register = () => {
     >
       <SEO
         title="Create an Account"
-        description="Join Ires Kitchen and start ordering delicious meals with fast delivery across Nigeria."
+        description={`Join ${BRAND_NAME} and start shopping from a wide range of products with fast delivery.`}
       />
       <DarkBg />
 
@@ -245,13 +249,13 @@ const Register = () => {
           <div>
             <div className="flex items-center gap-2.5 mb-2">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${ACCENT}20` }}>
-                <ChefHat className="w-5 h-5" style={{ color: ACCENT }} />
+                <Store className="w-5 h-5" style={{ color: ACCENT }} />
               </div>
               <span className="text-2xl font-black text-white tracking-tight">
-                Ires<span style={{ color: ACCENT }}>Kitchen</span>
+                {BRAND_NAME}
               </span>
             </div>
-            <p className="text-gray-600 text-sm font-semibold pl-0.5">Join the community</p>
+            <p className="text-gray-600 text-sm font-semibold pl-0.5">{BRAND_TAGLINE}</p>
           </div>
 
           {/* Hero plate */}
@@ -270,8 +274,8 @@ const Register = () => {
                 style={{ boxShadow: `0 0 0 4px #10b981, 0 28px 64px rgba(0,0,0,0.75), 0 0 50px rgba(16,185,129,0.12)` }}
               >
                 <img
-                  src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80"
-                  alt="Premium food spread"
+                  src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=400&q=80"
+                  alt="Shopping variety"
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -293,7 +297,7 @@ const Register = () => {
 
             <div className="text-center">
               <h3 className="text-white font-black text-xl tracking-tight mb-1">Start Your Journey</h3>
-              <p className="text-gray-600 text-sm">Fresh food at your fingertips.</p>
+              <p className="text-gray-600 text-sm">Everything you need, delivered fast.</p>
             </div>
           </div>
 
@@ -324,10 +328,10 @@ const Register = () => {
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
             className="md:hidden flex items-center gap-2 mb-7">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${ACCENT}20` }}>
-              <ChefHat className="w-4 h-4" style={{ color: ACCENT }} />
+              <Store className="w-4 h-4" style={{ color: ACCENT }} />
             </div>
             <span className="text-xl font-black text-white tracking-tight">
-              Ires<span style={{ color: ACCENT }}>Kitchen</span>
+              {BRAND_NAME}
             </span>
           </motion.div>
 

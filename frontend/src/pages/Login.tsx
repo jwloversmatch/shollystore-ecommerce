@@ -9,10 +9,14 @@ import { useLoginMutation } from "../features/api/apiSlice";
 import { setCredentials } from "../features/auth/authSlice";
 import {
   Mail, Lock, AlertCircle, Eye, EyeOff,
-  ArrowRight, Loader2, ChefHat, Shield, Zap, Star,
+  ArrowRight, Loader2, Store, Shield, Zap, Star,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import SEO from "../components/SEO";
+
+// ─── Brand constants ──────────────────────────────────────────────────────────
+const BRAND_NAME = "ShollyStore";
+const BRAND_TAGLINE = "Your One‑Stop Shop";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
@@ -69,7 +73,7 @@ const Login = () => {
     >
       <SEO
         title="Sign In"
-        description="Log in to your Ires Kitchen account to manage orders and track deliveries."
+        description={`Log in to your ${BRAND_NAME} account to manage orders, track deliveries, and enjoy exclusive deals.`}
       />
 
       {/* ── Ambient orbs ── */}
@@ -140,14 +144,14 @@ const Login = () => {
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
                 style={{ background: `${ACCENT}20` }}
               >
-                <ChefHat className="w-5 h-5" style={{ color: ACCENT }} />
+                <Store className="w-5 h-5" style={{ color: ACCENT }} />
               </div>
               <span className="text-2xl font-black text-white tracking-tight">
-                Ires<span style={{ color: ACCENT }}>Kitchen</span>
+                {BRAND_NAME}
               </span>
             </div>
             <p className="text-gray-600 text-sm font-semibold pl-0.5">
-              Premium Food Experience
+              {BRAND_TAGLINE}
             </p>
           </div>
 
@@ -174,8 +178,8 @@ const Login = () => {
                 }}
               >
                 <img
-                  src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=400&q=80"
-                  alt="Premium food"
+                  src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=400&q=80"
+                  alt="Online shopping"
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -204,10 +208,10 @@ const Login = () => {
 
             <div className="text-center">
               <h3 className="text-white font-black text-xl tracking-tight mb-1">
-                Taste the Difference
+                Shop the Best
               </h3>
               <p className="text-gray-600 text-sm">
-                Premium ingredients, unbeatable prices.
+                Quality products at unbeatable prices.
               </p>
             </div>
           </div>
@@ -254,10 +258,10 @@ const Login = () => {
               className="w-8 h-8 rounded-xl flex items-center justify-center"
               style={{ background: `${ACCENT}20` }}
             >
-              <ChefHat className="w-4 h-4" style={{ color: ACCENT }} />
+              <Store className="w-4 h-4" style={{ color: ACCENT }} />
             </div>
             <span className="text-xl font-black text-white tracking-tight">
-              Ires<span style={{ color: ACCENT }}>Kitchen</span>
+              {BRAND_NAME}
             </span>
           </motion.div>
 
