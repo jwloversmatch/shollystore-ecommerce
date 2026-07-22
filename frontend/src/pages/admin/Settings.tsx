@@ -143,6 +143,7 @@ const Settings = () => {
     setPushTitle("");
     setPushBody("");
     setPushUrl("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (err) {
     toast.error("Failed to send push notification");
   } finally {
