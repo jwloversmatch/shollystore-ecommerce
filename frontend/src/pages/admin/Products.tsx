@@ -21,18 +21,8 @@ import { ProductRowSkeleton } from '../../components/Skeletons';
 const ACCENT      = '#e8622a';
 const PLACEHOLDER = 'https://via.placeholder.com/150';
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
-interface ProductItem {
-  _id: string;
-  name: string;
-  slug?: string;
-  images?: string[];
-  price: number;
-  stock: number;
-  description?: string;
-  category: string | { _id: string; name: string; slug: string; parent?: string }; // populated object
-  createdAt?: string;
-}
+// ─── Types – use the shared type from types/home ──────────────────────────────
+import type { ProductItem } from '../../types/home'; // ✅ no local interface
 interface CategoryItem {
   _id: string;
   name: string;
@@ -45,7 +35,7 @@ const productSchema = z.object({
   name:        z.string().min(1, 'Product name is required'),
   price:       z.string().min(1, 'Price is required').refine(v => Number(v) > 0, 'Price must be greater than 0'),
   stock:       z.string().min(1, 'Stock is required').refine(v => Number(v) >= 0, 'Stock cannot be negative'),
-  category:    z.string().min(1, 'Category is required'),  // will hold category _id
+  category:    z.string().min(1, 'Category is required'),
   description: z.string().optional(),
 });
 type ProductFormData = z.infer<typeof productSchema>;
@@ -84,7 +74,14 @@ const getCategoryId = (cat: ProductItem['category']): string => {
 const Products = () => {
   const navigate = useNavigate();
 
-  const { data: products = [], isLoading } = useGetProductsQuery({});
+  // ✅ Fetch all products for admin
+  const { data: productsData, isLoading } = useGetProductsQuery({ limit: 9999 });
+  // Memoize the product array so it's stable across renders
+  const products = useMemo<ProductItem[]>(
+    () => productsData?.products ?? [],
+    [productsData?.products]
+  );
+
   const { data: categories = [] }          = useGetCategoriesQuery({});
   const [deleteProduct]                    = useDeleteProductMutation();
   const [createProduct]                    = useCreateProductMutation();
@@ -94,7 +91,7 @@ const Products = () => {
   const [sendMarketingEmail, { isLoading: isSendingMarketing }] = useSendMarketingEmailMutation();
 
   const [searchTerm,     setSearchTerm]     = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('All');   // now holds category _id or 'All'
+  const [categoryFilter, setCategoryFilter] = useState('All');
   const [showLowStock,   setShowLowStock]   = useState(false);
 
   const [isDrawerOpen,   setIsDrawerOpen]   = useState(false);
@@ -125,7 +122,6 @@ const Products = () => {
     }
   });
 
-  // Filter options: build dropdown with category _id as value and name as label
   const filterCategories = useMemo(() => {
     const opts = [{ _id: 'All', name: 'All' }, ...categories];
     return opts;
@@ -140,7 +136,7 @@ const Products = () => {
       });
     }
     if (searchTerm) f = f.filter((p: ProductItem) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    if (showLowStock) f = f.filter((p: ProductItem) => p.stock < 5);
+    if (showLowStock) f = f.filter((p: ProductItem) => (p.stock ?? 0) < 5);
     return f.slice().sort((a: ProductItem, b: ProductItem) => b._id.localeCompare(a._id));
   }, [products, searchTerm, categoryFilter, showLowStock]);
 
@@ -151,8 +147,8 @@ const Products = () => {
       reset({
         name: product.name,
         price: product.price.toString(),
-        stock: product.stock.toString(),
-        category: getCategoryId(product.category),   // use ID
+        stock: String(product.stock ?? 0),
+        category: getCategoryId(product.category),
         description: product.description || '',
       });
       setRawPrice(product.price.toString());
@@ -210,7 +206,7 @@ const Products = () => {
         price: Number(data.price),
         stock: Number(data.stock),
         description: data.description || '',
-        category: data.category,   // this is the category _id
+        category: data.category,
         images: imageUrl ? [imageUrl] : [],
         slug: data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       };
@@ -379,20 +375,20 @@ const Products = () => {
                     <div className="flex items-center gap-1.5">
                       <div className="flex items-center rounded-xl overflow-hidden" style={{ background:'#1c1c1c', border:'1px solid rgba(255,255,255,0.08)' }}>
                         <motion.button whileTap={{ scale:0.85 }}
-                          onClick={() => handleQuickStock(product._id, product.stock, -1)}
+                          onClick={() => handleQuickStock(product._id, product.stock ?? 0, -1)}
                           className="w-7 h-7 flex items-center justify-center text-red-400 hover:bg-red-500/10 transition-colors">
                           <Minus className="w-3 h-3" />
                         </motion.button>
-                        <span className={`w-8 text-center text-sm font-black ${product.stock < 5 ? 'text-red-400' : 'text-white'}`}>
-                          {product.stock}
+                        <span className={`w-8 text-center text-sm font-black ${(product.stock ?? 0) < 5 ? 'text-red-400' : 'text-white'}`}>
+                          {product.stock ?? 0}
                         </span>
                         <motion.button whileTap={{ scale:0.85 }}
-                          onClick={() => handleQuickStock(product._id, product.stock, 1)}
+                          onClick={() => handleQuickStock(product._id, product.stock ?? 0, 1)}
                           className="w-7 h-7 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/10 transition-colors">
                           <Plus className="w-3 h-3" />
                         </motion.button>
                       </div>
-                      {product.stock < 5 && (
+                      {(product.stock ?? 0) < 5 && (
                         <span className="text-[9px] px-1.5 py-0.5 rounded-full font-extrabold"
                           style={{ background:'rgba(239,68,68,0.12)', color:'#f87171' }}>Low</span>
                       )}
@@ -423,7 +419,7 @@ const Products = () => {
                         <Trash2 className="w-3.5 h-3.5" />
                       </motion.button>
                       <motion.button whileHover={{ scale:1.1 }} whileTap={{ scale:0.9 }}
-                        onClick={() => { setMarketingProduct(product); setMarketingType(product.stock > 0 ? 'new_arrival' : 'back_in_stock'); setCustomMessage(''); setMarketingOpen(true); }}
+                        onClick={() => { setMarketingProduct(product); setMarketingType((product.stock ?? 0) > 0 ? 'new_arrival' : 'back_in_stock'); setCustomMessage(''); setMarketingOpen(true); }}
                         title="Notify customers"
                         className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors"
                         style={{ background:'rgba(16,185,129,0.1)', color:'#34d399', border:'1px solid rgba(16,185,129,0.2)' }}>
@@ -588,7 +584,7 @@ const Products = () => {
         )}
       </AnimatePresence>
 
-      {/* ══ Marketing Email Modal (unchanged except minor) ════════════════════ */}
+      {/* ══ Marketing Email Modal ════════════════════════════════════════════ */}
       <AnimatePresence>
         {marketingOpen && marketingProduct && (
           <>

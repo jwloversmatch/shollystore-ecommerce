@@ -7,41 +7,29 @@ import toast from 'react-hot-toast';
 import SEO from '../components/SEO';
 import { ShoppingCart, ArrowLeft, ImageOff, Minus, Plus, Check, Flame } from 'lucide-react';
 import { useGetProductsQuery } from '../features/api/apiSlice';
+import type { ProductItem } from '../types/home';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT      = '#e8622a';
 const PLACEHOLDER = 'https://via.placeholder.com/600';
 
-interface Product {
-  _id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  price: number;
-  stock: number;
-  // ✅ Updated to match the new populated object
-  category?: string | { _id: string; name: string; slug?: string; parent?: string | null };
-  images?: string[];
-}
-
-// Helper: safely get the category name
-const getCategoryName = (cat: Product['category']): string => {
+const getCategoryName = (cat: ProductItem['category']): string => {
   if (!cat) return 'General';
   return typeof cat === 'string' ? cat : cat.name ?? 'General';
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
 const ProductDetail = () => {
-  const { slug }    = useParams<{ slug: string }>();
-  const dispatch    = useDispatch();
-  const navigate    = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const [qty,        setQty]        = useState(1);
-  const [imgError,   setImgError]   = useState(false);
-  const [added,      setAdded]      = useState(false);
+  const [qty,      setQty]      = useState(1);
+  const [imgError, setImgError] = useState(false);
+  const [added,    setAdded]    = useState(false);
 
-  const { data: products = [], isLoading } = useGetProductsQuery({});
-  const product = products.find((p: Product) => p.slug === slug);
+  const { data: productsData, isLoading } = useGetProductsQuery({ limit: 9999 });
+  const products: ProductItem[] = productsData?.products ?? [];
+  const product = products.find((p) => p.slug === slug);
 
   const handleAddToCart = () => {
     if (!product || product.stock === 0) { toast.error('Out of stock!'); return; }
@@ -51,7 +39,7 @@ const ProductDetail = () => {
       image: product.images?.[0] || PLACEHOLDER,
       price: product.price,
       qty,
-      stock: product.stock,
+      stock: product.stock ?? 0,   // ✅ ensure number
     }));
     toast.success(`${product.name} added to cart! 🛒`);
     setAdded(true);
@@ -64,9 +52,7 @@ const ProductDetail = () => {
       <div className="min-h-screen pt-20 md:pt-24 pb-16 px-4 md:px-8 max-w-7xl mx-auto" style={{ background:'#0A0A0B' }}>
         <div className="h-9 w-20 rounded-xl animate-pulse mb-8" style={{ background:'#141414' }} />
         <div className="grid md:grid-cols-2 gap-10">
-          {/* Image skeleton */}
           <div className="h-[400px] md:h-[500px] rounded-3xl animate-pulse" style={{ background:'#141414' }} />
-          {/* Info skeleton */}
           <div className="space-y-5 pt-2">
             <div className="h-4 w-20 rounded-full animate-pulse" style={{ background:'#141414' }} />
             <div className="h-12 w-3/4 rounded-xl animate-pulse" style={{ background:'#141414' }} />
@@ -132,14 +118,12 @@ const ProductDetail = () => {
       style={{ background:'#0A0A0B' }}>
 
       <SEO title={product.name}
-        description={`Buy ${product.name} from LotceWieth. ${product.description || ''}`}
+        description={`Buy ${product.name} from ShollyStore. ${product.description || ''}`}   // ✅ updated brand
         ogImage={product.images?.[0]} ogType="product" />
 
-      {/* Ambient orb */}
       <div className="fixed pointer-events-none rounded-full blur-[130px] -z-10"
         style={{ width:500, height:500, top:-100, right:-100, background:ACCENT, opacity:0.05 }} />
 
-      {/* ── Back button ── */}
       <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 mb-8 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 hover:text-white transition-colors"
@@ -147,21 +131,15 @@ const ProductDetail = () => {
         <ArrowLeft className="w-4 h-4" /> Back
       </motion.button>
 
-      {/* ── Two-column layout ── */}
       <div className="grid md:grid-cols-2 gap-8 lg:gap-14 items-start">
-
-        {/* ─── Image panel ─── */}
         <motion.div initial={{ opacity:0, x:-20 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.1, duration:0.5 }}
           className="relative rounded-3xl overflow-hidden sticky top-24"
           style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.07)', boxShadow:'0 24px 60px rgba(0,0,0,0.5)' }}>
-          {/* Top accent hairline */}
           <div className="absolute top-0 inset-x-0 h-px"
             style={{ background:`linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
-
           <div className="p-8 flex items-center justify-center" style={{ minHeight:380 }}>
             {product.images?.[0] && !imgError ? (
-              <motion.img
-                src={product.images[0]} alt={product.name}
+              <motion.img src={product.images[0]} alt={product.name}
                 onError={() => setImgError(true)}
                 className="max-h-80 md:max-h-96 w-full object-contain drop-shadow-2xl"
                 whileHover={{ scale:1.04 }}
@@ -173,8 +151,6 @@ const ProductDetail = () => {
               </div>
             )}
           </div>
-
-          {/* Out of stock overlay */}
           {isOutOfStock && (
             <div className="absolute inset-0 rounded-3xl flex items-center justify-center"
               style={{ background:'rgba(0,0,0,0.55)' }}>
@@ -186,11 +162,8 @@ const ProductDetail = () => {
           )}
         </motion.div>
 
-        {/* ─── Product info ─── */}
         <motion.div initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.15, duration:0.5 }}
           className="space-y-6 pt-2">
-
-          {/* Category + Name */}
           <div>
             <div className="flex items-center gap-2 mb-3">
               <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background:`${ACCENT}18` }}>
@@ -201,12 +174,9 @@ const ProductDetail = () => {
                 {categoryName}
               </span>
             </div>
-            <h1 className="text-3xl md:text-5xl font-black text-white leading-[1.05]">
-              {product.name}
-            </h1>
+            <h1 className="text-3xl md:text-5xl font-black text-white leading-[1.05]">{product.name}</h1>
           </div>
 
-          {/* Price */}
           <div className="flex items-baseline gap-1.5">
             <span className="text-gray-600 text-xl font-bold">₦</span>
             <motion.span key={product.price}
@@ -216,14 +186,10 @@ const ProductDetail = () => {
             </motion.span>
           </div>
 
-          {/* Description */}
           {product.description && (
-            <p className="text-gray-500 leading-relaxed text-sm md:text-base">
-              {product.description}
-            </p>
+            <p className="text-gray-500 leading-relaxed text-sm md:text-base">{product.description}</p>
           )}
 
-          {/* Stock status */}
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl"
             style={{ background:'#1c1c1c', border:'1px solid rgba(255,255,255,0.07)' }}>
             <motion.div
@@ -236,13 +202,10 @@ const ProductDetail = () => {
             </span>
           </div>
 
-          {/* Qty selector + Add to Cart */}
           <AnimatePresence>
             {!isOutOfStock && (
               <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
                 className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-
-                {/* Quantity pill */}
                 <div className="flex items-center rounded-xl overflow-hidden shrink-0"
                   style={{ background:'#1c1c1c', border:'1px solid rgba(255,255,255,0.09)' }}>
                   <motion.button whileTap={{ scale:0.85 }} onClick={() => qty > 1 && setQty(q => q - 1)}
@@ -256,14 +219,12 @@ const ProductDetail = () => {
                     className="w-12 text-center text-xl font-black text-white select-none">
                     {qty}
                   </motion.span>
-                  <motion.button whileTap={{ scale:0.85 }} onClick={() => qty < product.stock && setQty(q => q + 1)}
-                    disabled={qty >= product.stock}
+                  <motion.button whileTap={{ scale:0.85 }} onClick={() => qty < (product.stock ?? 0) && setQty(q => q + 1)}
+                    disabled={qty >= (product.stock ?? 0)}
                     className="w-12 h-14 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-30 transition-colors">
                     <Plus className="w-4 h-4" />
                   </motion.button>
                 </div>
-
-                {/* Add to Cart button */}
                 <motion.button
                   onClick={handleAddToCart}
                   whileHover={{ scale:1.03, boxShadow: added ? '0 14px 36px rgba(16,185,129,0.45)' : `0 14px 36px ${ACCENT}55` }}
@@ -282,17 +243,13 @@ const ProductDetail = () => {
             )}
           </AnimatePresence>
 
-          {/* Out of stock CTA */}
           {isOutOfStock && (
             <div className="flex items-center gap-3 px-5 py-4 rounded-xl border"
               style={{ background:'rgba(239,68,68,0.06)', borderColor:'rgba(239,68,68,0.2)' }}>
-              <span className="text-sm text-red-400 font-semibold">
-                This product is currently unavailable. Check back later.
-              </span>
+              <span className="text-sm text-red-400 font-semibold">Currently unavailable. Check back later.</span>
             </div>
           )}
 
-          {/* Divider + meta */}
           <div className="pt-2 border-t" style={{ borderColor:'rgba(255,255,255,0.06)' }}>
             <div className="flex flex-wrap gap-3 mt-4">
               {[

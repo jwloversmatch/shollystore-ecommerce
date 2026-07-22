@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   useGetProductsQuery,
@@ -13,38 +14,35 @@ import ProductQuickViewModal from "../components/ProductQuickViewModal";
 import type { ProductItem, CategoryItem } from "../types/home";
 import { ACCENT } from "../types/home";
 
-// Import all home sub‑components
 import HomeLoading from "./home/HomeLoading";
 import HomeHero from "./home/HomeHero";
 import HomeMarquee from "./home/HomeMarquee";
 import HomeFeatures from "./home/HomeFeatures";
 import HomeCategoryBrowser from "./home/HomeCategoryBrowser";
-import HomeProductGrid from "./home/HomeProductGrid";
 import HomeSpecialOffer from "./home/HomeSpecialOffer";
+import FeaturedProductsGrid from "../components/FeaturedProductsGrid";
+import { ArrowRight } from "lucide-react";
 
-// Helper: safely extract category name from product (string or populated object)
 const getProductCategoryName = (p: ProductItem): string => {
   if (!p.category) return "General";
-  return typeof p.category === "string"
-    ? p.category
-    : p.category.name ?? "General";
+  return typeof p.category === "string" ? p.category : p.category.name ?? "General";
 };
 
 const Home = () => {
-  const { data: products, isLoading: pLoad } = useGetProductsQuery({});
+  const { data: productsResp } = useGetProductsQuery({});   // returns { products, pagination }
   const { data: heroSlides, isLoading: sLoad } = useGetHeroSlidesQuery({});
   const { data: categories = [], isLoading: cLoad } = useGetCategoriesQuery({});
   const { data: publicSettings } = useGetPublicSettingsQuery({});
+  const navigate = useNavigate();
 
   const landingMode = publicSettings?.landingMode || false;
-  const isPageLoading = pLoad || sLoad || cLoad;
+  const isPageLoading = !productsResp || sLoad || cLoad;
 
   const displayProducts = useMemo<ProductItem[]>(
-    () => products || [],
-    [products]
+    () => productsResp?.products || [],
+    [productsResp]
   );
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [searchTerm, setSearchTerm] = useState("");
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [modalProduct, setModalProduct] = useState<ProductItem | null>(null);
@@ -69,46 +67,22 @@ const Home = () => {
     setCurrentIndex((p) => (p - 1 + heroSlides.length) % heroSlides.length);
   };
 
-  // Category list for UI – based on actual Category collection, not products
-  const categoryList = useMemo(
-    () => ["All", ...categories.map((c: CategoryItem) => c.name)],
-    [categories]
-  );
-
-  // Category counts – now using safe category name extraction
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { All: displayProducts.length };
-    categories.forEach((c: CategoryItem) => {
-      counts[c.name] = displayProducts.filter(
+  const categoryData = useMemo(() => {
+    return categories.map((c: CategoryItem) => ({
+      name: c.name,
+      slug: c.slug,
+      count: displayProducts.filter(
         (p) => getProductCategoryName(p) === c.name
-      ).length;
-    });
-    return counts;
-  }, [displayProducts, categories]);
+      ).length,
+    }));
+  }, [categories, displayProducts]);
 
-  // Filtered products – same adjustment
-  const filteredProducts = useMemo(() => {
-    let f = displayProducts;
-    if (selectedCategory !== "All")
-      f = f.filter(
-        (p) => getProductCategoryName(p) === selectedCategory
-      );
-    if (searchTerm.trim())
-      f = f.filter((p) =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    return f.slice().sort((a, b) => b._id.localeCompare(a._id));
-  }, [displayProducts, selectedCategory, searchTerm]);
-
-  // ─── Updated generic fallbacks ──────────────────────────────────────────
   const heroTagline = publicSettings?.heroTagline || "🔥 Your One‑Stop Shop";
-  const heroTitle =
-    publicSettings?.heroTitle || "Shop the | Best Deals";
+  const heroTitle = publicSettings?.heroTitle || "Shop the | Best Deals";
   const heroDescription =
     publicSettings?.heroDescription ||
     "Quality products, unbeatable prices. Everything you need, delivered fast.";
-  const specialOfferTitle =
-    publicSettings?.specialOfferTitle || "Special Offer";
+  const specialOfferTitle = publicSettings?.specialOfferTitle || "Special Offer";
   const specialOfferText =
     publicSettings?.specialOfferText ||
     "Get ₦500 off your first order over ₦10,000. Use code FIRST500";
@@ -117,11 +91,10 @@ const Home = () => {
     ? heroTitle.split("|").map((s: string) => s.trim())
     : [heroTitle, ""];
 
-  // ─── Structured data ──────────────────────────────────────────────────────
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "ShollyStore",                     // fixed brand name
+    name: "ShollyStore",
     url: "https://shollystore-ecommerce.vercel.app",
     logo: "https://shollystore-ecommerce.vercel.app/logo.png",
   };
@@ -137,11 +110,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] relative overflow-x-hidden">
-      <SEO
-        title={heroTitle.replace("|", "").trim()}
-        description={heroDescription}
-        canonicalUrl="https://shollystore-ecommerce.vercel.app"
-      />
+      <SEO title={heroTitle.replace("|", "").trim()} description={heroDescription} canonicalUrl="https://shollystore-ecommerce.vercel.app" />
       <StructuredData data={organizationSchema} />
       <StructuredData data={websiteSchema} />
 
@@ -178,27 +147,46 @@ const Home = () => {
         setCurrentIndex={setCurrentIndex}
       />
 
+      {/* Enter Shop CTA */}
+      <section className="py-10 bg-[#0A0A0B]">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-2xl md:text-3xl font-black text-white mb-3">Ready to explore?</h2>
+            <p className="text-gray-400 max-w-md mx-auto mb-8">Browse our full catalog of products across all categories.</p>
+            <motion.button
+              whileHover={{ scale: 1.05, boxShadow: `0 18px 44px ${ACCENT}55` }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => navigate('/shop')}
+              className="inline-flex items-center gap-2 px-10 py-4 rounded-full font-black text-lg text-white"
+              style={{ background: ACCENT, boxShadow: `0 8px 24px ${ACCENT}44` }}
+            >
+              Enter Shop <ArrowRight className="w-5 h-5" />
+            </motion.button>
+          </motion.div>
+        </div>
+      </section>
+
       <HomeMarquee categoryNames={categoryNames} />
       <HomeFeatures />
-      <HomeCategoryBrowser
-        categoryList={categoryList}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        categoryCounts={categoryCounts}
-      />
-      <HomeProductGrid
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        filteredProducts={filteredProducts}
-        categoryList={categoryList}
-        setModalProduct={setModalProduct}
-      />
-      <HomeSpecialOffer
-        specialOfferTitle={specialOfferTitle}
-        specialOfferText={specialOfferText}
-      />
+
+      <HomeCategoryBrowser categories={categoryData} />
+
+      <section className="bg-[#111111] py-14 md:py-18">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <div className="mb-8">
+            <p className="text-xs font-black uppercase tracking-[0.2em] mb-2" style={{ color: ACCENT }}>Featured</p>
+            <h2 className="text-3xl md:text-4xl font-black text-white">Best Sellers</h2>
+          </div>
+          <FeaturedProductsGrid />
+        </div>
+      </section>
+
+      <HomeSpecialOffer specialOfferTitle={specialOfferTitle} specialOfferText={specialOfferText} />
 
       <ProductQuickViewModal
         product={modalProduct}

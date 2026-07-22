@@ -28,12 +28,16 @@ const Account = React.lazy(() => import('./pages/Account'));
 const ProductDetail = React.lazy(() => import('./pages/ProductDetail'));
 const Coupons = React.lazy(() => import('./pages/admin/Coupons'));
 
+// --- New Pages ---
+const ShopPage = React.lazy(() => import('./pages/ShopPage'));
+const CategoryPage = React.lazy(() => import('./pages/CategoryPage'));
+
 import Settings from './pages/admin/Settings';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
 
-// Dark-themed loading fallback (no white flash)
+// Dark‑themed loading fallback (no white flash)
 const LoadingFallback = () => (
   <div
     className="min-h-screen flex justify-center items-center"
@@ -61,6 +65,8 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Home />} />
+            <Route path="/shop" element={<ShopPage />} />
+            <Route path="/category/:slug" element={<CategoryPage />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/login" element={<Login />} />
@@ -70,8 +76,8 @@ function App() {
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/account" element={<Account />} />
 
-            {/* Product Detail – public */}
-            <Route path="/product/:slug" element={<ProductDetail />} />
+            {/* Product Detail – public (updated slug param) */}
+            <Route path="/products/:slug" element={<ProductDetail />} />
 
             {/* Protected Admin Routes */}
             <Route element={<AdminRoute />}>

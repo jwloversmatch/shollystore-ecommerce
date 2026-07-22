@@ -2,36 +2,33 @@ import { Request, Response } from "express";
 import { Product } from "../models/Product";
 import { Category } from "../models/Category";
 
-// Helper: given a category identifier (slug or ID), return the category doc and all its descendant IDs
 const resolveCategoryWithDescendants = async (identifier: string) => {
   const isObjectId = /^[0-9a-fA-F]{24}$/.test(identifier);
   const category = isObjectId
     ? await Category.findById(identifier)
     : await Category.findOne({ slug: identifier });
-
   if (!category) return null;
-
-  // Get all child IDs (uses the static method we added to the Category model)
   const childIds = await Category.getAllChildIds(category._id);
   return [category._id, ...childIds];
 };
 
-// @desc    Fetch all products (with optional category filter)
-// @route   GET /api/products?category=hair&includeSubcategories=true
-export const getProducts = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
+// @desc    Fetch products (with optional filters, pagination)
+// @route   GET /api/products
+export const getProducts = async (req: Request, res: Response): Promise<void> => {
   try {
     const filter: any = {};
 
     // Category filtering
     if (req.query.category) {
-      const includeSubcategories = req.query.includeSubcategories !== "false"; // default true
+      const includeSubcategories = req.query.includeSubcategories !== "false";
+
+      // Convert to plain string (Express can sometimes give an array, but we expect a single value)
+      const categoryParam = Array.isArray(req.query.category)
+        ? String(req.query.category[0])
+        : String(req.query.category);
+
       if (includeSubcategories) {
-        const categoryIds = await resolveCategoryWithDescendants(
-          req.query.category as string,
-        );
+        const categoryIds = await resolveCategoryWithDescendants(categoryParam);
         if (!categoryIds) {
           res.status(400).json({ message: "Category not found" });
           return;
@@ -39,53 +36,48 @@ export const getProducts = async (
         filter.category = { $in: categoryIds };
       } else {
         // Only the exact category (by ID or slug)
-        const isObjectId = /^[0-9a-fA-F]{24}$/.test(
-          req.query.category as string,
-        );
-        if (req.query.category !== undefined) {
-          const categoryParam = req.query.category;
-          const includeSubcategories =
-            req.query.includeSubcategories !== "false"; // default true
-
-          // Normalize to a plain string
-          const categoryValue = Array.isArray(categoryParam)
-            ? String(categoryParam[0])
-            : String(categoryParam);
-
-          if (includeSubcategories) {
-            const categoryIds =
-              await resolveCategoryWithDescendants(categoryValue);
-            if (!categoryIds) {
-              res.status(400).json({ message: "Category not found" });
-              return;
-            }
-            filter.category = { $in: categoryIds };
-          } else {
-            // Only the exact category (by ID or slug)
-            const isObjectId = /^[0-9a-fA-F]{24}$/.test(categoryValue);
-            if (isObjectId) {
-              filter.category = categoryValue;
-            } else {
-              const category = await Category.findOne({ slug: categoryValue });
-              if (!category) {
-                res.status(400).json({ message: "Category not found" });
-                return;
-              }
-              filter.category = category._id;
-            }
+        const isObjectId = /^[0-9a-fA-F]{24}$/.test(categoryParam);
+        if (isObjectId) {
+          filter.category = categoryParam;
+        } else {
+          const category = await Category.findOne({ slug: categoryParam });
+          if (!category) {
+            res.status(400).json({ message: "Category not found" });
+            return;
           }
+          filter.category = category._id;
         }
       }
     }
 
-    // Other potential filters (example: featured, stock, etc.) can be added here
-    // e.g., if (req.query.featured) filter.isFeatured = true;
+    // Featured filter
+    if (req.query.featured === "true") {
+      filter.isFeatured = true;
+    }
 
-    const products = await Product.find(filter)
-      .populate("category", "name slug parent") // now we get the referenced category info
-      .sort({ createdAt: -1 });
+    // Pagination
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 12;
+    const skip = (page - 1) * limit;
 
-    res.json(products);
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .populate("category", "name slug parent")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Product.countDocuments(filter),
+    ]);
+
+    res.json({
+      products,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -93,10 +85,7 @@ export const getProducts = async (
 
 // @desc    Get a single product by slug
 // @route   GET /api/products/:slug
-export const getProductBySlug = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
+export const getProductBySlug = async (req: Request, res: Response): Promise<void> => {
   try {
     const product = await Product.findOne({ slug: req.params.slug })
       .populate("category", "name slug parent")

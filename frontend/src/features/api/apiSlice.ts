@@ -1,7 +1,8 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { Order } from "../../types/account";
+import type { ProductItem } from "../../types/home"; // ✅ imported
 
-// ─── Response types for the new endpoints ──────────────────────────────────────
+// ─── Response types ───────────────────────────────────────────────────────────
 interface VerifyPaymentResponse {
   status: boolean;
   message: string;
@@ -14,6 +15,17 @@ interface VerifyPaymentResponse {
   };
 }
 
+export interface ProductsResponse {
+  products: ProductItem[]; // ✅ properly typed, no any
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+// ─── API Slice ────────────────────────────────────────────────────────────────
 export const apiSlice = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
@@ -34,18 +46,29 @@ export const apiSlice = createApi({
     "Coupon",
   ],
   endpoints: (builder) => ({
-    // ─── Products (public) ────────────────────────────────────────────────────
-    getProducts: builder.query({
-      query: (filters?: { category?: string; includeSubcategories?: boolean }) => {
-        const params = new URLSearchParams();
-        params.append("limit", "9999");
-        if (filters?.category) {
-          params.append("category", filters.category);
-          if (filters.includeSubcategories !== undefined) {
-            params.append("includeSubcategories", String(filters.includeSubcategories));
-          }
+    // ══════════════════════════════════════════════════════════════════
+    // Products (public)
+    // ══════════════════════════════════════════════════════════════════
+    getProducts: builder.query<ProductsResponse, {
+      category?: string;
+      includeSubcategories?: boolean;
+      featured?: boolean;
+      page?: number;
+      limit?: number;
+    }>({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.category) {
+          searchParams.append("category", params.category);
+          if (params.includeSubcategories !== undefined)
+            searchParams.append("includeSubcategories", String(params.includeSubcategories));
         }
-        return `/products?${params.toString()}`;
+        if (params?.featured) searchParams.append("featured", "true");
+        if (params?.page) searchParams.append("page", String(params.page));
+        if (params?.limit) searchParams.append("limit", String(params.limit));
+        else searchParams.append("limit", "12"); // default page size
+        const qs = searchParams.toString();
+        return `/products${qs ? `?${qs}` : ""}`;
       },
       providesTags: ["Product"],
     }),
@@ -55,7 +78,7 @@ export const apiSlice = createApi({
       providesTags: ["Product"],
     }),
 
-    // ─── Orders (public) ──────────────────────────────────────────────────────
+    // ─── Orders (public) ────────────────────────────────────────────────────
     createOrder: builder.mutation({
       query: (orderData) => ({
         url: "/orders",
@@ -74,7 +97,7 @@ export const apiSlice = createApi({
       providesTags: ["Order"],
     }),
 
-    // ─── Admin Orders ─────────────────────────────────────────────────────────
+    // ─── Admin Orders ───────────────────────────────────────────────────────
     getAllOrders: builder.query({
       query: ({
         page = 1,
@@ -113,7 +136,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["Order", "Product"],
     }),
 
-    // ─── Admin Products ───────────────────────────────────────────────────────
+    // ─── Admin Products ─────────────────────────────────────────────────────
     createProduct: builder.mutation({
       query: (productData) => ({
         url: "/admin/products",
@@ -140,7 +163,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["Product"],
     }),
 
-    // ─── Upload ───────────────────────────────────────────────────────────────
+    // ─── Upload ─────────────────────────────────────────────────────────────
     uploadImage: builder.mutation({
       query: (formData) => ({
         url: "/upload",
@@ -149,7 +172,7 @@ export const apiSlice = createApi({
       }),
     }),
 
-    // ─── Auth ─────────────────────────────────────────────────────────────────
+    // ─── Auth ───────────────────────────────────────────────────────────────
     login: builder.mutation({
       query: (credentials) => ({
         url: "/auth/login",
@@ -198,7 +221,7 @@ export const apiSlice = createApi({
       }),
     }),
 
-    // ─── Addresses ────────────────────────────────────────────────────────────
+    // ─── Addresses ──────────────────────────────────────────────────────────
     getAddresses: builder.query({
       query: () => "/auth/addresses",
       transformResponse: (response: {
@@ -246,7 +269,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["User"],
     }),
 
-    // ─── Admin Analytics ──────────────────────────────────────────────────────
+    // ─── Admin Analytics ────────────────────────────────────────────────────
     getSalesAnalytics: builder.query({
       query: () => "/admin/orders/analytics",
       providesTags: ["Order"],
@@ -265,7 +288,7 @@ export const apiSlice = createApi({
       query: () => "/admin/orders/analytics/order-customers",
     }),
 
-    // ─── Admin Users ──────────────────────────────────────────────────────────
+    // ─── Admin Users ────────────────────────────────────────────────────────
     getUsers: builder.query({
       query: () => "/admin/users",
       providesTags: ["User"],
@@ -280,7 +303,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["User"],
     }),
 
-    // ─── Admin Inventory ──────────────────────────────────────────────────────
+    // ─── Admin Inventory ────────────────────────────────────────────────────
     updateStock: builder.mutation({
       query: ({ id, stock }) => ({
         url: `/admin/inventory/${id}`,
@@ -290,7 +313,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["Product"],
     }),
 
-    // ─── Settings ─────────────────────────────────────────────────────────────
+    // ─── Settings ───────────────────────────────────────────────────────────
     getSettings: builder.query({
       query: () => "/admin/settings",
       providesTags: ["Settings"],
@@ -314,7 +337,7 @@ export const apiSlice = createApi({
       providesTags: ["Settings"],
     }),
 
-    // ─── Hero Slides ──────────────────────────────────────────────────────────
+    // ─── Hero Slides ────────────────────────────────────────────────────────
     getHeroSlides: builder.query({
       query: () => "/hero-slides",
       providesTags: ["HeroSlide"],
@@ -347,8 +370,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["HeroSlide"],
     }),
 
-    // ─── Categories (public & admin) ──────────────────────────────────────────
-    // Flat list (with optional parent filter)
+    // ─── Categories (public & admin) ────────────────────────────────────────
     getCategories: builder.query({
       query: (params?: { parent?: string | null }) => {
         const searchParams = new URLSearchParams();
@@ -365,13 +387,11 @@ export const apiSlice = createApi({
       providesTags: ["Category"],
     }),
 
-    // Hierarchical tree
     getCategoryTree: builder.query({
       query: () => "/categories/tree",
       providesTags: ["Category"],
     }),
 
-    // Admin category mutations
     createCategory: builder.mutation({
       query: (data) => ({
         url: "/admin/categories",
@@ -398,7 +418,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["Category"],
     }),
 
-    // ─── Coupons ──────────────────────────────────────────────────────────────
+    // ─── Coupons ────────────────────────────────────────────────────────────
     getCoupons: builder.query({
       query: () => "/admin/coupons",
       providesTags: ["Coupon"],
@@ -427,7 +447,7 @@ export const apiSlice = createApi({
       }),
     }),
 
-    // ─── Marketing ────────────────────────────────────────────────────────────
+    // ─── Marketing ──────────────────────────────────────────────────────────
     sendMarketingEmail: builder.mutation({
       query: (data) => ({
         url: "/admin/marketing/send",
@@ -480,7 +500,7 @@ export const {
   useUpdateHeroSlideMutation,
   useDeleteHeroSlideMutation,
   useGetCategoriesQuery,
-  useGetCategoryTreeQuery,            // NEW
+  useGetCategoryTreeQuery,
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
