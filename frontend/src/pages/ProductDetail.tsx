@@ -127,7 +127,7 @@ const ProductDetail = () => {
       style={{ background:'#0A0A0B' }}>
 
       <SEO title={product.name}
-        description={`Buy ${product.name} from LotceWieth. ${product.description||''}`}
+        description={`Buy ${product.name} from Sholex. ${product.description||''}`}
         ogImage={product.images?.[0]} ogType="product" />
 
       {/* Ambient orb */}
