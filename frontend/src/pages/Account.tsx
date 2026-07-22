@@ -23,6 +23,7 @@ import AccountProfile from "./account/AccountProfile";
 import OrderDetailModal from "./account/OrderDetailModal";
 
 import type { Order, IAddress } from "../types/account";
+import PushNotificationManager from "../components/PushNotificationManager";
 
 const Account = () => {
   const navigate = useNavigate();
@@ -260,6 +261,11 @@ const Account = () => {
             onDeleteAddress={handleDeleteAddress}
             onSetDefaultAddress={handleSetDefaultAddress}
           />
+        )}
+        {activeTab === "profile" && (
+          <div className="mt-8">
+            <PushNotificationManager />
+          </div>
         )}
       </AnimatePresence>
 

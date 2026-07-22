@@ -10,7 +10,8 @@ import {
 import {
   ArrowLeft, Banknote, MessageCircle, Building, Pencil, Trash2,
   Check, Home, History, Flame, AlertCircle, Loader2, ChevronDown,
-} from "lucide-react";
+  Bell, Send,
+} from "lucide-react";   // added Bell and Send
 import { motion, AnimatePresence } from "framer-motion";
 import ConfirmationModal from "../../components/ConfirmationModal";
 
@@ -108,6 +109,45 @@ const Settings = () => {
   const { data:settings, isLoading, refetch } = useGetSettingsQuery({});
   const [updateSettings, { isLoading:updating }] = useUpdateSettingsMutation();
   const { data:changeLogs = [] }               = useGetSettingsChangesQuery({});
+
+  // ── Push notification state ──────────────────────────────────────────────
+  const [pushTitle, setPushTitle] = useState("");
+  const [pushBody,  setPushBody]  = useState("");
+  const [pushUrl,   setPushUrl]   = useState("");
+  const [sendingPush, setSendingPush] = useState(false);
+
+  const handleSendPush = async () => {
+    if (!pushTitle.trim() || !pushBody.trim()) {
+      toast.error("Title and body are required");
+      return;
+    }
+    const token = localStorage.getItem("token");
+    setSendingPush(true);
+    try {
+      const res = await fetch("/api/push/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: pushTitle.trim(),
+          body: pushBody.trim(),
+          url: pushUrl.trim() || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to send");
+      toast.success("Push notification sent!");
+      setPushTitle("");
+      setPushBody("");
+      setPushUrl("");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
+      toast.error("Failed to send push notification");
+    } finally {
+      setSendingPush(false);
+    }
+  };
 
   const { register, handleSubmit, reset, formState:{ errors } } =
     useForm<SettingsFormData>({ resolver: zodResolver(settingsSchema) });
@@ -360,6 +400,61 @@ const Settings = () => {
                     <p className="text-sm">No payment details configured yet. Click <strong className="text-white">Edit Settings</strong> to add them.</p>
                   </div>
                 )}
+              </div>
+            </DarkCard>
+
+            {/* ✨ Push Notifications Card (always visible) */}
+            <DarkCard accentColor="#8b5cf6">
+              <div className="p-6 md:p-7">
+                <SectionLabel icon={<Bell className="w-4 h-4" />} label="Push Notifications" color="#8b5cf6" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Notification Title</Label>
+                    <input
+                      type="text"
+                      value={pushTitle}
+                      onChange={(e) => setPushTitle(e.target.value)}
+                      placeholder="New Arrival"
+                      className={inputCls(false)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Message Body</Label>
+                    <input
+                      type="text"
+                      value={pushBody}
+                      onChange={(e) => setPushBody(e.target.value)}
+                      placeholder="Check out our latest products!"
+                      className={inputCls(false)}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label hint="optional">Click URL</Label>
+                    <input
+                      type="text"
+                      value={pushUrl}
+                      onChange={(e) => setPushUrl(e.target.value)}
+                      placeholder="https://shollystore-ecommerce.vercel.app/shop"
+                      className={inputCls(false)}
+                    />
+                  </div>
+                </div>
+                <div className="mt-5 flex justify-end">
+                  <motion.button
+                    whileHover={{ scale: 1.02, boxShadow: `0 12px 28px #8b5cf644` }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={sendingPush || !pushTitle.trim() || !pushBody.trim()}
+                    onClick={handleSendPush}
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-black text-white text-sm transition-all disabled:opacity-55"
+                    style={{ background: "#8b5cf6", boxShadow: "0 6px 18px #8b5cf644" }}
+                  >
+                    {sendingPush ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
+                    ) : (
+                      <><Send className="w-4 h-4" /> Broadcast Notification</>
+                    )}
+                  </motion.button>
+                </div>
               </div>
             </DarkCard>
           </motion.div>

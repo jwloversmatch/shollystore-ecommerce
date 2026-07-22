@@ -21,6 +21,7 @@ import categoryRoutes from './routes/categoryRoutes';
 import adminCategoryRoutes from './routes/adminCategoryRoutes';
 import adminMarketingRoutes from './routes/adminMarketingRoutes';
 import couponRoutes from './routes/couponRoutes';
+import pushRoutes from './routes/pushRoutes';
 
 dotenv.config();
 
@@ -53,6 +54,7 @@ app.use('/api/admin/categories', adminCategoryRoutes);
 app.use('/api/admin/marketing', adminMarketingRoutes);
 app.use('/api/admin/coupons', couponRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api/push', pushRoutes);
 
 // Health Check (public)
 app.get("/api/health", (req: Request, res: Response) => {
