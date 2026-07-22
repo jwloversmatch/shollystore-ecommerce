@@ -9,8 +9,19 @@ export interface ProductItem {
   stock?: number;
   slug?: string;
   description?: string;
-  brand?: string;   // ✅ added
-  sku?: string;     // ✅ added
+  brand?: string;
+  sku?: string;
+  // ─── Newly added fields from the product schema ────────────────────────
+  compareAtPrice?: number;
+  discount?: {
+    percentage: number;
+    validUntil?: Date;
+  };
+  tags?: string[];
+  isFeatured?: boolean;
+  attributes?: Record<string, string | number | boolean>;
+  barcode?: string;
+  taxClass?: string;
 }
 
 export interface HeroSlide {

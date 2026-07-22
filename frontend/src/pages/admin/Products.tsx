@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
@@ -21,8 +21,8 @@ import { ProductRowSkeleton } from '../../components/Skeletons';
 const ACCENT      = '#e8622a';
 const PLACEHOLDER = 'https://via.placeholder.com/150';
 
-// ─── Types – use the shared type from types/home ──────────────────────────────
-import type { ProductItem } from '../../types/home'; // ✅ no local interface
+// ─── Types ─────────────────────────────────────────────────────────────────────
+import type { ProductItem } from '../../types/home';
 interface CategoryItem {
   _id: string;
   name: string;
@@ -30,13 +30,20 @@ interface CategoryItem {
   parent?: string | null;
 }
 
-// ─── Schema ───────────────────────────────────────────────────────────────────
+// ─── Schema (extended) ────────────────────────────────────────────────────────
 const productSchema = z.object({
-  name:        z.string().min(1, 'Product name is required'),
-  price:       z.string().min(1, 'Price is required').refine(v => Number(v) > 0, 'Price must be greater than 0'),
-  stock:       z.string().min(1, 'Stock is required').refine(v => Number(v) >= 0, 'Stock cannot be negative'),
-  category:    z.string().min(1, 'Category is required'),
-  description: z.string().optional(),
+  name:            z.string().min(1, 'Product name is required'),
+  price:           z.string().min(1, 'Price is required').refine(v => Number(v) > 0, 'Price must be greater than 0'),
+  stock:           z.string().min(1, 'Stock is required').refine(v => Number(v) >= 0, 'Stock cannot be negative'),
+  category:        z.string().min(1, 'Category is required'),
+  description:     z.string().optional(),
+  brand:           z.string().optional(),
+  sku:             z.string().optional(),
+  tags:            z.string().optional(),               // comma separated
+  compareAtPrice:  z.string().optional(),
+  discountPercent: z.string().optional(),
+  isFeatured:      z.boolean().optional(),
+  attributes:      z.string().optional(),               // JSON string
 });
 type ProductFormData = z.infer<typeof productSchema>;
 
@@ -44,8 +51,8 @@ type ProductFormData = z.infer<typeof productSchema>;
 const buildInputCls = (hasError: boolean) =>
   ['w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none transition-all border',
     hasError
-      ? 'border-red-500/50 ring-2 ring-red-500/10'
-      : 'border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15',
+      ? 'border border-red-500/50 ring-2 ring-red-500/10'
+      : 'border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15',
   ].join(' ');
 
 const formatPriceInput = (raw: string): string => {
@@ -59,11 +66,12 @@ const DLabel = ({ children }: { children: React.ReactNode }) => (
   <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">{children}</p>
 );
 
-// Helper: extract category name for display
+// Helper: extract category name for display (still used in table)
 const getCategoryName = (cat: ProductItem['category']): string => {
   if (!cat) return '';
   return typeof cat === 'string' ? cat : cat.name;
 };
+
 // Helper: extract category ID
 const getCategoryId = (cat: ProductItem['category']): string => {
   if (!cat) return '';
@@ -74,9 +82,8 @@ const getCategoryId = (cat: ProductItem['category']): string => {
 const Products = () => {
   const navigate = useNavigate();
 
-  // ✅ Fetch all products for admin
+  // Fetch all products
   const { data: productsData, isLoading } = useGetProductsQuery({ limit: 9999 });
-  // Memoize the product array so it's stable across renders
   const products = useMemo<ProductItem[]>(
     () => productsData?.products ?? [],
     [productsData?.products]
@@ -90,29 +97,39 @@ const Products = () => {
   const [updateStock]                      = useUpdateStockMutation();
   const [sendMarketingEmail, { isLoading: isSendingMarketing }] = useSendMarketingEmailMutation();
 
+  // Filter & search state
   const [searchTerm,     setSearchTerm]     = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [showLowStock,   setShowLowStock]   = useState(false);
 
+  // Drawer state
   const [isDrawerOpen,   setIsDrawerOpen]   = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
   const [uploading,      setUploading]      = useState(false);
-  const [file,           setFile]           = useState<File | null>(null);
+  const [files,          setFiles]          = useState<File[]>([]);       // multiple files
   const [notifyCustomers,setNotifyCustomers]= useState(false);
 
+  // Delete modal
   const [modalOpen,   setModalOpen]   = useState(false);
   const [modalAction, setModalAction] = useState<{ type:'delete'; id:string } | null>(null);
 
-  const [marketingOpen,   setMarketingOpen]   = useState(false);
-  const [marketingProduct,setMarketingProduct]= useState<ProductItem | null>(null);
-  const [marketingType,   setMarketingType]   = useState<'new_arrival'|'back_in_stock'>('new_arrival');
-  const [customMessage,   setCustomMessage]   = useState('');
+  // Marketing modal
+  const [marketingOpen,    setMarketingOpen]    = useState(false);
+  const [marketingProduct, setMarketingProduct] = useState<ProductItem | null>(null);
+  const [marketingType,    setMarketingType]    = useState<'new_arrival'|'back_in_stock'>('new_arrival');
+  const [customMessage,    setCustomMessage]    = useState('');
 
-  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } =
+  const { register, handleSubmit, reset, setValue, control, formState: { errors, isSubmitting } } =
     useForm<ProductFormData>({ resolver: zodResolver(productSchema) });
 
+  // Watched fields (use useWatch to avoid react-hooks/incompatible-library warning)
+  const isFeatured = useWatch({ control, name: 'isFeatured' });
+
+  // Price inputs
   const [rawPrice,       setRawPrice]       = useState('');
+  const [rawCompareAt,   setRawCompareAt]   = useState('');
   const priceInputRef    = useRef<HTMLInputElement>(null);
+  const compareAtRef     = useRef<HTMLInputElement>(null);
   const pendingCursorRef = useRef<number | null>(null);
 
   useLayoutEffect(() => {
@@ -122,6 +139,7 @@ const Products = () => {
     }
   });
 
+  // ── Filter & search logic ──────────────────────────────────────────────────
   const filterCategories = useMemo(() => {
     const opts = [{ _id: 'All', name: 'All' }, ...categories];
     return opts;
@@ -145,22 +163,42 @@ const Products = () => {
     if (product) {
       setEditingProduct(product);
       reset({
-        name: product.name,
-        price: product.price.toString(),
-        stock: String(product.stock ?? 0),
-        category: getCategoryId(product.category),
-        description: product.description || '',
+        name:           product.name,
+        price:          product.price.toString(),
+        stock:          String(product.stock ?? 0),
+        category:       getCategoryId(product.category),
+        description:    product.description || '',
+        brand:          product.brand || '',
+        sku:            product.sku || '',
+        tags:           product.tags?.join(', ') || '',
+        compareAtPrice: product.compareAtPrice?.toString() || '',
+        discountPercent: product.discount?.percentage?.toString() || '',
+        isFeatured:     product.isFeatured || false,
+        attributes:     product.attributes ? JSON.stringify(product.attributes) : '',
       });
       setRawPrice(product.price.toString());
+      setRawCompareAt(product.compareAtPrice?.toString() || '');
     } else {
       setEditingProduct(null);
-      reset({ name:'', price:'', stock:'', category:'', description:'' });
+      reset({
+        name:'', price:'', stock:'', category:'', description:'',
+        brand:'', sku:'', tags:'', compareAtPrice:'', discountPercent:'',
+        isFeatured: false, attributes:''
+      });
       setRawPrice('');
+      setRawCompareAt('');
     }
-    setFile(null); setNotifyCustomers(false); setIsDrawerOpen(true);
+    setFiles([]);
+    setNotifyCustomers(false);
+    setIsDrawerOpen(true);
   };
 
-  const handleCloseDrawer = () => { setIsDrawerOpen(false); setEditingProduct(null); setFile(null); setNotifyCustomers(false); };
+  const handleCloseDrawer = () => {
+    setIsDrawerOpen(false);
+    setEditingProduct(null);
+    setFiles([]);
+    setNotifyCustomers(false);
+  };
 
   const confirmDelete = async () => {
     if (!modalAction || modalAction.type !== 'delete') return;
@@ -172,7 +210,12 @@ const Products = () => {
     try { await updateStock({ id, stock: Math.max(0, cur + delta) }).unwrap(); } catch { /* empty */ }
   };
 
-  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ── Price change handler (also used for compareAtPrice) ──────────────────
+  const handlePriceChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setRaw: React.Dispatch<React.SetStateAction<string>>,
+    fieldName: 'price' | 'compareAtPrice'
+  ) => {
     const el = e.target;
     const cursor = el.selectionStart ?? el.value.length;
     const nonCommasBefore = el.value.slice(0, cursor).replace(/,/g, '').length;
@@ -189,31 +232,56 @@ const Products = () => {
       if (newFormatted[i] !== ',') { charCount++; if (charCount === nonCommasBefore) { newCursor = i + 1; break; } }
     }
     pendingCursorRef.current = newCursor;
-    setRawPrice(cleaned); setValue('price', cleaned, { shouldValidate: true });
+    setRaw(cleaned);
+    setValue(fieldName, cleaned, { shouldValidate: true });
   };
 
+  // ── Submit ─────────────────────────────────────────────────────────────────
   const onSubmit = async (data: ProductFormData) => {
     try {
-      let imageUrl = editingProduct?.images?.[0] || '';
-      if (file) {
+      const imageUrls: string[] = editingProduct?.images?.slice() || [];
+      if (files.length > 0) {
         setUploading(true);
-        const fd = new FormData(); fd.append('image', file);
-        const res = await uploadImage(fd).unwrap();
-        imageUrl = res.url; setUploading(false);
+        for (const file of files) {
+          const fd = new FormData();
+          fd.append('image', file);
+          const res = await uploadImage(fd).unwrap();
+          imageUrls.push(res.url);
+        }
+        setUploading(false);
       }
+
+      const tagsArray = data.tags
+        ? data.tags.split(',').map(t => t.trim()).filter(t => t.length > 0)
+        : [];
+      let attributes = undefined;
+      if (data.attributes) {
+        try { attributes = JSON.parse(data.attributes); } catch { /* ignore invalid JSON */ }
+      }
+
       const payload = {
-        name: data.name,
-        price: Number(data.price),
-        stock: Number(data.stock),
-        description: data.description || '',
-        category: data.category,
-        images: imageUrl ? [imageUrl] : [],
-        slug: data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        name:           data.name,
+        price:          Number(data.price),
+        compareAtPrice: data.compareAtPrice ? Number(data.compareAtPrice) : undefined,
+        stock:          Number(data.stock),
+        description:    data.description || '',
+        category:       data.category,
+        images:         imageUrls.length > 0 ? imageUrls : undefined,
+        slug:           data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        brand:          data.brand || undefined,
+        sku:            data.sku || undefined,
+        tags:           tagsArray.length > 0 ? tagsArray : undefined,
+        discount:       data.discountPercent && Number(data.discountPercent) > 0
+          ? { percentage: Number(data.discountPercent) }
+          : undefined,
+        isFeatured:     data.isFeatured || false,
+        attributes:     attributes,
       };
+
       if (editingProduct) {
         await updateProduct({ id: editingProduct._id, ...payload }).unwrap();
       } else {
-        await createProduct({ ...payload, notifyCustomers }).unwrap();
+        await createProduct({ ...payload, notifyCustomers: notifyCustomers }).unwrap();
       }
       handleCloseDrawer();
     } catch (err) {
@@ -230,7 +298,8 @@ const Products = () => {
         productId: marketingProduct._id,
         customMessage: marketingType === 'new_arrival' ? customMessage : undefined,
       }).unwrap();
-      toast.success('Emails sent!'); setMarketingOpen(false);
+      toast.success('Emails sent!');
+      setMarketingOpen(false);
     } catch (err) {
       const e = err as { data?: { message?: string } };
       toast.error(e?.data?.message || 'Failed to send emails');
@@ -395,7 +464,7 @@ const Products = () => {
                     </div>
                   </td>
 
-                  {/* Category (now showing name) */}
+                  {/* Category */}
                   <td className="px-4 sm:px-5 py-3">
                     <span className="text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full"
                       style={{ background:`${ACCENT}14`, color:ACCENT, border:`1px solid ${ACCENT}25` }}>
@@ -467,20 +536,32 @@ const Products = () => {
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
+                {/* Product Name */}
                 <div>
                   <DLabel>Product Name</DLabel>
-                  <input {...register('name')} placeholder="e.g. Organic Apple Juice"
+                  <input {...register('name')} placeholder="e.g. Luxury Lace Wig"
                     className={buildInputCls(!!errors.name)} />
                   {errors.name && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.name.message}</p>}
                 </div>
 
+                {/* Price + Compare At Price + Stock */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <DLabel>Price (₦)</DLabel>
                     <input ref={priceInputRef} type="text" inputMode="decimal"
-                      value={formatPriceInput(rawPrice)} onChange={handlePriceChange} placeholder="0.00"
+                      value={formatPriceInput(rawPrice)}
+                      onChange={(e) => handlePriceChange(e, setRawPrice, 'price')}
+                      placeholder="0.00"
                       className={buildInputCls(!!errors.price)} />
                     {errors.price && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.price.message}</p>}
+                  </div>
+                  <div>
+                    <DLabel>Compare At Price (₦)</DLabel>
+                    <input ref={compareAtRef} type="text" inputMode="decimal"
+                      value={formatPriceInput(rawCompareAt)}
+                      onChange={(e) => handlePriceChange(e, setRawCompareAt, 'compareAtPrice')}
+                      placeholder="e.g. original price"
+                      className={buildInputCls(false)} />
                   </div>
                   <div>
                     <DLabel>Stock</DLabel>
@@ -488,8 +569,14 @@ const Products = () => {
                       className={buildInputCls(!!errors.stock)} />
                     {errors.stock && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.stock.message}</p>}
                   </div>
+                  <div>
+                    <DLabel>Discount %</DLabel>
+                    <input type="number" min="0" max="100" step="1" {...register('discountPercent')} placeholder="e.g. 10"
+                      className={buildInputCls(false)} />
+                  </div>
                 </div>
 
+                {/* Category */}
                 <div>
                   <DLabel>Category</DLabel>
                   <select {...register('category')}
@@ -503,47 +590,98 @@ const Products = () => {
                   {errors.category && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.category.message}</p>}
                 </div>
 
+                {/* Brand + SKU */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <DLabel>Brand</DLabel>
+                    <input {...register('brand')} placeholder="e.g. Apple"
+                      className={buildInputCls(false)} />
+                  </div>
+                  <div>
+                    <DLabel>SKU</DLabel>
+                    <input {...register('sku')} placeholder="e.g. APL-123"
+                      className={buildInputCls(false)} />
+                  </div>
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <DLabel>Tags (comma separated)</DLabel>
+                  <input {...register('tags')} placeholder="e.g. new, trending, summer"
+                    className={buildInputCls(false)} />
+                </div>
+
+                {/* Description */}
                 <div>
                   <DLabel>Description</DLabel>
                   <textarea {...register('description')} rows={3} placeholder="Brief product description…"
                     className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none resize-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/12 transition-all" />
                 </div>
 
+                {/* Attributes (JSON) */}
                 <div>
-                  <DLabel>Product Image</DLabel>
+                  <DLabel>Attributes (JSON format)</DLabel>
+                  <textarea {...register('attributes')} rows={2} placeholder='{"material":"cotton","fit":"regular"}'
+                    className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none resize-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/12 transition-all font-mono text-xs" />
+                </div>
+
+                {/* Featured toggle */}
+                <div className="flex items-center justify-between p-4 rounded-xl border"
+                  style={{ background:'rgba(255,255,255,0.03)', borderColor:'rgba(255,255,255,0.07)' }}>
+                  <div>
+                    <p className="text-white text-sm font-bold">Featured Product</p>
+                    <p className="text-gray-600 text-xs">Show on homepage best sellers section</p>
+                  </div>
+                  <button type="button" onClick={() => setValue('isFeatured', !isFeatured)}
+                    className="relative w-11 h-6 rounded-full transition-colors duration-300 shrink-0"
+                    style={{ background: isFeatured ? ACCENT : '#2d2d2d' }}>
+                    <motion.div animate={{ x: isFeatured ? 20 : 2 }}
+                      transition={{ type:'spring', stiffness:500, damping:32 }}
+                      className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-md" />
+                  </button>
+                </div>
+
+                {/* Image upload (multiple) */}
+                <div>
+                  <DLabel>Product Images</DLabel>
                   <div className="space-y-3">
                     <label className="flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed cursor-pointer transition-colors hover:border-[#e8622a]/40"
                       style={{ background:'rgba(255,255,255,0.03)', borderColor:'rgba(255,255,255,0.12)' }}>
                       <UploadCloud className="w-5 h-5 text-gray-600 shrink-0" />
                       <span className="text-sm text-gray-600 flex-1 truncate">
-                        {file ? file.name : 'Click to choose an image…'}
+                        {files.length > 0 ? `${files.length} file(s) selected` : 'Click to choose images…'}
                       </span>
-                      <input type="file" accept="image/*" className="hidden"
-                        onChange={e => setFile(e.target.files?.[0] || null)} />
+                      <input type="file" accept="image/*" multiple className="hidden"
+                        onChange={e => setFiles(e.target.files ? Array.from(e.target.files) : [])} />
                     </label>
                     {uploading && (
                       <div className="flex items-center gap-2 text-sm" style={{ color:'#60a5fa' }}>
                         <Loader2 className="w-4 h-4 animate-spin" /> Uploading…
                       </div>
                     )}
-                    {file && (
-                      <div>
-                        <p className="text-[10px] text-gray-600 mb-1.5 uppercase font-bold tracking-wider">Preview</p>
-                        <img src={URL.createObjectURL(file)} alt="Preview"
-                          className="w-20 h-20 rounded-xl object-cover border" style={{ borderColor:'rgba(255,255,255,0.1)' }} />
+                    {files.length > 0 && (
+                      <div className="flex gap-2 flex-wrap">
+                        {files.map((file, idx) => (
+                          <img key={idx} src={URL.createObjectURL(file)} alt="Preview"
+                            className="w-16 h-16 rounded-xl object-cover border" style={{ borderColor:'rgba(255,255,255,0.1)' }} />
+                        ))}
                       </div>
                     )}
-                    {editingProduct?.images?.[0] && !file && (
+                    {editingProduct?.images?.length && files.length === 0 && (
                       <div>
-                        <p className="text-[10px] text-gray-600 mb-1.5 uppercase font-bold tracking-wider">Current</p>
-                        <img src={editingProduct.images[0]} alt="Current" loading="lazy"
-                          onError={e => { e.currentTarget.src = PLACEHOLDER; }}
-                          className="w-20 h-20 rounded-xl object-cover border" style={{ borderColor:'rgba(255,255,255,0.1)' }} />
+                        <p className="text-[10px] text-gray-600 mb-1.5 uppercase font-bold tracking-wider">Current Images</p>
+                        <div className="flex gap-2 flex-wrap">
+                          {editingProduct.images.map((img, idx) => (
+                            <img key={idx} src={img} alt="Current" loading="lazy"
+                              className="w-16 h-16 rounded-xl object-cover border" style={{ borderColor:'rgba(255,255,255,0.1)' }} />
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
 
+                {/* Notify customers (new product only) */}
                 {!editingProduct && (
                   <div className="flex items-center justify-between p-4 rounded-xl border"
                     style={{ background:'rgba(255,255,255,0.03)', borderColor:'rgba(255,255,255,0.07)' }}>
@@ -561,6 +699,7 @@ const Products = () => {
                   </div>
                 )}
 
+                {/* Footer */}
                 <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor:'rgba(255,255,255,0.07)' }}>
                   <motion.button type="button" whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                     onClick={handleCloseDrawer}
