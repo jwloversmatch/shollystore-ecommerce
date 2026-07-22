@@ -36,7 +36,7 @@ const getCategoryId = (cat: ProductItem['category']): string | undefined => {
   return typeof cat === 'string' ? cat : cat._id;
 };
 
-// Helper to find category path from tree – now typed with CategoryNode
+// Helper to find category path from tree
 const findCategoryById = (tree: CategoryNode[], id: string): CategoryNode | null => {
   for (const node of tree) {
     if (node._id === id) return node;
@@ -100,7 +100,7 @@ const ProductDetail = () => {
       <div className="min-h-screen pt-20 md:pt-24 pb-16 px-4 md:px-8 max-w-7xl mx-auto" style={{ background: '#0A0A0B' }}>
         <div className="h-9 w-20 rounded-xl animate-pulse mb-8" style={{ background: '#141414' }} />
         <div className="grid md:grid-cols-2 gap-10">
-          <div className="h-[400px] md:h-[500px] rounded-3xl animate-pulse" style={{ background: '#141414' }} />
+          <div className="h-[300px] md:h-[450px] rounded-3xl animate-pulse" style={{ background: '#141414' }} />
           <div className="space-y-5 pt-2">
             <div className="h-4 w-20 rounded-full animate-pulse" style={{ background: '#141414' }} />
             <div className="h-12 w-3/4 rounded-xl animate-pulse" style={{ background: '#141414' }} />
@@ -196,18 +196,20 @@ const ProductDetail = () => {
       </div>
 
       {/* Main layout */}
-      <div className="grid md:grid-cols-2 gap-8 lg:gap-14 items-start">
+      <div className="grid lg:grid-cols-2 gap-8 lg:gap-14 items-start">
 
-        {/* Image panel */}
+        {/* ─── Image panel (optimised for mobile) ─── */}
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1, duration: 0.5 }}
-          className="relative rounded-3xl overflow-hidden sticky top-24"
-          style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.07)', boxShadow: '0 24px 60px rgba(0,0,0,0.5)' }}>
+          className="relative rounded-3xl overflow-hidden"
+          style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.07)', boxShadow: '0 20px 50px rgba(0,0,0,0.4)' }}>
           <div className="absolute top-0 inset-x-0 h-px"
             style={{ background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
 
-          <div className="p-6 md:p-8 flex flex-col">
-            {/* Main image */}
-            <div className="flex items-center justify-center mb-4" style={{ minHeight: 380 }}>
+          <div className="p-4 md:p-6 flex flex-col">
+            {/* Main image – smaller on mobile */}
+            <div className="flex items-center justify-center bg-[#1a1a1a] rounded-2xl mb-4"
+              style={{ minHeight: 250, maxHeight: 360 }}
+            >
               {images[selectedImage] && !imgError ? (
                 <motion.img
                   key={selectedImage}
@@ -217,12 +219,12 @@ const ProductDetail = () => {
                   src={images[selectedImage]}
                   alt={product.name}
                   onError={() => setImgError(true)}
-                  className="max-h-80 md:max-h-96 w-full object-contain drop-shadow-2xl"
+                  className="max-h-full max-w-full object-contain p-4"
                   whileHover={{ scale: 1.02 }}
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center gap-3 h-80 w-full text-gray-700">
-                  <ImageOff className="w-16 h-16" />
+                <div className="flex flex-col items-center justify-center gap-3 h-full w-full text-gray-700">
+                  <ImageOff className="w-12 h-12" />
                   <p className="text-sm font-semibold">No image available</p>
                 </div>
               )}
@@ -230,13 +232,13 @@ const ProductDetail = () => {
 
             {/* Thumbnail row */}
             {images.length > 1 && (
-              <div className="flex gap-3 mt-2 justify-center">
+              <div className="flex gap-2 justify-center flex-wrap">
                 {images.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedImage(idx)}
-                    className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${
-                      idx === selectedImage ? 'border-[#e8622a] opacity-100' : 'border-white/10 opacity-60 hover:opacity-80'
+                    className={`w-14 h-14 rounded-xl overflow-hidden border-2 transition-all ${
+                      idx === selectedImage ? 'border-[#e8622a] opacity-100 scale-105' : 'border-white/10 opacity-60 hover:opacity-80'
                     }`}
                   >
                     <img src={img} alt="" className="w-full h-full object-cover" />
@@ -255,9 +257,9 @@ const ProductDetail = () => {
           )}
         </motion.div>
 
-        {/* Product info */}
+        {/* ─── Product info ─── */}
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15, duration: 0.5 }}
-          className="space-y-6 pt-2">
+          className="space-y-5">
 
           {/* Category + Name */}
           <div>
@@ -269,7 +271,7 @@ const ProductDetail = () => {
                 {categoryName}
               </span>
             </div>
-            <h1 className="text-3xl md:text-5xl font-black text-white leading-[1.05]">{product.name}</h1>
+            <h1 className="text-2xl md:text-4xl font-black text-white leading-tight">{product.name}</h1>
           </div>
 
           {/* Price */}
@@ -277,7 +279,7 @@ const ProductDetail = () => {
             <span className="text-gray-600 text-xl font-bold">₦</span>
             <motion.span key={product.price}
               initial={{ scale: 1.1, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-              className="text-4xl md:text-5xl font-black leading-none" style={{ color: ACCENT }}>
+              className="text-3xl md:text-4xl font-black leading-none" style={{ color: ACCENT }}>
               {product.price.toLocaleString()}
             </motion.span>
           </div>
@@ -303,22 +305,22 @@ const ProductDetail = () => {
           <AnimatePresence>
             {!isOutOfStock && (
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+                className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <div className="flex items-center rounded-xl overflow-hidden shrink-0" style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.09)' }}>
                   <motion.button whileTap={{ scale: 0.85 }} onClick={() => qty > 1 && setQty(q => q - 1)}
                     disabled={qty <= 1}
-                    className="w-12 h-14 flex items-center justify-center text-red-400 hover:bg-red-500/10 disabled:opacity-30 transition-colors">
+                    className="w-11 h-12 flex items-center justify-center text-red-400 hover:bg-red-500/10 disabled:opacity-30 transition-colors">
                     <Minus className="w-4 h-4" />
                   </motion.button>
                   <motion.span key={qty}
                     initial={{ scale: 1.3, opacity: 0.6 }} animate={{ scale: 1, opacity: 1 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                    className="w-12 text-center text-xl font-black text-white select-none">
+                    className="w-10 text-center text-lg font-black text-white select-none">
                     {qty}
                   </motion.span>
                   <motion.button whileTap={{ scale: 0.85 }} onClick={() => qty < (product.stock ?? 0) && setQty(q => q + 1)}
                     disabled={qty >= (product.stock ?? 0)}
-                    className="w-12 h-14 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-30 transition-colors">
+                    className="w-11 h-12 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-30 transition-colors">
                     <Plus className="w-4 h-4" />
                   </motion.button>
                 </div>
@@ -326,7 +328,7 @@ const ProductDetail = () => {
                   onClick={handleAddToCart}
                   whileHover={{ scale: 1.03, boxShadow: added ? '0 14px 36px rgba(16,185,129,0.45)' : `0 14px 36px ${ACCENT}55` }}
                   whileTap={{ scale: 0.97 }}
-                  className="flex-1 h-14 rounded-xl font-black text-white text-base flex items-center justify-center gap-2.5 group transition-all"
+                  className="flex-1 h-12 rounded-xl font-black text-white text-base flex items-center justify-center gap-2.5 group transition-all"
                   style={{
                     background: added ? '#10b981' : ACCENT,
                     boxShadow: added ? '0 8px 24px rgba(16,185,129,0.35)' : `0 8px 24px ${ACCENT}44`,
@@ -334,7 +336,7 @@ const ProductDetail = () => {
                   <motion.span animate={added ? { rotate: [0, -15, 15, 0], scale: [1, 1.3, 1] } : {}} transition={{ duration: 0.4 }}>
                     {added ? <Check className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
                   </motion.span>
-                  {added ? 'Added to Cart!' : 'Add to Cart'}
+                  {added ? 'Added!' : 'Add to Cart'}
                 </motion.button>
               </motion.div>
             )}
@@ -348,44 +350,43 @@ const ProductDetail = () => {
             </div>
           )}
 
-          {/* Product details card */}
+          {/* Product meta details */}
           <div className="pt-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <div className="p-4 rounded-xl" style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-600 mb-1">Category</p>
-                <p className="text-white font-bold text-sm">{categoryName}</p>
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="p-3 rounded-xl" style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <p className="text-[9px] font-extrabold uppercase tracking-wider text-gray-600 mb-1">Category</p>
+                <p className="text-white font-bold text-xs">{categoryName}</p>
               </div>
-              <div className="p-4 rounded-xl" style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-600 mb-1">Unit Price</p>
-                <p className="text-white font-bold text-sm">₦{product.price.toLocaleString()}</p>
+              <div className="p-3 rounded-xl" style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <p className="text-[9px] font-extrabold uppercase tracking-wider text-gray-600 mb-1">Unit Price</p>
+                <p className="text-white font-bold text-xs">₦{product.price.toLocaleString()}</p>
               </div>
               {product.brand && (
-                <div className="p-4 rounded-xl" style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.07)' }}>
-                  <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-600 mb-1">Brand</p>
-                  <p className="text-white font-bold text-sm">{product.brand}</p>
+                <div className="p-3 rounded-xl" style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <p className="text-[9px] font-extrabold uppercase tracking-wider text-gray-600 mb-1">Brand</p>
+                  <p className="text-white font-bold text-xs">{product.brand}</p>
                 </div>
               )}
               {product.sku && (
-                <div className="p-4 rounded-xl" style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.07)' }}>
-                  <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-600 mb-1">SKU</p>
-                  <p className="text-white font-bold text-sm font-mono">{product.sku}</p>
+                <div className="p-3 rounded-xl" style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <p className="text-[9px] font-extrabold uppercase tracking-wider text-gray-600 mb-1">SKU</p>
+                  <p className="text-white font-bold text-xs font-mono">{product.sku}</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Shipping & returns */}
-          <div className="flex flex-wrap gap-4 text-sm text-gray-400">
-            <div className="flex items-center gap-2">
-              <Truck className="w-4 h-4" />
+          <div className="flex flex-wrap gap-4 text-xs text-gray-400">
+            <div className="flex items-center gap-1.5">
+              <Truck className="w-3.5 h-3.5" />
               <span>Free shipping over ₦50,000</span>
             </div>
-            <div className="flex items-center gap-2">
-              <RefreshCw className="w-4 h-4" />
+            <div className="flex items-center gap-1.5">
+              <RefreshCw className="w-3.5 h-3.5" />
               <span>30-day easy returns</span>
             </div>
           </div>
-
         </motion.div>
       </div>
     </motion.div>
