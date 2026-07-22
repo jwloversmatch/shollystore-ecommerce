@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 // Import Navbar and AdminRoute synchronously
 import Navbar from './components/Navbar';
 import AdminRoute from './components/AdminRoute';
+import ProtectedRoute from './components/ProtectedRoute';   // ✅ new
 
 // --- Lazy Load Pages (Code Splitting) ---
 const Home = React.lazy(() => import('./pages/Home'));
@@ -37,7 +38,7 @@ import Settings from './pages/admin/Settings';
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
 
-// Dark‑themed loading fallback (no white flash)
+// Dark‑themed loading fallback
 const LoadingFallback = () => (
   <div
     className="min-h-screen flex justify-center items-center"
@@ -65,8 +66,6 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Home />} />
-            <Route path="/shop" element={<ShopPage />} />
-            <Route path="/category/:slug" element={<CategoryPage />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/login" element={<Login />} />
@@ -76,8 +75,14 @@ function App() {
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/account" element={<Account />} />
 
-            {/* Product Detail – public (updated slug param) */}
+            {/* Product Detail – public */}
             <Route path="/products/:slug" element={<ProductDetail />} />
+
+            {/* Protected Shop & Category Routes – require login */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/shop" element={<ShopPage />} />
+              <Route path="/category/:slug" element={<CategoryPage />} />
+            </Route>
 
             {/* Protected Admin Routes */}
             <Route element={<AdminRoute />}>
@@ -90,7 +95,7 @@ function App() {
               <Route path="/admin/coupons" element={<Coupons />} />
             </Route>
 
-            {/* Catch‑all – silently redirect to home */}
+            {/* Catch‑all – redirect to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

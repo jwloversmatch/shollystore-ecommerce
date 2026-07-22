@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useSelector } from "react-redux";        // ✅ new
+import { RootState } from "../store";              // ✅ new
 import {
   useGetProductsQuery,
   useGetHeroSlidesQuery,
@@ -29,11 +31,19 @@ const getProductCategoryName = (p: ProductItem): string => {
 };
 
 const Home = () => {
-  const { data: productsResp } = useGetProductsQuery({});   // returns { products, pagination }
+  const { data: productsResp } = useGetProductsQuery({ limit: 9999 });
   const { data: heroSlides, isLoading: sLoad } = useGetHeroSlidesQuery({});
   const { data: categories = [], isLoading: cLoad } = useGetCategoriesQuery({});
   const { data: publicSettings } = useGetPublicSettingsQuery({});
   const navigate = useNavigate();
+  const { user } = useSelector((s: RootState) => s.auth);   // ✅ new
+
+  // ✅ Redirect authenticated users to shop
+  useEffect(() => {
+    if (user) {
+      navigate("/shop", { replace: true });
+    }
+  }, [user, navigate]);
 
   const landingMode = publicSettings?.landingMode || false;
   const isPageLoading = !productsResp || sLoad || cLoad;
@@ -103,6 +113,11 @@ const Home = () => {
     "@type": "WebSite",
     url: "https://shollystore-ecommerce.vercel.app",
   };
+
+  // If user is logged in, the effect above will redirect, so we can show a brief loading/fallback
+  if (user) {
+    return <HomeLoading />;
+  }
 
   if (isPageLoading) return <HomeLoading />;
 

@@ -46,7 +46,9 @@ const Login = () => {
   const location  = useLocation();
   const dispatch  = useDispatch();
   const [login, { isLoading, error }] = useLoginMutation();
-  const from = (location.state as { from?: string })?.from || "/";
+
+  // ✅ Get the intended destination from the protected route (if any)
+  const from = (location.state as { from?: string })?.from;
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -57,7 +59,15 @@ const Login = () => {
       const res = await login({ email: data.email, password: data.password }).unwrap();
       dispatch(setCredentials({ user: res.user, token: res.token }));
       toast.success("Welcome back! 🎉");
-      navigate(res.user.role === "admin" ? "/admin" : from, { replace: true });
+
+      // ✅ Determine redirect
+      const destination = from
+        ? from
+        : res.user.role === "admin"
+        ? "/admin"
+        : "/shop";
+
+      navigate(destination, { replace: true });
     } catch (err) {
       console.error(err);
       toast.error("Login failed. Please check your credentials.");
