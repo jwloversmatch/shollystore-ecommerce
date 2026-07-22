@@ -50,8 +50,8 @@ const sendEmail = async (
       },
       body: JSON.stringify({
         sender: {
-          name:  SENDER_NAME  || "LotceWieth Store",
-          email: SENDER_EMAIL || "noreply@lotcewieth.com",
+          name:  SENDER_NAME  || "ShollyStore",
+          email: SENDER_EMAIL || "noreply@shollystore.com",
         },
         to: [{ email: to }],
         subject,
@@ -78,8 +78,6 @@ const stripHtml = (html: string): string =>
   html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
 
 // ─── Shared layout wrapper ────────────────────────────────────────────────────
-// All emails share the same outer shell; only the header colour and inner
-// content change, keeping every template consistent without repetition.
 
 interface LayoutOptions {
   headerBg:  string;
@@ -99,7 +97,7 @@ const layout = ({ headerBg, headerText = '#2d3748', body }: LayoutOptions) => `
     .card { max-width:600px; margin:0 auto; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,.05); }
     .hdr  { background:${headerBg}; padding:30px 20px; text-align:center; }
     .hdr h1 { margin:0; color:${headerText}; font-size:28px; letter-spacing:-.5px; }
-    .hdr .accent { color:#4a8f29; }
+    .hdr .accent { color:#e8622a; }
     .body { padding:40px 30px; }
     .body h2 { color:#2d3748; font-size:22px; margin-top:0; }
     .body p  { color:#4a5568; line-height:1.6; }
@@ -107,7 +105,7 @@ const layout = ({ headerBg, headerText = '#2d3748', body }: LayoutOptions) => `
     .box  { background:#f9fafb; border-radius:12px; padding:20px; margin:20px 0; }
     .box p { margin:8px 0; color:#4a5568; }
     .ftr  { background:#f9fafb; padding:20px; text-align:center; color:#a0aec0; font-size:13px; border-top:1px solid #e2e8f0; }
-    .ftr a { color:#4a8f29; text-decoration:none; }
+    .ftr a { color:#e8622a; text-decoration:none; }
     @media(max-width:480px){ .body { padding:30px 20px; } .hdr h1 { font-size:24px; } }
   </style>
 </head>
@@ -115,11 +113,11 @@ const layout = ({ headerBg, headerText = '#2d3748', body }: LayoutOptions) => `
   <div class="wrap">
     <div class="card">
       <div class="hdr">
-        <h1>Lotce<span class="accent">Wieth</span></h1>
+        <h1>Sholly<span class="accent">Store</span></h1>
       </div>
       ${body}
       <div class="ftr">
-        &copy; ${new Date().getFullYear()} LotceWieth. All rights reserved.<br>
+        &copy; ${new Date().getFullYear()} ShollyStore. All rights reserved.<br>
         <a href="${CLIENT_URL}">Visit our store</a>
       </div>
     </div>
@@ -131,14 +129,13 @@ const layout = ({ headerBg, headerText = '#2d3748', body }: LayoutOptions) => `
 // AUTH EMAILS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// POST /api/auth/register  →  verify-email?token=...
 export const sendVerificationEmail = async (
   email: string,
   token: string,
   name?: string,
 ) => {
   const url = `${CLIENT_URL}/verify-email?token=${token}`;
-  const greeting = name ? `Hi <strong>${name}</strong>, welcome to LotceWieth! 🌿` : `Welcome to LotceWieth! 🌿`;
+  const greeting = name ? `Hi <strong>${name}</strong>, welcome to ShollyStore! 🛍️` : `Welcome to ShollyStore! 🛍️`;
 
   const html = layout({
     headerBg: '#ffd6d6',
@@ -146,7 +143,7 @@ export const sendVerificationEmail = async (
       <div class="body" style="text-align:center;">
         <h2>${greeting}</h2>
         <p>Thank you for joining us. Please verify your email address to complete your registration.</p>
-        <a href="${url}" class="btn" style="background:#4a8f29;color:#fff;box-shadow:0 4px 12px rgba(74,143,41,.3);">Verify Email Address</a>
+        <a href="${url}" class="btn" style="background:#e8622a;color:#fff;box-shadow:0 4px 12px rgba(232,98,42,.3);">Verify Email Address</a>
         <p style="margin-top:25px;font-size:14px;color:#718096;">
           If you didn't create an account, you can safely ignore this email.
         </p>
@@ -155,13 +152,12 @@ export const sendVerificationEmail = async (
 
   return sendEmail(
     email,
-    "Welcome to LotceWieth – Verify Your Email",
+    "Welcome to ShollyStore – Verify Your Email",
     html,
-    `Welcome to LotceWieth! Verify your email: ${url}`,
+    `Welcome to ShollyStore! Verify your email: ${url}`,
   );
 };
 
-// POST /api/auth/forgot-password  →  reset-password?token=...
 export const sendPasswordResetEmail = async (email: string, token: string) => {
   const url = `${CLIENT_URL}/reset-password?token=${token}`;
 
@@ -170,7 +166,7 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
     body: `
       <div class="body" style="text-align:center;">
         <h2>Reset Your Password 🔐</h2>
-        <p>We received a request to reset the password for your LotceWieth account. Click the button below to choose a new password.</p>
+        <p>We received a request to reset the password for your ShollyStore account. Click the button below to choose a new password.</p>
         <a href="${url}" class="btn" style="background:#d97706;color:#fff;box-shadow:0 4px 12px rgba(217,119,6,.3);">Reset My Password</a>
         <div style="margin-top:30px; padding:16px; background:#fef9c3; border-radius:10px; border-left:4px solid #d97706;">
           <p style="margin:0; font-size:14px; color:#92400e;">
@@ -183,13 +179,12 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
 
   return sendEmail(
     email,
-    "Password Reset Request – LotceWieth",
+    "Password Reset Request – ShollyStore",
     html,
-    `Reset your LotceWieth password (expires in 1 hour): ${url}`,
+    `Reset your ShollyStore password (expires in 1 hour): ${url}`,
   );
 };
 
-// Sent after a successful password reset or change
 export const sendPasswordChangedEmail = async (email: string, name?: string) => {
   const greeting = name ? `Hi <strong>${name}</strong>,` : "Hi there,";
 
@@ -198,7 +193,7 @@ export const sendPasswordChangedEmail = async (email: string, name?: string) => 
     body: `
       <div class="body" style="text-align:center;">
         <h2>Your Password Was Changed ✅</h2>
-        <p>${greeting} your LotceWieth account password was recently updated.</p>
+        <p>${greeting} your ShollyStore account password was recently updated.</p>
         <div style="padding:16px; background:#fef2f2; border-radius:10px; border-left:4px solid #ef4444; text-align:left;">
           <p style="margin:0; font-size:14px; color:#991b1b;">
             🚨 <strong>If you didn't make this change</strong>, your account may be compromised.<br>
@@ -213,14 +208,12 @@ export const sendPasswordChangedEmail = async (email: string, name?: string) => 
 
   return sendEmail(
     email,
-    "Your Password Has Been Changed – LotceWieth",
+    "Your Password Has Been Changed – ShollyStore",
     html,
-    `Your LotceWieth password was changed. If you didn't do this, reset your password immediately at ${CLIENT_URL}/forgot-password`,
+    `Your ShollyStore password was changed. If you didn't do this, reset your password immediately at ${CLIENT_URL}/forgot-password`,
   );
 };
 
-// POST /api/auth/change-email  →  verify-email-change?token=...
-// Sent to the NEW email address
 export const sendEmailChangeVerification = async (
   newEmail: string,
   token:    string,
@@ -232,7 +225,7 @@ export const sendEmailChangeVerification = async (
     body: `
       <div class="body" style="text-align:center;">
         <h2>Confirm Your New Email Address ✉️</h2>
-        <p>A request was made to change the email address on a LotceWieth account to <strong>${newEmail}</strong>.</p>
+        <p>A request was made to change the email address on a ShollyStore account to <strong>${newEmail}</strong>.</p>
         <p>Click the button below to confirm and activate your new email address.</p>
         <a href="${url}" class="btn" style="background:#3b82f6;color:#fff;box-shadow:0 4px 12px rgba(59,130,246,.3);">Confirm New Email</a>
         <div style="margin-top:30px; padding:16px; background:#eff6ff; border-radius:10px; border-left:4px solid #3b82f6;">
@@ -246,9 +239,9 @@ export const sendEmailChangeVerification = async (
 
   return sendEmail(
     newEmail,
-    "Confirm Your New Email Address – LotceWieth",
+    "Confirm Your New Email Address – ShollyStore",
     html,
-    `Confirm your new LotceWieth email address (expires in 24 hours): ${url}`,
+    `Confirm your new ShollyStore email address (expires in 24 hours): ${url}`,
   );
 };
 
@@ -284,7 +277,7 @@ export const sendOrderConfirmation = async (
           <p><strong>Order #</strong> ${orderId}</p>
           ${subtotalLine}
           ${discountLine}
-          <p><strong>Total</strong> <span style="font-size:24px;font-weight:700;color:#4a8f29;">₦${total.toLocaleString()}</span></p>
+          <p><strong>Total</strong> <span style="font-size:24px;font-weight:700;color:#e8622a;">₦${total.toLocaleString()}</span></p>
         </div>
         <p>You'll receive a shipping notification once your order is on its way.</p>
       </div>`,
@@ -292,7 +285,7 @@ export const sendOrderConfirmation = async (
 
   return sendEmail(
     email,
-    "Order Confirmation – LotceWieth",
+    "Order Confirmation – ShollyStore",
     html,
     `Order #${orderId} confirmed. Total: ₦${total.toLocaleString()}. Thank you!`,
   );
@@ -332,9 +325,9 @@ export const sendOrderShippedEmail = async (
 
   return sendEmail(
     email,
-    "Your Order Has Been Shipped – LotceWieth",
+    "Your Order Has Been Shipped – ShollyStore",
     html,
-    `Your LotceWieth order #${orderId} has shipped!`,
+    `Your ShollyStore order #${orderId} has shipped!`,
   );
 };
 
@@ -366,15 +359,15 @@ export const sendOrderDeliveredEmail = async (
         <p>Your order <strong>#${orderId}</strong> has been successfully delivered.</p>
         ${discountLine}
         ${totalLine}
-        <p>We hope you enjoy your beverages! 🥤</p>
+        <p>We hope you enjoy your purchase! 🛍️</p>
       </div>`,
   });
 
   return sendEmail(
     email,
-    "Order Delivered – LotceWieth",
+    "Order Delivered – ShollyStore",
     html,
-    `Your LotceWieth order #${orderId} has been delivered. Enjoy! 🥤`,
+    `Your ShollyStore order #${orderId} has been delivered. Enjoy! 🛍️`,
   );
 };
 
@@ -418,7 +411,7 @@ export const sendOrderStatusUpdateEmail = async (
           <p style="margin:8px 0;"><strong>Total:</strong> ₦${total.toLocaleString()}</p>
         </div>
         ${status === 'Delivered'
-          ? `<p>Your order has been delivered. Thank you for shopping with us! 🥤</p>`
+          ? `<p>Your order has been delivered. Thank you for shopping with us! 🛍️</p>`
           : `<p>We'll keep you updated on your order's progress.</p>`}
       </div>`,
   });
@@ -427,7 +420,7 @@ export const sendOrderStatusUpdateEmail = async (
     email,
     `Order #${orderId} – Status Updated to ${status}`,
     html,
-    `Your LotceWieth order #${orderId} is now ${status}. Total: ₦${total.toLocaleString()}.`,
+    `Your ShollyStore order #${orderId} is now ${status}. Total: ₦${total.toLocaleString()}.`,
   );
 };
 

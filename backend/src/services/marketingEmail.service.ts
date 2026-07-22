@@ -1,11 +1,11 @@
 // backend/src/services/marketingEmail.service.ts
 import { User } from '../models/User';
-import { Settings } from '../models/Settings';   // ← new
+import { Settings } from '../models/Settings';
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
-const SENDER_EMAIL = process.env.MARKETING_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'store@lotcewieth.com';
-const SENDER_NAME = process.env.MARKETING_SENDER_NAME || process.env.BREVO_SENDER_NAME || 'LotceWieth Store';
-const CLIENT_URL = process.env.CLIENT_URL || 'https://lotcewieth.com';
+const SENDER_EMAIL = process.env.MARKETING_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'store@shollystore.com';
+const SENDER_NAME = process.env.MARKETING_SENDER_NAME || process.env.BREVO_SENDER_NAME || 'ShollyStore';
+const CLIENT_URL = process.env.CLIENT_URL || 'https://shollystore-ecommerce.vercel.app';
 
 // ---------- Helper: get store name from settings (cached in memory for performance) ----------
 let cachedStoreName: string | null = null;
@@ -14,11 +14,10 @@ const getStoreName = async (): Promise<string> => {
 
   try {
     const settings = await Settings.findOne();
-    // Use heroTitle, remove any "|" used for two‑color text, and trim
     const rawTitle = settings?.heroTitle || '';
-    cachedStoreName = rawTitle.replace(/\|/g, '').trim() || 'LotceWieth';
+    cachedStoreName = rawTitle.replace(/\|/g, '').trim() || 'ShollyStore';
   } catch {
-    cachedStoreName = 'LotceWieth';
+    cachedStoreName = 'ShollyStore';
   }
   return cachedStoreName;
 };
@@ -107,10 +106,10 @@ export const sendNewArrivalEmail = async (
         .content { padding: 40px 30px; text-align: center; }
         .content h2 { color: #2d3748; font-size: 22px; margin-top: 0; }
         .product-img { width: 200px; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .btn { display: inline-block; background-color: #4a8f29; color: #ffffff; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(74, 143, 41, 0.3); transition: all 0.2s; }
-        .btn:hover { background-color: #3a7a22; box-shadow: 0 6px 18px rgba(74, 143, 41, 0.4); }
+        .btn { display: inline-block; background-color: #e8622a; color: #ffffff; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(232, 98, 42, 0.3); transition: all 0.2s; }
+        .btn:hover { background-color: #d1501a; box-shadow: 0 6px 18px rgba(232, 98, 42, 0.4); }
         .footer { background: #f9fafb; padding: 20px; text-align: center; color: #a0aec0; font-size: 13px; border-top: 1px solid #e2e8f0; }
-        .footer a { color: #4a8f29; text-decoration: none; }
+        .footer a { color: #e8622a; text-decoration: none; }
         @media (max-width: 480px) { .content { padding: 30px 20px; } .header h1 { font-size: 24px; } }
       </style>
     </head>
@@ -121,7 +120,7 @@ export const sendNewArrivalEmail = async (
             <h1>${storeName}</h1>
           </div>
           <div class="content">
-            <h2>🌟 New Arrival!</h2>
+            <h2>🆕 New Arrival!</h2>
             <img src="${productImage}" alt="${productName}" class="product-img" />
             <h3>${productName}</h3>
             ${description ? `<p style="color: #4a5568; line-height: 1.6;">${description}</p>` : ''}
@@ -168,10 +167,10 @@ export const sendBackInStockEmail = async (
         .content { padding: 40px 30px; text-align: center; }
         .content h2 { color: #2d3748; font-size: 22px; margin-top: 0; }
         .product-img { width: 200px; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .btn { display: inline-block; background-color: #4a8f29; color: #ffffff; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(74, 143, 41, 0.3); transition: all 0.2s; }
-        .btn:hover { background-color: #3a7a22; box-shadow: 0 6px 18px rgba(74, 143, 41, 0.4); }
+        .btn { display: inline-block; background-color: #e8622a; color: #ffffff; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(232, 98, 42, 0.3); transition: all 0.2s; }
+        .btn:hover { background-color: #d1501a; box-shadow: 0 6px 18px rgba(232, 98, 42, 0.4); }
         .footer { background: #f9fafb; padding: 20px; text-align: center; color: #a0aec0; font-size: 13px; border-top: 1px solid #e2e8f0; }
-        .footer a { color: #4a8f29; text-decoration: none; }
+        .footer a { color: #e8622a; text-decoration: none; }
         @media (max-width: 480px) { .content { padding: 30px 20px; } .header h1 { font-size: 24px; } }
       </style>
     </head>
@@ -182,7 +181,7 @@ export const sendBackInStockEmail = async (
             <h1>${storeName}</h1>
           </div>
           <div class="content">
-            <h2>🎉 Back in Stock!</h2>
+            <h2>⚡ Back in Stock!</h2>
             <img src="${productImage}" alt="${productName}" class="product-img" />
             <p>Great news! <strong>${productName}</strong> is now available again. Grab yours before it runs out!</p>
             <a href="${productUrl}" class="btn">View Product</a>
