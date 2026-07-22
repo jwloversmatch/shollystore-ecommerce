@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useSelector } from "react-redux";        // ✅ new
-import { RootState } from "../store";              // ✅ new
+import { useSelector } from "react-redux";
+import { RootState } from "../store";
 import {
   useGetProductsQuery,
   useGetHeroSlidesQuery,
@@ -36,12 +36,16 @@ const Home = () => {
   const { data: categories = [], isLoading: cLoad } = useGetCategoriesQuery({});
   const { data: publicSettings } = useGetPublicSettingsQuery({});
   const navigate = useNavigate();
-  const { user } = useSelector((s: RootState) => s.auth);   // ✅ new
+  const { user } = useSelector((s: RootState) => s.auth);
 
-  // ✅ Redirect authenticated users to shop
+  // ✅ Redirect logged‑in users to the appropriate "inside" page
   useEffect(() => {
     if (user) {
-      navigate("/shop", { replace: true });
+      if (user.role === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/shop", { replace: true });
+      }
     }
   }, [user, navigate]);
 
@@ -114,7 +118,7 @@ const Home = () => {
     url: "https://shollystore-ecommerce.vercel.app",
   };
 
-  // If user is logged in, the effect above will redirect, so we can show a brief loading/fallback
+  // If user is logged in, the effect above will redirect, so show loading
   if (user) {
     return <HomeLoading />;
   }
