@@ -24,6 +24,8 @@ import {
   TableRowSkeleton,
   DarkCardSkeleton,
 } from "../../components/Skeletons";
+// ✅ Import the shared ProductItem type
+import type { ProductItem } from "../../types/home";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
@@ -44,7 +46,7 @@ const PAYMENT_LABELS: Record<string, string> = {
 
 // ─── Interfaces ────────────────────────────────────────────────────────────────
 interface OrderItem  { _id:string; user:{email:string}; totalPrice:number; status:string; createdAt?:string; paymentMethod?:string; }
-interface ProductItem{ _id:string; name:string; price:number; images?:string[]; category?:string; stock:number; }
+// ❌ Local ProductItem removed – using imported type
 interface CategorySale{ _id:string; totalSales:number; revenue:number; }
 interface TopProduct { _id:string; name:string; images:string[]; price:number; totalQuantity:number; totalRevenue:number; }
 interface UserData   { _id:string; email:string; role:"user"|"admin"; }
@@ -54,6 +56,12 @@ interface CustomTooltipProps {
   payload?: Array<{ value: number; name: string; dataKey?: string }>;
   label?: string;
 }
+
+// ─── Helper to safely get category name ───────────────────────────────────────
+const getCategoryName = (cat: ProductItem['category']): string => {
+  if (!cat) return 'Uncategorized';
+  return typeof cat === 'string' ? cat : cat.name;
+};
 
 // ─── Animation variants ────────────────────────────────────────────────────────
 const stagger  = { hidden:{}, visible:{ transition:{ staggerChildren:0.08, delayChildren:0.05 } } };
@@ -99,7 +107,8 @@ const Dashboard = () => {
   const [productToDelete,  setProductToDelete]  = useState<string | null>(null);
 
   const { data:statsData,    isLoading:statsLoading,    refetch:refetchStats    } = useGetAdminStatsQuery({});
-  const { data:productsData, isLoading:productsLoading, refetch:refetchProducts } = useGetProductsQuery({});
+  // ✅ Extract products from the paginated response
+  const { data:productsResponse, isLoading:productsLoading, refetch:refetchProducts } = useGetProductsQuery({ limit: 9999 });
   const { data:analyticsData,isLoading:analyticsLoading,refetch:refetchAnalytics} = useGetSalesAnalyticsQuery({});
   const { data:topProductsData, refetch:refetchTopProducts } = useGetTopProductsQuery({});
   const { data:orderCustomerData }                           = useGetOrderCustomerCountQuery({});
@@ -111,12 +120,13 @@ const Dashboard = () => {
   const [updateStock]   = useUpdateStockMutation();
 
   const stats      = statsData   || { orders:[], totalRevenue:0 };
-  const products   = useMemo<ProductItem[]>(() => productsData || [], [productsData]);
+  // ✅ Use imported ProductItem type; array is correctly typed
+  const products   = useMemo<ProductItem[]>(() => productsResponse?.products || [], [productsResponse]);
   const analytics  = analyticsData || { totalRevenue:0, totalOrders:0, categorySales:[] };
   const topProducts: TopProduct[] = topProductsData || [];
   const users: UserData[] = usersData || [];
 
-  const lowStockCount = useMemo(() => products.filter(p => p.stock < 5).length, [products]);
+  const lowStockCount = useMemo(() => products.filter(p => (p.stock ?? 0) < 5).length, [products]);
   const realCustomers  = orderCustomerData?.count || 0;
 
   const statusPieData = useMemo(() => {
@@ -396,23 +406,28 @@ const Dashboard = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-semibold text-sm truncate">{p.name}</p>
+                    {/* ✅ Use safe category helper */}
                     <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
-                      style={{ background:`${ACCENT}15`, color:ACCENT }}>{p.category}</span>
+                      style={{ background:`${ACCENT}15`, color:ACCENT }}>
+                      {getCategoryName(p.category)}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <div className="flex items-center rounded-xl overflow-hidden"
                       style={{ background:"#111", border:"1px solid rgba(255,255,255,0.08)" }}>
-                      <motion.button whileTap={{ scale:0.85 }} onClick={() => handleStockUpdate(p._id, p.stock, -1)}
+                      <motion.button whileTap={{ scale:0.85 }} onClick={() => handleStockUpdate(p._id, p.stock ?? 0, -1)}
                         className="w-7 h-7 flex items-center justify-center text-red-400 hover:bg-red-500/10 transition-colors">
                         <Minus className="w-3 h-3" />
                       </motion.button>
-                      <span className={`w-8 text-center text-xs font-black ${p.stock < 5 ? "text-red-400" : "text-white"}`}>{p.stock}</span>
-                      <motion.button whileTap={{ scale:0.85 }} onClick={() => handleStockUpdate(p._id, p.stock, 1)}
+                      <span className={`w-8 text-center text-xs font-black ${(p.stock ?? 0) < 5 ? "text-red-400" : "text-white"}`}>
+                        {p.stock ?? 0}
+                      </span>
+                      <motion.button whileTap={{ scale:0.85 }} onClick={() => handleStockUpdate(p._id, p.stock ?? 0, 1)}
                         className="w-7 h-7 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/10 transition-colors">
                         <Plus className="w-3 h-3" />
                       </motion.button>
                     </div>
-                    {p.stock < 5 && (
+                    {(p.stock ?? 0) < 5 && (
                       <span className="text-[9px] px-1.5 py-0.5 rounded-full font-extrabold"
                         style={{ background:"rgba(239,68,68,0.12)", color:"#f87171" }}>Low</span>
                     )}
