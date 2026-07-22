@@ -127,7 +127,7 @@ const ProductDetail = () => {
       style={{ background:'#0A0A0B' }}>
 
       <SEO title={product.name}
-        description={`Buy ${product.name} from Sholex. ${product.description||''}`}
+        description={`Buy ${product.name} from ShollyStore. ${product.description||''}`}
         ogImage={product.images?.[0]} ogType="product" />
 
       {/* Ambient orb */}
@@ -167,12 +167,11 @@ const ProductDetail = () => {
           {/* Main image */}
           <div className="relative rounded-2xl md:rounded-3xl overflow-hidden"
             style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.07)' }}>
-            {/* top hairline */}
             <div className="absolute top-0 inset-x-0 h-px"
               style={{ background:`linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
 
             <div className="flex items-center justify-center p-4 md:p-8"
-              style={{ minHeight:260, maxHeight:420 }}>
+              style={{ minHeight:200, maxHeight:320 }}>
               {images[selectedImage] && !imgError ? (
                 <motion.img
                   key={selectedImage}
@@ -181,7 +180,7 @@ const ProductDetail = () => {
                   src={images[selectedImage]} alt={product.name}
                   onError={() => setImgError(true)}
                   className="w-full object-contain drop-shadow-2xl"
-                  style={{ maxHeight:360 }}
+                  style={{ maxHeight:280 }}
                   whileHover={{ scale:1.03 }}
                 />
               ) : (
@@ -192,7 +191,7 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {/* Out-of-stock tint */}
+            {/* Out-of-stock overlay */}
             {isOutOfStock && (
               <div className="absolute inset-0 flex items-center justify-center"
                 style={{ background:'rgba(0,0,0,0.6)' }}>
@@ -346,10 +345,7 @@ const ProductDetail = () => {
         </motion.div>
       </div>
 
-      {/* ══ MOBILE STICKY CTA BAR (sm and below only) ═══════════════════════════
-           Sits above the bottom nav bar (which is 72px tall).
-           Contains a compact qty control + full-width Add to Cart button.
-      ══════════════════════════════════════════════════════════════════════════ */}
+      {/* ══ MOBILE STICKY CTA BAR (sm and below only) ═══════════════════════════ */}
       <AnimatePresence>
         {!isOutOfStock && (
           <motion.div
@@ -358,14 +354,12 @@ const ProductDetail = () => {
             exit={{ y:120, opacity:0 }}
             transition={{ type:'spring', stiffness:280, damping:28 }}
             className="fixed inset-x-0 z-40 sm:hidden"
-            style={{ bottom:72 }}>  {/* 72px = bottom nav height */}
-            {/* Fade gradient above the bar */}
+            style={{ bottom:72 }}>
             <div className="h-8 pointer-events-none"
               style={{ background:'linear-gradient(transparent, #0A0A0B)' }} />
 
             <div className="bg-[#0A0A0B] px-4 pb-3 pt-2 border-t border-white/[0.07]">
               <div className="flex gap-2.5">
-                {/* Qty controls */}
                 <div className="flex items-center rounded-xl overflow-hidden shrink-0"
                   style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.1)' }}>
                   <motion.button whileTap={{ scale:0.85 }} onClick={() => qty > 1 && setQty(q=>q-1)}
@@ -386,7 +380,6 @@ const ProductDetail = () => {
                   </motion.button>
                 </div>
 
-                {/* Add to Cart */}
                 <motion.button onClick={handleAddToCart}
                   whileTap={{ scale:0.97 }}
                   className="flex-1 h-12 rounded-xl font-black text-white text-sm flex items-center justify-center gap-2 transition-all"
