@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useGetProductsQuery, useGetCategoriesQuery } from "../features/api/apiSlice";
@@ -13,15 +13,40 @@ const ShopPage = () => {
   const { data: categories = [] } = useGetCategoriesQuery({});
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+
+  // ── Two‑level category state ──────────────────────────────────────────
+  const [selectedParent, setSelectedParent] = useState<string>("All");
+  const [selectedSub, setSelectedSub]       = useState<string>("All");
   const limit = 12;
 
-  const categoryId = selectedCategory !== "All"
-    ? categories.find((c: CategoryItem) => c.name === selectedCategory)?._id
-    : undefined;
+  // Top‑level categories (parent is null or undefined)
+  const parentCategories = useMemo(
+    () => categories.filter((c: CategoryItem) => !c.parent),
+    [categories]
+  );
+
+  // Subcategories for the selected parent
+  const subCategories = useMemo(
+    () =>
+      selectedParent !== "All"
+        ? categories.filter((c: CategoryItem) => c.parent === selectedParent)
+        : [],
+    [categories, selectedParent]
+  );
+
+  // Determine the actual category ID and includeSubcategories flag for the API
+  const { categoryId, includeSubs } = useMemo(() => {
+    if (selectedParent === "All") return { categoryId: undefined, includeSubs: false };
+
+    if (selectedSub !== "All") {
+      return { categoryId: selectedSub, includeSubs: false };
+    }
+
+    return { categoryId: selectedParent, includeSubs: true };
+  }, [selectedParent, selectedSub]);
 
   const { data, isLoading } = useGetProductsQuery({
-    ...(categoryId ? { category: categoryId, includeSubcategories: true } : {}),
+    ...(categoryId ? { category: categoryId, includeSubcategories: includeSubs } : {}),
     page,
     limit,
   });
@@ -33,8 +58,14 @@ const ShopPage = () => {
     ? products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
     : products;
 
-  const handleCategoryChange = (cat: string) => {
-    setSelectedCategory(cat);
+  const handleParentChange = (parentId: string) => {
+    setSelectedParent(parentId);
+    setSelectedSub("All");
+    setPage(1);
+  };
+
+  const handleSubChange = (subId: string) => {
+    setSelectedSub(subId);
     setPage(1);
   };
 
@@ -52,9 +83,9 @@ const ShopPage = () => {
           <p className="text-gray-600 text-sm mt-1">{pagination.total} products available</p>
         </div>
 
-        <div className="flex gap-3 w-full md:w-auto">
+        <div className="flex gap-3 w-full md:w-auto flex-wrap">
           {/* Search */}
-          <div className="relative flex-1 md:flex-none md:w-64">
+          <div className="relative flex-1 md:flex-none md:w-56">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
             <input
               type="text"
@@ -65,29 +96,41 @@ const ShopPage = () => {
             />
           </div>
 
-          {/* Custom‑styled category dropdown */}
+          {/* Parent Category Dropdown */}
           <div className="relative min-w-[160px]">
             <select
-              value={selectedCategory}
-              onChange={e => handleCategoryChange(e.target.value)}
+              value={selectedParent}
+              onChange={e => handleParentChange(e.target.value)}
               className="w-full appearance-none px-4 py-2.5 rounded-xl text-sm text-white bg-[#1c1c1c] border border-white/[0.08] outline-none cursor-pointer focus:border-[#e8622a]/50 transition-colors pr-10"
             >
               <option value="All">All Categories</option>
-              {categories.map((c: CategoryItem) => (
-                <option key={c._id} value={c.name} className="bg-[#1c1c1c]">
-                  {c.name}
-                </option>
+              {parentCategories.map((c: CategoryItem) => (     // ✅ typed
+                <option key={c._id} value={c._id}>{c.name}</option>
               ))}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
           </div>
+
+          {/* Subcategory Dropdown (only when a parent is selected) */}
+          {selectedParent !== "All" && subCategories.length > 0 && (
+            <div className="relative min-w-[160px]">
+              <select
+                value={selectedSub}
+                onChange={e => handleSubChange(e.target.value)}
+                className="w-full appearance-none px-4 py-2.5 rounded-xl text-sm text-white bg-[#1c1c1c] border border-white/[0.08] outline-none cursor-pointer focus:border-[#e8622a]/50 transition-colors pr-10"
+              >
+                <option value="All">All Subcategories</option>
+                {subCategories.map((c: CategoryItem) => (       // ✅ typed
+                  <option key={c._id} value={c._id}>{c.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ... rest of the component unchanged (loading grid, product cards, pagination) ... */}
-      {/* The rest is exactly the same as the previous version. */}
-      {/* I'm including it fully below for completeness. */}
-
+      {/* Products grid */}
       {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
@@ -114,6 +157,7 @@ const ShopPage = () => {
         </motion.div>
       )}
 
+      {/* Pagination */}
       {pagination.pages > 1 && (
         <div className="flex justify-center items-center gap-3 mt-10">
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-2 rounded-xl border border-white/10 disabled:opacity-30 hover:bg-white/5 transition">

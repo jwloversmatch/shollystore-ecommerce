@@ -24,6 +24,7 @@ export interface CategoryItem {
   _id: string;
   name: string;
   slug: string;
+  parent?: string | null;
 }
 
 export const PLACEHOLDER = "https://via.placeholder.com/600x600?text=No+Image";
