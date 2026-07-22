@@ -133,7 +133,7 @@ const Cart = () => {
 
   // ══════ CART WITH ITEMS ═══════════════════════════════════════════════════════
   return (
-    <div className="min-h-screen pt-4 pb-28 md:pb-16 px-4 md:px-6 relative overflow-x-hidden" style={{ background:'#0A0A0B' }}>
+    <div className="min-h-screen pt-20 md:pt-24 pb-28 md:pb-16 px-4 md:px-6 relative overflow-x-hidden" style={{ background:'#0A0A0B' }}>
       <SEO title="Your Cart" description="Review your items and proceed to secure checkout." />
       <AmbientBg />
 
@@ -141,7 +141,7 @@ const Cart = () => {
 
         {/* ── Header ── */}
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.45 }}
-          className="flex items-center justify-between gap-3 mb-6 md:mb-8 pt-2">
+          className="flex items-center justify-between gap-3 mb-6 md:mb-8">
 
           <div className="flex items-center gap-3 min-w-0">
             <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
