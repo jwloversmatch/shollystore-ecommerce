@@ -49,13 +49,13 @@ const ProductCard = ({
         boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
       }}
     >
-      {/* ── Image container ── */}
-      <div className="relative w-full aspect-square overflow-hidden bg-[#1a1a1a]">
+      {/* ── Image area – shows full image, no cropping ── */}
+      <div className="relative w-full h-48 bg-[#1a1a1a] flex items-center justify-center p-4">
         <motion.img
           src={imgError ? FALLBACK : image}
           alt={name}
           onError={() => setImgError(true)}
-          className="w-full h-full object-cover"
+          className="max-w-full max-h-full object-contain"
           variants={{ hover: { scale: 1.06 } }}
           transition={{ duration: 0.35 }}
         />
@@ -83,7 +83,6 @@ const ProductCard = ({
 
       {/* ── Info section ── */}
       <div className="flex flex-col flex-1 p-4">
-        {/* Category */}
         <span
           className="text-[10px] font-extrabold uppercase tracking-[0.2em] mb-1.5"
           style={{ color: accent }}
@@ -91,12 +90,10 @@ const ProductCard = ({
           {category}
         </span>
 
-        {/* Name */}
         <h3 className="text-white font-bold text-sm leading-snug line-clamp-2 mb-3">
           {name}
         </h3>
 
-        {/* Price and Add to Cart row */}
         <div className="mt-auto flex items-end justify-between gap-2">
           <div className="flex items-baseline gap-0.5">
             <span className="text-gray-500 text-xs pb-0.5">₦</span>
