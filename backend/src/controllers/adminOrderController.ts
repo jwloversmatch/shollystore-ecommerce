@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { Order } from '../models/Order';
+import mongoose from 'mongoose'; 
+import { Order, IOrder } from '../models/Order';
 import { Product } from '../models/Product';
 import { User } from '../models/User';
 import { Coupon } from '../models/Coupon';
@@ -8,18 +9,35 @@ import {
   sendOrderStatusUpdateEmail,
 } from '../services/email.service';
 
-// Helper to reduce stock when order transitions from Pending
-const reduceStockForOrder = async (order: any) => {
+// Helper to reduce stock (handles variants)
+const reduceStockForOrder = async (order: IOrder) => {
   for (const item of order.orderItems) {
     const product = await Product.findById(item.product);
-    if (product) {
-      const newStock = Math.max(0, product.stock - item.qty);
-      await Product.findByIdAndUpdate(item.product, { stock: newStock });
+    if (!product) continue;
+
+    if (item.variant && (item.variant.sku || item.variant.color || item.variant.size)) {
+      // Find matching variant
+      const variant = product.variants?.find(
+        v => v.sku === item.variant?.sku ||
+             (v.color === item.variant?.color && v.size === item.variant?.size)
+      );
+      if (variant) {
+        if (variant.stock !== undefined) {
+          variant.stock = Math.max(0, variant.stock - item.qty);
+        }
+        // Reduce parent stock too (if separate)
+        product.stock = Math.max(0, product.stock - item.qty);
+        await product.save();
+      }
+    } else {
+      // No variant – reduce main stock
+      product.stock = Math.max(0, product.stock - item.qty);
+      await product.save();
     }
   }
 };
 
-// @desc    Get admin dashboard stats (recent orders + revenue excluding Pending)
+// @desc    Get admin dashboard stats
 // @route   GET /api/admin/orders
 export const getAdminStats = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -102,25 +120,22 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
     const { id } = req.params;
     const { status } = req.body;
 
-    // 1. Fetch the order (with populated user for email notifications)
-    const order = await Order.findById(id).populate('user', 'email name phone');
+    // Fetch with typed result
+    const order = await Order.findById(id).populate('user', 'email name phone') as IOrder | null;
     if (!order) {
       res.status(404).json({ message: 'Order not found' });
       return;
     }
 
-    // 2. Reduce stock if transitioning from Pending
+    // Reduce stock if moving from Pending
     if (order.status === 'Pending' && status !== 'Pending') {
       await reduceStockForOrder(order);
     }
 
-    // 3. Update only the status field – bypasses full document validation
+    // Update status field only
     await Order.updateOne({ _id: order._id }, { $set: { status } });
 
-    // 4. Increment coupon usedCount exactly once: when the order first transitions
-    //    to Paid, regardless of payment method (Paystack, COD, bank transfer, etc.)
-    //    The `order.status !== 'Paid'` guard prevents double-counting if an admin
-    //    somehow calls this endpoint again on an already-Paid order.
+    // Handle coupon increment exactly once when turning to Paid
     if (status === 'Paid' && order.status !== 'Paid' && order.couponCode) {
       await Coupon.updateOne(
         { code: order.couponCode.toUpperCase() },
@@ -128,13 +143,13 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
       );
     }
 
-    // 5. Update the in-memory object for the rest of the function
+    // Update in‑memory status
     order.status = status;
 
-    // 6. Send admin notification (now has the new status)
+    // Notify admin
     await sendAdminOrderNotification(order, 'updated', status);
 
-    // 7. Notify the customer if shipped/delivered
+    // Notify customer if shipped/delivered
     if (['Shipped', 'Delivered'].includes(status)) {
       const populatedUser = order.user as unknown as { email?: string; name?: string; phone?: string } | null;
       if (populatedUser?.email) {
@@ -142,10 +157,9 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
           (sum, item) => sum + item.price * item.qty,
           0
         );
-
         await sendOrderStatusUpdateEmail(
           populatedUser.email,
-          order._id.toString(),
+          (order._id as mongoose.Types.ObjectId).toString(),
           status,
           order.totalPrice,
           populatedUser.name,
@@ -156,7 +170,6 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
       }
     }
 
-    // 8. Return the updated order
     res.json({ success: true, order });
   } catch (error: any) {
     res.status(500).json({ message: error.message });

@@ -23,17 +23,29 @@ const PLACEHOLDER = 'https://via.placeholder.com/150';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface ProductItem {
-  _id: string; name: string; slug?: string; images?: string[];
-  price: number; stock: number; description?: string; category?: string; createdAt?: string;
+  _id: string;
+  name: string;
+  slug?: string;
+  images?: string[];
+  price: number;
+  stock: number;
+  description?: string;
+  category: string | { _id: string; name: string; slug: string; parent?: string }; // populated object
+  createdAt?: string;
 }
-interface CategoryItem { _id: string; name: string; slug: string; }
+interface CategoryItem {
+  _id: string;
+  name: string;
+  slug: string;
+  parent?: string | null;
+}
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 const productSchema = z.object({
   name:        z.string().min(1, 'Product name is required'),
   price:       z.string().min(1, 'Price is required').refine(v => Number(v) > 0, 'Price must be greater than 0'),
   stock:       z.string().min(1, 'Stock is required').refine(v => Number(v) >= 0, 'Stock cannot be negative'),
-  category:    z.string().min(1, 'Category is required'),
+  category:    z.string().min(1, 'Category is required'),  // will hold category _id
   description: z.string().optional(),
 });
 type ProductFormData = z.infer<typeof productSchema>;
@@ -46,7 +58,6 @@ const buildInputCls = (hasError: boolean) =>
       : 'border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15',
   ].join(' ');
 
-// ─── Price formatter ──────────────────────────────────────────────────────────
 const formatPriceInput = (raw: string): string => {
   if (!raw) return '';
   const [intPart, decPart] = raw.split('.');
@@ -54,10 +65,20 @@ const formatPriceInput = (raw: string): string => {
   return decPart !== undefined ? `${fmtInt}.${decPart}` : fmtInt;
 };
 
-// ─── Shared drawer label ──────────────────────────────────────────────────────
 const DLabel = ({ children }: { children: React.ReactNode }) => (
   <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">{children}</p>
 );
+
+// Helper: extract category name for display
+const getCategoryName = (cat: ProductItem['category']): string => {
+  if (!cat) return '';
+  return typeof cat === 'string' ? cat : cat.name;
+};
+// Helper: extract category ID
+const getCategoryId = (cat: ProductItem['category']): string => {
+  if (!cat) return '';
+  return typeof cat === 'string' ? cat : cat._id;
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 const Products = () => {
@@ -72,33 +93,27 @@ const Products = () => {
   const [updateStock]                      = useUpdateStockMutation();
   const [sendMarketingEmail, { isLoading: isSendingMarketing }] = useSendMarketingEmailMutation();
 
-  // UI state
   const [searchTerm,     setSearchTerm]     = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [categoryFilter, setCategoryFilter] = useState('All');   // now holds category _id or 'All'
   const [showLowStock,   setShowLowStock]   = useState(false);
 
-  // Drawer state
   const [isDrawerOpen,   setIsDrawerOpen]   = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
   const [uploading,      setUploading]      = useState(false);
   const [file,           setFile]           = useState<File | null>(null);
   const [notifyCustomers,setNotifyCustomers]= useState(false);
 
-  // Delete modal
   const [modalOpen,   setModalOpen]   = useState(false);
   const [modalAction, setModalAction] = useState<{ type:'delete'; id:string } | null>(null);
 
-  // Marketing modal
   const [marketingOpen,   setMarketingOpen]   = useState(false);
   const [marketingProduct,setMarketingProduct]= useState<ProductItem | null>(null);
   const [marketingType,   setMarketingType]   = useState<'new_arrival'|'back_in_stock'>('new_arrival');
   const [customMessage,   setCustomMessage]   = useState('');
 
-  // Form
   const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } =
     useForm<ProductFormData>({ resolver: zodResolver(productSchema) });
 
-  // Price input
   const [rawPrice,       setRawPrice]       = useState('');
   const priceInputRef    = useRef<HTMLInputElement>(null);
   const pendingCursorRef = useRef<number | null>(null);
@@ -110,21 +125,36 @@ const Products = () => {
     }
   });
 
-  const filterCategories = useMemo(() => ['All', ...categories.map((c: CategoryItem) => c.name)], [categories]);
+  // Filter options: build dropdown with category _id as value and name as label
+  const filterCategories = useMemo(() => {
+    const opts = [{ _id: 'All', name: 'All' }, ...categories];
+    return opts;
+  }, [categories]);
 
   const filteredProducts = useMemo(() => {
     let f = products;
-    if (categoryFilter !== 'All') f = f.filter((p: ProductItem) => p.category === categoryFilter);
-    if (searchTerm)               f = f.filter((p: ProductItem) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    if (showLowStock)             f = f.filter((p: ProductItem) => p.stock < 5);
+    if (categoryFilter !== 'All') {
+      f = f.filter((p: ProductItem) => {
+        const id = getCategoryId(p.category);
+        return id === categoryFilter;
+      });
+    }
+    if (searchTerm) f = f.filter((p: ProductItem) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    if (showLowStock) f = f.filter((p: ProductItem) => p.stock < 5);
     return f.slice().sort((a: ProductItem, b: ProductItem) => b._id.localeCompare(a._id));
   }, [products, searchTerm, categoryFilter, showLowStock]);
 
-  // Handlers
+  // ── Drawer handlers ───────────────────────────────────────────────────────
   const handleOpenDrawer = (product?: ProductItem) => {
     if (product) {
       setEditingProduct(product);
-      reset({ name:product.name, price:product.price.toString(), stock:product.stock.toString(), category:product.category||'', description:product.description||'' });
+      reset({
+        name: product.name,
+        price: product.price.toString(),
+        stock: product.stock.toString(),
+        category: getCategoryId(product.category),   // use ID
+        description: product.description || '',
+      });
       setRawPrice(product.price.toString());
     } else {
       setEditingProduct(null);
@@ -175,12 +205,23 @@ const Products = () => {
         const res = await uploadImage(fd).unwrap();
         imageUrl = res.url; setUploading(false);
       }
-      const payload = { name:data.name, price:Number(data.price), stock:Number(data.stock), description:data.description||'', category:data.category, images:imageUrl?[imageUrl]:[], slug:data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-') };
-      if (editingProduct) { await updateProduct({ id:editingProduct._id, ...payload }).unwrap(); }
-      else                { await createProduct({ ...payload, notifyCustomers }).unwrap(); }
+      const payload = {
+        name: data.name,
+        price: Number(data.price),
+        stock: Number(data.stock),
+        description: data.description || '',
+        category: data.category,   // this is the category _id
+        images: imageUrl ? [imageUrl] : [],
+        slug: data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      };
+      if (editingProduct) {
+        await updateProduct({ id: editingProduct._id, ...payload }).unwrap();
+      } else {
+        await createProduct({ ...payload, notifyCustomers }).unwrap();
+      }
       handleCloseDrawer();
     } catch (err) {
-      const e = err as { data?: { message:string } };
+      const e = err as { data?: { message: string } };
       toast.error(e.data?.message || 'Error saving product.');
     }
   };
@@ -188,15 +229,19 @@ const Products = () => {
   const handleSendMarketing = async () => {
     if (!marketingProduct) return;
     try {
-      await sendMarketingEmail({ type:marketingType, productId:marketingProduct._id, customMessage:marketingType==='new_arrival'?customMessage:undefined }).unwrap();
+      await sendMarketingEmail({
+        type: marketingType,
+        productId: marketingProduct._id,
+        customMessage: marketingType === 'new_arrival' ? customMessage : undefined,
+      }).unwrap();
       toast.success('Emails sent!'); setMarketingOpen(false);
     } catch (err) {
-      const e = err as { data?: { message?:string } };
+      const e = err as { data?: { message?: string } };
       toast.error(e?.data?.message || 'Failed to send emails');
     }
   };
 
-  // ══════ LOADING ══════════════════════════════════════════════════════════════
+  // ══════ LOADING ════════════════════════════════════════════════════════════
   if (isLoading) {
     return (
       <div className="p-4 md:p-6 pt-16 md:pt-24 max-w-7xl mx-auto space-y-5 pb-28 md:pb-10" style={{ background:'#0A0A0B' }}>
@@ -207,7 +252,7 @@ const Products = () => {
     );
   }
 
-  // ══════ MAIN PAGE ═════════════════════════════════════════════════════════════
+  // ══════ MAIN PAGE ═══════════════════════════════════════════════════════════
   return (
     <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ duration:0.4 }}
       className="p-4 md:p-6 pt-16 md:pt-24 max-w-7xl mx-auto space-y-5 pb-28 md:pb-10"
@@ -257,10 +302,17 @@ const Products = () => {
             className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none border border-white/[0.08] focus:border-[#e8622a]/60 transition-all" />
         </div>
 
-        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+        <select
+          value={categoryFilter}
+          onChange={e => setCategoryFilter(e.target.value)}
           className="px-4 py-2.5 rounded-xl text-sm text-white outline-none border border-white/[0.08] cursor-pointer"
-          style={{ background:'#1c1c1c' }}>
-          {filterCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+          style={{ background:'#1c1c1c' }}
+        >
+          {filterCategories.map(cat => (
+            <option key={cat._id} value={cat._id}>
+              {cat.name}
+            </option>
+          ))}
         </select>
 
         <button onClick={() => setShowLowStock(v => !v)}
@@ -347,11 +399,11 @@ const Products = () => {
                     </div>
                   </td>
 
-                  {/* Category */}
+                  {/* Category (now showing name) */}
                   <td className="px-4 sm:px-5 py-3">
                     <span className="text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full"
                       style={{ background:`${ACCENT}14`, color:ACCENT, border:`1px solid ${ACCENT}25` }}>
-                      {product.category}
+                      {getCategoryName(product.category)}
                     </span>
                   </td>
 
@@ -400,7 +452,6 @@ const Products = () => {
               className="fixed right-0 top-0 h-full w-full max-w-xl z-50 overflow-y-auto"
               style={{ background:'#141414', borderLeft:'1px solid rgba(255,255,255,0.08)', boxShadow:'-20px 0 60px rgba(0,0,0,0.6)' }}>
 
-              {/* Drawer header */}
               <div className="sticky top-0 z-10 flex justify-between items-center px-6 py-5 border-b"
                 style={{ background:'#141414', borderColor:'rgba(255,255,255,0.07)' }}>
                 <div>
@@ -419,10 +470,7 @@ const Products = () => {
                 </motion.button>
               </div>
 
-              {/* Form */}
               <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
-
-                {/* Name */}
                 <div>
                   <DLabel>Product Name</DLabel>
                   <input {...register('name')} placeholder="e.g. Organic Apple Juice"
@@ -430,7 +478,6 @@ const Products = () => {
                   {errors.name && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.name.message}</p>}
                 </div>
 
-                {/* Price + Stock */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <DLabel>Price (₦)</DLabel>
@@ -447,7 +494,6 @@ const Products = () => {
                   </div>
                 </div>
 
-                {/* Category */}
                 <div>
                   <DLabel>Category</DLabel>
                   <select {...register('category')}
@@ -455,20 +501,18 @@ const Products = () => {
                     style={{ background:'#1c1c1c' }}>
                     <option value="" className="text-gray-600">Select a category…</option>
                     {categories.map((cat: CategoryItem) => (
-                      <option key={cat._id} value={cat.name}>{cat.name}</option>
+                      <option key={cat._id} value={cat._id}>{cat.name}</option>
                     ))}
                   </select>
                   {errors.category && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.category.message}</p>}
                 </div>
 
-                {/* Description */}
                 <div>
                   <DLabel>Description</DLabel>
                   <textarea {...register('description')} rows={3} placeholder="Brief product description…"
                     className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none resize-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/12 transition-all" />
                 </div>
 
-                {/* Image upload */}
                 <div>
                   <DLabel>Product Image</DLabel>
                   <div className="space-y-3">
@@ -481,7 +525,6 @@ const Products = () => {
                       <input type="file" accept="image/*" className="hidden"
                         onChange={e => setFile(e.target.files?.[0] || null)} />
                     </label>
-
                     {uploading && (
                       <div className="flex items-center gap-2 text-sm" style={{ color:'#60a5fa' }}>
                         <Loader2 className="w-4 h-4 animate-spin" /> Uploading…
@@ -505,7 +548,6 @@ const Products = () => {
                   </div>
                 </div>
 
-                {/* Notify toggle (new product only) */}
                 {!editingProduct && (
                   <div className="flex items-center justify-between p-4 rounded-xl border"
                     style={{ background:'rgba(255,255,255,0.03)', borderColor:'rgba(255,255,255,0.07)' }}>
@@ -523,7 +565,6 @@ const Products = () => {
                   </div>
                 )}
 
-                {/* Footer actions */}
                 <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor:'rgba(255,255,255,0.07)' }}>
                   <motion.button type="button" whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                     onClick={handleCloseDrawer}
@@ -547,7 +588,7 @@ const Products = () => {
         )}
       </AnimatePresence>
 
-      {/* ══ Marketing Email Modal ════════════════════════════════════════════════ */}
+      {/* ══ Marketing Email Modal (unchanged except minor) ════════════════════ */}
       <AnimatePresence>
         {marketingOpen && marketingProduct && (
           <>
@@ -563,7 +604,6 @@ const Products = () => {
                 onClick={e => e.stopPropagation()}>
                 <div className="absolute top-0 inset-x-0 h-px rounded-t-2xl"
                   style={{ background:`linear-gradient(90deg, transparent, #10b981, transparent)` }} />
-
                 <div className="flex justify-between items-center mb-5">
                   <div>
                     <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] mb-0.5" style={{ color:'#10b981' }}>Email Campaign</p>
@@ -576,12 +616,10 @@ const Products = () => {
                     <X className="w-4 h-4" />
                   </motion.button>
                 </div>
-
                 <p className="text-sm text-gray-500 mb-5 leading-relaxed">
                   Sending email to all customers about{' '}
                   <strong className="text-white">{marketingProduct.name}</strong>.
                 </p>
-
                 <div className="space-y-4">
                   <div>
                     <DLabel>Email Type</DLabel>
@@ -593,7 +631,6 @@ const Products = () => {
                       <option value="back_in_stock">Back in Stock</option>
                     </select>
                   </div>
-
                   {marketingType === 'new_arrival' && (
                     <div>
                       <DLabel>Custom Message (optional)</DLabel>
@@ -602,7 +639,6 @@ const Products = () => {
                         className="w-full px-4 py-3 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none resize-none border border-white/[0.08] focus:border-emerald-500/60 transition-all" />
                     </div>
                   )}
-
                   <div className="flex justify-end gap-3 pt-3 border-t" style={{ borderColor:'rgba(255,255,255,0.06)' }}>
                     <motion.button whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                       onClick={() => setMarketingOpen(false)}

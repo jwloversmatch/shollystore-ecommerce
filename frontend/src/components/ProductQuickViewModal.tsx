@@ -15,7 +15,8 @@ interface ProductModalProps {
     images?: string[];
     description?: string;
     stock?: number;
-    category?: string;
+    // ✅ Updated: category can be a string or populated object
+    category?: string | { _id: string; name: string; slug?: string; parent?: string | null };
     slug?: string;
   } | null;
   isOpen: boolean;
@@ -28,6 +29,12 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
   const [imageError, setImageError] = useState(false);
 
   if (!product) return null;
+
+  // ✅ Safely extract the category name
+  const categoryName =
+    typeof product.category === 'string'
+      ? product.category
+      : product.category?.name ?? 'General';
 
   const stock = product.stock ?? 0;
   const isOutOfStock = stock === 0;
@@ -82,7 +89,6 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Close button */}
               <button
                 onClick={onClose}
                 className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/5 transition z-10 text-gray-500 hover:text-white"
@@ -90,14 +96,12 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                 <X className="w-5 h-5" />
               </button>
 
-              {/* Top accent hairline */}
               <div
                 className="absolute top-0 inset-x-0 h-px rounded-t-3xl"
                 style={{ background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }}
               />
 
               <div className="grid md:grid-cols-2 gap-6 p-6 md:p-8">
-                {/* Image */}
                 <div
                   className="rounded-2xl flex items-center justify-center p-4"
                   style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.06)' }}
@@ -117,14 +121,14 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                   )}
                 </div>
 
-                {/* Info */}
                 <div className="space-y-5">
                   <div>
+                    {/* ✅ Use the extracted category name */}
                     <span
                       className="inline-block px-3 py-1 text-xs font-extrabold uppercase tracking-wider rounded-full mb-2"
                       style={{ background: `${ACCENT}15`, color: ACCENT }}
                     >
-                      {product.category || 'General'}
+                      {categoryName}
                     </span>
                     <h2 className="text-2xl md:text-3xl font-black text-white">{product.name}</h2>
                   </div>
@@ -152,7 +156,6 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
 
                   {!isOutOfStock && (
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-2">
-                      {/* Quantity pill */}
                       <div
                         className="flex items-center gap-3 rounded-xl p-1"
                         style={{ background: '#1c1c1c', border: '1px solid rgba(255,255,255,0.08)' }}
@@ -174,7 +177,6 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                         </button>
                       </div>
 
-                      {/* Add to Cart button */}
                       <button
                         onClick={handleAddToCart}
                         className="w-full sm:w-auto text-white px-8 py-3 rounded-xl font-black shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-105"

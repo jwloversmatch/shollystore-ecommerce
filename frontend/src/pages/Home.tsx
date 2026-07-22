@@ -22,6 +22,14 @@ import HomeCategoryBrowser from "./home/HomeCategoryBrowser";
 import HomeProductGrid from "./home/HomeProductGrid";
 import HomeSpecialOffer from "./home/HomeSpecialOffer";
 
+// Helper: safely extract category name from product (string or populated object)
+const getProductCategoryName = (p: ProductItem): string => {
+  if (!p.category) return "General";
+  return typeof p.category === "string"
+    ? p.category
+    : p.category.name ?? "General";
+};
+
 const Home = () => {
   const { data: products, isLoading: pLoad } = useGetProductsQuery({});
   const { data: heroSlides, isLoading: sLoad } = useGetHeroSlidesQuery({});
@@ -61,24 +69,30 @@ const Home = () => {
     setCurrentIndex((p) => (p - 1 + heroSlides.length) % heroSlides.length);
   };
 
+  // Category list for UI – based on actual Category collection, not products
   const categoryList = useMemo(
     () => ["All", ...categories.map((c: CategoryItem) => c.name)],
     [categories]
   );
+
+  // Category counts – now using safe category name extraction
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { All: displayProducts.length };
     categories.forEach((c: CategoryItem) => {
       counts[c.name] = displayProducts.filter(
-        (p) => p.category === c.name
+        (p) => getProductCategoryName(p) === c.name
       ).length;
     });
     return counts;
   }, [displayProducts, categories]);
 
+  // Filtered products – same adjustment
   const filteredProducts = useMemo(() => {
     let f = displayProducts;
     if (selectedCategory !== "All")
-      f = f.filter((p) => p.category === selectedCategory);
+      f = f.filter(
+        (p) => getProductCategoryName(p) === selectedCategory
+      );
     if (searchTerm.trim())
       f = f.filter((p) =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase())

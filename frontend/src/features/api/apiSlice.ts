@@ -10,7 +10,7 @@ interface VerifyPaymentResponse {
     currency: string;
     status: string;
     reference: string;
-    metadata: Record<string, unknown>;   // no `any`
+    metadata: Record<string, unknown>;
   };
 }
 
@@ -34,11 +34,28 @@ export const apiSlice = createApi({
     "Coupon",
   ],
   endpoints: (builder) => ({
+    // ─── Products (public) ────────────────────────────────────────────────────
     getProducts: builder.query({
-      query: () => "/products?limit=9999",
+      query: (filters?: { category?: string; includeSubcategories?: boolean }) => {
+        const params = new URLSearchParams();
+        params.append("limit", "9999");
+        if (filters?.category) {
+          params.append("category", filters.category);
+          if (filters.includeSubcategories !== undefined) {
+            params.append("includeSubcategories", String(filters.includeSubcategories));
+          }
+        }
+        return `/products?${params.toString()}`;
+      },
       providesTags: ["Product"],
     }),
 
+    getProductBySlug: builder.query({
+      query: (slug) => `/products/${slug}`,
+      providesTags: ["Product"],
+    }),
+
+    // ─── Orders (public) ──────────────────────────────────────────────────────
     createOrder: builder.mutation({
       query: (orderData) => ({
         url: "/orders",
@@ -48,6 +65,16 @@ export const apiSlice = createApi({
       invalidatesTags: ["Order"],
     }),
 
+    verifyPayment: builder.query<VerifyPaymentResponse, string>({
+      query: (reference: string) => `/orders/verify/${reference}`,
+    }),
+
+    getMyOrders: builder.query<Order[], void>({
+      query: () => "/orders/my-orders",
+      providesTags: ["Order"],
+    }),
+
+    // ─── Admin Orders ─────────────────────────────────────────────────────────
     getAllOrders: builder.query({
       query: ({
         page = 1,
@@ -77,6 +104,16 @@ export const apiSlice = createApi({
       providesTags: ["Order"],
     }),
 
+    updateOrderStatus: builder.mutation({
+      query: ({ id, status }) => ({
+        url: `/admin/orders/${id}/status`,
+        method: "PUT",
+        body: { status },
+      }),
+      invalidatesTags: ["Order", "Product"],
+    }),
+
+    // ─── Admin Products ───────────────────────────────────────────────────────
     createProduct: builder.mutation({
       query: (productData) => ({
         url: "/admin/products",
@@ -103,15 +140,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["Product"],
     }),
 
-    updateOrderStatus: builder.mutation({
-      query: ({ id, status }) => ({
-        url: `/admin/orders/${id}/status`,
-        method: "PUT",
-        body: { status },
-      }),
-      invalidatesTags: ["Order", "Product"],
-    }),
-
+    // ─── Upload ───────────────────────────────────────────────────────────────
     uploadImage: builder.mutation({
       query: (formData) => ({
         url: "/upload",
@@ -120,6 +149,7 @@ export const apiSlice = createApi({
       }),
     }),
 
+    // ─── Auth ─────────────────────────────────────────────────────────────────
     login: builder.mutation({
       query: (credentials) => ({
         url: "/auth/login",
@@ -136,128 +166,6 @@ export const apiSlice = createApi({
       }),
     }),
 
-    getSalesAnalytics: builder.query({
-      query: () => "/admin/orders/analytics",
-      providesTags: ["Order"],
-    }),
-
-    getTopProducts: builder.query({
-      query: () => "/admin/orders/analytics/top-products",
-      providesTags: ["Product"],
-    }),
-
-    getCustomerCount: builder.query({
-      query: () => "/admin/orders/analytics/customers",
-    }),
-
-    getUsers: builder.query({
-      query: () => "/admin/users",
-      providesTags: ["User"],
-    }),
-
-    updateUserRole: builder.mutation({
-      query: ({ id, role }) => ({
-        url: `/admin/users/${id}/role`,
-        method: "PUT",
-        body: { role },
-      }),
-      invalidatesTags: ["User"],
-    }),
-
-    updateStock: builder.mutation({
-      query: ({ id, stock }) => ({
-        url: `/admin/inventory/${id}`,
-        method: "PUT",
-        body: { stock },
-      }),
-      invalidatesTags: ["Product"],
-    }),
-
-    getSettings: builder.query({
-      query: () => "/admin/settings",
-      providesTags: ["Settings"],
-    }),
-
-    updateSettings: builder.mutation({
-      query: (data) => ({
-        url: "/admin/settings",
-        method: "PUT",
-        body: data,
-      }),
-      invalidatesTags: ["Settings"],
-    }),
-
-    getPublicSettings: builder.query({
-      query: () => "/settings/public",
-    }),
-
-    getHeroSlides: builder.query({
-      query: () => "/hero-slides",
-      providesTags: ["HeroSlide"],
-    }),
-    getAllHeroSlides: builder.query({
-      query: () => "/admin/hero-slides",
-      providesTags: ["HeroSlide"],
-    }),
-    createHeroSlide: builder.mutation({
-      query: (data) => ({
-        url: "/admin/hero-slides",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["HeroSlide"],
-    }),
-    updateHeroSlide: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/admin/hero-slides/${id}`,
-        method: "PUT",
-        body: data,
-      }),
-      invalidatesTags: ["HeroSlide"],
-    }),
-    deleteHeroSlide: builder.mutation({
-      query: (id) => ({
-        url: `/admin/hero-slides/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["HeroSlide"],
-    }),
-
-    getCategories: builder.query({
-      query: () => "/categories",
-      providesTags: ["Category"],
-    }),
-
-    createCategory: builder.mutation({
-      query: (data) => ({
-        url: "/admin/categories",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Category"],
-    }),
-
-    updateCategory: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/admin/categories/${id}`,
-        method: "PUT",
-        body: data,
-      }),
-      invalidatesTags: ["Category"],
-    }),
-
-    deleteCategory: builder.mutation({
-      query: (id) => ({
-        url: `/admin/categories/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Category"],
-    }),
-
-    getOrderCustomerCount: builder.query({
-      query: () => "/admin/orders/analytics/order-customers",
-    }),
-
     updateProfile: builder.mutation({
       query: (body) => ({
         url: "/auth/profile",
@@ -266,51 +174,31 @@ export const apiSlice = createApi({
       }),
     }),
 
-    sendMarketingEmail: builder.mutation({
+    forgotPassword: builder.mutation({
+      query: (email) => ({
+        url: "/auth/forgot-password",
+        method: "POST",
+        body: { email },
+      }),
+    }),
+
+    resetPassword: builder.mutation({
       query: (data) => ({
-        url: "/admin/marketing/send",
+        url: "/auth/reset-password",
         method: "POST",
         body: data,
       }),
     }),
 
-    getProductBySlug: builder.query({
-      query: (slug) => `/products/${slug}`,
-      providesTags: ["Product"],
-    }),
-
-    getCoupons: builder.query({
-      query: () => "/admin/coupons",
-      providesTags: ["Coupon"],
-    }),
-    createCoupon: builder.mutation({
-      query: (data) => ({ url: "/admin/coupons", method: "POST", body: data }),
-      invalidatesTags: ["Coupon"],
-    }),
-    updateCoupon: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/admin/coupons/${id}`,
+    changePassword: builder.mutation({
+      query: (data) => ({
+        url: "/auth/change-password",
         method: "PUT",
         body: data,
       }),
-      invalidatesTags: ["Coupon"],
-    }),
-    deleteCoupon: builder.mutation({
-      query: (id) => ({ url: `/admin/coupons/${id}`, method: "DELETE" }),
-      invalidatesTags: ["Coupon"],
-    }),
-    validateCoupon: builder.mutation({
-      query: (data) => ({
-        url: "/coupons/validate",
-        method: "POST",
-        body: data,
-      }),
-    }),
-    getSettingsChanges: builder.query({
-      query: () => "/admin/settings/changes",
-      providesTags: ["Settings"],
     }),
 
+    // ─── Addresses ────────────────────────────────────────────────────────────
     getAddresses: builder.query({
       query: () => "/auth/addresses",
       transformResponse: (response: {
@@ -358,90 +246,248 @@ export const apiSlice = createApi({
       invalidatesTags: ["User"],
     }),
 
-    forgotPassword: builder.mutation({
-      query: (email) => ({
-        url: "/auth/forgot-password",
-        method: "POST",
-        body: { email },
-      }),
+    // ─── Admin Analytics ──────────────────────────────────────────────────────
+    getSalesAnalytics: builder.query({
+      query: () => "/admin/orders/analytics",
+      providesTags: ["Order"],
     }),
 
-    resetPassword: builder.mutation({
-      query: (data) => ({
-        url: "/auth/reset-password",
-        method: "POST",
-        body: data,
-      }),
+    getTopProducts: builder.query({
+      query: () => "/admin/orders/analytics/top-products",
+      providesTags: ["Product"],
     }),
 
-    changePassword: builder.mutation({
+    getCustomerCount: builder.query({
+      query: () => "/admin/orders/analytics/customers",
+    }),
+
+    getOrderCustomerCount: builder.query({
+      query: () => "/admin/orders/analytics/order-customers",
+    }),
+
+    // ─── Admin Users ──────────────────────────────────────────────────────────
+    getUsers: builder.query({
+      query: () => "/admin/users",
+      providesTags: ["User"],
+    }),
+
+    updateUserRole: builder.mutation({
+      query: ({ id, role }) => ({
+        url: `/admin/users/${id}/role`,
+        method: "PUT",
+        body: { role },
+      }),
+      invalidatesTags: ["User"],
+    }),
+
+    // ─── Admin Inventory ──────────────────────────────────────────────────────
+    updateStock: builder.mutation({
+      query: ({ id, stock }) => ({
+        url: `/admin/inventory/${id}`,
+        method: "PUT",
+        body: { stock },
+      }),
+      invalidatesTags: ["Product"],
+    }),
+
+    // ─── Settings ─────────────────────────────────────────────────────────────
+    getSettings: builder.query({
+      query: () => "/admin/settings",
+      providesTags: ["Settings"],
+    }),
+
+    updateSettings: builder.mutation({
       query: (data) => ({
-        url: "/auth/change-password",
+        url: "/admin/settings",
         method: "PUT",
         body: data,
       }),
+      invalidatesTags: ["Settings"],
     }),
 
-    verifyPayment: builder.query<VerifyPaymentResponse, string>({
-      query: (reference: string) => `/orders/verify/${reference}`,
+    getPublicSettings: builder.query({
+      query: () => "/settings/public",
     }),
 
-    getMyOrders: builder.query<Order[], void>({
-      query: () => "/orders/my-orders",
-      providesTags: ["Order"],
+    getSettingsChanges: builder.query({
+      query: () => "/admin/settings/changes",
+      providesTags: ["Settings"],
+    }),
+
+    // ─── Hero Slides ──────────────────────────────────────────────────────────
+    getHeroSlides: builder.query({
+      query: () => "/hero-slides",
+      providesTags: ["HeroSlide"],
+    }),
+    getAllHeroSlides: builder.query({
+      query: () => "/admin/hero-slides",
+      providesTags: ["HeroSlide"],
+    }),
+    createHeroSlide: builder.mutation({
+      query: (data) => ({
+        url: "/admin/hero-slides",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["HeroSlide"],
+    }),
+    updateHeroSlide: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `/admin/hero-slides/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["HeroSlide"],
+    }),
+    deleteHeroSlide: builder.mutation({
+      query: (id) => ({
+        url: `/admin/hero-slides/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["HeroSlide"],
+    }),
+
+    // ─── Categories (public & admin) ──────────────────────────────────────────
+    // Flat list (with optional parent filter)
+    getCategories: builder.query({
+      query: (params?: { parent?: string | null }) => {
+        const searchParams = new URLSearchParams();
+        if (params?.parent !== undefined) {
+          if (params.parent === null) {
+            searchParams.append("parent", "null");
+          } else {
+            searchParams.append("parent", params.parent);
+          }
+        }
+        const queryString = searchParams.toString();
+        return `/categories${queryString ? `?${queryString}` : ""}`;
+      },
+      providesTags: ["Category"],
+    }),
+
+    // Hierarchical tree
+    getCategoryTree: builder.query({
+      query: () => "/categories/tree",
+      providesTags: ["Category"],
+    }),
+
+    // Admin category mutations
+    createCategory: builder.mutation({
+      query: (data) => ({
+        url: "/admin/categories",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Category"],
+    }),
+
+    updateCategory: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `/admin/categories/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["Category"],
+    }),
+
+    deleteCategory: builder.mutation({
+      query: (id) => ({
+        url: `/admin/categories/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Category"],
+    }),
+
+    // ─── Coupons ──────────────────────────────────────────────────────────────
+    getCoupons: builder.query({
+      query: () => "/admin/coupons",
+      providesTags: ["Coupon"],
+    }),
+    createCoupon: builder.mutation({
+      query: (data) => ({ url: "/admin/coupons", method: "POST", body: data }),
+      invalidatesTags: ["Coupon"],
+    }),
+    updateCoupon: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `/admin/coupons/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["Coupon"],
+    }),
+    deleteCoupon: builder.mutation({
+      query: (id) => ({ url: `/admin/coupons/${id}`, method: "DELETE" }),
+      invalidatesTags: ["Coupon"],
+    }),
+    validateCoupon: builder.mutation({
+      query: (data) => ({
+        url: "/coupons/validate",
+        method: "POST",
+        body: data,
+      }),
+    }),
+
+    // ─── Marketing ────────────────────────────────────────────────────────────
+    sendMarketingEmail: builder.mutation({
+      query: (data) => ({
+        url: "/admin/marketing/send",
+        method: "POST",
+        body: data,
+      }),
     }),
   }),
 });
 
 export const {
   useGetProductsQuery,
+  useGetProductBySlugQuery,
   useCreateOrderMutation,
+  useVerifyPaymentQuery,
+  useLazyVerifyPaymentQuery,
+  useGetMyOrdersQuery,
+  useGetAllOrdersQuery,
   useGetAdminStatsQuery,
+  useUpdateOrderStatusMutation,
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
-  useUpdateOrderStatusMutation,
   useUploadImageMutation,
   useLoginMutation,
   useRegisterMutation,
+  useUpdateProfileMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
+  useChangePasswordMutation,
+  useGetAddressesQuery,
+  useAddAddressMutation,
+  useUpdateAddressMutation,
+  useDeleteAddressMutation,
+  useSetDefaultAddressMutation,
   useGetSalesAnalyticsQuery,
   useGetTopProductsQuery,
   useGetCustomerCountQuery,
+  useGetOrderCustomerCountQuery,
   useGetUsersQuery,
   useUpdateUserRoleMutation,
   useUpdateStockMutation,
   useGetSettingsQuery,
   useUpdateSettingsMutation,
   useGetPublicSettingsQuery,
-  useGetAllOrdersQuery,
+  useGetSettingsChangesQuery,
   useGetHeroSlidesQuery,
   useGetAllHeroSlidesQuery,
   useCreateHeroSlideMutation,
   useUpdateHeroSlideMutation,
   useDeleteHeroSlideMutation,
   useGetCategoriesQuery,
+  useGetCategoryTreeQuery,            // NEW
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
-  useGetOrderCustomerCountQuery,
-  useUpdateProfileMutation,
-  useSendMarketingEmailMutation,
-  useGetProductBySlugQuery,
   useGetCouponsQuery,
   useCreateCouponMutation,
   useUpdateCouponMutation,
   useDeleteCouponMutation,
   useValidateCouponMutation,
-  useGetSettingsChangesQuery,
-  useGetAddressesQuery,
-  useAddAddressMutation,
-  useUpdateAddressMutation,
-  useDeleteAddressMutation,
-  useSetDefaultAddressMutation,
-  useForgotPasswordMutation,
-  useResetPasswordMutation,
-  useChangePasswordMutation,
-  useVerifyPaymentQuery,
-  useLazyVerifyPaymentQuery,
-  useGetMyOrdersQuery,
+  useSendMarketingEmailMutation,
 } = apiSlice;

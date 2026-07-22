@@ -95,7 +95,12 @@ const HomeProductGrid = ({
                   name={product.name}
                   price={product.price}
                   image={product.images?.[0] || PLACEHOLDER}
-                  category={product.category || "General"}
+                  // ✅ Extract category name safely
+                  category={
+                    typeof product.category === "string"
+                      ? product.category
+                      : product.category?.name ?? "General"
+                  }
                   stock={product.stock}
                   onClick={() => setModalProduct(product)}
                 />

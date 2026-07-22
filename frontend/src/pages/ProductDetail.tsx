@@ -13,9 +13,22 @@ const ACCENT      = '#e8622a';
 const PLACEHOLDER = 'https://via.placeholder.com/600';
 
 interface Product {
-  _id: string; name: string; slug: string; description?: string;
-  price: number; stock: number; category?: string; images?: string[];
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  price: number;
+  stock: number;
+  // ✅ Updated to match the new populated object
+  category?: string | { _id: string; name: string; slug?: string; parent?: string | null };
+  images?: string[];
 }
+
+// Helper: safely get the category name
+const getCategoryName = (cat: Product['category']): string => {
+  if (!cat) return 'General';
+  return typeof cat === 'string' ? cat : cat.name ?? 'General';
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 const ProductDetail = () => {
@@ -33,9 +46,12 @@ const ProductDetail = () => {
   const handleAddToCart = () => {
     if (!product || product.stock === 0) { toast.error('Out of stock!'); return; }
     dispatch(addToCart({
-      _id: product._id, name: product.name,
+      _id: product._id,
+      name: product.name,
       image: product.images?.[0] || PLACEHOLDER,
-      price: product.price, qty, stock: product.stock,
+      price: product.price,
+      qty,
+      stock: product.stock,
     }));
     toast.success(`${product.name} added to cart! 🛒`);
     setAdded(true);
@@ -107,6 +123,7 @@ const ProductDetail = () => {
   }
 
   const isOutOfStock = product.stock === 0;
+  const categoryName = getCategoryName(product.category);
 
   // ══════ MAIN PAGE ═════════════════════════════════════════════════════════════
   return (
@@ -181,7 +198,7 @@ const ProductDetail = () => {
               </div>
               <span className="text-[10px] font-extrabold uppercase tracking-[0.22em]"
                 style={{ color:ACCENT }}>
-                {product.category || 'Product'}
+                {categoryName}
               </span>
             </div>
             <h1 className="text-3xl md:text-5xl font-black text-white leading-[1.05]">
@@ -279,7 +296,7 @@ const ProductDetail = () => {
           <div className="pt-2 border-t" style={{ borderColor:'rgba(255,255,255,0.06)' }}>
             <div className="flex flex-wrap gap-3 mt-4">
               {[
-                { label:'Category', value: product.category || '—' },
+                { label:'Category', value: categoryName },
                 { label:'Unit price', value: `₦${product.price.toLocaleString()}` },
               ].map(item => (
                 <div key={item.label} className="px-4 py-2.5 rounded-xl"

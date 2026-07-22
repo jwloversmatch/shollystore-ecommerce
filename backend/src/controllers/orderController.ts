@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { Order } from '../models/Order';
+import mongoose from 'mongoose';
+import { Order, IOrder } from '../models/Order';   // ✅ import IOrder now exported
 import { Product } from '../models/Product';
 import { User } from '../models/User';
 import { Coupon } from '../models/Coupon';
@@ -14,42 +15,80 @@ import { AuthRequest } from '../middleware/auth';
 // @route   POST /api/orders
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { orderItems, shippingAddress, totalPrice, paymentMethod = 'paystack', couponCode, discount } = req.body;
+    const {
+      orderItems,
+      shippingAddress,
+      totalPrice,
+      subtotal,
+      taxAmount,
+      paymentMethod = 'paystack',
+      couponCode,
+      discount,
+      notes,
+      isGift,
+      giftMessage,
+      shippingInfo,
+    } = req.body;
 
     if (!orderItems || orderItems.length === 0) {
       res.status(400).json({ success: false, message: 'No order items' });
       return;
     }
 
-    // 1. Check stock availability
+    // 1. Validate stock (including variants)
     for (const item of orderItems) {
       const product = await Product.findById(item._id);
       if (!product) {
         res.status(404).json({ success: false, message: `Product ${item._id} not found` });
         return;
       }
-      if (product.stock < item.qty) {
-        res.status(400).json({
-          success: false,
-          message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.qty}`,
-        });
-        return;
+
+      if (item.variant && (item.variant.sku || item.variant.color || item.variant.size)) {
+        const variant = product.variants?.find(
+          v => v.sku === item.variant?.sku || (v.color === item.variant?.color && v.size === item.variant?.size)
+        );
+        if (!variant) {
+          res.status(400).json({ success: false, message: `Variant not found for ${product.name}` });
+          return;
+        }
+        const available = variant.stock ?? product.stock;
+        if (available < item.qty) {
+          res.status(400).json({
+            success: false,
+            message: `Insufficient stock for ${product.name} (${variant.color || ''} ${variant.size || ''}). Available: ${available}`,
+          });
+          return;
+        }
+      } else {
+        if (product.stock < item.qty) {
+          res.status(400).json({
+            success: false,
+            message: `Insufficient stock for ${product.name}. Available: ${product.stock}`,
+          });
+          return;
+        }
       }
     }
 
     // 2. Build order document
-    const order = new Order({
+    const orderData = {
       user: req.user!._id,
       name: req.user!.name || '',
       phone: req.user!.phone || '',
+      email: req.user!.email,
       orderItems: orderItems.map((x: any) => ({
-        ...x,
+        name: x.name,
+        qty: x.qty,
+        price: x.price,
         product: x._id,
-        _id: undefined,
+        image: x.image || undefined,
+        variant: x.variant || undefined,
       })),
       shippingAddress,
       totalPrice,
-      status: 'Pending',
+      subtotal: subtotal || totalPrice - (discount || 0),
+      taxAmount: taxAmount || 0,
+      status: 'Pending' as const,
       paymentMethod,
       paymentDetails:
         paymentMethod === 'bank_transfer'
@@ -64,9 +103,13 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
           : undefined,
       couponCode: couponCode || undefined,
       discount: discount || 0,
-    });
+      notes: notes || undefined,
+      isGift: isGift || false,
+      giftMessage: giftMessage || undefined,
+      shippingInfo: shippingInfo || {},
+    };
 
-    const createdOrder = await order.save();
+    const createdOrder = await Order.create(orderData) as IOrder;
 
     // 3. Payment flow
     if (paymentMethod === 'paystack') {
@@ -81,13 +124,11 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
         );
 
         if (!paymentData.status) {
-          // Paystack returned an unsuccessful status – remove the order
           await Order.findByIdAndDelete(createdOrder._id);
           res.status(400).json({ success: false, message: 'Paystack error' });
           return;
         }
 
-        // Paystack succeeded – now notify admin
         await sendAdminOrderNotification(createdOrder, 'created');
 
         res.status(201).json({
@@ -97,12 +138,27 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
           reference: paymentData.data.reference,
         });
       } catch (paystackError) {
-        // Paystack threw an exception – delete the pending order
         await Order.findByIdAndDelete(createdOrder._id);
-        throw paystackError; // re-throw to be handled by the outer catch
+        throw paystackError;
       }
     } else {
-      // Non‑Paystack methods: notify admin immediately
+      try {
+        const originalSubtotal = orderItems.reduce(
+          (sum: number, item: any) => sum + item.price * item.qty, 0
+        );
+        await sendOrderConfirmation(
+          req.user!.email,
+          createdOrder._id.toString(),
+          totalPrice,
+          req.user!.name,
+          discount || 0,
+          couponCode,
+          originalSubtotal
+        );
+      } catch (emailError) {
+        console.error('Failed to send customer order confirmation email:', emailError);
+      }
+
       await sendAdminOrderNotification(createdOrder, 'created');
 
       res.status(201).json({
@@ -112,7 +168,6 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       });
     }
   } catch (error: any) {
-    // Specific Paystack / validation errors
     if (error instanceof ValidationError) {
       res.status(400).json({ success: false, message: error.message });
       return;
@@ -121,7 +176,6 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       res.status(502).json({ success: false, message: 'Payment processing failed. Please try again.' });
       return;
     }
-    // Fallback
     res.status(500).json({ success: false, message: error.message || 'Internal server error' });
   }
 };
@@ -147,7 +201,7 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
     const event = JSON.parse(rawBody.toString());
     if (event.event === 'charge.success') {
       const orderId = event.data.metadata.order_id;
-      const order = await Order.findById(orderId);
+      const order = await Order.findById(orderId) as IOrder | null;
       if (!order) {
         res.status(404).send('Order not found');
         return;
@@ -155,7 +209,24 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
 
       if (order.status === 'Pending') {
         for (const item of order.orderItems) {
-          await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.qty } });
+          const product = await Product.findById(item.product);
+          if (!product) continue;
+
+          if (item.variant && (item.variant.sku || item.variant.color || item.variant.size)) {
+            const variant = product.variants?.find(
+              v => v.sku === item.variant?.sku || (v.color === item.variant?.color && v.size === item.variant?.size)
+            );
+            if (variant) {
+              if (variant.stock !== undefined) {
+                variant.stock = Math.max(0, variant.stock - item.qty);
+              }
+              product.stock = Math.max(0, product.stock - item.qty);
+              await product.save();
+            }
+          } else {
+            product.stock = Math.max(0, product.stock - item.qty);
+            await product.save();
+          }
         }
       }
 
@@ -169,7 +240,7 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
 
       if (order.couponCode) {
         await Coupon.updateOne(
-          { code: order.couponCode.toUpperCase() },
+          { code: (order.couponCode as string).toUpperCase() },
           { $inc: { usedCount: 1 } }
         );
       }
@@ -180,8 +251,7 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
         const user = await User.findById(order.user);
         if (user) {
           const originalSubtotal = order.orderItems.reduce(
-            (sum, item) => sum + item.price * item.qty,
-            0
+            (sum: number, item) => sum + item.price * item.qty, 0  // ✅ item is now properly typed
           );
           await sendOrderConfirmation(
             user.email,
@@ -189,7 +259,7 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
             order.totalPrice,
             user.name,
             order.discount || 0,
-            order.couponCode,
+            (order.couponCode as string),
             originalSubtotal
           );
         }
