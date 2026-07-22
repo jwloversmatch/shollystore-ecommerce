@@ -9,6 +9,8 @@ export interface ProductItem {
   stock?: number;
   slug?: string;
   description?: string;
+  brand?: string;   // ✅ added
+  sku?: string;     // ✅ added
 }
 
 export interface HeroSlide {

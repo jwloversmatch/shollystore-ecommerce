@@ -182,7 +182,7 @@ const Account = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-6xl mx-auto space-y-8"
+      className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 pb-24 md:pb-16 max-w-6xl mx-auto space-y-8"
       style={{ background: "#0A0A0B" }}
     >
       <SEO

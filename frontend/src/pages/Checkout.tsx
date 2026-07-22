@@ -16,7 +16,7 @@ import {
 import { clearCart } from "../features/cart/cartSlice";
 import {
   MapPin, Building, CreditCard, Banknote, MessageCircle,
-  X, Home, Briefcase, CheckCircle, Flame, Tag, ArrowRight, Loader2, AlertCircle,
+  X, Home, Briefcase, CheckCircle, Flame, Tag, ArrowRight, Loader2, AlertCircle, ArrowLeft,
 } from "lucide-react";
 import SEO from "../components/SEO";
 
@@ -40,7 +40,7 @@ const checkoutSchema = z.object({
 });
 type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
-// ─── Input class builder (matches Login / Register) ────────────────────────────
+// ─── Input class builder ──────────────────────────────────────────────────────
 const inputCls = (hasError: boolean) =>
   [
     "w-full pl-11 pr-4 py-3.5 rounded-xl text-sm text-white",
@@ -94,7 +94,6 @@ const Checkout = () => {
   const [orderSuccess, setOrderSuccess]   = useState(false);
   const [orderData,    setOrderData]      = useState<OrderResponse | null>(null);
 
-  // Address state – no effect needed; initial state is fine.
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [isNewAddress,       setIsNewAddress]      = useState(true);
 
@@ -188,7 +187,6 @@ const Checkout = () => {
           <div className="absolute top-0 inset-x-0 h-px rounded-t-3xl"
             style={{ background:`linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
 
-          {/* Animated plate check */}
           <div className="flex justify-center mb-6">
             <div className="relative">
               <motion.div animate={{ rotate:360 }} transition={{ duration:20, repeat:Infinity, ease:"linear" }}
@@ -302,16 +300,30 @@ const Checkout = () => {
       <AmbientBg />
 
       <div className="max-w-6xl mx-auto">
-        {/* Page header */}
+        {/* Page header with Back to Cart button */}
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.45 }}
-          className="mb-7">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background:`${ACCENT}18` }}>
-              <Flame className="w-4 h-4" style={{ color:ACCENT }} />
+          className="mb-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background:`${ACCENT}18` }}>
+                <Flame className="w-4 h-4" style={{ color:ACCENT }} />
+              </div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color:ACCENT }}>Secure Checkout</p>
             </div>
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color:ACCENT }}>Secure Checkout</p>
+            <h1 className="text-3xl md:text-4xl font-black text-white">Complete Your Order</h1>
           </div>
-          <h1 className="text-3xl md:text-4xl font-black text-white">Complete Your Order</h1>
+
+          {/* ✅ Back to Cart button */}
+          <motion.button
+            whileHover={{ scale:1.04 }}
+            whileTap={{ scale:0.96 }}
+            onClick={() => navigate('/cart')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white transition-colors"
+            style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.08)' }}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Cart
+          </motion.button>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-5 lg:gap-8 items-start">
