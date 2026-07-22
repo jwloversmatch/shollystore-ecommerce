@@ -1,13 +1,15 @@
-import { useState, useMemo, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronLeft, ChevronRight, Home } from "lucide-react";
-import { useGetProductsQuery, useGetCategoryTreeQuery } from "../features/api/apiSlice";
+import {
+  useGetProductsQuery,
+  useGetCategoryTreeQuery,
+} from "../features/api/apiSlice";
 import ProductCard from "../components/ProductCard";
 import { ACCENT, PLACEHOLDER } from "../types/home";
 import type { ProductItem } from "../types/home";
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface CategoryNode {
   _id: string;
   name: string;
@@ -15,77 +17,57 @@ interface CategoryNode {
   children?: CategoryNode[];
 }
 
-// Safely extract category name from product
-const getCategoryName = (p: ProductItem): string =>
-  typeof p.category === "string" ? p.category : p.category?.name ?? "General";
-
-// Find a category node by slug path from a tree
-const findCategoryByPath = (
-  tree: CategoryNode[],
-  slugs: string[]
-): CategoryNode | null => {
-  if (!slugs.length) return null;
-  const [currentSlug, ...rest] = slugs;
+// Helper: find a node by ID anywhere in the tree
+const findNodeById = (tree: CategoryNode[], id: string): CategoryNode | null => {
   for (const node of tree) {
-    if (node.slug === currentSlug) {
-      if (rest.length === 0) return node;
-      if (node.children) {
-        const found = findCategoryByPath(node.children, rest);
-        if (found) return found;
-      }
+    if (node._id === id) return node;
+    if (node.children) {
+      const found = findNodeById(node.children, id);
+      if (found) return found;
     }
   }
   return null;
 };
 
+// Helper: safely extract category name from product
+const getCategoryName = (p: ProductItem): string =>
+  typeof p.category === "string" ? p.category : p.category?.name ?? "General";
+
 const ShopPage = () => {
-  const { "*": pathParam } = useParams<{ "*": string }>();
-  const navigate = useNavigate();
-
-  // Memoize slugs to avoid new array on every render
-  const slugs = useMemo(
-    () => (pathParam ? pathParam.split("/").filter(Boolean) : []),
-    [pathParam]
-  );
-
-  // Fetch category tree (pass undefined as the argument to satisfy the hook signature)
   const { data: tree = [] } = useGetCategoryTreeQuery(undefined);
+
+  // ── Navigation state: array of selected category IDs ────────────────
+  const [selectedPath, setSelectedPath] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const limit = 12;
 
-  // Current category node based on the path
-  const currentCategory = useMemo(
-    () => (tree.length ? findCategoryByPath(tree, slugs) : null),
-    [tree, slugs]
-  );
+  // Current node based on selectedPath
+  const currentNode = useMemo<CategoryNode | null>(() => {
+    if (selectedPath.length === 0) return null;
+    return findNodeById(tree, selectedPath[selectedPath.length - 1]);
+  }, [selectedPath, tree]);
 
-  // All ancestors (breadcrumb)
+  // Children of current node (or root if none selected)
+  const childCategories = useMemo<CategoryNode[]>(() => {
+    if (selectedPath.length === 0) return tree;
+    return currentNode?.children || [];
+  }, [currentNode, tree, selectedPath]);
+
+  // Build breadcrumb from selectedPath
   const breadcrumbs = useMemo(() => {
-    if (!currentCategory) return [];
-    const crumbs: { name: string; path: string }[] = [];
-    const currentSlugs: string[] = [];
-    for (const slug of slugs) {
-      currentSlugs.push(slug);
-      const node = findCategoryByPath(tree, currentSlugs);
-      if (node) {
-        crumbs.push({
-          name: node.name,
-          path: `/shop/${currentSlugs.join("/")}`,
-        });
-      }
-    }
+    const crumbs: { name: string; id: string | null }[] = [
+      { name: "All", id: null },
+    ];
+    selectedPath.forEach((id) => {
+      const node = findNodeById(tree, id);
+      if (node) crumbs.push({ name: node.name, id: node._id });
+    });
     return crumbs;
-  }, [currentCategory, slugs, tree]);
-
-  // Child categories of current node (or root if no node)
-  const childCategories = useMemo<CategoryNode[]>(
-    () => (currentCategory?.children || tree),
-    [currentCategory, tree]
-  );
+  }, [selectedPath, tree]);
 
   // Category ID for product query
-  const categoryId = currentCategory?._id || undefined;
+  const categoryId = currentNode?._id || undefined;
 
   const { data, isLoading } = useGetProductsQuery({
     ...(categoryId ? { category: categoryId, includeSubcategories: true } : {}),
@@ -96,23 +78,30 @@ const ShopPage = () => {
   const products: ProductItem[] = data?.products ?? [];
   const pagination = data?.pagination ?? { page: 1, pages: 1, total: 0 };
 
-  // Client‑side search filter
   const filtered = search
     ? products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
     : products;
 
-  // Reset page when path changes
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+  // Handle chip click – reset page and search
+  const handleChipClick = (id: string | null) => {
+    if (id === null) {
+      setSelectedPath([]);
+    } else {
+      const idx = selectedPath.indexOf(id);
+      if (idx !== -1) {
+        setSelectedPath(selectedPath.slice(0, idx + 1));
+      } else {
+        setSelectedPath([...selectedPath, id]);
+      }
+    }
     setPage(1);
     setSearch("");
-  }, [slugs]);
+  };
 
-  // When a child category card is clicked, navigate deeper
-  const handleChildClick = (child: CategoryNode) => {
-    const base = slugs.join("/");
-    const newPath = base ? `/shop/${base}/${child.slug}` : `/shop/${child.slug}`;
-    navigate(newPath);
+  // Handle search input – reset page
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setPage(1);
   };
 
   return (
@@ -126,10 +115,10 @@ const ShopPage = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.2em] mb-1" style={{ color: ACCENT }}>
-            {currentCategory ? currentCategory.name : "All Categories"}
+            {currentNode ? currentNode.name : "All Categories"}
           </p>
           <h1 className="text-3xl md:text-4xl font-black text-white">
-            {currentCategory ? currentCategory.name : "Shop"}
+            {currentNode ? currentNode.name : "Shop"}
           </h1>
           <p className="text-gray-600 text-sm mt-1">{pagination.total} products available</p>
         </div>
@@ -142,66 +131,91 @@ const ShopPage = () => {
               type="text"
               placeholder="Search..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={handleSearchChange}
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#1c1c1c] border border-white/[0.08] text-white placeholder-gray-600 outline-none text-sm focus:border-[#e8622a]/50 transition-colors"
             />
           </div>
 
           {/* Quick jump to root */}
-          {slugs.length > 0 && (
-            <Link
-              to="/shop"
+          {selectedPath.length > 0 && (
+            <button
+              onClick={() => handleChipClick(null)}
               className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white transition-colors bg-[#1c1c1c] border border-white/[0.08]"
             >
               <Home className="w-4 h-4" /> All
-            </Link>
+            </button>
           )}
         </div>
       </div>
 
-      {/* Breadcrumbs */}
-      {slugs.length > 0 && (
-        <div className="flex items-center gap-2 mb-5 text-sm flex-wrap">
-          <Link
-            to="/shop"
-            className="text-gray-500 hover:text-white transition-colors font-bold"
-          >
-            Shop
-          </Link>
-          {breadcrumbs.map((crumb, idx) => (
-            <span key={crumb.path} className="flex items-center gap-2">
-              <ChevronRight className="w-4 h-4 text-gray-600" />
-              <Link
-                to={crumb.path}
-                className={`font-bold transition-colors ${
+      {/* Breadcrumb chips */}
+      <div className="flex items-center gap-2 mb-5 text-sm flex-wrap">
+        {breadcrumbs.map((crumb, idx) => (
+          <span key={crumb.id || "root"} className="flex items-center gap-2">
+            {idx > 0 && <ChevronRight className="w-4 h-4 text-gray-600" />}
+            <button
+              onClick={() => handleChipClick(crumb.id)}
+              className={`font-bold transition-colors px-3 py-1 rounded-full border ${
+                idx === breadcrumbs.length - 1
+                  ? "text-white border-transparent"
+                  : "text-gray-500 border-white/10 hover:border-white/20"
+              }`}
+              style={{
+                background:
+                  idx === breadcrumbs.length - 1 ? ACCENT : "#1c1c1c",
+                borderColor:
                   idx === breadcrumbs.length - 1
-                    ? "text-white"
-                    : "text-gray-500 hover:text-white"
-                }`}
-              >
-                {crumb.name}
-              </Link>
-            </span>
-          ))}
-        </div>
-      )}
+                    ? ACCENT
+                    : "rgba(255,255,255,0.08)",
+              }}
+            >
+              {crumb.name}
+            </button>
+          </span>
+        ))}
+      </div>
 
-      {/* Child categories (grid of cards) */}
+      {/* Subcategory chips */}
       {childCategories.length > 0 && (
         <div className="mb-8">
           <h2 className="text-white font-black text-lg mb-4">
-            {currentCategory ? `${currentCategory.name} – Subcategories` : "Categories"}
+            {currentNode ? `${currentNode.name} – Subcategories` : "Categories"}
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {childCategories.map((child) => (
-              <button
-                key={child._id}
-                onClick={() => handleChildClick(child)}
-                className="flex flex-col items-center justify-center p-4 rounded-xl border border-white/10 bg-[#1c1c1c] hover:border-[#e8622a]/40 transition-colors"
-              >
-                <span className="text-gray-400 font-bold text-sm">{child.name}</span>
-              </button>
-            ))}
+          <div className="flex gap-3 flex-wrap">
+            <button
+              onClick={() => handleChipClick(null)}
+              className={`px-4 py-2 rounded-full text-sm font-bold border transition-all ${
+                selectedPath.length === 0
+                  ? "text-white border-transparent"
+                  : "text-gray-400 border-white/10 hover:border-white/20"
+              }`}
+              style={{
+                background: selectedPath.length === 0 ? ACCENT : "#1c1c1c",
+                borderColor: selectedPath.length === 0 ? ACCENT : "rgba(255,255,255,0.08)",
+              }}
+            >
+              All
+            </button>
+            {childCategories.map(child => {
+              const isActive = selectedPath[selectedPath.length - 1] === child._id;
+              return (
+                <button
+                  key={child._id}
+                  onClick={() => handleChipClick(child._id)}
+                  className={`px-4 py-2 rounded-full text-sm font-bold border transition-all ${
+                    isActive
+                      ? "text-white border-transparent"
+                      : "text-gray-400 border-white/10 hover:border-white/20"
+                  }`}
+                  style={{
+                    background: isActive ? ACCENT : "#1c1c1c",
+                    borderColor: isActive ? ACCENT : "rgba(255,255,255,0.08)",
+                  }}
+                >
+                  {child.name}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

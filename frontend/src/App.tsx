@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 // Import Navbar and AdminRoute synchronously
 import Navbar from './components/Navbar';
 import AdminRoute from './components/AdminRoute';
-import ProtectedRoute from './components/ProtectedRoute';   // ✅ new
+import ProtectedRoute from './components/ProtectedRoute';  
 
 // --- Lazy Load Pages (Code Splitting) ---
 const Home = React.lazy(() => import('./pages/Home'));
