@@ -76,7 +76,10 @@ const stripHtml = (html: string): string => {
 
 // ---------- Get all user emails ----------
 export const getAllUserEmails = async (): Promise<{ email: string; name?: string }[]> => {
-  const users = await User.find({}, { email: 1, name: 1, _id: 0 }).lean();
+  const users = await User.find(
+    { role: 'user' },              
+    { email: 1, name: 1, _id: 0 }
+  ).lean();
   return users as { email: string; name?: string }[];
 };
 
