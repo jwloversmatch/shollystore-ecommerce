@@ -166,31 +166,29 @@ const Navbar = () => {
 
       {/* ══════ MOBILE — FIXED top bar ═══════════════════════════════════ */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex justify-between items-center px-5 py-4
-        bg-[#FCFAF5]/95 dark:bg-[#0A0A0B]/92 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06]">
-        <Link to={user?.role === 'admin' ? '/admin' : '/'}
-          className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white">
-          <Store className="w-5 h-5" style={{ color: ACCENT }} />
-          <span>{BRAND_NAME}</span>
-        </Link>
+  bg-[#FCFAF5] dark:bg-[#0A0A0B] backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06]">
+  <Link to={user?.role === 'admin' ? '/admin' : '/'}
+    className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white">
+    <Store className="w-5 h-5" style={{ color: ACCENT }} />
+    <span>{BRAND_NAME}</span>
+  </Link>
 
-        <div className="flex items-center gap-3">
-          {/* Theme toggle (mobile) */}
-          <ThemeToggle />
-
-          {showCart && (
-            <Link to="/cart" className="relative p-1.5 rounded-xl transition-colors"
-              style={{ color: isActive('/cart') ? ACCENT : '#6b7280' }}>
-              <ShoppingCart className="w-5 h-5" />
-              {totalQty > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
-                  style={{ background: ACCENT }}>
-                  {totalQty}
-                </span>
-              )}
-            </Link>
-          )}
-        </div>
-      </div>
+  <div className="flex items-center gap-3">
+    <ThemeToggle />
+    {showCart && (
+      <Link to="/cart" className="relative p-1.5 rounded-xl transition-colors"
+        style={{ color: isActive('/cart') ? ACCENT : '#6b7280' }}>
+        <ShoppingCart className="w-5 h-5" />
+        {totalQty > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
+            style={{ background: ACCENT }}>
+            {totalQty}
+          </span>
+        )}
+      </Link>
+    )}
+  </div>
+</div>
 
       {/* ══════ MOBILE — fixed bottom nav ════════════════════════════════════ */}
       <div className="md:hidden fixed bottom-0 inset-x-0 z-50
