@@ -23,7 +23,7 @@ const HomeProductGrid = ({
   categoryList,
   setModalProduct,
 }: HomeProductGridProps) => (
-  <section id="products-grid" className="bg-white dark:bg-[#111111] py-14 md:py-18">
+  <section id="products-grid" className="bg-[#FCFAF5] dark:bg-[#111111] py-14 md:py-18">
     <div className="max-w-7xl mx-auto px-4 md:px-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div>

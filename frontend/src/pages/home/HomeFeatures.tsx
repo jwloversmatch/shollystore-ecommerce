@@ -38,7 +38,7 @@ const features = [
 ];
 
 const HomeFeatures = () => (
-  <section className="bg-white dark:bg-[#111111] py-16 md:py-20">
+  <section className="bg-[#FCFAF5] dark:bg-[#111111] py-16 md:py-20">
     <div className="max-w-7xl mx-auto px-4 md:px-6">
       <motion.div
         variants={stagger}
@@ -55,7 +55,7 @@ const HomeFeatures = () => (
               y: -6,
               boxShadow: `0 20px 50px rgba(0,0,0,0.15), 0 0 0 1px ${f.color}22`,
             }}
-            className="bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/5 rounded-2xl p-5 md:p-6 transition-all cursor-default relative overflow-hidden"
+            className="bg-[#FCFAF5] dark:bg-[#141414] border border-gray-200 dark:border-white/5 rounded-2xl p-5 md:p-6 transition-all cursor-default relative overflow-hidden"
           >
             <div
               className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-100 transition-opacity"

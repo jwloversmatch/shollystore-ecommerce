@@ -38,7 +38,7 @@ const HomeHero = ({
 }: HomeHeroProps) => {
   if (landingMode) {
     return (
-      <section className="min-h-screen flex flex-col justify-center items-center px-6 text-center pt-20 bg-gray-50 dark:bg-transparent">
+      <section className="min-h-screen flex flex-col justify-center items-center px-6 text-center pt-20 bg-[#FCFAF5] dark:bg-transparent">
         <motion.span
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -236,7 +236,7 @@ const HomeHero = ({
           <motion.div
             animate={{ y: [-4, 4, -4] }}
             transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
-            className="absolute -right-4 top-8 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 rounded-2xl px-3.5 py-2.5 shadow-lg dark:shadow-xl"
+            className="absolute -right-4 top-8 bg-[#FCFAF5] dark:bg-[#141414] border border-gray-200 dark:border-white/10 rounded-2xl px-3.5 py-2.5 shadow-lg dark:shadow-xl"
           >
             <div className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Products</div>
             <div className="text-xl font-black text-gray-900 dark:text-white">{displayProductsCount}+</div>
@@ -244,7 +244,7 @@ const HomeHero = ({
           <motion.div
             animate={{ y: [4, -4, 4] }}
             transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-            className="absolute -left-6 bottom-12 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 rounded-2xl px-3.5 py-2.5 shadow-lg dark:shadow-xl"
+            className="absolute -left-6 bottom-12 bg-[#FCFAF5] dark:bg-[#141414] border border-gray-200 dark:border-white/10 rounded-2xl px-3.5 py-2.5 shadow-lg dark:shadow-xl"
           >
             <div className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Rating</div>
             <div className="text-xl font-black text-yellow-500">4.9 ★</div>

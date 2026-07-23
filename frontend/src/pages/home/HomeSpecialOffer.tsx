@@ -11,7 +11,7 @@ const HomeSpecialOffer = ({
   specialOfferTitle,
   specialOfferText,
 }: HomeSpecialOfferProps) => (
-  <section className="bg-gray-50 dark:bg-[#0A0A0B] py-14 md:py-20 px-4 md:px-6">
+  <section className="bg-[#FCFAF5] dark:bg-[#0A0A0B] py-14 md:py-20 px-4 md:px-6">
     <div className="max-w-7xl mx-auto">
       <motion.div
         initial={{ opacity: 0, y: 40 }}

@@ -8,7 +8,7 @@ import {
   Image, Tag, BadgePercent, Home, MoreHorizontal, X, Store,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ThemeToggle from './ThemeToggle';              // ✅ added
+import ThemeToggle from './ThemeToggle';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT = '#e8622a';
@@ -88,7 +88,12 @@ const Navbar = () => {
     <>
       {/* ══════ DESKTOP — fixed top bar ═══════════════════════════════════ */}
       <nav className="hidden md:block fixed top-0 left-0 right-0 z-50">
-        <div className="absolute inset-0 bg-white/95 dark:bg-[#111]/95 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.08] shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]" />
+        <div className="absolute inset-0 
+          bg-[#FCFAF5]/95 dark:bg-[#111]/95 
+          backdrop-blur-xl 
+          border-b border-gray-200 dark:border-white/[0.08] 
+          shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]" 
+        />
         <div className="relative max-w-7xl mx-auto px-6 flex justify-between items-center py-4">
           {/* Logo */}
           <Link to={user?.role === 'admin' ? '/admin' : '/'}
@@ -161,7 +166,7 @@ const Navbar = () => {
 
       {/* ══════ MOBILE — FIXED top bar ═══════════════════════════════════ */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex justify-between items-center px-5 py-4
-        bg-white/95 dark:bg-[#0A0A0B]/92 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06]">
+        bg-[#FCFAF5]/95 dark:bg-[#0A0A0B]/92 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06]">
         <Link to={user?.role === 'admin' ? '/admin' : '/'}
           className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white">
           <Store className="w-5 h-5" style={{ color: ACCENT }} />
@@ -189,7 +194,7 @@ const Navbar = () => {
 
       {/* ══════ MOBILE — fixed bottom nav ════════════════════════════════════ */}
       <div className="md:hidden fixed bottom-0 inset-x-0 z-50
-        bg-white dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
+        bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 6px)' }}>
         <div className="flex justify-around items-center px-2 pt-2 pb-1">
 
@@ -252,7 +257,7 @@ const Navbar = () => {
               exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
               className="fixed bottom-0 inset-x-0 z-[70] rounded-t-3xl md:hidden
-                bg-white dark:bg-[#141414] border-t border-gray-200 dark:border-white/[0.09]"
+                bg-[#FCFAF5] dark:bg-[#141414] border-t border-gray-200 dark:border-white/[0.09]"
               style={{ paddingBottom: 'env(safe-area-inset-bottom, 24px)' }}>
 
               <div className="flex justify-center pt-3 pb-1">
@@ -266,7 +271,7 @@ const Navbar = () => {
                 </div>
                 <motion.button onClick={() => setAdminDrawer(false)}
                   whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-100 dark:bg-white/7">
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-200 dark:bg-white/7">
                   <X className="w-4 h-4" />
                 </motion.button>
               </div>
@@ -283,7 +288,7 @@ const Navbar = () => {
                         className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
                           active
                             ? 'bg-[#e8622a]/15 border-[#e8622a]/40 text-[#e8622a]'
-                            : 'bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/6 text-gray-600 dark:text-[#9ca3af]'
+                            : 'bg-gray-200 dark:bg-[#1c1c1c] border-gray-300 dark:border-white/6 text-gray-700 dark:text-[#9ca3af]'
                         }`}>
                         {l.icon}
                         <span className="text-sm font-bold">{l.label}</span>

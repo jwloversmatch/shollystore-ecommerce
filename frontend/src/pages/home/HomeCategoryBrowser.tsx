@@ -13,7 +13,7 @@ interface HomeCategoryBrowserProps {
 }
 
 const HomeCategoryBrowser = ({ categories }: HomeCategoryBrowserProps) => (
-  <section className="py-14 md:py-18 bg-gray-50 dark:bg-[#0A0A0B]">
+  <section className="py-14 md:py-18 bg-[#FCFAF5] dark:bg-[#0A0A0B]">
     <div className="max-w-7xl mx-auto px-4 md:px-6">
       <div className="mb-8">
         <motion.p
@@ -40,7 +40,7 @@ const HomeCategoryBrowser = ({ categories }: HomeCategoryBrowserProps) => (
           <Link
             key={cat.slug}
             to={`/category/${cat.slug}`}
-            className="flex-shrink-0 relative flex flex-col items-center gap-2 px-5 py-4 rounded-2xl border transition-all min-w-[100px] hover:border-[#e8622a]/50 bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.06]"
+            className="flex-shrink-0 relative flex flex-col items-center gap-2 px-5 py-4 rounded-2xl border transition-all min-w-[100px] hover:border-[#e8622a]/50 bg-[#FCFAF5] dark:bg-[#141414] border-gray-200 dark:border-white/[0.06]"
           >
             <span className="text-2xl">🛍️</span>
             <span className="text-xs font-bold whitespace-nowrap text-gray-500 dark:text-gray-400">

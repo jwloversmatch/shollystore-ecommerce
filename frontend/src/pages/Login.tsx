@@ -80,7 +80,7 @@ const Login = () => {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-16 relative overflow-hidden
-        bg-gray-50 dark:bg-[#0A0A0B]"
+        bg-[#FCFAF5] dark:bg-[#0A0A0B]"
     >
       <SEO
         title="Sign In"
@@ -121,7 +121,7 @@ const Login = () => {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.55, ease: "easeOut" }}
         className="relative z-10 w-full max-w-5xl rounded-3xl overflow-hidden grid md:grid-cols-[1fr_1.1fr]
-          bg-white dark:bg-[#111111]
+          bg-[#FCFAF5] dark:bg-[#111111]
           border border-gray-200 dark:border-white/[0.07]
           shadow-lg dark:shadow-[0_40px_100px_rgba(0,0,0,0.7)]"
         style={{ minHeight: 620 }}
@@ -201,7 +201,7 @@ const Login = () => {
 
         {/* Right panel – form (now adapts to light/dark) */}
         <div className="flex flex-col justify-center p-6 sm:p-8 md:p-10 lg:p-12
-          bg-white dark:bg-[#141414]">
+          bg-[#FCFAF5] dark:bg-[#141414]">
 
           {/* Mobile logo */}
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
