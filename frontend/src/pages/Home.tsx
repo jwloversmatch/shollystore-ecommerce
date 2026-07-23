@@ -38,7 +38,7 @@ const Home = () => {
   const navigate = useNavigate();
   const { user } = useSelector((s: RootState) => s.auth);
 
-  // ✅ Redirect logged‑in users to the appropriate "inside" page
+  // Redirect logged‑in users
   useEffect(() => {
     if (user) {
       if (user.role === "admin") {
@@ -118,22 +118,18 @@ const Home = () => {
     url: "https://shollystore-ecommerce.vercel.app",
   };
 
-  // If user is logged in, the effect above will redirect, so show loading
-  if (user) {
-    return <HomeLoading />;
-  }
-
+  if (user) return <HomeLoading />;
   if (isPageLoading) return <HomeLoading />;
 
   const categoryNames = categories.map((c: CategoryItem) => c.name);
 
   return (
-    <div className="min-h-screen bg-[#0A0A0B] relative overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0A0A0B] relative overflow-x-hidden">
       <SEO title={heroTitle.replace("|", "").trim()} description={heroDescription} canonicalUrl="https://shollystore-ecommerce.vercel.app" />
       <StructuredData data={organizationSchema} />
       <StructuredData data={websiteSchema} />
 
-      {/* Ambient background orbs */}
+      {/* Ambient background orbs – unchanged (low opacity) */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
         <motion.div
           animate={{ x: ["-15%", "15%", "-15%"], y: ["-8%", "8%", "-8%"] }}
@@ -167,7 +163,7 @@ const Home = () => {
       />
 
       {/* Enter Shop CTA */}
-      <section className="py-10 bg-[#0A0A0B]">
+      <section className="py-10 bg-gray-50 dark:bg-[#0A0A0B]">
         <div className="max-w-7xl mx-auto px-4 md:px-6 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -175,8 +171,8 @@ const Home = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-2xl md:text-3xl font-black text-white mb-3">Ready to explore?</h2>
-            <p className="text-gray-400 max-w-md mx-auto mb-8">Browse our full catalog of products across all categories.</p>
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-3">Ready to explore?</h2>
+            <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8">Browse our full catalog of products across all categories.</p>
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: `0 18px 44px ${ACCENT}55` }}
               whileTap={{ scale: 0.97 }}
@@ -195,11 +191,12 @@ const Home = () => {
 
       <HomeCategoryBrowser categories={categoryData} />
 
-      <section className="bg-[#111111] py-14 md:py-18">
+      {/* Featured Products section */}
+      <section className="bg-white dark:bg-[#111111] py-14 md:py-18">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="mb-8">
             <p className="text-xs font-black uppercase tracking-[0.2em] mb-2" style={{ color: ACCENT }}>Featured</p>
-            <h2 className="text-3xl md:text-4xl font-black text-white">Best Sellers</h2>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white">Best Sellers</h2>
           </div>
           <FeaturedProductsGrid />
         </div>

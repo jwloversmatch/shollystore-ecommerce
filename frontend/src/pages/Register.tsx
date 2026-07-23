@@ -34,19 +34,22 @@ const registerSchema = z
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
-// ─── Input class helper ───────────────────────────────────────────────────────
+// ─── Input class helper (light/dark) ──────────────────────────────────────────
 const buildInputCls = (hasError: boolean, extraPl = "pl-11", extraPr = "pr-4") =>
   [
-    "w-full py-3.5 rounded-xl text-sm text-white",
-    "bg-[#1c1c1c] placeholder-gray-600 outline-none transition-all duration-200",
+    "w-full py-3.5 rounded-xl text-sm",
+    "bg-gray-100 dark:bg-[#1c1c1c]",
+    "text-gray-900 dark:text-white",
+    "placeholder-gray-500 dark:placeholder-gray-600",
+    "outline-none transition-all duration-200",
     extraPl, extraPr,
     hasError
       ? "border border-red-500/50 ring-2 ring-red-500/10"
-      : "border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15",
+      : "border border-gray-300 dark:border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15",
   ].join(" ");
 
-// ── Dark background with orbs ─────────────────────────────────────────────────
-const DarkBg = () => (
+// ─── Ambient background (light/dark) ──────────────────────────────────────────
+const AmbientBg = () => (
   <>
     <motion.div
       animate={{ x: ["-12%", "12%", "-12%"], y: ["-8%", "10%", "-8%"] }}
@@ -61,11 +64,10 @@ const DarkBg = () => (
       style={{ width: 600, height: 600, bottom: -200, right: -200, background: "#10b981", opacity: 0.04 }}
     />
     <div
-      className="absolute inset-0 pointer-events-none"
-      style={{
-        backgroundImage: "radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px)",
-        backgroundSize:  "28px 28px",
-      }}
+      className="absolute inset-0 pointer-events-none
+        bg-[radial-gradient(rgba(0,0,0,0.03)_1px,transparent_1px)]
+        dark:bg-[radial-gradient(rgba(255,255,255,0.025)_1px,transparent_1px)]
+        bg-[length:28px_28px]"
     />
   </>
 );
@@ -104,20 +106,19 @@ const Register = () => {
   // ══════ SUCCESS SCREEN ════════════════════════════════════════════════════════
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden" style={{ background: "#0A0A0B" }}>
+      <div className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden
+        bg-gray-50 dark:bg-[#0A0A0B]">
         <SEO title="Check Your Email" description={`Please verify your email to activate your ${BRAND_NAME} account.`} />
-        <DarkBg />
+        <AmbientBg />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1,    y: 0  }}
           transition={{ duration: 0.55, ease: "easeOut" }}
-          className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 text-center"
-          style={{
-            background: "#141414",
-            border:     "1px solid rgba(255,255,255,0.07)",
-            boxShadow:  "0 40px 90px rgba(0,0,0,0.65)",
-          }}
+          className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 text-center
+            bg-white dark:bg-[#141414]
+            border border-gray-200 dark:border-white/[0.07]
+            shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.65)]"
         >
           {/* Accent top line */}
           <div className="absolute top-0 inset-x-0 h-px rounded-t-3xl"
@@ -154,29 +155,30 @@ const Register = () => {
 
           <motion.h2
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-            className="text-3xl font-black text-white mb-3 leading-tight"
+            className="text-3xl font-black text-gray-900 dark:text-white mb-3 leading-tight"
           >
             Check your inbox
           </motion.h2>
 
           <motion.p
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-            className="text-gray-500 text-sm leading-relaxed mb-2"
+            className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-2"
           >
             We've sent a verification link to
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.35 }}
-            className="inline-block px-4 py-2 rounded-xl border mb-6 text-sm font-bold text-white"
-            style={{ background: "#1c1c1c", borderColor: "rgba(255,255,255,0.1)" }}
+            className="inline-block px-4 py-2 rounded-xl border mb-6 text-sm font-bold
+              text-gray-900 dark:text-white
+              bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.1]"
           >
             {sentEmail}
           </motion.div>
 
           <motion.p
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
-            className="text-gray-600 text-xs mb-8 leading-relaxed"
+            className="text-gray-500 dark:text-gray-400 text-xs mb-8 leading-relaxed"
           >
             Click the link in the email to activate your account.
             Check your spam folder if you don't see it within a few minutes.
@@ -196,7 +198,7 @@ const Register = () => {
 
           <motion.p
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-            className="mt-5 text-xs text-gray-700"
+            className="mt-5 text-xs text-gray-500 dark:text-gray-600"
           >
             Wrong email?{" "}
             <button onClick={() => setSuccess(false)} className="font-bold hover:opacity-75 transition-opacity" style={{ color: ACCENT }}>
@@ -211,27 +213,25 @@ const Register = () => {
   // ══════ MAIN REGISTER FORM ════════════════════════════════════════════════════
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden"
-      style={{ background: "#0A0A0B" }}
+      className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden
+        bg-gray-50 dark:bg-[#0A0A0B]"
     >
       <SEO
         title="Create an Account"
         description={`Join ${BRAND_NAME} and start shopping from a wide range of products with fast delivery.`}
       />
-      <DarkBg />
+      <AmbientBg />
 
       {/* ════════ MAIN CARD ════════════════════════════════════════════════════ */}
       <motion.div
         initial={{ opacity: 0, y: 28, scale: 0.98 }}
         animate={{ opacity: 1, y: 0,  scale: 1    }}
         transition={{ duration: 0.55, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-5xl rounded-3xl overflow-hidden grid md:grid-cols-[1fr_1.15fr]"
-        style={{
-          background:  "#111111",
-          border:      "1px solid rgba(255,255,255,0.07)",
-          boxShadow:   "0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03)",
-          minHeight:   600,
-        }}
+        className="relative z-10 w-full max-w-5xl rounded-3xl overflow-hidden grid md:grid-cols-[1fr_1.15fr]
+          bg-white dark:bg-[#111111]
+          border border-gray-200 dark:border-white/[0.07]
+          shadow-lg dark:shadow-[0_40px_100px_rgba(0,0,0,0.7)]"
+        style={{ minHeight: 600 }}
       >
 
         {/* ══ LEFT PANEL (desktop only) ══════════════════════════════════════ */}
@@ -282,14 +282,14 @@ const Register = () => {
 
               {/* Floating chips */}
               <motion.div animate={{ y: [-5, 5, -5] }} transition={{ repeat: Infinity, duration: 3.8, ease: "easeInOut" }}
-                className="absolute -right-12 top-2 rounded-2xl px-3.5 py-2.5 border text-left"
-                style={{ background: "#1c1c1c", borderColor: "rgba(255,255,255,0.08)" }}>
+                className="absolute -right-12 top-2 rounded-2xl px-3.5 py-2.5 border text-left
+                  bg-[#1c1c1c] border-white/[0.08]">
                 <div className="text-[9px] text-gray-600 font-extrabold uppercase tracking-wider">Members</div>
                 <div className="text-sm font-black text-white">2K+</div>
               </motion.div>
               <motion.div animate={{ y: [5, -5, 5] }} transition={{ repeat: Infinity, duration: 4.5, ease: "easeInOut" }}
-                className="absolute -left-12 bottom-3 rounded-2xl px-3.5 py-2.5 border text-left"
-                style={{ background: "#1c1c1c", borderColor: "rgba(255,255,255,0.08)" }}>
+                className="absolute -left-12 bottom-3 rounded-2xl px-3.5 py-2.5 border text-left
+                  bg-[#1c1c1c] border-white/[0.08]">
                 <div className="text-[9px] text-gray-600 font-extrabold uppercase tracking-wider">Products</div>
                 <div className="text-sm font-black" style={{ color: "#10b981" }}>50+</div>
               </motion.div>
@@ -321,8 +321,9 @@ const Register = () => {
           </div>
         </div>
 
-        {/* ══ RIGHT PANEL — form ════════════════════════════════════════════════ */}
-        <div className="flex flex-col justify-center p-6 sm:p-8 md:p-10 lg:p-12" style={{ background: "#141414" }}>
+        {/* ══ RIGHT PANEL — form (light/dark) ════════════════════════════════════ */}
+        <div className="flex flex-col justify-center p-6 sm:p-8 md:p-10 lg:p-12
+          bg-white dark:bg-[#141414]">
 
           {/* Mobile logo */}
           <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
@@ -330,7 +331,7 @@ const Register = () => {
             <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${ACCENT}20` }}>
               <Store className="w-4 h-4" style={{ color: ACCENT }} />
             </div>
-            <span className="text-xl font-black text-white tracking-tight">
+            <span className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
               {BRAND_NAME}
             </span>
           </motion.div>
@@ -340,10 +341,10 @@ const Register = () => {
             <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] mb-2" style={{ color: ACCENT }}>
               New here?
             </p>
-            <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight">
+            <h2 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white leading-tight">
               Create your<br className="hidden sm:block" /> account
             </h2>
-            <p className="text-gray-600 text-sm mt-3">
+            <p className="text-gray-500 dark:text-gray-600 text-sm mt-3">
               Already a member?{" "}
               <Link to="/login" className="font-bold hover:opacity-80 transition-opacity" style={{ color: ACCENT }}>
                 Sign in →
@@ -354,27 +355,25 @@ const Register = () => {
           {/* ── Form ── */}
           <form onSubmit={handleSubmit(onSubmit)} className="mt-7 space-y-4" noValidate>
 
-            {/* Name + Phone — side by side on sm+ */}
+            {/* Name + Phone */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
               className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Name */}
               <div>
-                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">
-                  Full Name <span className="text-gray-700 normal-case tracking-normal">(optional)</span>
+                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+                  Full Name <span className="text-gray-400 dark:text-gray-700 normal-case tracking-normal">(optional)</span>
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-600" />
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400 dark:text-gray-600" />
                   <input type="text" {...register("name")} placeholder="John Doe"
                     className={buildInputCls(false)} />
                 </div>
               </div>
-              {/* Phone */}
               <div>
-                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">
-                  Phone <span className="text-gray-700 normal-case tracking-normal">(optional)</span>
+                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+                  Phone <span className="text-gray-400 dark:text-gray-700 normal-case tracking-normal">(optional)</span>
                 </label>
                 <div className="relative">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-600" />
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400 dark:text-gray-600" />
                   <input type="tel" {...register("phone")} placeholder="+234 800 000 0000"
                     className={buildInputCls(false)} />
                 </div>
@@ -383,7 +382,7 @@ const Register = () => {
 
             {/* Email */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.19 }}>
-              <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">
+              <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
                 Email Address
               </label>
               <div className="relative">
@@ -403,13 +402,11 @@ const Register = () => {
               </AnimatePresence>
             </motion.div>
 
-            {/* Password + Confirm — side by side on sm+ */}
+            {/* Password + Confirm */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.23 }}
               className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-              {/* Password */}
               <div>
-                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">
+                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
                   Password
                 </label>
                 <div className="relative">
@@ -433,10 +430,8 @@ const Register = () => {
                   )}
                 </AnimatePresence>
               </div>
-
-              {/* Confirm Password */}
               <div>
-                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">
+                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
                   Confirm Password
                 </label>
                 <div className="relative">
@@ -494,9 +489,9 @@ const Register = () => {
 
           {/* Fine print */}
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.42 }}
-            className="mt-6 text-center text-[11px] text-gray-700 leading-relaxed">
+            className="mt-6 text-center text-[11px] text-gray-500 dark:text-gray-600 leading-relaxed">
             By creating an account you agree to our{" "}
-            <Link to="/terms"   className="underline hover:text-gray-500 transition-colors">Terms</Link>
+            <Link to="/terms" className="underline hover:text-gray-500 transition-colors">Terms</Link>
             {" "}and{" "}
             <Link to="/privacy" className="underline hover:text-gray-500 transition-colors">Privacy Policy</Link>
           </motion.p>

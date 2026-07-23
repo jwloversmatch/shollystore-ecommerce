@@ -11,7 +11,7 @@ const HomeSpecialOffer = ({
   specialOfferTitle,
   specialOfferText,
 }: HomeSpecialOfferProps) => (
-  <section className="bg-[#0A0A0B] py-14 md:py-20 px-4 md:px-6">
+  <section className="bg-gray-50 dark:bg-[#0A0A0B] py-14 md:py-20 px-4 md:px-6">
     <div className="max-w-7xl mx-auto">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -80,7 +80,7 @@ const HomeSpecialOffer = ({
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
-          className="text-gray-500 text-lg mb-10 max-w-lg mx-auto"
+          className="text-gray-400 text-lg mb-10 max-w-lg mx-auto"
         >
           {specialOfferText}
         </motion.p>
@@ -89,10 +89,7 @@ const HomeSpecialOffer = ({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.28 }}
-          whileHover={{
-            scale: 1.05,
-            boxShadow: `0 18px 45px ${ACCENT}55`,
-          }}
+          whileHover={{ scale: 1.05, boxShadow: `0 18px 45px ${ACCENT}55` }}
           whileTap={{ scale: 0.96 }}
           onClick={() =>
             document
@@ -100,10 +97,7 @@ const HomeSpecialOffer = ({
               ?.scrollIntoView({ behavior: "smooth" })
           }
           className="inline-flex items-center gap-2.5 px-10 py-4 rounded-full font-bold text-lg text-white group"
-          style={{
-            background: ACCENT,
-            boxShadow: `0 10px 28px ${ACCENT}44`,
-          }}
+          style={{ background: ACCENT, boxShadow: `0 10px 28px ${ACCENT}44` }}
         >
           Shop Now{" "}
           <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

@@ -38,7 +38,7 @@ const features = [
 ];
 
 const HomeFeatures = () => (
-  <section className="bg-[#111111] py-16 md:py-20">
+  <section className="bg-white dark:bg-[#111111] py-16 md:py-20">
     <div className="max-w-7xl mx-auto px-4 md:px-6">
       <motion.div
         variants={stagger}
@@ -53,9 +53,9 @@ const HomeFeatures = () => (
             variants={fadeUp(i * 0.08)}
             whileHover={{
               y: -6,
-              boxShadow: `0 20px 50px rgba(0,0,0,0.4), 0 0 0 1px ${f.color}22`,
+              boxShadow: `0 20px 50px rgba(0,0,0,0.15), 0 0 0 1px ${f.color}22`,
             }}
-            className="bg-[#141414] border border-white/5 rounded-2xl p-5 md:p-6 transition-all cursor-default relative overflow-hidden"
+            className="bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/5 rounded-2xl p-5 md:p-6 transition-all cursor-default relative overflow-hidden"
           >
             <div
               className="absolute inset-0 pointer-events-none opacity-0 hover:opacity-100 transition-opacity"
@@ -70,14 +70,14 @@ const HomeFeatures = () => (
               >
                 {f.icon}
               </div>
-              <div className="text-3xl font-black text-white">{f.stat}</div>
+              <div className="text-3xl font-black text-gray-900 dark:text-white">{f.stat}</div>
               <div
                 className="text-xs font-bold uppercase tracking-wider mt-0.5"
                 style={{ color: f.color }}
               >
                 {f.label}
               </div>
-              <div className="text-gray-600 text-xs mt-1">{f.desc}</div>
+              <div className="text-gray-500 dark:text-gray-600 text-xs mt-1">{f.desc}</div>
             </div>
           </motion.div>
         ))}

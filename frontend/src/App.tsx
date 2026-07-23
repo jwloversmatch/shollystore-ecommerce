@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import Navbar from './components/Navbar';
 import AdminRoute from './components/AdminRoute';
 import ProtectedRoute from './components/ProtectedRoute';
+import { ThemeProvider } from './context/ThemeContext';   // ✅ new
 
 // --- Lazy Load Pages (unchanged) ---
 const Home = React.lazy(() => import('./pages/Home'));
@@ -30,8 +31,9 @@ import Settings from './pages/admin/Settings';
 
 const ACCENT = "#e8622a";
 
+// Loading fallback – light/dark aware
 const LoadingFallback = () => (
-  <div className="min-h-screen flex justify-center items-center" style={{ background: "#0A0A0B" }}>
+  <div className="min-h-screen flex justify-center items-center bg-gray-50 dark:bg-[#0A0A0B]">
     <motion.div
       animate={{ rotate: 360 }}
       transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
@@ -87,10 +89,12 @@ function AppContent() {
 function App() {
   return (
     <HelmetProvider>
-      <Router>
-        <Toaster position="top-center" reverseOrder={false} />
-        <AppContent />
-      </Router>
+      <ThemeProvider>                                  {/* ✅ wrap with ThemeProvider */}
+        <Router>
+          <Toaster position="top-center" reverseOrder={false} />
+          <AppContent />
+        </Router>
+      </ThemeProvider>
     </HelmetProvider>
   );
 }

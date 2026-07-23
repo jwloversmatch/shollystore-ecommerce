@@ -8,6 +8,7 @@ import {
   Image, Tag, BadgePercent, Home, MoreHorizontal, X, Store,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ThemeToggle from './ThemeToggle';              // ✅ added
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT = '#e8622a';
@@ -79,27 +80,19 @@ const Navbar = () => {
 
   const desktopLinkCls = (path: string) =>
     `flex items-center gap-1.5 text-sm font-bold transition-colors duration-150 ${
-      isActive(path) ? 'text-[#e8622a]' : 'text-gray-500 hover:text-white'
+      isActive(path) ? 'text-[#e8622a]' : 'text-gray-600 dark:text-gray-500 hover:text-black dark:hover:text-white'
     }`;
 
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <>
-      {/* ══════ DESKTOP — fixed top bar, overlays hero ═══════════════════════ */}
+      {/* ══════ DESKTOP — fixed top bar ═══════════════════════════════════ */}
       <nav className="hidden md:block fixed top-0 left-0 right-0 z-50">
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'rgba(17,17,17,0.95)',
-            backdropFilter: 'blur(20px)',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.04) inset',
-          }}
-        />
+        <div className="absolute inset-0 bg-white/95 dark:bg-[#111]/95 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.08] shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]" />
         <div className="relative max-w-7xl mx-auto px-6 flex justify-between items-center py-4">
           {/* Logo */}
           <Link to={user?.role === 'admin' ? '/admin' : '/'}
-            className="text-2xl font-black text-white tracking-tight shrink-0 flex items-center gap-2">
+            className="text-2xl font-black tracking-tight shrink-0 flex items-center gap-2 text-gray-900 dark:text-white">
             <Store className="w-6 h-6" style={{ color: ACCENT }} />
             <span>{BRAND_NAME}</span>
           </Link>
@@ -122,11 +115,16 @@ const Navbar = () => {
             </Link>
           )}
 
-          {/* Right: cart + auth */}
+          {/* Right: cart + auth + theme toggle */}
           <div className="flex items-center gap-4 shrink-0">
+            {/* Theme toggle */}
+            <ThemeToggle />
+
             {showCart && (
               <Link to="/cart" className="relative p-1">
-                <ShoppingCart className={`w-5 h-5 transition-colors ${isActive('/cart') ? 'text-[#e8622a]' : 'text-gray-500 hover:text-white'}`} />
+                <ShoppingCart className={`w-5 h-5 transition-colors ${
+                  isActive('/cart') ? 'text-[#e8622a]' : 'text-gray-600 dark:text-gray-500 hover:text-black dark:hover:text-white'
+                }`} />
                 <AnimatePresence>
                   {totalQty > 0 && (
                     <motion.span
@@ -145,7 +143,7 @@ const Navbar = () => {
 
             {user ? (
               <motion.button onClick={handleLogout} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-1.5 text-sm font-bold text-gray-600 hover:text-red-400 transition-colors">
+                className="flex items-center gap-1.5 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-red-500 transition-colors">
                 <LogOut className="w-4 h-4" /> Logout
               </motion.button>
             ) : (
@@ -162,39 +160,37 @@ const Navbar = () => {
       </nav>
 
       {/* ══════ MOBILE — FIXED top bar ═══════════════════════════════════ */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex justify-between items-center px-5 py-4"
-        style={{
-          background:     'rgba(10,10,11,0.92)',
-          backdropFilter: 'blur(20px)',
-          borderBottom:   '1px solid rgba(255,255,255,0.06)',
-        }}>
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex justify-between items-center px-5 py-4
+        bg-white/95 dark:bg-[#0A0A0B]/92 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06]">
         <Link to={user?.role === 'admin' ? '/admin' : '/'}
-          className="text-xl font-black text-white tracking-tight flex items-center gap-1.5">
+          className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white">
           <Store className="w-5 h-5" style={{ color: ACCENT }} />
           <span>{BRAND_NAME}</span>
         </Link>
 
-        {showCart && (
-          <Link to="/cart" className="relative p-1.5 rounded-xl transition-colors"
-            style={{ color: isActive('/cart') ? ACCENT : '#6b7280' }}>
-            <ShoppingCart className="w-5 h-5" />
-            {totalQty > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
-                style={{ background: ACCENT }}>
-                {totalQty}
-              </span>
-            )}
-          </Link>
-        )}
+        <div className="flex items-center gap-3">
+          {/* Theme toggle (mobile) */}
+          <ThemeToggle />
+
+          {showCart && (
+            <Link to="/cart" className="relative p-1.5 rounded-xl transition-colors"
+              style={{ color: isActive('/cart') ? ACCENT : '#6b7280' }}>
+              <ShoppingCart className="w-5 h-5" />
+              {totalQty > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
+                  style={{ background: ACCENT }}>
+                  {totalQty}
+                </span>
+              )}
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* ══════ MOBILE — fixed bottom nav ════════════════════════════════════ */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-50"
-        style={{
-          background:    '#111111',
-          borderTop:     '1px solid rgba(255,255,255,0.07)',
-          paddingBottom: 'env(safe-area-inset-bottom, 6px)',
-        }}>
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-50
+        bg-white dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 6px)' }}>
         <div className="flex justify-around items-center px-2 pt-2 pb-1">
 
           <NavBtn to={user?.role === 'admin' ? '/admin' : '/'} icon={<Home className="w-5 h-5" />}
@@ -246,8 +242,7 @@ const Navbar = () => {
             <motion.div
               key="scrim"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[60] md:hidden"
-              style={{ background: 'rgba(0,0,0,0.72)' }}
+              className="fixed inset-0 z-[60] md:hidden bg-black/70 dark:bg-black/70"
               onClick={() => setAdminDrawer(false)} />
 
             <motion.div
@@ -256,26 +251,22 @@ const Navbar = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-              className="fixed bottom-0 inset-x-0 z-[70] rounded-t-3xl md:hidden"
-              style={{
-                background:  '#141414',
-                borderTop:   `1px solid rgba(255,255,255,0.09)`,
-                paddingBottom: 'env(safe-area-inset-bottom, 24px)',
-              }}>
+              className="fixed bottom-0 inset-x-0 z-[70] rounded-t-3xl md:hidden
+                bg-white dark:bg-[#141414] border-t border-gray-200 dark:border-white/[0.09]"
+              style={{ paddingBottom: 'env(safe-area-inset-bottom, 24px)' }}>
 
               <div className="flex justify-center pt-3 pb-1">
-                <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+                <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-white/15" />
               </div>
 
               <div className="flex justify-between items-center px-6 py-4">
                 <div>
                   <p className="text-xs font-extrabold uppercase tracking-widest" style={{ color: ACCENT }}>Admin</p>
-                  <h2 className="text-xl font-black text-white">Menu</h2>
+                  <h2 className="text-xl font-black text-gray-900 dark:text-white">Menu</h2>
                 </div>
                 <motion.button onClick={() => setAdminDrawer(false)}
                   whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-white transition-colors"
-                  style={{ background: 'rgba(255,255,255,0.07)' }}>
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-100 dark:bg-white/7">
                   <X className="w-4 h-4" />
                 </motion.button>
               </div>
@@ -289,12 +280,11 @@ const Navbar = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}>
                       <Link to={l.to} onClick={() => setAdminDrawer(false)}
-                        className="flex items-center gap-3 p-4 rounded-2xl border transition-all"
-                        style={{
-                          background:  active ? `${ACCENT}15` : '#1c1c1c',
-                          borderColor: active ? `${ACCENT}40` : 'rgba(255,255,255,0.06)',
-                          color:       active ? ACCENT : '#9ca3af',
-                        }}>
+                        className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
+                          active
+                            ? 'bg-[#e8622a]/15 border-[#e8622a]/40 text-[#e8622a]'
+                            : 'bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/6 text-gray-600 dark:text-[#9ca3af]'
+                        }`}>
                         {l.icon}
                         <span className="text-sm font-bold">{l.label}</span>
                       </Link>
@@ -306,8 +296,7 @@ const Navbar = () => {
               <div className="px-5 pt-3 pb-2">
                 <motion.button onClick={handleLogout}
                   whileTap={{ scale: 0.97 }}
-                  className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold text-red-400 border border-red-500/20 transition-colors"
-                  style={{ background: 'rgba(239,68,68,0.06)' }}>
+                  className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold text-red-400 border border-red-500/20 transition-colors bg-red-50 dark:bg-red-500/6">
                   <LogOut className="w-4 h-4" /> Sign Out
                 </motion.button>
               </div>

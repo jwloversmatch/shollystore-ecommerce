@@ -23,7 +23,7 @@ const HomeProductGrid = ({
   categoryList,
   setModalProduct,
 }: HomeProductGridProps) => (
-  <section id="products-grid" className="bg-[#111111] py-14 md:py-18">
+  <section id="products-grid" className="bg-white dark:bg-[#111111] py-14 md:py-18">
     <div className="max-w-7xl mx-auto px-4 md:px-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div>
@@ -33,22 +33,23 @@ const HomeProductGrid = ({
           >
             {selectedCategory === "All" ? "All Products" : selectedCategory}
           </p>
-          <h2 className="text-3xl md:text-4xl font-black text-white">
+          <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white">
             {selectedCategory === "All" ? "Best Sellers" : selectedCategory}
           </h2>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+          {/* Search input – light/dark aware */}
           <div className="relative w-full sm:w-60">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-600" />
             <input
               type="text"
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-[#1c1c1c] border border-white/8 text-white placeholder-gray-600 rounded-xl outline-none text-sm focus:border-[#e8622a]/50 transition-colors"
-              style={{ borderColor: "rgba(255,255,255,0.07)" }}
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-600 rounded-xl outline-none text-sm focus:border-[#e8622a]/50 transition-colors"
             />
           </div>
+          {/* Category pills */}
           <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
             {categoryList.map((cat) => (
               <button
@@ -83,11 +84,7 @@ const HomeProductGrid = ({
                 layout
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{
-                  opacity: 0,
-                  scale: 0.9,
-                  transition: { duration: 0.18 },
-                }}
+                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.18 } }}
                 transition={{ type: "spring", stiffness: 300, damping: 24 }}
               >
                 <ProductCard
@@ -95,7 +92,6 @@ const HomeProductGrid = ({
                   name={product.name}
                   price={product.price}
                   image={product.images?.[0] || PLACEHOLDER}
-                  // ✅ Extract category name safely
                   category={
                     typeof product.category === "string"
                       ? product.category
@@ -110,7 +106,7 @@ const HomeProductGrid = ({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="col-span-full py-24 flex flex-col items-center gap-3 text-gray-600"
+              className="col-span-full py-24 flex flex-col items-center gap-3 text-gray-500 dark:text-gray-600"
             >
               <span className="text-5xl">🔍</span>
               <p className="text-lg font-semibold">No products found</p>
@@ -119,7 +115,7 @@ const HomeProductGrid = ({
                   setSearchTerm("");
                   setSelectedCategory("All");
                 }}
-                className="text-sm underline hover:text-gray-400 transition-colors"
+                className="text-sm underline hover:text-gray-500 dark:hover:text-gray-400 transition-colors"
               >
                 Clear filters
               </button>

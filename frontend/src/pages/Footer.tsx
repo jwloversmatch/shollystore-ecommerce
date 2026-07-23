@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { FaFacebook, FaInstagram, FaTwitter, FaYoutube } from 'react-icons/fa';
 
-// ---------- Animation Variants ----------
 const footerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -51,9 +50,10 @@ const Footer = () => {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: '-20px' }}
-      className="relative mt-20 bg-gray-900/90 backdrop-blur-xl border-t border-white/10 shadow-2xl overflow-hidden"
+      className="relative mt-20 border-t border-gray-200 dark:border-white/10 shadow-2xl overflow-hidden
+        bg-white dark:bg-gray-900/90 backdrop-blur-xl"
     >
-      {/* Subtle background glow – now using the orange accent */}
+      {/* Subtle background glow */}
       <div className="absolute inset-0 -z-10 pointer-events-none">
         <motion.div
           animate={{ x: ['-10%', '10%', '-10%'], y: ['-5%', '5%', '-5%'] }}
@@ -71,25 +71,24 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand Column */}
           <motion.div variants={columnVariants} className="space-y-4">
-            <Link to="/" className="text-2xl font-bold text-white tracking-tight">
-              Ires<span className="text-[#e8622a]">Kitchen</span>
+            <Link to="/" className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+              Sholly<span className="text-[#e8622a]">Store</span>
             </Link>
-            <p className="text-sm text-gray-400 leading-relaxed max-w-xs">
-              Savor the taste of home‑cooked Nigerian meals, grilled delights,
-              and refreshing drinks — delivered fresh to your doorstep.
+            <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
+              Your one‑stop destination for quality products – from fashion to beverages, delivered fast and reliably.
             </p>
             <div className="flex gap-3 pt-2">
-              <SocialIcon href="https://facebook.com/ireskitchen" icon={<FaFacebook size={20} />} />
-              <SocialIcon href="https://instagram.com/ireskitchen" icon={<FaInstagram size={20} />} />
-              <SocialIcon href="https://twitter.com/ireskitchen" icon={<FaTwitter size={20} />} />
-              <SocialIcon href="https://youtube.com/@ireskitchen" icon={<FaYoutube size={20} />} />
+              <SocialIcon href="https://facebook.com/shollystore" icon={<FaFacebook size={20} />} />
+              <SocialIcon href="https://instagram.com/shollystore" icon={<FaInstagram size={20} />} />
+              <SocialIcon href="https://twitter.com/shollystore" icon={<FaTwitter size={20} />} />
+              <SocialIcon href="https://youtube.com/@shollystore" icon={<FaYoutube size={20} />} />
             </div>
           </motion.div>
 
           {/* Quick Links */}
           <motion.div variants={columnVariants}>
-            <h4 className="font-semibold text-white mb-4">Quick Links</h4>
-            <ul className="space-y-2 text-sm text-gray-400">
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Quick Links</h4>
+            <ul className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
               {quickLinks.map((item) => (
                 <motion.li
                   key={item.name}
@@ -110,28 +109,22 @@ const Footer = () => {
 
           {/* Contact Info */}
           <motion.div variants={columnVariants}>
-            <h4 className="font-semibold text-white mb-4">Contact Us</h4>
-            <ul className="space-y-3 text-sm text-gray-400">
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Contact Us</h4>
+            <ul className="space-y-3 text-sm text-gray-500 dark:text-gray-400">
               <li className="flex items-center gap-3">
                 <MapPin size={18} className="text-[#e8622a]" />
                 <span>Lagos, Nigeria</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone size={18} className="text-[#e8622a]" />
-                <a
-                  href="tel:+2349012345678"
-                  className="hover:text-[#e8622a] transition-colors"
-                >
+                <a href="tel:+2349012345678" className="hover:text-[#e8622a] transition-colors">
                   +234 901 234 5678
                 </a>
               </li>
               <li className="flex items-center gap-3">
                 <Mail size={18} className="text-[#e8622a]" />
-                <a
-                  href="mailto:hello@ireskitchen.com"
-                  className="hover:text-[#e8622a] transition-colors"
-                >
-                  hello@ireskitchen.com
+                <a href="mailto:hello@shollystore.com" className="hover:text-[#e8622a] transition-colors">
+                  hello@shollystore.com
                 </a>
               </li>
             </ul>
@@ -139,15 +132,15 @@ const Footer = () => {
 
           {/* Newsletter */}
           <motion.div variants={columnVariants} className="md:col-span-2">
-            <h4 className="font-semibold text-white mb-4">Stay Tasty</h4>
-            <p className="text-sm text-gray-400 mb-4">
-              Subscribe for exclusive recipes, discounts, and new dish alerts.
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Stay in the Loop</h4>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Subscribe for exclusive deals, new arrivals, and discounts.
             </p>
             <form className="flex flex-col sm:flex-row gap-3 w-full">
               <input
                 type="email"
                 placeholder="Your email"
-                className="flex-1 min-w-[160px] px-5 py-3.5 text-base bg-white rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#e8622a] placeholder:text-gray-500 text-gray-800"
+                className="flex-1 min-w-[160px] px-5 py-3.5 text-base bg-white dark:bg-white border border-gray-300 dark:border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#e8622a] placeholder:text-gray-500 text-gray-800"
               />
               <motion.button
                 type="submit"
@@ -164,9 +157,9 @@ const Footer = () => {
         {/* Bottom Bar */}
         <motion.div
           variants={columnVariants}
-          className="mt-12 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500"
+          className="mt-12 pt-6 border-t border-gray-200 dark:border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500 dark:text-gray-400"
         >
-          <span>&copy; {currentYear} Ires Kitchen. All rights reserved.</span>
+          <span>&copy; {currentYear} ShollyStore. All rights reserved.</span>
           <div className="flex gap-6">
             <Link to="/privacy" className="hover:text-[#e8622a] transition-colors">
               Privacy Policy
@@ -181,7 +174,6 @@ const Footer = () => {
   );
 };
 
-// Helper component for social icons – now orange hover
 const SocialIcon = ({ href, icon }: { href: string; icon: React.ReactNode }) => (
   <motion.a
     href={href}
@@ -190,7 +182,7 @@ const SocialIcon = ({ href, icon }: { href: string; icon: React.ReactNode }) => 
     variants={socialIconSpring}
     initial="rest"
     whileHover="hover"
-    className="p-2.5 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 text-gray-400 hover:text-[#e8622a] hover:border-[#e8622a]/50 transition-all duration-200"
+    className="p-2.5 backdrop-blur-sm rounded-full border border-gray-300 dark:border-white/20 bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-[#e8622a] hover:border-[#e8622a]/50 transition-all duration-200"
   >
     {icon}
   </motion.a>
