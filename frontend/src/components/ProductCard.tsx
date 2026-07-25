@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { ShoppingCart, Check } from 'lucide-react';
-import { useDispatch } from 'react-redux';
-import toast from 'react-hot-toast';
-import { addToCart } from '../features/cart/cartSlice';
+import { useState, useCallback } from "react";
+import { motion } from "framer-motion";
+import { ShoppingCart, Check } from "lucide-react";
+import { useDispatch } from "react-redux";
+import toast from "react-hot-toast";
+import { addToCart } from "../features/cart/cartSlice";
 
 interface ProductProps {
   _id: string;
@@ -15,26 +15,40 @@ interface ProductProps {
   onClick?: () => void;
 }
 
-const FALLBACK = 'https://via.placeholder.com/300x300?text=No+Image';
+const FALLBACK = "https://via.placeholder.com/300x300?text=No+Image";
 
 const ProductCard = ({
-  _id, name, price, image, category = 'General', stock, onClick,
+  _id,
+  name,
+  price,
+  image,
+  category = "General",
+  stock,
+  onClick,
 }: ProductProps) => {
   const dispatch = useDispatch();
   const [imgError, setImgError] = useState(false);
-  const [added, setAdded]       = useState(false);
+  const [added, setAdded] = useState(false);
 
   const isOutOfStock = stock !== undefined && stock === 0;
-  const accent       = isOutOfStock ? '#ef4444' : '#e8622a';
+  const accent = isOutOfStock ? "#ef4444" : "#e8622a";
 
-  const handleAddToCart = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isOutOfStock) { toast.error('Out of stock!'); return; }
-    dispatch(addToCart({ _id, name, image, price, qty: 1, stock: stock ?? 999 }));
-    toast.success(`${name} added!`, { icon: '🛒' });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1800);
-  }, [dispatch, _id, name, image, price, stock, isOutOfStock]);
+  const handleAddToCart = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (isOutOfStock) {
+        toast.error("Out of stock!");
+        return;
+      }
+      dispatch(
+        addToCart({ _id, name, image, price, qty: 1, stock: stock ?? 999 }),
+      );
+      toast.success(`${name} added!`, { icon: "🛒" });
+      setAdded(true);
+      setTimeout(() => setAdded(false), 1800);
+    },
+    [dispatch, _id, name, image, price, stock, isOutOfStock],
+  );
 
   return (
     <motion.div
@@ -44,9 +58,9 @@ const ProductCard = ({
         shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.3)]"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-20px' }}
+      viewport={{ once: true, margin: "-20px" }}
       whileHover="hover"
-      transition={{ type: 'spring', stiffness: 200, damping: 22 }}
+      transition={{ type: "spring", stiffness: 200, damping: 22 }}
       onClick={onClick}
     >
       {/* ── Image area – shows full image, no cropping ── */}
@@ -64,10 +78,12 @@ const ProductCard = ({
         {stock !== undefined && (
           <div
             className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
-              isOutOfStock ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'
+              isOutOfStock
+                ? "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400"
+                : "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
             }`}
           >
-            {isOutOfStock ? 'Sold Out' : `${stock} left`}
+            {isOutOfStock ? "Sold Out" : `${stock} left`}
           </div>
         )}
 
@@ -96,7 +112,9 @@ const ProductCard = ({
 
         <div className="mt-auto flex items-end justify-between gap-2">
           <div className="flex items-baseline gap-0.5">
-            <span className="text-gray-500 dark:text-gray-400 text-xs pb-0.5">₦</span>
+            <span className="text-gray-500 dark:text-gray-400 text-xs pb-0.5">
+              ₦
+            </span>
             <span className="font-black text-xl leading-none text-gray-900 dark:text-white">
               {price.toLocaleString()}
             </span>
@@ -108,12 +126,12 @@ const ProductCard = ({
             whileTap={{ scale: 0.9 }}
             className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${
               isOutOfStock
-                ? 'bg-gray-200 dark:bg-[#1e1e1e] text-gray-500 dark:text-gray-600 cursor-not-allowed'
+                ? "bg-gray-200 dark:bg-[#1e1e1e] text-gray-500 dark:text-gray-600 cursor-not-allowed"
                 : added
-                ? 'bg-emerald-500 text-white'
-                : 'bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-white/20'
+                  ? "bg-emerald-500 text-white"
+                  : "bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-white/20"
             }`}
-            title={isOutOfStock ? 'Unavailable' : 'Add to cart'}
+            title={isOutOfStock ? "Unavailable" : "Add to cart"}
           >
             {isOutOfStock ? (
               <span className="text-xs font-bold">✕</span>
