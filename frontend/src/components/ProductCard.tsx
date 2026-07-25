@@ -38,19 +38,19 @@ const ProductCard = ({
 
   return (
     <motion.div
-      className="flex flex-col rounded-2xl overflow-hidden border border-white/[0.06] bg-[#141414] cursor-pointer group"
+      className="flex flex-col rounded-2xl overflow-hidden border cursor-pointer group
+        bg-white dark:bg-[#141414]
+        border-gray-200 dark:border-white/[0.06]
+        shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.3)]"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-20px' }}
       whileHover="hover"
       transition={{ type: 'spring', stiffness: 200, damping: 22 }}
       onClick={onClick}
-      style={{
-        boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-      }}
     >
       {/* ── Image area – shows full image, no cropping ── */}
-      <div className="relative w-full h-48 bg-[#1a1a1a] flex items-center justify-center p-4">
+      <div className="relative w-full h-48 bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center p-4">
         <motion.img
           src={imgError ? FALLBACK : image}
           alt={name}
@@ -90,14 +90,14 @@ const ProductCard = ({
           {category}
         </span>
 
-        <h3 className="text-white font-bold text-sm leading-snug line-clamp-2 mb-3">
+        <h3 className="font-bold text-sm leading-snug line-clamp-2 mb-3 text-gray-900 dark:text-white">
           {name}
         </h3>
 
         <div className="mt-auto flex items-end justify-between gap-2">
           <div className="flex items-baseline gap-0.5">
-            <span className="text-gray-500 text-xs pb-0.5">₦</span>
-            <span className="font-black text-xl leading-none text-white">
+            <span className="text-gray-500 dark:text-gray-400 text-xs pb-0.5">₦</span>
+            <span className="font-black text-xl leading-none text-gray-900 dark:text-white">
               {price.toLocaleString()}
             </span>
           </div>
@@ -108,10 +108,10 @@ const ProductCard = ({
             whileTap={{ scale: 0.9 }}
             className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${
               isOutOfStock
-                ? 'bg-[#1e1e1e] text-gray-600 cursor-not-allowed'
+                ? 'bg-gray-200 dark:bg-[#1e1e1e] text-gray-500 dark:text-gray-600 cursor-not-allowed'
                 : added
                 ? 'bg-emerald-500 text-white'
-                : 'bg-white/10 text-white hover:bg-white/20'
+                : 'bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-white/20'
             }`}
             title={isOutOfStock ? 'Unavailable' : 'Add to cart'}
           >

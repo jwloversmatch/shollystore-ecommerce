@@ -51,7 +51,7 @@ const Footer = () => {
       whileInView="visible"
       viewport={{ once: true, margin: '-20px' }}
       className="relative mt-20 border-t border-gray-200 dark:border-white/10 shadow-2xl overflow-hidden
-        bg-white dark:bg-gray-900/90 backdrop-blur-xl"
+        bg-white dark:bg-gray-900/90 backdrop-blur-xl pb-16"
     >
       {/* Subtle background glow */}
       <div className="absolute inset-0 -z-10 pointer-events-none">

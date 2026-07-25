@@ -64,18 +64,18 @@ const ProductDetail = () => {
   // ══════ LOADING ══════════════════════════════════════════════════════════════
   if (isLoading) {
     return (
-      <div className="min-h-screen pt-20 pb-16 px-4 md:px-8 max-w-7xl mx-auto" style={{ background:'#0A0A0B' }}>
-        <div className="h-8 w-24 rounded-xl animate-pulse mb-6 mt-4" style={{ background:'#141414' }} />
+      <div className="min-h-screen pt-20 pb-16 px-4 md:px-8 max-w-7xl mx-auto bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+        <div className="h-8 w-24 rounded-xl animate-pulse mb-6 mt-4 bg-gray-200 dark:bg-[#141414]" />
         <div className="grid md:grid-cols-2 gap-8">
-          <div className="rounded-3xl animate-pulse aspect-[4/3]" style={{ background:'#141414' }} />
+          <div className="rounded-3xl animate-pulse aspect-[4/3] bg-gray-200 dark:bg-[#141414]" />
           <div className="space-y-4 pt-2">
             {[20,75,50,100,80,70].map((w,i)=>(
-              <div key={i} className="h-4 rounded animate-pulse" style={{ background:'#141414', width:`${w}%` }} />
+              <div key={i} className="h-4 rounded animate-pulse bg-gray-200 dark:bg-[#141414]" style={{ width:`${w}%` }} />
             ))}
-            <div className="h-12 w-44 rounded-xl animate-pulse" style={{ background:'#141414' }} />
+            <div className="h-12 w-44 rounded-xl animate-pulse bg-gray-200 dark:bg-[#141414]" />
             <div className="flex gap-3 pt-2">
-              <div className="h-14 w-36 rounded-xl animate-pulse" style={{ background:'#141414' }} />
-              <div className="h-14 flex-1 rounded-xl animate-pulse" style={{ background:'#141414' }} />
+              <div className="h-14 w-36 rounded-xl animate-pulse bg-gray-200 dark:bg-[#141414]" />
+              <div className="h-14 flex-1 rounded-xl animate-pulse bg-gray-200 dark:bg-[#141414]" />
             </div>
           </div>
         </div>
@@ -86,10 +86,13 @@ const ProductDetail = () => {
   // ══════ NOT FOUND ════════════════════════════════════════════════════════════
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ background:'#0A0A0B' }}>
+      <div className="min-h-screen flex items-center justify-center px-4 bg-[#FCFAF5] dark:bg-[#0A0A0B]">
         <motion.div initial={{ opacity:0, scale:0.92 }} animate={{ opacity:1, scale:1 }}
-          className="relative w-full max-w-sm text-center rounded-3xl p-10"
-          style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.07)', boxShadow:'0 40px 90px rgba(0,0,0,0.6)' }}>
+          className="relative w-full max-w-sm text-center rounded-3xl p-10
+            bg-[#FCFAF5] dark:bg-[#141414]
+            border border-gray-200 dark:border-white/[0.07]
+            shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.6)]"
+        >
           <div className="absolute top-0 inset-x-0 h-px rounded-t-3xl"
             style={{ background:`linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
           <div className="flex justify-center mb-5">
@@ -104,8 +107,8 @@ const ProductDetail = () => {
             </div>
           </div>
           <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] mb-2" style={{ color:ACCENT }}>404</p>
-          <h2 className="text-2xl font-black text-white mb-2">Product Not Found</h2>
-          <p className="text-gray-600 text-sm mb-7">This product doesn't exist or may have been removed.</p>
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Product Not Found</h2>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mb-7">This product doesn't exist or may have been removed.</p>
           <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }} onClick={() => navigate('/')}
             className="w-full py-4 rounded-xl font-black text-white flex items-center justify-center gap-2"
             style={{ background:ACCENT, boxShadow:`0 8px 24px ${ACCENT}44` }}>
@@ -120,11 +123,10 @@ const ProductDetail = () => {
   const categoryName = getCategoryName(product.category);
   const images       = product.images?.length ? product.images : [PLACEHOLDER];
 
-  // ══════ MAIN PAGE ═════════════════════════════════════════════════════════════
   return (
     <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ duration:0.4 }}
-      className="min-h-screen pt-20 md:pt-24 pb-36 md:pb-16 px-4 md:px-8 max-w-7xl mx-auto"
-      style={{ background:'#0A0A0B' }}>
+      className="min-h-screen pt-20 md:pt-24 pb-36 md:pb-16 px-4 md:px-8 max-w-7xl mx-auto
+        bg-[#FCFAF5] dark:bg-[#0A0A0B]">
 
       <SEO title={product.name}
         description={`Buy ${product.name} from ShollyStore. ${product.description||''}`}
@@ -139,17 +141,18 @@ const ProductDetail = () => {
         className="flex items-center gap-2 mb-5 overflow-x-auto no-scrollbar pb-1">
         <motion.button whileHover={{ scale:1.06 }} whileTap={{ scale:0.94 }}
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-gray-500 hover:text-white transition-colors shrink-0"
-          style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.08)' }}>
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold
+            text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors shrink-0
+            bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.08]">
           <ArrowLeft className="w-4 h-4" />
           <span className="hidden sm:inline">Back</span>
         </motion.button>
 
         {categoryNode && (
           <div className="flex items-center gap-1.5 text-xs shrink-0">
-            <ChevronRight className="w-3.5 h-3.5 text-gray-700" />
-            <Link to="/shop" className="text-gray-600 hover:text-white font-semibold transition-colors">Shop</Link>
-            <ChevronRight className="w-3.5 h-3.5 text-gray-700" />
+            <ChevronRight className="w-3.5 h-3.5 text-gray-400 dark:text-gray-600" />
+            <Link to="/shop" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-semibold transition-colors">Shop</Link>
+            <ChevronRight className="w-3.5 h-3.5 text-gray-400 dark:text-gray-600" />
             <Link to={`/shop/${categoryNode.slug}`} className="font-semibold transition-colors" style={{ color:ACCENT }}>
               {categoryNode.name}
             </Link>
@@ -165,8 +168,8 @@ const ProductDetail = () => {
           className="md:sticky md:top-24 space-y-3">
 
           {/* Main image */}
-          <div className="relative rounded-2xl md:rounded-3xl overflow-hidden"
-            style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.07)' }}>
+          <div className="relative rounded-2xl md:rounded-3xl overflow-hidden
+            bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]">
             <div className="absolute top-0 inset-x-0 h-px"
               style={{ background:`linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
 
@@ -184,7 +187,7 @@ const ProductDetail = () => {
                   whileHover={{ scale:1.03 }}
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center gap-3 py-16 w-full text-gray-700">
+                <div className="flex flex-col items-center justify-center gap-3 py-16 w-full text-gray-400 dark:text-gray-700">
                   <ImageOff className="w-12 h-12" />
                   <p className="text-sm font-semibold">No image</p>
                 </div>
@@ -237,14 +240,14 @@ const ProductDetail = () => {
                 {categoryName}
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-[1.05]">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 dark:text-white leading-[1.05]">
               {product.name}
             </h1>
           </div>
 
           {/* Price */}
           <div className="flex items-baseline gap-1">
-            <span className="text-gray-600 text-xl font-bold">₦</span>
+            <span className="text-gray-600 dark:text-gray-400 text-xl font-bold">₦</span>
             <span className="text-3xl sm:text-4xl font-black" style={{ color:ACCENT }}>
               {product.price.toLocaleString()}
             </span>
@@ -252,20 +255,20 @@ const ProductDetail = () => {
 
           {/* Description */}
           {product.description && (
-            <p className="text-gray-400 leading-relaxed text-sm md:text-[15px]">
+            <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-sm md:text-[15px]">
               {product.description}
             </p>
           )}
 
           {/* Stock pill */}
-          <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
-            style={{ background:'#1c1c1c', border:'1px solid rgba(255,255,255,0.07)' }}>
+          <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl
+            bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.07]">
             <motion.div
               animate={!isOutOfStock ? { scale:[1,1.5,1], opacity:[1,0.4,1] } : {}}
               transition={{ duration:2.5, repeat:Infinity }}
               className="w-2 h-2 rounded-full shrink-0"
               style={{ background: isOutOfStock ? '#ef4444' : '#10b981' }} />
-            <span className="text-sm font-bold text-white">
+            <span className="text-sm font-bold text-gray-900 dark:text-white">
               {isOutOfStock ? 'Out of Stock' : `In Stock — ${product.stock} units left`}
             </span>
           </div>
@@ -274,8 +277,8 @@ const ProductDetail = () => {
           {!isOutOfStock && (
             <div className="hidden sm:flex items-center gap-3">
               {/* Qty */}
-              <div className="flex items-center rounded-xl overflow-hidden shrink-0"
-                style={{ background:'#1c1c1c', border:'1px solid rgba(255,255,255,0.09)' }}>
+              <div className="flex items-center rounded-xl overflow-hidden shrink-0
+                bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.09]">
                 <motion.button whileTap={{ scale:0.85 }} onClick={() => qty > 1 && setQty(q=>q-1)}
                   disabled={qty<=1}
                   className="w-11 h-12 flex items-center justify-center text-red-400 hover:bg-red-500/10 disabled:opacity-30 transition-colors">
@@ -284,7 +287,7 @@ const ProductDetail = () => {
                 <motion.span key={qty}
                   initial={{ scale:1.3, opacity:0.6 }} animate={{ scale:1, opacity:1 }}
                   transition={{ type:'spring', stiffness:400, damping:20 }}
-                  className="w-10 text-center text-lg font-black text-white select-none">
+                  className="w-10 text-center text-lg font-black text-gray-900 dark:text-white select-none">
                   {qty}
                 </motion.span>
                 <motion.button whileTap={{ scale:0.85 }} onClick={() => qty < (product.stock??0) && setQty(q=>q+1)}
@@ -309,30 +312,30 @@ const ProductDetail = () => {
 
           {/* Out of stock message */}
           {isOutOfStock && (
-            <div className="px-5 py-4 rounded-xl border text-sm text-red-400 font-semibold"
-              style={{ background:'rgba(239,68,68,0.06)', borderColor:'rgba(239,68,68,0.2)' }}>
+            <div className="px-5 py-4 rounded-xl border text-sm text-red-400 font-semibold
+              bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20">
               Currently unavailable. Check back later.
             </div>
           )}
 
           {/* Meta grid */}
-          <div className="grid grid-cols-2 gap-2.5 pt-3 border-t" style={{ borderColor:'rgba(255,255,255,0.06)' }}>
+          <div className="grid grid-cols-2 gap-2.5 pt-3 border-t border-gray-200 dark:border-white/[0.06]">
             {[
               { label:'Category', value: categoryName },
               { label:'Unit Price', value: `₦${product.price.toLocaleString()}` },
               ...(product.brand ? [{ label:'Brand', value: product.brand }] : []),
               ...(product.sku   ? [{ label:'SKU',   value: product.sku   }] : []),
             ].map(item => (
-              <div key={item.label} className="p-3 rounded-xl"
-                style={{ background:'#1c1c1c', border:'1px solid rgba(255,255,255,0.07)' }}>
-                <p className="text-[9px] font-extrabold uppercase tracking-wider text-gray-600 mb-1">{item.label}</p>
-                <p className="text-white font-bold text-xs truncate">{item.value}</p>
+              <div key={item.label} className="p-3 rounded-xl
+                bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.07]">
+                <p className="text-[9px] font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">{item.label}</p>
+                <p className="font-bold text-xs truncate text-gray-900 dark:text-white">{item.value}</p>
               </div>
             ))}
           </div>
 
           {/* Shipping + returns — small text */}
-          <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-600">
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1.5">
               <Truck className="w-3.5 h-3.5 shrink-0" />
               <span>Free shipping over ₦50,000</span>
@@ -355,13 +358,12 @@ const ProductDetail = () => {
             transition={{ type:'spring', stiffness:280, damping:28 }}
             className="fixed inset-x-0 z-40 sm:hidden"
             style={{ bottom:72 }}>
-            <div className="h-8 pointer-events-none"
-              style={{ background:'linear-gradient(transparent, #0A0A0B)' }} />
-
-            <div className="bg-[#0A0A0B] px-4 pb-3 pt-2 border-t border-white/[0.07]">
+            <div className="h-8 pointer-events-none bg-gradient-to-t from-transparent to-transparent" />
+            {/* ^ replaced the problematic div */}
+            <div className="bg-[#FCFAF5] dark:bg-[#0A0A0B] px-4 pb-3 pt-2 border-t border-gray-200 dark:border-white/[0.07]">
               <div className="flex gap-2.5">
-                <div className="flex items-center rounded-xl overflow-hidden shrink-0"
-                  style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.1)' }}>
+                <div className="flex items-center rounded-xl overflow-hidden shrink-0
+                  bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.1]">
                   <motion.button whileTap={{ scale:0.85 }} onClick={() => qty > 1 && setQty(q=>q-1)}
                     disabled={qty<=1}
                     className="w-10 h-12 flex items-center justify-center text-red-400 disabled:opacity-30 active:bg-red-500/10 transition-colors">
@@ -370,7 +372,7 @@ const ProductDetail = () => {
                   <motion.span key={qty}
                     initial={{ scale:1.2, opacity:0.6 }} animate={{ scale:1, opacity:1 }}
                     transition={{ type:'spring', stiffness:400, damping:20 }}
-                    className="w-8 text-center text-base font-black text-white select-none">
+                    className="w-8 text-center text-base font-black text-gray-900 dark:text-white select-none">
                     {qty}
                   </motion.span>
                   <motion.button whileTap={{ scale:0.85 }} onClick={() => qty < (product.stock??0) && setQty(q=>q+1)}

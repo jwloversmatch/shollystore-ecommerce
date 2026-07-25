@@ -1,4 +1,3 @@
-// pages/PaymentSuccess.tsx
 import { useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -14,7 +13,7 @@ const PaymentSuccess = () => {
 
   const reference = searchParams.get('reference') || searchParams.get('trxref') || '';
 
-  const [trigger, { data, isLoading, isError, }] = useLazyVerifyPaymentQuery();
+  const [trigger, { data, isLoading, isError }] = useLazyVerifyPaymentQuery();
 
   useEffect(() => {
     if (reference) {
@@ -35,7 +34,6 @@ const PaymentSuccess = () => {
     status = 'error';
     message = 'Unable to verify payment. Please contact support.';
   } else if (data) {
-    // The backend returns a PaystackResponse<VerifyData>
     if (data.status && data.data?.status === 'success') {
       status = 'success';
       message = 'Payment successful! Your order is being processed.';
@@ -47,12 +45,12 @@ const PaymentSuccess = () => {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden"
-      style={{ background: '#0A0A0B' }}
+      className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden
+        bg-[#FCFAF5] dark:bg-[#0A0A0B]"
     >
       <SEO title="Payment Status" description="Verify your payment status." />
 
-      {/* Ambient background – reuse your existing AmbientBg component if imported */}
+      {/* Ambient background orbs */}
       <motion.div
         animate={{ x: ['-12%', '12%', '-12%'], y: ['-8%', '8%', '-8%'] }}
         transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
@@ -79,25 +77,24 @@ const PaymentSuccess = () => {
           opacity: 0.04,
         }}
       />
+
+      {/* Dot grid texture – light/dark */}
       <div
-        className="fixed inset-0 pointer-events-none -z-10"
-        style={{
-          backgroundImage:
-            'radial-gradient(rgba(255,255,255,0.022) 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-        }}
+        className="absolute inset-0 pointer-events-none
+          bg-[radial-gradient(rgba(0,0,0,0.03)_1px,transparent_1px)]
+          dark:bg-[radial-gradient(rgba(255,255,255,0.025)_1px,transparent_1px)]
+          bg-[length:28px_28px]"
       />
 
+      {/* Main card */}
       <motion.div
         initial={{ opacity: 0, scale: 0.92, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.55, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10"
-        style={{
-          background: '#141414',
-          border: '1px solid rgba(255,255,255,0.07)',
-          boxShadow: '0 40px 90px rgba(0,0,0,0.65)',
-        }}
+        className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10
+          bg-[#FCFAF5] dark:bg-[#141414]
+          border border-gray-200 dark:border-white/[0.07]
+          shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.65)]"
       >
         <div
           className="absolute top-0 inset-x-0 h-px rounded-t-3xl"
@@ -139,20 +136,20 @@ const PaymentSuccess = () => {
           )}
         </div>
 
-        <h2 className="text-2xl font-black text-white text-center mb-2">
+        <h2 className="text-2xl font-black text-center mb-2 text-gray-900 dark:text-white">
           {status === 'loading'
             ? 'Verifying Payment'
             : status === 'success'
             ? 'Payment Confirmed'
             : 'Payment Failed'}
         </h2>
-        <p className="text-gray-400 text-sm text-center mb-6">{message}</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm text-center mb-6">{message}</p>
 
         <div className="flex flex-col gap-3">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => navigate('/orders')}   // or wherever you list user orders
+            onClick={() => navigate('/orders')}
             className="w-full py-4 rounded-xl font-black text-white text-[15px] flex items-center justify-center gap-2.5"
             style={{
               background: ACCENT,
@@ -164,7 +161,7 @@ const PaymentSuccess = () => {
           </motion.button>
           <button
             onClick={() => navigate('/')}
-            className="text-gray-600 font-bold text-sm hover:text-white transition-colors"
+            className="text-gray-500 dark:text-gray-400 font-bold text-sm hover:text-gray-900 dark:hover:text-white transition-colors"
           >
             Back to Shop
           </button>

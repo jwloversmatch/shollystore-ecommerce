@@ -8,7 +8,7 @@ import SEO from '../components/SEO';
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT = '#e8622a';
 
-// ─── Ambient background (same orbs & dot grid as Register/Login) ──────────────
+// ─── Ambient background (light/dark) ──────────────────────────────────────────
 const AmbientBg = () => (
   <>
     <motion.div
@@ -24,11 +24,10 @@ const AmbientBg = () => (
       style={{ width: 600, height: 600, bottom: -200, right: -200, background: '#10b981', opacity: 0.04 }}
     />
     <div
-      className="fixed inset-0 pointer-events-none -z-10"
-      style={{
-        backgroundImage: 'radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px)',
-        backgroundSize: '28px 28px',
-      }}
+      className="fixed inset-0 pointer-events-none -z-10
+        bg-[radial-gradient(rgba(0,0,0,0.03)_1px,transparent_1px)]
+        dark:bg-[radial-gradient(rgba(255,255,255,0.025)_1px,transparent_1px)]
+        bg-[length:28px_28px]"
     />
   </>
 );
@@ -46,14 +45,14 @@ const ForgotPassword = () => {
       await forgotPassword(email.trim()).unwrap();
       setSent(true);
     } catch {
-      // error is displayed via errorMessage
+      // error displayed via errorMessage
     }
   };
 
   // ── Success screen ──────────────────────────────────────────────────────────
   if (sent) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden" style={{ background: '#0A0A0B' }}>
+      <div className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B]">
         <SEO title="Check Your Email" description="Password reset link sent" />
         <AmbientBg />
 
@@ -61,12 +60,10 @@ const ForgotPassword = () => {
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.55, ease: 'easeOut' }}
-          className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 text-center"
-          style={{
-            background: '#141414',
-            border: '1px solid rgba(255,255,255,0.07)',
-            boxShadow: '0 40px 90px rgba(0,0,0,0.65)',
-          }}
+          className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 text-center
+            bg-[#FCFAF5] dark:bg-[#141414]
+            border border-gray-200 dark:border-white/[0.07]
+            shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.65)]"
         >
           {/* Accent top line */}
           <div
@@ -105,29 +102,30 @@ const ForgotPassword = () => {
 
           <motion.h2
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-            className="text-3xl font-black text-white mb-3 leading-tight"
+            className="text-3xl font-black text-gray-900 dark:text-white mb-3 leading-tight"
           >
             Check your inbox
           </motion.h2>
 
           <motion.p
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-            className="text-gray-500 text-sm leading-relaxed mb-2"
+            className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-2"
           >
             If an account exists for
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.35 }}
-            className="inline-block px-4 py-2 rounded-xl border mb-6 text-sm font-bold text-white"
-            style={{ background: '#1c1c1c', borderColor: 'rgba(255,255,255,0.1)' }}
+            className="inline-block px-4 py-2 rounded-xl border mb-6 text-sm font-bold
+              text-gray-900 dark:text-white
+              bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.1]"
           >
             {email}
           </motion.div>
 
           <motion.p
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
-            className="text-gray-600 text-xs mb-8 leading-relaxed"
+            className="text-gray-500 dark:text-gray-400 text-xs mb-8 leading-relaxed"
           >
             You'll receive a password reset link shortly.
             Check your spam folder if you don't see it.
@@ -147,20 +145,18 @@ const ForgotPassword = () => {
 
   // ── Main form ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden" style={{ background: '#0A0A0B' }}>
-      <SEO title="Forgot Password" description="Reset your Ires Kitchen account password" />
+    <div className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+      <SEO title="Forgot Password" description="Reset your ShollyStore account password" />
       <AmbientBg />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.92, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.55, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10"
-        style={{
-          background: '#141414',
-          border: '1px solid rgba(255,255,255,0.07)',
-          boxShadow: '0 40px 90px rgba(0,0,0,0.65)',
-        }}
+        className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10
+          bg-[#FCFAF5] dark:bg-[#141414]
+          border border-gray-200 dark:border-white/[0.07]
+          shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.65)]"
       >
         {/* Accent top line */}
         <div
@@ -170,7 +166,7 @@ const ForgotPassword = () => {
 
         <Link
           to="/login"
-          className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-500 hover:text-white transition-colors mb-6"
+          className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-6"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Login
         </Link>
@@ -179,26 +175,32 @@ const ForgotPassword = () => {
           Account recovery
         </p>
 
-        <h2 className="text-3xl font-black text-white mb-2 leading-tight">
+        <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2 leading-tight">
           Forgot password?
         </h2>
 
-        <p className="text-gray-500 text-sm mb-8 leading-relaxed">
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 leading-relaxed">
           Enter your email and we'll send you a link to reset your password.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">
+            <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-600" />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400 dark:text-gray-600" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none transition-all duration-200 border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15"
+                className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm
+                  bg-gray-100 dark:bg-[#1c1c1c]
+                  text-gray-900 dark:text-white
+                  placeholder-gray-500 dark:placeholder-gray-600
+                  outline-none transition-all duration-200
+                  border border-gray-300 dark:border-white/[0.08]
+                  focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15"
                 placeholder="you@example.com"
                 required
               />

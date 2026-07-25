@@ -40,17 +40,20 @@ const checkoutSchema = z.object({
 });
 type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
-// ─── Input class builder ──────────────────────────────────────────────────────
-const inputCls = (hasError: boolean) =>
+// ─── Input class builder (light/dark) ─────────────────────────────────────────
+const buildInputCls = (hasError: boolean) =>
   [
-    "w-full pl-11 pr-4 py-3.5 rounded-xl text-sm text-white",
-    "bg-[#1c1c1c] placeholder-gray-600 outline-none transition-all duration-200",
+    "w-full pl-11 pr-4 py-3.5 rounded-xl text-sm",
+    "bg-gray-100 dark:bg-[#1c1c1c]",
+    "text-gray-900 dark:text-white",
+    "placeholder-gray-500 dark:placeholder-gray-600",
+    "outline-none transition-all duration-200",
     hasError
       ? "border border-red-500/50 ring-2 ring-red-500/10"
-      : "border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15",
+      : "border border-gray-300 dark:border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15",
   ].join(" ");
 
-// ─── Ambient background ────────────────────────────────────────────────────────
+// ─── Ambient background ───────────────────────────────────────────────────────
 const AmbientBg = () => (
   <>
     <motion.div animate={{ x:["-12%","12%","-12%"], y:["-8%","8%","-8%"] }}
@@ -61,8 +64,10 @@ const AmbientBg = () => (
       transition={{ repeat:Infinity, duration:38, ease:"linear" }}
       className="fixed pointer-events-none rounded-full blur-[130px] -z-10"
       style={{ width:600, height:600, bottom:-200, right:-200, background:"#10b981", opacity:0.04 }} />
-    <div className="fixed inset-0 pointer-events-none -z-10"
-      style={{ backgroundImage:"radial-gradient(rgba(255,255,255,0.022) 1px, transparent 1px)", backgroundSize:"28px 28px" }} />
+    <div className="fixed inset-0 pointer-events-none -z-10
+      bg-[radial-gradient(rgba(0,0,0,0.03)_1px,transparent_1px)]
+      dark:bg-[radial-gradient(rgba(255,255,255,0.025)_1px,transparent_1px)]
+      bg-[length:28px_28px]" />
   </>
 );
 
@@ -97,21 +102,18 @@ const Checkout = () => {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [isNewAddress,       setIsNewAddress]      = useState(true);
 
-  // Helper to select a saved address and fill the form
   const selectSavedAddress = (addr: IAddress) => {
     setSelectedAddressId(addr._id);
     setIsNewAddress(false);
     reset({ address: addr.address, city: addr.city });
   };
 
-  // Helper to switch to new address mode
   const selectNewAddress = () => {
     setIsNewAddress(true);
     setSelectedAddressId(null);
     reset({ address: "", city: "" });
   };
 
-  // Coupon state
   const [couponCode,     setCouponCode]     = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponError,    setCouponError]    = useState("");
@@ -169,20 +171,21 @@ const Checkout = () => {
   // ══════ SUCCESS SCREEN ════════════════════════════════════════════════════════
   if (orderSuccess) {
     const d = publicSettings || {
-      bankAccountName: "LotceWieth Store", bankAccountNumber: "0123456789",
+      bankAccountName: "ShollyStore", bankAccountNumber: "0123456789",
       bankName: "GTBank", whatsappNumber: "+2348000000000",
     };
     const waLink = `https://wa.me/${d.whatsappNumber?.replace(/\D/g, "")}`;
 
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden" style={{ background:"#0A0A0B" }}>
+      <div className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B]">
         <SEO title="Order Placed" description="Your order has been placed successfully." />
         <AmbientBg />
 
         <motion.div initial={{ opacity:0, scale:0.92, y:20 }} animate={{ opacity:1, scale:1, y:0 }}
           transition={{ duration:0.55, ease:"easeOut" }}
-          className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10"
-          style={{ background:"#141414", border:"1px solid rgba(255,255,255,0.07)", boxShadow:"0 40px 90px rgba(0,0,0,0.65)" }}>
+          className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10
+            bg-[#FCFAF5] dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]
+            shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.65)]">
 
           <div className="absolute top-0 inset-x-0 h-px rounded-t-3xl"
             style={{ background:`linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
@@ -206,13 +209,13 @@ const Checkout = () => {
             Order received
           </motion.p>
           <motion.h2 initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.25 }}
-            className="text-3xl font-black text-white mb-2 text-center leading-tight">
+            className="text-3xl font-black text-gray-900 dark:text-white mb-2 text-center leading-tight">
             Order Placed!
           </motion.h2>
           <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.3 }}
-            className="text-gray-600 text-sm text-center mb-6">
+            className="text-gray-500 dark:text-gray-400 text-sm text-center mb-6">
             Reference:{" "}
-            <span className="font-bold text-white font-mono text-xs px-2 py-0.5 rounded-lg" style={{ background:"#1c1c1c" }}>
+            <span className="font-bold text-gray-900 dark:text-white font-mono text-xs px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-[#1c1c1c]">
               #{orderData?._id}
             </span>
           </motion.p>
@@ -220,9 +223,8 @@ const Checkout = () => {
           {/* Bank transfer details */}
           {paymentMethod === "bank_transfer" && (
             <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.35 }}
-              className="rounded-2xl p-5 mb-6 border"
-              style={{ background:"rgba(16,185,129,0.07)", borderColor:"rgba(16,185,129,0.25)" }}>
-              <p className="text-xs font-extrabold uppercase tracking-widest text-emerald-400 mb-3">Bank Transfer Details</p>
+              className="rounded-2xl p-5 mb-6 border bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/25">
+              <p className="text-xs font-extrabold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-3">Bank Transfer Details</p>
               <div className="space-y-2 text-sm">
                 {[
                   { label:"Bank",           val: d.bankName            },
@@ -230,15 +232,15 @@ const Checkout = () => {
                   { label:"Account Number", val: d.bankAccountNumber, highlight:true },
                 ].map(row => (
                   <div key={row.label} className="flex justify-between items-center">
-                    <span className="text-gray-500 font-medium">{row.label}</span>
-                    <span className={`font-bold ${row.highlight ? "text-emerald-400 font-mono tracking-widest text-base" : "text-white"}`}>
+                    <span className="text-gray-500 dark:text-gray-400 font-medium">{row.label}</span>
+                    <span className={`font-bold ${row.highlight ? "text-emerald-600 dark:text-emerald-400 font-mono tracking-widest text-base" : "text-gray-900 dark:text-white"}`}>
                       {row.val}
                     </span>
                   </div>
                 ))}
               </div>
-              <div className="mt-4 pt-3 border-t border-emerald-500/20">
-                <p className="text-xs text-gray-600 mb-2">Send transfer receipt to WhatsApp:</p>
+              <div className="mt-4 pt-3 border-t border-emerald-200 dark:border-emerald-500/20">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Send transfer receipt to WhatsApp:</p>
                 <a href={waLink} target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all"
                   style={{ background:"#25D366", boxShadow:"0 4px 12px rgba(37,211,102,0.35)" }}>
@@ -251,10 +253,9 @@ const Checkout = () => {
           {/* WhatsApp details */}
           {paymentMethod === "whatsapp" && (
             <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.35 }}
-              className="rounded-2xl p-5 mb-6 border"
-              style={{ background:"rgba(37,211,102,0.07)", borderColor:"rgba(37,211,102,0.25)" }}>
-              <p className="text-xs font-extrabold uppercase tracking-widest mb-3" style={{ color:"#25D366" }}>WhatsApp Payment</p>
-              <p className="text-sm text-gray-500 mb-3 leading-relaxed">
+              className="rounded-2xl p-5 mb-6 border bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/25">
+              <p className="text-xs font-extrabold uppercase tracking-widest mb-3 text-green-600 dark:text-green-400">WhatsApp Payment</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 leading-relaxed">
                 Chat with us to confirm your order and complete payment.
               </p>
               <a href={waLink} target="_blank" rel="noopener noreferrer"
@@ -280,11 +281,11 @@ const Checkout = () => {
   // ══════ EMPTY CART ════════════════════════════════════════════════════════════
   if (cart.cartItems.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background:"#0A0A0B" }}>
+      <div className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0A0A0B]">
         <SEO title="Checkout" description="Complete your order securely." />
         <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
           className="text-center p-8">
-          <p className="text-gray-600 mb-4 text-lg">Your cart is empty.</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-4 text-lg">Your cart is empty.</p>
           <button onClick={() => navigate("/")} className="font-bold hover:opacity-80 transition-opacity" style={{ color:ACCENT }}>
             ← Back to Shop
           </button>
@@ -295,7 +296,7 @@ const Checkout = () => {
 
   // ══════ MAIN CHECKOUT ═════════════════════════════════════════════════════════
   return (
-    <div className="min-h-screen px-4 py-8 pb-28 md:pb-10 md:py-10 relative overflow-x-hidden" style={{ background:"#0A0A0B" }}>
+    <div className="min-h-screen px-4 py-8 pb-28 md:pb-10 md:py-10 relative overflow-x-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B]">
       <SEO title="Checkout" description="Complete your order with secure payment options." />
       <AmbientBg />
 
@@ -310,16 +311,16 @@ const Checkout = () => {
               </div>
               <p className="text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color:ACCENT }}>Secure Checkout</p>
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-white">Complete Your Order</h1>
+            <h1 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white">Complete Your Order</h1>
           </div>
 
-          {/* ✅ Back to Cart button */}
           <motion.button
             whileHover={{ scale:1.04 }}
             whileTap={{ scale:0.96 }}
             onClick={() => navigate('/cart')}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white transition-colors"
-            style={{ background:'#141414', border:'1px solid rgba(255,255,255,0.08)' }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold
+              text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors
+              bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.08]"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Cart
@@ -334,29 +335,27 @@ const Checkout = () => {
 
               {/* Saved addresses */}
               {savedAddresses.length > 0 && (
-                <div className="rounded-2xl p-5 md:p-6" style={{ background:"#141414", border:"1px solid rgba(255,255,255,0.07)" }}>
-                  <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 mb-4">Delivery Address</p>
+                <div className="rounded-2xl p-5 md:p-6 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]">
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-4">Delivery Address</p>
                   <div className="space-y-2.5">
                     {savedAddresses.map((addr: IAddress) => {
                       const active = selectedAddressId === addr._id && !isNewAddress;
                       return (
                         <motion.label key={addr._id} whileHover={{ scale:1.01 }}
-                          className="flex items-center gap-3.5 p-3.5 rounded-xl border cursor-pointer transition-all"
-                          style={{
-                            background:   active ? `${ACCENT}0d` : "#1c1c1c",
-                            borderColor:  active ? ACCENT : "rgba(255,255,255,0.07)",
-                            boxShadow:    active ? `0 0 0 1px ${ACCENT}` : "none",
-                          }}>
+                          className={`flex items-center gap-3.5 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                            active
+                              ? 'bg-[#e8622a]/10 border-[#e8622a] shadow-[0_0_0_1px_#e8622a]'
+                              : 'bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.07]'
+                          }`}>
                           <input type="radio" name="savedAddress" className="sr-only"
                             checked={active}
                             onChange={() => selectSavedAddress(addr)} />
-                          {/* Custom radio */}
                           <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
                             style={{ borderColor: active ? ACCENT : "#4b5563" }}>
                             {active && <div className="w-2 h-2 rounded-full" style={{ background:ACCENT }} />}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-white font-bold text-sm flex items-center gap-1.5">
+                            <p className="font-bold text-sm flex items-center gap-1.5 text-gray-900 dark:text-white">
                               {addr.label === "Home"
                                 ? <Home      className="w-3.5 h-3.5" style={{ color:ACCENT }} />
                                 : <Briefcase className="w-3.5 h-3.5" style={{ color:ACCENT }} />}
@@ -366,7 +365,7 @@ const Checkout = () => {
                                   style={{ background:`${ACCENT}20`, color:ACCENT }}>Default</span>
                               )}
                             </p>
-                            <p className="text-gray-600 text-xs mt-0.5 truncate">{addr.address}, {addr.city}</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5 truncate">{addr.address}, {addr.city}</p>
                           </div>
                         </motion.label>
                       );
@@ -374,19 +373,18 @@ const Checkout = () => {
 
                     {/* New address option */}
                     <motion.label whileHover={{ scale:1.01 }}
-                      className="flex items-center gap-3.5 p-3.5 rounded-xl border cursor-pointer transition-all"
-                      style={{
-                        background:   isNewAddress ? `${ACCENT}0d` : "#1c1c1c",
-                        borderColor:  isNewAddress ? ACCENT : "rgba(255,255,255,0.07)",
-                        boxShadow:    isNewAddress ? `0 0 0 1px ${ACCENT}` : "none",
-                      }}>
+                      className={`flex items-center gap-3.5 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                        isNewAddress
+                          ? 'bg-[#e8622a]/10 border-[#e8622a] shadow-[0_0_0_1px_#e8622a]'
+                          : 'bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.07]'
+                      }`}>
                       <input type="radio" name="savedAddress" className="sr-only" checked={isNewAddress}
                         onChange={selectNewAddress} />
                       <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
                         style={{ borderColor: isNewAddress ? ACCENT : "#4b5563" }}>
                         {isNewAddress && <div className="w-2 h-2 rounded-full" style={{ background:ACCENT }} />}
                       </div>
-                      <span className="text-sm font-bold text-gray-400">+ Enter new address</span>
+                      <span className="text-sm font-bold text-gray-600 dark:text-gray-400">+ Enter new address</span>
                     </motion.label>
                   </div>
                 </div>
@@ -398,17 +396,16 @@ const Checkout = () => {
                   <motion.div key="new-addr"
                     initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:"auto" }} exit={{ opacity:0, height:0 }}
                     className="overflow-hidden">
-                    <div className="rounded-2xl p-5 md:p-6 space-y-4" style={{ background:"#141414", border:"1px solid rgba(255,255,255,0.07)" }}>
-                      <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500">New Address</p>
+                    <div className="rounded-2xl p-5 md:p-6 space-y-4 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]">
+                      <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">New Address</p>
 
-                      {/* Address */}
                       <div>
-                        <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">Street Address</label>
+                        <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">Street Address</label>
                         <div className="relative">
                           <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
                             style={{ color: errors.address ? "#ef4444" : "#4b5563" }} />
                           <input {...register("address")} placeholder="123 Main Street, Lagos"
-                            className={inputCls(!!errors.address)} />
+                            className={buildInputCls(!!errors.address)} />
                         </div>
                         {errors.address && (
                           <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold">
@@ -417,14 +414,13 @@ const Checkout = () => {
                         )}
                       </div>
 
-                      {/* City */}
                       <div>
-                        <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">City</label>
+                        <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">City</label>
                         <div className="relative">
                           <Building className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
                             style={{ color: errors.city ? "#ef4444" : "#4b5563" }} />
                           <input {...register("city")} placeholder="Lagos"
-                            className={inputCls(!!errors.city)} />
+                            className={buildInputCls(!!errors.city)} />
                         </div>
                         {errors.city && (
                           <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold">
@@ -438,19 +434,18 @@ const Checkout = () => {
               </AnimatePresence>
 
               {/* Payment method */}
-              <div className="rounded-2xl p-5 md:p-6" style={{ background:"#141414", border:"1px solid rgba(255,255,255,0.07)" }}>
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 mb-4">Payment Method</p>
+              <div className="rounded-2xl p-5 md:p-6 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]">
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-4">Payment Method</p>
                 <div className="space-y-2.5">
                   {PAYMENT_METHODS.map((pm) => {
                     const active = paymentMethod === pm.id;
                     return (
                       <motion.label key={pm.id} whileHover={{ scale:1.01 }}
-                        className="flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all"
-                        style={{
-                          background:  active ? `${pm.color}0d` : "#1c1c1c",
-                          borderColor: active ? pm.color : "rgba(255,255,255,0.07)",
-                          boxShadow:   active ? `0 0 0 1px ${pm.color}` : "none",
-                        }}>
+                        className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
+                          active
+                            ? `bg-${pm.color}/10 border-${pm.color} shadow-[0_0_0_1px_${pm.color}]`
+                            : 'bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.07]'
+                        }`}>
                         <input type="radio" className="sr-only" value={pm.id}
                           checked={active} onChange={() => setPaymentMethod(pm.id as typeof paymentMethod)} />
                         <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
@@ -462,8 +457,8 @@ const Checkout = () => {
                           {pm.icon}
                         </div>
                         <div>
-                          <p className="text-white font-bold text-sm">{pm.label}</p>
-                          <p className="text-gray-600 text-xs">{pm.sub}</p>
+                          <p className="font-bold text-sm text-gray-900 dark:text-white">{pm.label}</p>
+                          <p className="text-gray-500 dark:text-gray-400 text-xs">{pm.sub}</p>
                         </div>
                       </motion.label>
                     );
@@ -476,8 +471,7 @@ const Checkout = () => {
                     <motion.div key="ps-info"
                       initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:"auto" }} exit={{ opacity:0, height:0 }}
                       className="overflow-hidden">
-                      <div className="mt-3 flex items-start gap-2.5 p-3.5 rounded-xl border text-xs"
-                        style={{ background:"rgba(59,130,246,0.07)", borderColor:"rgba(59,130,246,0.22)", color:"#93c5fd" }}>
+                      <div className="mt-3 flex items-start gap-2.5 p-3.5 rounded-xl border text-xs bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20 text-blue-600 dark:text-blue-400">
                         <CreditCard className="w-4 h-4 shrink-0 mt-0.5" />
                         You will be redirected to Paystack to complete payment securely.
                       </div>
@@ -506,35 +500,34 @@ const Checkout = () => {
           {/* ═══ RIGHT: Order summary ═══ */}
           <motion.div initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.18 }}
             className="lg:sticky lg:top-24">
-            <div className="relative rounded-2xl p-5 md:p-6" style={{ background:"#141414", border:"1px solid rgba(255,255,255,0.07)", boxShadow:"0 20px 60px rgba(0,0,0,0.4)" }}>
+            <div className="relative rounded-2xl p-5 md:p-6 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07] shadow-lg dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
               <div className="absolute top-0 inset-x-0 h-px rounded-t-2xl"
                 style={{ background:`linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
 
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 mb-5">Order Summary</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-5">Order Summary</p>
 
               {/* Items */}
               <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1 mb-5"
                 style={{ scrollbarWidth:"thin", scrollbarColor:`${ACCENT}40 transparent` }}>
                 {cart.cartItems.map((item: CartItem) => (
                   <div key={item._id} className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border" style={{ borderColor:"rgba(255,255,255,0.08)" }}>
+                    <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-gray-200 dark:border-white/[0.08]">
                       <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-semibold text-sm truncate">{item.name}</p>
-                      <p className="text-gray-600 text-xs">{item.qty} × ₦{item.price.toLocaleString()}</p>
+                      <p className="font-semibold text-sm truncate text-gray-900 dark:text-white">{item.name}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-xs">{item.qty} × ₦{item.price.toLocaleString()}</p>
                     </div>
-                    <span className="font-black text-white text-sm shrink-0">₦{(item.price * item.qty).toLocaleString()}</span>
+                    <span className="font-black text-sm shrink-0 text-gray-900 dark:text-white">₦{(item.price * item.qty).toLocaleString()}</span>
                   </div>
                 ))}
               </div>
 
-              {/* Divider */}
-              <div className="h-px mb-5" style={{ background:"rgba(255,255,255,0.06)" }} />
+              <div className="h-px mb-5 bg-gray-200 dark:bg-white/[0.06]" />
 
               {/* Coupon */}
               <div className="mb-5">
-                <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2.5 flex items-center gap-1.5">
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2.5 flex items-center gap-1.5">
                   <Tag className="w-3 h-3" /> Discount Code
                 </p>
                 <div className="flex gap-2">
@@ -543,7 +536,7 @@ const Checkout = () => {
                       onChange={e => setCouponCode(e.target.value.toUpperCase())}
                       disabled={!!appliedCoupon}
                       placeholder="Enter code"
-                      className="w-full px-4 py-3 rounded-xl text-sm text-white bg-[#1c1c1c] border border-white/[0.08] outline-none placeholder-gray-600 focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-mono tracking-widest" />
+                      className="w-full px-4 py-3 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] outline-none placeholder-gray-500 dark:placeholder-gray-600 text-gray-900 dark:text-white focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-mono tracking-widest" />
                   </div>
                   {!appliedCoupon ? (
                     <motion.button type="button" onClick={handleApplyCoupon}
@@ -556,8 +549,7 @@ const Checkout = () => {
                   ) : (
                     <motion.button type="button" onClick={handleRemoveCoupon}
                       whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
-                      className="px-4 py-3 rounded-xl text-sm font-bold transition-all shrink-0"
-                      style={{ background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.25)", color:"#f87171" }}>
+                      className="px-4 py-3 rounded-xl text-sm font-bold transition-all shrink-0 text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20">
                       <X className="w-4 h-4" />
                     </motion.button>
                   )}
@@ -571,7 +563,7 @@ const Checkout = () => {
                   )}
                   {appliedCoupon && (
                     <motion.p initial={{ opacity:0, y:-4 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
-                      className="mt-1.5 text-xs font-bold flex items-center gap-1" style={{ color:"#10b981" }}>
+                      className="mt-1.5 text-xs font-bold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                       <CheckCircle className="w-3 h-3" /> {appliedCoupon} applied
                     </motion.p>
                   )}
@@ -581,28 +573,28 @@ const Checkout = () => {
               {/* Price breakdown */}
               <div className="space-y-2.5 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Subtotal</span>
-                  <span className="text-white font-bold">₦{totalPrice.toLocaleString()}</span>
+                  <span className="text-gray-500 dark:text-gray-400 font-medium">Subtotal</span>
+                  <span className="font-bold text-gray-900 dark:text-white">₦{totalPrice.toLocaleString()}</span>
                 </div>
                 <AnimatePresence>
                   {couponDiscount > 0 && (
                     <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:"auto" }} exit={{ opacity:0, height:0 }}
                       className="flex justify-between overflow-hidden">
-                      <span className="font-medium" style={{ color:"#10b981" }}>Discount</span>
-                      <span className="font-bold" style={{ color:"#10b981" }}>- ₦{couponDiscount.toLocaleString()}</span>
+                      <span className="font-medium text-emerald-600 dark:text-emerald-400">Discount</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">- ₦{couponDiscount.toLocaleString()}</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Delivery</span>
-                  <span className="font-bold" style={{ color:"#10b981" }}>Free</span>
+                  <span className="text-gray-500 dark:text-gray-400 font-medium">Delivery</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">Free</span>
                 </div>
               </div>
 
-              <div className="h-px my-4" style={{ background:"rgba(255,255,255,0.06)" }} />
+              <div className="h-px my-4 bg-gray-200 dark:bg-white/[0.06]" />
 
               <div className="flex justify-between items-end">
-                <span className="text-gray-400 font-bold text-sm uppercase tracking-wider">Total</span>
+                <span className="text-gray-400 dark:text-gray-500 font-bold text-sm uppercase tracking-wider">Total</span>
                 <motion.span key={finalTotal}
                   initial={{ scale:1.14, opacity:0.7 }} animate={{ scale:1, opacity:1 }}
                   transition={{ type:"spring", stiffness:400, damping:20 }}
@@ -612,8 +604,8 @@ const Checkout = () => {
               </div>
 
               <div className="mt-5 flex items-center justify-center gap-2">
-                <AlertCircle className="w-3 h-3 text-gray-700 shrink-0" />
-                <span className="text-[11px] text-gray-700">Secured by Paystack · Nigeria</span>
+                <AlertCircle className="w-3 h-3 text-gray-400 dark:text-gray-500 shrink-0" />
+                <span className="text-[11px] text-gray-400 dark:text-gray-500">Secured by Paystack · Nigeria</span>
               </div>
             </div>
           </motion.div>

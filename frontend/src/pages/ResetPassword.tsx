@@ -5,6 +5,8 @@ import { useResetPasswordMutation } from "../features/api/apiSlice";
 import { Lock, ArrowLeft, AlertCircle, CheckCircle } from "lucide-react";
 import SEO from "../components/SEO";
 
+const ACCENT = "#e8622a";
+
 const ResetPassword = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,26 +45,54 @@ const ResetPassword = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-leaf-green/5 via-pastel-pink/30 to-blob-orange/10 p-4">
-        <SEO
-          title="Password Reset"
-          description="Your password has been reset"
-        />
+      <div className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+        <SEO title="Password Reset" description="Your password has been reset" />
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 max-w-md w-full text-center border border-white/50"
+          className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 text-center
+            bg-[#FCFAF5] dark:bg-[#141414]
+            border border-gray-200 dark:border-white/[0.07]
+            shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.65)]"
         >
-          <CheckCircle className="w-16 h-16 text-leaf-green mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <div
+            className="absolute top-0 inset-x-0 h-px rounded-t-3xl"
+            style={{ background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }}
+          />
+          <div className="flex justify-center mb-6">
+            <div className="relative">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute -inset-4 rounded-full border-2 border-dashed pointer-events-none"
+                style={{ borderColor: `${ACCENT}30` }}
+              />
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 320, damping: 22, delay: 0.1 }}
+                className="w-20 h-20 rounded-full flex items-center justify-center"
+                style={{ background: `${ACCENT}15`, boxShadow: `0 0 0 3px ${ACCENT}` }}
+              >
+                <CheckCircle className="w-9 h-9" style={{ color: ACCENT }} />
+              </motion.div>
+            </div>
+          </div>
+
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] mb-2" style={{ color: ACCENT }}>
+            Password updated
+          </p>
+          <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3 leading-tight">
             Password Reset!
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 leading-relaxed">
             Your password has been changed successfully.
           </p>
+
           <Link
             to="/login"
-            className="inline-flex items-center gap-2 bg-leaf-green text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-green-700 transition"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-white text-sm transition-all hover:scale-105"
+            style={{ background: ACCENT, boxShadow: `0 8px 24px ${ACCENT}44` }}
           >
             Go to Login
           </Link>
@@ -72,68 +102,114 @@ const ResetPassword = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-leaf-green/5 via-pastel-pink/30 to-blob-orange/10 p-4">
-      <SEO
-        title="Reset Password"
-        description="Set a new password for your account"
-      />
+    <div className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+      <SEO title="Reset Password" description="Set a new password for your account" />
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 max-w-md w-full border border-white/50"
+        className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10
+          bg-[#FCFAF5] dark:bg-[#141414]
+          border border-gray-200 dark:border-white/[0.07]
+          shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.65)]"
       >
+        <div
+          className="absolute top-0 inset-x-0 h-px rounded-t-3xl"
+          style={{ background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }}
+        />
+
         <Link
           to="/login"
-          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-leaf-green mb-6"
+          className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-6"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Login
         </Link>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">
+
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] mb-2" style={{ color: ACCENT }}>
+          Set new password
+        </p>
+        <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2 leading-tight">
           Reset Password
         </h2>
-        <p className="text-gray-500 mb-6 text-sm">
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 leading-relaxed">
           Enter your new password below.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent placeholder:text-gray-400 bg-white/70"
-              placeholder="New password"
-              required
-            />
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+              New Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400 dark:text-gray-600" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm
+                  bg-gray-100 dark:bg-[#1c1c1c]
+                  text-gray-900 dark:text-white
+                  placeholder-gray-500 dark:placeholder-gray-600
+                  outline-none transition-all duration-200
+                  border border-gray-300 dark:border-white/[0.08]
+                  focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15"
+                placeholder="New password"
+                required
+              />
+            </div>
           </div>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent placeholder:text-gray-400 bg-white/70"
-              placeholder="Confirm new password"
-              required
-            />
+
+          <div>
+            <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400 dark:text-gray-600" />
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm
+                  bg-gray-100 dark:bg-[#1c1c1c]
+                  text-gray-900 dark:text-white
+                  placeholder-gray-500 dark:placeholder-gray-600
+                  outline-none transition-all duration-200
+                  border border-gray-300 dark:border-white/[0.08]
+                  focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15"
+                placeholder="Confirm new password"
+                required
+              />
+            </div>
           </div>
 
           {errorMsg && (
-            <div className="flex items-center gap-2 bg-red-50 text-red-600 text-sm p-3 rounded-xl">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.97 }}
+              className="flex items-start gap-2.5 p-3.5 rounded-xl border text-sm"
+              style={{
+                background: 'rgba(239,68,68,0.07)',
+                borderColor: 'rgba(239,68,68,0.2)',
+                color: '#f87171',
+              }}
+            >
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
-            </div>
+            </motion.div>
           )}
 
           <motion.button
             type="submit"
             disabled={isLoading}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full bg-leaf-green text-white py-3.5 rounded-xl font-bold shadow-lg shadow-leaf-green/30 hover:bg-green-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            whileHover={!isLoading ? { scale: 1.02, boxShadow: `0 18px 44px ${ACCENT}55` } : {}}
+            whileTap={!isLoading ? { scale: 0.98 } : {}}
+            className="w-full py-4 rounded-xl font-black text-white text-[15px] flex items-center justify-center gap-2.5 transition-all disabled:opacity-55 disabled:cursor-not-allowed"
+            style={{
+              background: ACCENT,
+              boxShadow: `0 8px 24px ${ACCENT}44`,
+            }}
           >
-            {isLoading ? "Resetting..." : "Reset Password"}
+            {isLoading ? 'Resetting…' : 'Reset Password'}
           </motion.button>
         </form>
       </motion.div>

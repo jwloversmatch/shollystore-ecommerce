@@ -108,8 +108,7 @@ const ShopPage = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen pt-20 md:pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto"
-      style={{ background: "#0A0A0B" }}
+      className="min-h-screen pt-20 md:pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto bg-[#FCFAF5] dark:bg-[#0A0A0B]"
     >
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -117,22 +116,27 @@ const ShopPage = () => {
           <p className="text-xs font-black uppercase tracking-[0.2em] mb-1" style={{ color: ACCENT }}>
             {currentNode ? currentNode.name : "All Categories"}
           </p>
-          <h1 className="text-3xl md:text-4xl font-black text-white">
+          <h1 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white">
             {currentNode ? currentNode.name : "Shop"}
           </h1>
-          <p className="text-gray-600 text-sm mt-1">{pagination.total} products available</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{pagination.total} products available</p>
         </div>
 
         <div className="flex gap-3 w-full md:w-auto items-center">
-          {/* Search */}
+          {/* Search input – light/dark aware */}
           <div className="relative flex-1 md:flex-none md:w-56">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-600" />
             <input
               type="text"
               placeholder="Search..."
               value={search}
               onChange={handleSearchChange}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#1c1c1c] border border-white/[0.08] text-white placeholder-gray-600 outline-none text-sm focus:border-[#e8622a]/50 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl
+                bg-gray-100 dark:bg-[#1c1c1c]
+                border border-gray-300 dark:border-white/[0.08]
+                text-gray-900 dark:text-white
+                placeholder-gray-500 dark:placeholder-gray-600
+                outline-none text-sm focus:border-[#e8622a]/50 transition-colors"
             />
           </div>
 
@@ -140,7 +144,9 @@ const ShopPage = () => {
           {selectedPath.length > 0 && (
             <button
               onClick={() => handleChipClick(null)}
-              className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white transition-colors bg-[#1c1c1c] border border-white/[0.08]"
+              className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold
+                text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors
+                bg-white dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.08]"
             >
               <Home className="w-4 h-4" /> All
             </button>
@@ -152,21 +158,21 @@ const ShopPage = () => {
       <div className="flex items-center gap-2 mb-5 text-sm flex-wrap">
         {breadcrumbs.map((crumb, idx) => (
           <span key={crumb.id || "root"} className="flex items-center gap-2">
-            {idx > 0 && <ChevronRight className="w-4 h-4 text-gray-600" />}
+            {idx > 0 && <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-600" />}
             <button
               onClick={() => handleChipClick(crumb.id)}
               className={`font-bold transition-colors px-3 py-1 rounded-full border ${
                 idx === breadcrumbs.length - 1
                   ? "text-white border-transparent"
-                  : "text-gray-500 border-white/10 hover:border-white/20"
+                  : "text-gray-600 dark:text-gray-400 border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/20"
               }`}
               style={{
                 background:
-                  idx === breadcrumbs.length - 1 ? ACCENT : "#1c1c1c",
+                  idx === breadcrumbs.length - 1 ? ACCENT : "transparent",
                 borderColor:
                   idx === breadcrumbs.length - 1
                     ? ACCENT
-                    : "rgba(255,255,255,0.08)",
+                    : undefined,
               }}
             >
               {crumb.name}
@@ -178,7 +184,7 @@ const ShopPage = () => {
       {/* Subcategory chips */}
       {childCategories.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-white font-black text-lg mb-4">
+          <h2 className="font-black text-lg mb-4 text-gray-900 dark:text-white">
             {currentNode ? `${currentNode.name} – Subcategories` : "Categories"}
           </h2>
           <div className="flex gap-3 flex-wrap">
@@ -187,11 +193,11 @@ const ShopPage = () => {
               className={`px-4 py-2 rounded-full text-sm font-bold border transition-all ${
                 selectedPath.length === 0
                   ? "text-white border-transparent"
-                  : "text-gray-400 border-white/10 hover:border-white/20"
+                  : "text-gray-600 dark:text-gray-400 border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/20"
               }`}
               style={{
-                background: selectedPath.length === 0 ? ACCENT : "#1c1c1c",
-                borderColor: selectedPath.length === 0 ? ACCENT : "rgba(255,255,255,0.08)",
+                background: selectedPath.length === 0 ? ACCENT : "transparent",
+                borderColor: selectedPath.length === 0 ? ACCENT : undefined,
               }}
             >
               All
@@ -205,11 +211,11 @@ const ShopPage = () => {
                   className={`px-4 py-2 rounded-full text-sm font-bold border transition-all ${
                     isActive
                       ? "text-white border-transparent"
-                      : "text-gray-400 border-white/10 hover:border-white/20"
+                      : "text-gray-600 dark:text-gray-400 border-gray-300 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/20"
                   }`}
                   style={{
-                    background: isActive ? ACCENT : "#1c1c1c",
-                    borderColor: isActive ? ACCENT : "rgba(255,255,255,0.08)",
+                    background: isActive ? ACCENT : "transparent",
+                    borderColor: isActive ? ACCENT : undefined,
                   }}
                 >
                   {child.name}
@@ -224,7 +230,7 @@ const ShopPage = () => {
       {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-64 rounded-2xl animate-pulse bg-[#141414]" />
+            <div key={i} className="h-64 rounded-2xl animate-pulse bg-gray-200 dark:bg-[#141414]" />
           ))}
         </div>
       ) : (
@@ -259,17 +265,17 @@ const ShopPage = () => {
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="p-2 rounded-xl border border-white/10 disabled:opacity-30 hover:bg-white/5 transition"
+            className="p-2 rounded-xl border border-gray-300 dark:border-white/10 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/5 transition text-gray-700 dark:text-white"
           >
-            <ChevronLeft className="w-5 h-5 text-white" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
-          <span className="text-sm text-gray-400">{page} / {pagination.pages}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{page} / {pagination.pages}</span>
           <button
             onClick={() => setPage(p => Math.min(pagination.pages, p + 1))}
             disabled={page === pagination.pages}
-            className="p-2 rounded-xl border border-white/10 disabled:opacity-30 hover:bg-white/5 transition"
+            className="p-2 rounded-xl border border-gray-300 dark:border-white/10 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/5 transition text-gray-700 dark:text-white"
           >
-            <ChevronRight className="w-5 h-5 text-white" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       )}
