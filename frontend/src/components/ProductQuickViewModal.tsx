@@ -64,11 +64,11 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
   const variants = useMemo(() => product?.variants || [], [product?.variants]);
   const hasVariants = variants.length > 0;
 
-  // Sizes that exist in at least one variant with both size and color
+  // PATCH 1: sizes from variants with size (no color required)
   const variantSizes = useMemo(() => {
     const sizes = new Set<string>();
     variants.forEach(v => {
-      if (v.size && v.color) sizes.add(v.size);
+      if (v.size?.trim()) sizes.add(v.size.trim());
     });
     return Array.from(sizes);
   }, [variants]);
@@ -77,17 +77,36 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
   const availableColors = useMemo(() => {
     if (!selectedSize) return [];
     return variants
-      .filter(v => v.size === selectedSize && v.color)
-      .map(v => v.color!)
+      .filter(v => v.size?.trim() === selectedSize && v.color?.trim())
+      .map(v => v.color!.trim())
       .filter((v, i, a) => a.indexOf(v) === i);
   }, [selectedSize, variants]);
 
-  // Active variant (only when both are chosen)
+  // PATCH 2: color-only variants (no size)
+  const colorOnlyList = useMemo(() => {
+    return variants
+      .filter(v => !v.size?.trim() && v.color?.trim())
+      .map(v => v.color!.trim())
+      .filter((v, i, a) => a.indexOf(v) === i);
+  }, [variants]);
+
+  // Which color list to show
+  const colorsToShow = selectedSize ? availableColors : colorOnlyList;
+
+  // PATCH 3: active variant – match size+color or color-only
   const activeVariant = useMemo(() => {
-    if (hasVariants && selectedSize && selectedColor) {
-      return variants.find(v => v.size === selectedSize && v.color === selectedColor) || null;
+    if (!hasVariants || !selectedColor) return null;
+    if (selectedSize) {
+      const match = variants.find(
+        v => v.size?.trim() === selectedSize &&
+             v.color?.trim().toLowerCase() === selectedColor.toLowerCase()
+      );
+      if (match) return match;
     }
-    return null;
+    return variants.find(
+      v => !v.size?.trim() &&
+           v.color?.trim().toLowerCase() === selectedColor.toLowerCase()
+    ) || null;
   }, [hasVariants, selectedSize, selectedColor, variants]);
 
   // Derive price & stock from active variant
@@ -210,36 +229,41 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                   {/* ───── Size + Color picker ───── */}
                   {hasVariants && (
                     <div className="space-y-3">
-                      <p className="text-xs font-bold text-gray-500 mb-1">Size</p>
-                      <div className="flex gap-2 flex-wrap">
-                        {variantSizes.map(size => (
-                          <button
-                            key={size}
-                            onClick={() => {
-                              setSelectedSize(size);
-                              // Clear color if it's not available for the new size
-                              setSelectedColor(prev =>
-                                prev && variants.some(v => v.size === size && v.color === prev)
-                                  ? prev
-                                  : null
-                              );
-                            }}
-                            className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
-                              selectedSize === size
-                                ? 'bg-[#e8622a] text-white border-[#e8622a]'
-                                : 'bg-gray-100 dark:bg-[#1c1c1c] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/[0.08]'
-                            }`}
-                          >
-                            {size}
-                          </button>
-                        ))}
-                      </div>
+                      {variantSizes.length > 0 && (
+                        <>
+                          <p className="text-xs font-bold text-gray-500 mb-1">Size</p>
+                          <div className="flex gap-2 flex-wrap">
+                            {variantSizes.map(size => (
+                              <button
+                                key={size}
+                                onClick={() => {
+                                  setSelectedSize(size === selectedSize ? null : size);
+                                  setSelectedColor(prev => {
+                                    if (size !== selectedSize) {
+                                      return prev && variants.some(v => v.size?.trim() === size && v.color?.trim().toLowerCase() === prev.toLowerCase()) ? prev : null;
+                                    }
+                                    return prev;
+                                  });
+                                }}
+                                className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
+                                  selectedSize === size
+                                    ? 'bg-[#e8622a] text-white border-[#e8622a]'
+                                    : 'bg-gray-100 dark:bg-[#1c1c1c] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/[0.08]'
+                                }`}
+                              >
+                                {size}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
 
-                      {selectedSize && availableColors.length > 0 && (
+                      {/* PATCH 4: show colorsToShow directly */}
+                      {colorsToShow.length > 0 && (
                         <>
                           <p className="text-xs font-bold text-gray-500 mb-1">Color</p>
                           <div className="flex gap-2.5 flex-wrap">
-                            {availableColors.map(color => {
+                            {colorsToShow.map(color => {
                               const hex = getColorHex(color);
                               return (
                                 <button
@@ -293,18 +317,16 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                     <p className="font-black text-3xl" style={{ color: ACCENT }}>
                       ₦{displayPrice.toLocaleString()}
                     </p>
-                    {product.compareAtPrice &&
-                      product.compareAtPrice > product.price && (
-                        <span className="text-gray-400 dark:text-gray-500 line-through text-xl font-medium">
-                          ₦{product.compareAtPrice.toLocaleString()}
-                        </span>
-                      )}
-                    {product.discount?.percentage &&
-                      product.discount.percentage > 0 && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold bg-red-500/20 text-red-400 border border-red-500/30">
-                          -{product.discount.percentage}%
-                        </span>
-                      )}
+                    {product.compareAtPrice && product.compareAtPrice > product.price && (
+                      <span className="text-gray-400 dark:text-gray-500 line-through text-xl font-medium">
+                        ₦{product.compareAtPrice.toLocaleString()}
+                      </span>
+                    )}
+                    {product.discount?.percentage && product.discount.percentage > 0 && (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold bg-red-500/20 text-red-400 border border-red-500/30">
+                        -{product.discount.percentage}%
+                      </span>
+                    )}
                   </div>
 
                   {product.description && (
