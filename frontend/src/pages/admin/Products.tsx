@@ -162,6 +162,10 @@ const Products = () => {
   // Variants state (separate from react-hook-form)
   const [variants, setVariants] = useState<Variant[]>([]);
 
+  // Quick‑add state for the "Add Colors" tool
+  const [quickSize, setQuickSize] = useState("");
+  const [quickColors, setQuickColors] = useState("");
+
   // Delete modal
   const [modalOpen, setModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<{
@@ -282,6 +286,8 @@ const Products = () => {
     }
     setFiles([]);
     setNotifyCustomers(false);
+    setQuickSize("");
+    setQuickColors("");
     setIsDrawerOpen(true);
   };
 
@@ -291,6 +297,8 @@ const Products = () => {
     setFiles([]);
     setNotifyCustomers(false);
     setVariants([]);
+    setQuickSize("");
+    setQuickColors("");
   };
 
   const confirmDelete = async () => {
@@ -376,6 +384,45 @@ const Products = () => {
     setVariants((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // ── Quick Add Colors handler ──────────────────────────────────────────────
+  const handleQuickAddColors = () => {
+    const size = quickSize.trim();
+    const colors = quickColors
+      .split(",")
+      .map((c) => c.trim())
+      .filter((c) => c.length > 0);
+
+    if (!size || colors.length === 0) {
+      toast.error("Please enter a size and at least one color.");
+      return;
+    }
+
+    setVariants((prev) => {
+      const newVariants: Variant[] = [...prev];
+      let addedCount = 0;
+      colors.forEach((color) => {
+        const exists = newVariants.some(
+          (v) =>
+            v.size === size &&
+            v.color?.toLowerCase() === color.toLowerCase(),
+        );
+        if (!exists) {
+          newVariants.push({ size, color, price: 0, stock: 0, sku: "" });
+          addedCount++;
+        }
+      });
+      if (addedCount === 0) {
+        toast.error("Those colors already exist for this size.");
+      } else {
+        toast.success(`${addedCount} variant(s) added.`);
+      }
+      return newVariants;
+    });
+
+    setQuickSize("");
+    setQuickColors("");
+  };
+
   // ── Submit ─────────────────────────────────────────────────────────────────
   const onSubmit = async (data: ProductFormData) => {
     try {
@@ -420,7 +467,7 @@ const Products = () => {
             ? { percentage: Number(data.discountPercent) }
             : undefined,
         isFeatured: data.isFeatured || false,
-        variants: validVariants.length > 0 ? validVariants : undefined, // ✅ variants included
+        variants: validVariants.length > 0 ? validVariants : undefined,
       };
 
       if (editingProduct) {
@@ -657,7 +704,7 @@ const Products = () => {
                     className="border-t transition-colors hover:bg-white/[0.015] group"
                     style={{ borderColor: "rgba(255,255,255,0.05)" }}
                   >
-                    {/* Image – now optimised */}
+                    {/* Image */}
                     <td className="px-4 sm:px-5 py-3">
                       <div
                         className="w-11 h-11 rounded-xl overflow-hidden border shrink-0"
@@ -1049,7 +1096,6 @@ const Products = () => {
                 </div>
 
                 {/* Variants builder */}
-                {/* ─── Variants builder ───────────────────────────────────────────────── */}
                 <div>
                   <DLabel hint="Add sizes, colors, and their own price/stock if different from the main product.">
                     Variants (optional)
@@ -1065,66 +1111,23 @@ const Products = () => {
                         <input
                           type="text"
                           placeholder="Size (e.g. M)"
+                          value={quickSize}
+                          onChange={(e) => setQuickSize(e.target.value)}
                           className="px-3 py-2 rounded-lg text-xs text-white bg-[#2a2a2a] placeholder-gray-500 outline-none border border-white/[0.08] w-full"
-                          id="quickAddSize"
                         />
                       </div>
                       <div className="flex-[2]">
                         <input
                           type="text"
                           placeholder="Colors (comma-separated, e.g. Red, Blue)"
+                          value={quickColors}
+                          onChange={(e) => setQuickColors(e.target.value)}
                           className="px-3 py-2 rounded-lg text-xs text-white bg-[#2a2a2a] placeholder-gray-500 outline-none border border-white/[0.08] w-full"
-                          id="quickAddColors"
                         />
                       </div>
                       <button
                         type="button"
-                        onClick={() => {
-                          const sizeEl = document.getElementById(
-                            "quickAddSize",
-                          ) as HTMLInputElement;
-                          const colorsEl = document.getElementById(
-                            "quickAddColors",
-                          ) as HTMLInputElement;
-                          const size = sizeEl?.value?.trim();
-                          const colorsStr = colorsEl?.value?.trim();
-
-                          if (!size || !colorsStr) return;
-
-                          const colors = colorsStr
-                            .split(",")
-                            .map((c) => c.trim())
-                            .filter((c) => c.length > 0);
-
-                          if (colors.length === 0) return;
-
-                          setVariants((prev) => {
-                            const newVariants: Variant[] = [...prev];
-                            colors.forEach((color) => {
-                              // Avoid duplicate size+color
-                              const exists = newVariants.some(
-                                (v) =>
-                                  v.size === size &&
-                                  v.color?.toLowerCase() ===
-                                    color.toLowerCase(),
-                              );
-                              if (!exists) {
-                                newVariants.push({
-                                  size,
-                                  color,
-                                  price: 0,
-                                  stock: 0,
-                                  sku: "",
-                                });
-                              }
-                            });
-                            return newVariants;
-                          });
-
-                          // Clear the inputs
-                          sizeEl.value = "";
-                          colorsEl.value = "";
-                        }}
+                        onClick={handleQuickAddColors}
                         className="px-3 py-2 rounded-lg text-xs font-bold text-white transition-colors shrink-0"
                         style={{ background: ACCENT }}
                       >
