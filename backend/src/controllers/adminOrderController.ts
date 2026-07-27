@@ -16,7 +16,6 @@ const reduceStockForOrder = async (order: IOrder) => {
     if (!product) continue;
 
     if (item.variant && (item.variant.sku || item.variant.color || item.variant.size)) {
-      // Find matching variant
       const variant = product.variants?.find(
         v => v.sku === item.variant?.sku ||
              (v.color === item.variant?.color && v.size === item.variant?.size)
@@ -25,12 +24,10 @@ const reduceStockForOrder = async (order: IOrder) => {
         if (variant.stock !== undefined) {
           variant.stock = Math.max(0, variant.stock - item.qty);
         }
-        // Reduce parent stock too (if separate)
         product.stock = Math.max(0, product.stock - item.qty);
         await product.save();
       }
     } else {
-      // No variant – reduce main stock
       product.stock = Math.max(0, product.stock - item.qty);
       await product.save();
     }
@@ -46,8 +43,9 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       .sort({ createdAt: -1 })
       .limit(5);
 
+    // Exclude both Pending AND Cancelled from revenue
     const revenueResult = await Order.aggregate([
-      { $match: { status: { $ne: 'Pending' } } },
+      { $match: { status: { $nin: ['Pending', 'Cancelled'] } } },
       { $group: { _id: null, total: { $sum: '$totalPrice' } } },
     ]);
 
@@ -120,22 +118,19 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
     const { id } = req.params;
     const { status } = req.body;
 
-    // Fetch with typed result
     const order = await Order.findById(id).populate('user', 'email name phone') as IOrder | null;
     if (!order) {
       res.status(404).json({ message: 'Order not found' });
       return;
     }
 
-    // Reduce stock if moving from Pending
-    if (order.status === 'Pending' && status !== 'Pending') {
+    // Reduce stock only if moving from Pending to a non-Cancelled status
+    if (order.status === 'Pending' && status !== 'Pending' && status !== 'Cancelled') {
       await reduceStockForOrder(order);
     }
 
-    // Update status field only
     await Order.updateOne({ _id: order._id }, { $set: { status } });
 
-    // Handle coupon increment exactly once when turning to Paid
     if (status === 'Paid' && order.status !== 'Paid' && order.couponCode) {
       await Coupon.updateOne(
         { code: order.couponCode.toUpperCase() },
@@ -143,13 +138,10 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
       );
     }
 
-    // Update in‑memory status
     order.status = status;
 
-    // Notify admin
     await sendAdminOrderNotification(order, 'updated', status);
 
-    // Notify customer if shipped/delivered
     if (['Shipped', 'Delivered'].includes(status)) {
       const populatedUser = order.user as unknown as { email?: string; name?: string; phone?: string } | null;
       if (populatedUser?.email) {
