@@ -366,7 +366,6 @@ const ProductDetail = () => {
                           setSelectedSize(size === selectedSize ? null : size);
                           setSelectedColor(prev => {
                             if (size !== selectedSize) {
-                              // keep color only if it still exists for the new size
                               return prev && variants.some(v => v.size?.trim() === size && v.color?.trim().toLowerCase() === prev.toLowerCase()) ? prev : null;
                             }
                             return prev;
@@ -438,6 +437,21 @@ const ProductDetail = () => {
                 {displayPrice.toLocaleString()}
               </span>
             </div>
+
+            {/* Show "Starting Price" badge when no variant is selected */}
+            {hasVariants && !activeVariant && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-[#e8622a]/10 text-[#e8622a] border border-[#e8622a]/25">
+                Starting Price
+              </span>
+            )}
+
+            {/* Show selected variant info when a variant is active */}
+            {activeVariant && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-[#e8622a]/15 text-[#e8622a] border border-[#e8622a]/30">
+                {[activeVariant.size, activeVariant.color].filter(Boolean).join(' / ')} Price
+              </span>
+            )}
+
             {hasSalePrice && product.compareAtPrice && (
               <span className="text-gray-400 dark:text-gray-500 line-through text-xl font-medium">
                 ₦{product.compareAtPrice.toLocaleString()}
