@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import { ProductRowSkeleton } from '../../components/Skeletons';
-import { getCloudinaryUrl } from '../../utils/cloudinary';   // ✅ added
+import { getCloudinaryUrl } from '../../utils/cloudinary';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT      = '#e8622a';
@@ -31,7 +31,7 @@ interface CategoryItem {
   parent?: string | null;
 }
 
-// ─── Schema (extended) ────────────────────────────────────────────────────────
+// ─── Schema (simplified – no JSON attributes) ─────────────────────────────────
 const productSchema = z.object({
   name:            z.string().min(1, 'Product name is required'),
   price:           z.string().min(1, 'Price is required').refine(v => Number(v) > 0, 'Price must be greater than 0'),
@@ -41,10 +41,9 @@ const productSchema = z.object({
   brand:           z.string().optional(),
   sku:             z.string().optional(),
   tags:            z.string().optional(),               // comma separated
-  compareAtPrice:  z.string().optional(),
-  discountPercent: z.string().optional(),
+  compareAtPrice:  z.string().optional(),               // original price (for sale)
+  discountPercent: z.string().optional(),               // e.g. "10"
   isFeatured:      z.boolean().optional(),
-  attributes:      z.string().optional(),               // JSON string
 });
 type ProductFormData = z.infer<typeof productSchema>;
 
@@ -63,8 +62,11 @@ const formatPriceInput = (raw: string): string => {
   return decPart !== undefined ? `${fmtInt}.${decPart}` : fmtInt;
 };
 
-const DLabel = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 mb-2">{children}</p>
+const DLabel = ({ children, hint }: { children: React.ReactNode; hint?: string }) => (
+  <div className="mb-2">
+    <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500">{children}</p>
+    {hint && <p className="text-[11px] text-gray-600 mt-0.5 leading-snug">{hint}</p>}
+  </div>
 );
 
 // Helper: extract category name for display (still used in table)
@@ -123,7 +125,7 @@ const Products = () => {
   const { register, handleSubmit, reset, setValue, control, formState: { errors, isSubmitting } } =
     useForm<ProductFormData>({ resolver: zodResolver(productSchema) });
 
-  // Watched fields (use useWatch to avoid react-hooks/incompatible-library warning)
+  // Watched fields
   const isFeatured = useWatch({ control, name: 'isFeatured' });
 
   // Price inputs
@@ -175,7 +177,6 @@ const Products = () => {
         compareAtPrice: product.compareAtPrice?.toString() || '',
         discountPercent: product.discount?.percentage?.toString() || '',
         isFeatured:     product.isFeatured || false,
-        attributes:     product.attributes ? JSON.stringify(product.attributes) : '',
       });
       setRawPrice(product.price.toString());
       setRawCompareAt(product.compareAtPrice?.toString() || '');
@@ -184,7 +185,7 @@ const Products = () => {
       reset({
         name:'', price:'', stock:'', category:'', description:'',
         brand:'', sku:'', tags:'', compareAtPrice:'', discountPercent:'',
-        isFeatured: false, attributes:''
+        isFeatured: false,
       });
       setRawPrice('');
       setRawCompareAt('');
@@ -211,7 +212,7 @@ const Products = () => {
     try { await updateStock({ id, stock: Math.max(0, cur + delta) }).unwrap(); } catch { /* empty */ }
   };
 
-  // ── Price change handler (also used for compareAtPrice) ──────────────────
+  // ── Price change handler ─────────────────────────────────────────────────
   const handlePriceChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     setRaw: React.Dispatch<React.SetStateAction<string>>,
@@ -255,10 +256,6 @@ const Products = () => {
       const tagsArray = data.tags
         ? data.tags.split(',').map(t => t.trim()).filter(t => t.length > 0)
         : [];
-      let attributes = undefined;
-      if (data.attributes) {
-        try { attributes = JSON.parse(data.attributes); } catch { /* ignore invalid JSON */ }
-      }
 
       const payload = {
         name:           data.name,
@@ -276,7 +273,7 @@ const Products = () => {
           ? { percentage: Number(data.discountPercent) }
           : undefined,
         isFeatured:     data.isFeatured || false,
-        attributes:     attributes,
+        // Attributes removed
       };
 
       if (editingProduct) {
@@ -421,7 +418,7 @@ const Products = () => {
                   className="border-t transition-colors hover:bg-white/[0.015] group"
                   style={{ borderColor:'rgba(255,255,255,0.05)' }}>
 
-                  {/* Image – now optimised */}
+                  {/* Image – optimised */}
                   <td className="px-4 sm:px-5 py-3">
                     <div className="w-11 h-11 rounded-xl overflow-hidden border shrink-0" style={{ borderColor:'rgba(255,255,255,0.08)' }}>
                       <img
@@ -508,7 +505,7 @@ const Products = () => {
         </div>
       </motion.div>
 
-      {/* ══ Slide-in Drawer (Add / Edit) ═══════════════════════════════════════ */}
+      {/* ══ Slide-in Drawer (Add / Edit) – SIMPLIFIED ══════════════════════════ */}
       <AnimatePresence>
         {isDrawerOpen && (
           <>
@@ -549,7 +546,7 @@ const Products = () => {
                   {errors.name && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.name.message}</p>}
                 </div>
 
-                {/* Price + Compare At Price + Stock */}
+                {/* Price + Original Price (Compare At) + Stock + Discount */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <DLabel>Price (₦)</DLabel>
@@ -561,11 +558,13 @@ const Products = () => {
                     {errors.price && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.price.message}</p>}
                   </div>
                   <div>
-                    <DLabel>Compare At Price (₦)</DLabel>
+                    <DLabel hint="The original price before discount. If higher than the selling price, a sale badge will show on the product.">
+                      Original Price (optional)
+                    </DLabel>
                     <input ref={compareAtRef} type="text" inputMode="decimal"
                       value={formatPriceInput(rawCompareAt)}
                       onChange={(e) => handlePriceChange(e, setRawCompareAt, 'compareAtPrice')}
-                      placeholder="e.g. original price"
+                      placeholder="e.g. 5,000"
                       className={buildInputCls(false)} />
                   </div>
                   <div>
@@ -575,8 +574,10 @@ const Products = () => {
                     {errors.stock && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.stock.message}</p>}
                   </div>
                   <div>
-                    <DLabel>Discount %</DLabel>
-                    <input type="number" min="0" max="100" step="1" {...register('discountPercent')} placeholder="e.g. 10"
+                    <DLabel hint="Enter a discount percentage, e.g. 10 for 10% off.">
+                      Discount (%)
+                    </DLabel>
+                    <input type="number" min="0" max="100" step="1" {...register('discountPercent')} placeholder="10"
                       className={buildInputCls(false)} />
                   </div>
                 </div>
@@ -598,12 +599,16 @@ const Products = () => {
                 {/* Brand + SKU */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <DLabel>Brand</DLabel>
+                    <DLabel hint="The manufacturer or brand name.">
+                      Brand (optional)
+                    </DLabel>
                     <input {...register('brand')} placeholder="e.g. Apple"
                       className={buildInputCls(false)} />
                   </div>
                   <div>
-                    <DLabel>SKU</DLabel>
+                    <DLabel hint="A unique product code for inventory.">
+                      SKU (optional)
+                    </DLabel>
                     <input {...register('sku')} placeholder="e.g. APL-123"
                       className={buildInputCls(false)} />
                   </div>
@@ -611,8 +616,10 @@ const Products = () => {
 
                 {/* Tags */}
                 <div>
-                  <DLabel>Tags (comma separated)</DLabel>
-                  <input {...register('tags')} placeholder="e.g. new, trending, summer"
+                  <DLabel hint="Keywords to help customers find this product. Separate with commas.">
+                    Tags (optional)
+                  </DLabel>
+                  <input {...register('tags')} placeholder="new, trending, summer"
                     className={buildInputCls(false)} />
                 </div>
 
@@ -623,19 +630,12 @@ const Products = () => {
                     className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none resize-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/12 transition-all" />
                 </div>
 
-                {/* Attributes (JSON) */}
-                <div>
-                  <DLabel>Attributes (JSON format)</DLabel>
-                  <textarea {...register('attributes')} rows={2} placeholder='{"material":"cotton","fit":"regular"}'
-                    className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none resize-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/12 transition-all font-mono text-xs" />
-                </div>
-
                 {/* Featured toggle */}
                 <div className="flex items-center justify-between p-4 rounded-xl border"
                   style={{ background:'rgba(255,255,255,0.03)', borderColor:'rgba(255,255,255,0.07)' }}>
                   <div>
                     <p className="text-white text-sm font-bold">Featured Product</p>
-                    <p className="text-gray-600 text-xs">Show on homepage best sellers section</p>
+                    <p className="text-gray-600 text-xs">Show on the homepage Best Sellers section</p>
                   </div>
                   <button type="button" onClick={() => setValue('isFeatured', !isFeatured)}
                     className="relative w-11 h-6 rounded-full transition-colors duration-300 shrink-0"

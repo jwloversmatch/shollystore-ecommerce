@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux';
 import { addToCart } from '../features/cart/cartSlice';
 import toast from 'react-hot-toast';
 import { ShoppingCart, X, Minus, Plus, ImageOff } from 'lucide-react';
-import { getCloudinaryUrl } from '../utils/cloudinary';   // ✅ added
+import { getCloudinaryUrl } from '../utils/cloudinary';
 
 const ACCENT = '#e8622a';
 
@@ -18,6 +18,8 @@ interface ProductModalProps {
     stock?: number;
     category?: string | { _id: string; name: string; slug?: string; parent?: string | null };
     slug?: string;
+    compareAtPrice?: number;                      // ✅ original price
+    discount?: { percentage: number; validUntil?: Date };  // ✅ discount object
   } | null;
   isOpen: boolean;
   onClose: () => void;
@@ -136,9 +138,22 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                     <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white">{product.name}</h2>
                   </div>
 
-                  <p className="font-black text-3xl" style={{ color: ACCENT }}>
-                    ₦{product.price.toLocaleString()}
-                  </p>
+                  {/* Price + sale badge + original price */}
+                  <div className="flex items-baseline gap-3 flex-wrap">
+                    <p className="font-black text-3xl" style={{ color: ACCENT }}>
+                      ₦{product.price.toLocaleString()}
+                    </p>
+                    {product.compareAtPrice && product.compareAtPrice > product.price && (
+                      <span className="text-gray-400 dark:text-gray-500 line-through text-xl font-medium">
+                        ₦{product.compareAtPrice.toLocaleString()}
+                      </span>
+                    )}
+                    {product.discount?.percentage && product.discount.percentage > 0 && (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold bg-red-500/20 text-red-400 border border-red-500/30">
+                        -{product.discount.percentage}%
+                      </span>
+                    )}
+                  </div>
 
                   {product.description && (
                     <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-sm">

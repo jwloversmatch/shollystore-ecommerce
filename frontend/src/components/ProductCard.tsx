@@ -4,7 +4,7 @@ import { ShoppingCart, Check } from "lucide-react";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import { addToCart } from "../features/cart/cartSlice";
-import { getCloudinaryUrl } from "../utils/cloudinary";   // ✅ added
+import { getCloudinaryUrl } from "../utils/cloudinary";
 
 interface ProductProps {
   _id: string;
@@ -14,6 +14,8 @@ interface ProductProps {
   category?: string;
   stock?: number;
   onClick?: () => void;
+  compareAtPrice?: number;          // ✅ original price
+  discountPercent?: number;         // ✅ discount percentage
 }
 
 const FALLBACK = "https://via.placeholder.com/300x300?text=No+Image";
@@ -26,6 +28,8 @@ const ProductCard = ({
   category = "General",
   stock,
   onClick,
+  compareAtPrice,
+  discountPercent,
 }: ProductProps) => {
   const dispatch = useDispatch();
   const [imgError, setImgError] = useState(false);
@@ -33,6 +37,7 @@ const ProductCard = ({
 
   const isOutOfStock = stock !== undefined && stock === 0;
   const accent = isOutOfStock ? "#ef4444" : "#e8622a";
+  const hasSale = (compareAtPrice && compareAtPrice > price) || (discountPercent && discountPercent > 0);
 
   const handleAddToCart = useCallback(
     (e: React.MouseEvent) => {
@@ -51,7 +56,6 @@ const ProductCard = ({
     [dispatch, _id, name, image, price, stock, isOutOfStock],
   );
 
-  // Prepare image sources
   const imgSrc = getCloudinaryUrl(imgError ? FALLBACK : image, 400);
   const srcSet = !imgError
     ? `${getCloudinaryUrl(image, 400)} 400w, ${getCloudinaryUrl(image, 800)} 800w`
@@ -71,7 +75,7 @@ const ProductCard = ({
       transition={{ type: "spring", stiffness: 200, damping: 22 }}
       onClick={onClick}
     >
-      {/* ── Image area – shows full image, no cropping ── */}
+      {/* Image area */}
       <div className="relative w-full h-48 bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center p-4">
         <motion.img
           src={imgSrc}
@@ -108,7 +112,7 @@ const ProductCard = ({
         )}
       </div>
 
-      {/* ── Info section ── */}
+      {/* Info section */}
       <div className="flex flex-col flex-1 p-4">
         <span
           className="text-[10px] font-extrabold uppercase tracking-[0.2em] mb-1.5"
@@ -121,37 +125,53 @@ const ProductCard = ({
           {name}
         </h3>
 
-        <div className="mt-auto flex items-end justify-between gap-2">
-          <div className="flex items-baseline gap-0.5">
-            <span className="text-gray-500 dark:text-gray-400 text-xs pb-0.5">
-              ₦
-            </span>
-            <span className="font-black text-xl leading-none text-gray-900 dark:text-white">
-              {price.toLocaleString()}
-            </span>
-          </div>
+        <div className="mt-auto space-y-1.5">
+          {/* Sale price + discount badge */}
+          {hasSale && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {compareAtPrice && compareAtPrice > price && (
+                <span className="text-xs text-gray-500 line-through">
+                  ₦{compareAtPrice.toLocaleString()}
+                </span>
+              )}
+              {discountPercent && discountPercent > 0 && (
+                <span className="px-1.5 py-0.5 text-[10px] font-extrabold rounded-full bg-red-500/20 text-red-500 border border-red-500/30">
+                  -{discountPercent}%
+                </span>
+              )}
+            </div>
+          )}
 
-          <motion.button
-            onClick={handleAddToCart}
-            disabled={isOutOfStock}
-            whileTap={{ scale: 0.9 }}
-            className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${
-              isOutOfStock
-                ? "bg-gray-200 dark:bg-[#1e1e1e] text-gray-500 dark:text-gray-600 cursor-not-allowed"
-                : added
-                  ? "bg-emerald-500 text-white"
-                  : "bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-white/20"
-            }`}
-            title={isOutOfStock ? "Unavailable" : "Add to cart"}
-          >
-            {isOutOfStock ? (
-              <span className="text-xs font-bold">✕</span>
-            ) : added ? (
-              <Check className="w-4 h-4" />
-            ) : (
-              <ShoppingCart className="w-4 h-4" />
-            )}
-          </motion.button>
+          <div className="flex items-end justify-between gap-2">
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-gray-500 dark:text-gray-400 text-xs pb-0.5">₦</span>
+              <span className="font-black text-xl leading-none text-gray-900 dark:text-white">
+                {price.toLocaleString()}
+              </span>
+            </div>
+
+            <motion.button
+              onClick={handleAddToCart}
+              disabled={isOutOfStock}
+              whileTap={{ scale: 0.9 }}
+              className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${
+                isOutOfStock
+                  ? "bg-gray-200 dark:bg-[#1e1e1e] text-gray-500 dark:text-gray-600 cursor-not-allowed"
+                  : added
+                    ? "bg-emerald-500 text-white"
+                    : "bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-white/20"
+              }`}
+              title={isOutOfStock ? "Unavailable" : "Add to cart"}
+            >
+              {isOutOfStock ? (
+                <span className="text-xs font-bold">✕</span>
+              ) : added ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                <ShoppingCart className="w-4 h-4" />
+              )}
+            </motion.button>
+          </div>
         </div>
       </div>
     </motion.div>

@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useGetProductsQuery, useGetCategoryTreeQuery } from '../features/api/apiSlice';
 import type { ProductItem } from '../types/home';
-import { getCloudinaryUrl } from '../utils/cloudinary';   // ✅ added
+import { getCloudinaryUrl } from '../utils/cloudinary';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface CategoryNode { _id: string; name: string; slug: string; children?: CategoryNode[]; }
@@ -123,6 +123,11 @@ const ProductDetail = () => {
   const isOutOfStock = product.stock === 0;
   const categoryName = getCategoryName(product.category);
   const images       = product.images?.length ? product.images : [PLACEHOLDER];
+
+  // Derived values
+  const hasDiscount = product.discount?.percentage && product.discount.percentage > 0;
+  const discountPercent = product.discount?.percentage;
+  const hasSalePrice = product.compareAtPrice && product.compareAtPrice > product.price;
 
   return (
     <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ duration:0.4 }}
@@ -250,13 +255,36 @@ const ProductDetail = () => {
             </h1>
           </div>
 
-          {/* Price */}
-          <div className="flex items-baseline gap-1">
-            <span className="text-gray-600 dark:text-gray-400 text-xl font-bold">₦</span>
-            <span className="text-3xl sm:text-4xl font-black" style={{ color:ACCENT }}>
-              {product.price.toLocaleString()}
-            </span>
+          {/* Price with sale badge and original price */}
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <div className="flex items-baseline gap-1">
+              <span className="text-gray-600 dark:text-gray-400 text-xl font-bold">₦</span>
+              <span className="text-3xl sm:text-4xl font-black" style={{ color: hasSalePrice ? ACCENT : ACCENT }}>
+                {product.price.toLocaleString()}
+              </span>
+            </div>
+            {hasSalePrice && product.compareAtPrice && (
+              <span className="text-gray-400 dark:text-gray-500 line-through text-xl font-medium">
+                ₦{product.compareAtPrice.toLocaleString()}
+              </span>
+            )}
+            {hasDiscount && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold bg-red-500/20 text-red-400 border border-red-500/30">
+                -{discountPercent}%
+              </span>
+            )}
           </div>
+
+          {/* Tags */}
+          {product.tags && product.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {product.tags.map((tag, idx) => (
+                <span key={idx} className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-gray-300 dark:border-white/10">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Description */}
           {product.description && (
@@ -330,6 +358,7 @@ const ProductDetail = () => {
               { label:'Unit Price', value: `₦${product.price.toLocaleString()}` },
               ...(product.brand ? [{ label:'Brand', value: product.brand }] : []),
               ...(product.sku   ? [{ label:'SKU',   value: product.sku   }] : []),
+              ...(hasSalePrice && product.compareAtPrice ? [{ label:'Original Price', value: `₦${product.compareAtPrice.toLocaleString()}` }] : []),
             ].map(item => (
               <div key={item.label} className="p-3 rounded-xl
                 bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.07]">
