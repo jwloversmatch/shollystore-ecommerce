@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import { getCloudinaryUrl } from '../../utils/cloudinary';   // ✅ added
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT = '#e8622a';
@@ -56,8 +57,6 @@ const itemFadeUp = {
     transition: { type: 'spring' as const, stiffness: 300, damping: 25 },
   },
 };
-
-
 
 const HeroSlides = () => {
   const navigate = useNavigate();
@@ -164,7 +163,7 @@ const HeroSlides = () => {
     refetch();
   };
 
-  // ══════ LOADING SKELETON (dark theme) ═════════════════════════════════════════
+  // ══════ LOADING SKELETON ═════════════════════════════════════════════════════
   if (isLoading) {
     return (
       <div
@@ -247,7 +246,7 @@ const HeroSlides = () => {
     );
   }
 
-  // ══════ MAIN PAGE (dark theme) ════════════════════════════════════════════════
+  // ══════ MAIN PAGE ════════════════════════════════════════════════════════════
   return (
     <motion.div
       variants={containerVariants}
@@ -340,7 +339,7 @@ const HeroSlides = () => {
                 >
                   <td className="px-4 sm:px-6 py-3">
                     <img
-                      src={slide.imageUrl || PLACEHOLDER_IMAGE}
+                      src={getCloudinaryUrl(slide.imageUrl || PLACEHOLDER_IMAGE, 150)}
                       alt={slide.title}
                       loading="lazy"
                       onError={(e) => {
@@ -355,9 +354,7 @@ const HeroSlides = () => {
                   <td className="px-4 sm:px-6 py-3">
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold ${
-                        slide.isActive
-                          ? ''
-                          : ''
+                        slide.isActive ? '' : ''
                       }`}
                       style={
                         slide.isActive
@@ -405,7 +402,7 @@ const HeroSlides = () => {
         </div>
       </motion.div>
 
-      {/* Modal for Add/Edit (dark theme) */}
+      {/* Modal for Add/Edit */}
       <AnimatePresence>
         {isModalOpen && (
           <>
@@ -480,7 +477,7 @@ const HeroSlides = () => {
                       </label>
                       {(formData.imageUrl || file) && (
                         <img
-                          src={file ? URL.createObjectURL(file) : formData.imageUrl}
+                          src={file ? URL.createObjectURL(file) : getCloudinaryUrl(formData.imageUrl, 150)}
                           alt="Preview"
                           className="w-14 h-14 rounded-lg object-cover border"
                           style={{ borderColor: 'rgba(255,255,255,0.08)' }}

@@ -21,7 +21,7 @@ import {
   CreditCard,
   Calendar,
   Package,
-  Ticket,            // ✅ added for coupon display
+  Ticket,            
 } from 'lucide-react';
 import { StatsCardSkeleton, OrderRowSkeleton } from '../../components/Skeletons';
 
@@ -42,8 +42,8 @@ interface OrderItem {
     postalCode?: string;
     country?: string;
   };
-  couponCode?: string;    // ✅ added
-  discount?: number;      // ✅ added
+  couponCode?: string;   
+  discount?: number;     
 }
 
 // ---------- Constants ----------

@@ -26,6 +26,7 @@ import {
 } from "../../components/Skeletons";
 // ✅ Import the shared ProductItem type
 import type { ProductItem } from "../../types/home";
+import { getCloudinaryUrl } from "../../utils/cloudinary";   // ✅ added
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
@@ -400,9 +401,12 @@ const Dashboard = () => {
                 <div key={p._id} className="flex items-center gap-3 p-3 rounded-xl transition-all"
                   style={{ background:"#1c1c1c", border:"1px solid rgba(255,255,255,0.06)" }}>
                   <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border" style={{ borderColor:"rgba(255,255,255,0.08)" }}>
-                    <img src={p.images?.[0] || "https://via.placeholder.com/40"} alt={p.name}
+                    <img
+                      src={getCloudinaryUrl(p.images?.[0] || "https://via.placeholder.com/40", 80)}
+                      alt={p.name}
                       className="w-full h-full object-cover"
-                      onError={e => { e.currentTarget.src="https://via.placeholder.com/40"; }} />
+                      onError={e => { e.currentTarget.src="https://via.placeholder.com/40"; }}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-semibold text-sm truncate">{p.name}</p>
@@ -461,9 +465,12 @@ const Dashboard = () => {
                     {idx + 1}
                   </div>
                   <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
-                    <img src={p.images?.[0] || "https://via.placeholder.com/40"} alt={p.name}
+                    <img
+                      src={getCloudinaryUrl(p.images?.[0] || "https://via.placeholder.com/40", 80)}
+                      alt={p.name}
                       className="w-full h-full object-cover"
-                      onError={e => { e.currentTarget.src="https://via.placeholder.com/40"; }} />
+                      onError={e => { e.currentTarget.src="https://via.placeholder.com/40"; }}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-semibold text-sm truncate">{p.name}</p>

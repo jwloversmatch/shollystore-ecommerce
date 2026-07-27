@@ -4,6 +4,7 @@ import { ShoppingCart, Check } from "lucide-react";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import { addToCart } from "../features/cart/cartSlice";
+import { getCloudinaryUrl } from "../utils/cloudinary";   // ✅ added
 
 interface ProductProps {
   _id: string;
@@ -50,6 +51,13 @@ const ProductCard = ({
     [dispatch, _id, name, image, price, stock, isOutOfStock],
   );
 
+  // Prepare image sources
+  const imgSrc = getCloudinaryUrl(imgError ? FALLBACK : image, 400);
+  const srcSet = !imgError
+    ? `${getCloudinaryUrl(image, 400)} 400w, ${getCloudinaryUrl(image, 800)} 800w`
+    : undefined;
+  const sizes = "(max-width: 640px) 100vw, 50vw";
+
   return (
     <motion.div
       className="flex flex-col rounded-2xl overflow-hidden border cursor-pointer group
@@ -66,8 +74,11 @@ const ProductCard = ({
       {/* ── Image area – shows full image, no cropping ── */}
       <div className="relative w-full h-48 bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center p-4">
         <motion.img
-          src={imgError ? FALLBACK : image}
+          src={imgSrc}
+          srcSet={srcSet}
+          sizes={sizes}
           alt={name}
+          loading="lazy"
           onError={() => setImgError(true)}
           className="max-w-full max-h-full object-contain"
           variants={{ hover: { scale: 1.06 } }}

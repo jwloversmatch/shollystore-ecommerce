@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux';
 import { addToCart } from '../features/cart/cartSlice';
 import toast from 'react-hot-toast';
 import { ShoppingCart, X, Minus, Plus, ImageOff } from 'lucide-react';
+import { getCloudinaryUrl } from '../utils/cloudinary';   // ✅ added
 
 const ACCENT = '#e8622a';
 
@@ -108,7 +109,9 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                 >
                   {product.images?.[0] && !imageError ? (
                     <img
-                      src={product.images[0]}
+                      src={getCloudinaryUrl(product.images[0], 600)}
+                      srcSet={`${getCloudinaryUrl(product.images[0], 300)} 300w, ${getCloudinaryUrl(product.images[0], 600)} 600w`}
+                      sizes="(max-width: 768px) 100vw, 50vw"
                       alt={product.name}
                       className="w-full h-64 md:h-72 object-contain rounded-xl"
                       onError={() => setImageError(true)}

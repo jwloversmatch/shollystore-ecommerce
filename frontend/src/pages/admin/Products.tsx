@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import { ProductRowSkeleton } from '../../components/Skeletons';
+import { getCloudinaryUrl } from '../../utils/cloudinary';   // ✅ added
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT      = '#e8622a';
@@ -420,12 +421,16 @@ const Products = () => {
                   className="border-t transition-colors hover:bg-white/[0.015] group"
                   style={{ borderColor:'rgba(255,255,255,0.05)' }}>
 
-                  {/* Image */}
+                  {/* Image – now optimised */}
                   <td className="px-4 sm:px-5 py-3">
                     <div className="w-11 h-11 rounded-xl overflow-hidden border shrink-0" style={{ borderColor:'rgba(255,255,255,0.08)' }}>
-                      <img src={product.images?.[0] || PLACEHOLDER} alt={product.name} loading="lazy"
+                      <img
+                        src={getCloudinaryUrl(product.images?.[0] || PLACEHOLDER, 100)}
+                        alt={product.name}
+                        loading="lazy"
                         onError={e => { e.currentTarget.src = PLACEHOLDER; }}
-                        className="w-full h-full object-cover" />
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   </td>
 
@@ -672,8 +677,14 @@ const Products = () => {
                         <p className="text-[10px] text-gray-600 mb-1.5 uppercase font-bold tracking-wider">Current Images</p>
                         <div className="flex gap-2 flex-wrap">
                           {editingProduct.images.map((img, idx) => (
-                            <img key={idx} src={img} alt="Current" loading="lazy"
-                              className="w-16 h-16 rounded-xl object-cover border" style={{ borderColor:'rgba(255,255,255,0.1)' }} />
+                            <img
+                              key={idx}
+                              src={getCloudinaryUrl(img, 100)}
+                              alt="Current"
+                              loading="lazy"
+                              className="w-16 h-16 rounded-xl object-cover border"
+                              style={{ borderColor:'rgba(255,255,255,0.1)' }}
+                            />
                           ))}
                         </div>
                       </div>

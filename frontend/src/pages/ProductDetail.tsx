@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useGetProductsQuery, useGetCategoryTreeQuery } from '../features/api/apiSlice';
 import type { ProductItem } from '../types/home';
+import { getCloudinaryUrl } from '../utils/cloudinary';   // ✅ added
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface CategoryNode { _id: string; name: string; slug: string; children?: CategoryNode[]; }
@@ -180,7 +181,10 @@ const ProductDetail = () => {
                   key={selectedImage}
                   initial={{ opacity:0, scale:0.96 }} animate={{ opacity:1, scale:1 }}
                   transition={{ duration:0.25 }}
-                  src={images[selectedImage]} alt={product.name}
+                  src={getCloudinaryUrl(images[selectedImage], 800)}
+                  srcSet={`${getCloudinaryUrl(images[selectedImage], 400)} 400w, ${getCloudinaryUrl(images[selectedImage], 800)} 800w, ${getCloudinaryUrl(images[selectedImage], 1200)} 1200w`}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  alt={product.name}
                   onError={() => setImgError(true)}
                   className="w-full object-contain drop-shadow-2xl"
                   style={{ maxHeight:280 }}
@@ -218,7 +222,8 @@ const ProductDetail = () => {
                     boxShadow:    idx === selectedImage ? `0 0 0 1px ${ACCENT}` : 'none',
                     opacity:      idx === selectedImage ? 1 : 0.5,
                   }}>
-                  <img src={img} alt={`View ${idx+1}`} className="w-full h-full object-cover" />
+                  <img src={getCloudinaryUrl(img, 100)} alt={`View ${idx+1}`} loading="lazy"
+                    className="w-full h-full object-cover" />
                 </motion.button>
               ))}
             </div>
@@ -359,7 +364,6 @@ const ProductDetail = () => {
             className="fixed inset-x-0 z-40 sm:hidden"
             style={{ bottom:72 }}>
             <div className="h-8 pointer-events-none bg-gradient-to-t from-transparent to-transparent" />
-            {/* ^ replaced the problematic div */}
             <div className="bg-[#FCFAF5] dark:bg-[#0A0A0B] px-4 pb-3 pt-2 border-t border-gray-200 dark:border-white/[0.07]">
               <div className="flex gap-2.5">
                 <div className="flex items-center rounded-xl overflow-hidden shrink-0

@@ -10,6 +10,7 @@ import {
   AlertCircle, CreditCard, Sparkles, Flame,
 } from 'lucide-react';
 import SEO from '../components/SEO';
+import { getCloudinaryUrl } from '../utils/cloudinary';   // ✅ added
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT = '#e8622a';
@@ -151,7 +152,12 @@ const CartItem = ({ item }: { item: CartItemType }) => {
       <motion.div whileHover={{ scale: 1.06 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         className="w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden shrink-0"
         style={{ boxShadow: `0 0 0 2px transparent` }}>
-        <img src={item.image || 'https://via.placeholder.com/100'} alt={item.name} className="w-full h-full object-cover" />
+        <img
+          src={getCloudinaryUrl(item.image || 'https://via.placeholder.com/100', 200)}
+          alt={item.name}
+          loading="lazy"
+          className="w-full h-full object-cover"
+        />
       </motion.div>
 
       <div className="flex-1 min-w-0 w-full">

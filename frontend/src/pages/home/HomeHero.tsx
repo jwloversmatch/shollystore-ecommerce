@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Flame, ArrowRight } from "lucide-react";
 import { ACCENT, PLACEHOLDER, fadeUp, stagger } from "../../types/home";
 import type { HeroSlide } from "../../types/home";
+import { getCloudinaryUrl } from "../../utils/cloudinary";   // ✅ added
 
 interface HomeHeroProps {
   landingMode: boolean;
@@ -200,7 +201,9 @@ const HomeHero = ({
                   animate="center"
                   exit="exit"
                   transition={{ type: "spring", stiffness: 280, damping: 28 }}
-                  src={heroSlides[currentIndex].imageUrl}
+                  src={getCloudinaryUrl(heroSlides[currentIndex].imageUrl, 800)}
+                  srcSet={`${getCloudinaryUrl(heroSlides[currentIndex].imageUrl, 400)} 400w, ${getCloudinaryUrl(heroSlides[currentIndex].imageUrl, 800)} 800w, ${getCloudinaryUrl(heroSlides[currentIndex].imageUrl, 1200)} 1200w`}
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   alt={heroSlides[currentIndex].title || ""}
                   onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
                   className="w-full h-full object-cover absolute inset-0"
