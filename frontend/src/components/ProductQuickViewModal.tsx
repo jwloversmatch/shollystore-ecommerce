@@ -33,6 +33,11 @@ const getColorHex = (name: string): string | null => {
   return colorMap[lower] || null;
 };
 
+// ─── Local variant type that includes compareAtPrice ────────────────────────
+interface LocalVariant extends IVariant {
+  compareAtPrice?: number;
+}
+
 interface ProductModalProps {
   product: {
     _id: string;
@@ -60,8 +65,8 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
-  // Stabilise variants so dependencies don't change on every render
-  const variants = useMemo(() => product?.variants || [], [product?.variants]);
+  // Stabilise variants with proper typing
+  const variants: LocalVariant[] = useMemo(() => product?.variants || [], [product?.variants]);
   const hasVariants = variants.length > 0;
 
   // PATCH 1: sizes from variants with size (no color required)
@@ -114,6 +119,10 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
   const displayStock = activeVariant?.stock ?? product?.stock ?? 0;
   const isOutOfStock = displayStock === 0;
 
+  // Variant-specific compare-at price (falls back to product-level)
+  const displayCompareAtPrice: number | undefined = activeVariant?.compareAtPrice ?? product?.compareAtPrice ?? undefined;
+  const hasSalePrice = !!(displayCompareAtPrice && displayCompareAtPrice > displayPrice);
+
   // ══════ EARLY RETURN (after all hooks) ════════════════════════════════
   if (!product) return null;
 
@@ -128,7 +137,7 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
       return;
     }
     const variantInfo = activeVariant
-      ? { sku: activeVariant.sku, color: activeVariant.color, size: activeVariant.size }
+      ? { sku: activeVariant.sku, color: activeVariant.color, size: activeVariant.size, compareAtPrice: activeVariant.compareAtPrice }
       : undefined;
     dispatch(addToCart({
       _id: product._id,
@@ -332,9 +341,9 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                       </span>
                     )}
 
-                    {product.compareAtPrice && product.compareAtPrice > product.price && (
+                    {hasSalePrice && displayCompareAtPrice && (
                       <span className="text-gray-400 dark:text-gray-500 line-through text-xl font-medium">
-                        ₦{product.compareAtPrice.toLocaleString()}
+                        ₦{displayCompareAtPrice.toLocaleString()}
                       </span>
                     )}
                     {product.discount?.percentage && product.discount.percentage > 0 && (

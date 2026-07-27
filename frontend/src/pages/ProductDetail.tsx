@@ -16,6 +16,16 @@ import { getCloudinaryUrl } from '../utils/cloudinary';
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface CategoryNode { _id: string; name: string; slug: string; children?: CategoryNode[]; }
 
+// Local variant type that includes compareAtPrice
+interface LocalVariant {
+  sku?: string;
+  color?: string;
+  size?: string;
+  price?: number;
+  stock?: number;
+  compareAtPrice?: number;
+}
+
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT      = '#e8622a';
 const PLACEHOLDER = 'https://via.placeholder.com/600';
@@ -85,8 +95,8 @@ const ProductDetail = () => {
   const categoryId   = product ? getCategoryId(product.category) : undefined;
   const categoryNode = categoryId ? findCategoryById(categoryTree, categoryId) : null;
 
-  // ── Variant logic (stabilised) ──────────────────────────────────────────
-  const variants = useMemo(() => product?.variants || [], [product?.variants]);
+  // ── Variant logic (stabilised with proper typing) ──────────────────────
+  const variants: LocalVariant[] = useMemo(() => product?.variants || [], [product?.variants]);
   const hasVariants = variants.length > 0;
 
   // PATCH 1: sizes from variants with size (no color required)
@@ -139,13 +149,21 @@ const ProductDetail = () => {
   const displayStock = activeVariant?.stock ?? product?.stock ?? 0;
   const isOutOfStock = displayStock === 0;
 
+  // Variant-specific compare-at price (falls back to product-level)
+  const displayCompareAtPrice: number | undefined = activeVariant?.compareAtPrice ?? product?.compareAtPrice ?? undefined;
+  const hasSalePrice = !!(displayCompareAtPrice && displayCompareAtPrice > displayPrice);
+
+  // Sale logic (base product discount)
+  const hasDiscount = product?.discount?.percentage && product.discount.percentage > 0;
+  const discountPercent = product?.discount?.percentage;
+
   const handleAddToCart = () => {
     if (!product || isOutOfStock) {
       toast.error('Out of stock!');
       return;
     }
     const variantInfo = activeVariant
-      ? { sku: activeVariant.sku, color: activeVariant.color, size: activeVariant.size }
+      ? { sku: activeVariant.sku, color: activeVariant.color, size: activeVariant.size, compareAtPrice: activeVariant.compareAtPrice }
       : undefined;
     dispatch(addToCart({
       _id: product._id,
@@ -221,11 +239,6 @@ const ProductDetail = () => {
 
   const categoryName = getCategoryName(product.category);
   const images       = product.images?.length ? product.images : [PLACEHOLDER];
-
-  // Sale logic (base product)
-  const hasDiscount = product.discount?.percentage && product.discount.percentage > 0;
-  const discountPercent = product.discount?.percentage;
-  const hasSalePrice = product.compareAtPrice && product.compareAtPrice > product.price;
 
   return (
     <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ duration:0.4 }}
@@ -384,7 +397,7 @@ const ProductDetail = () => {
                 </div>
               )}
 
-              {/* Color picker (round swatches) – PATCH 4: show colorsToShow directly */}
+              {/* Color picker (round swatches) */}
               {colorsToShow.length > 0 && (
                 <div>
                   <p className="text-xs font-bold text-gray-500 mb-2">Color</p>
@@ -452,9 +465,9 @@ const ProductDetail = () => {
               </span>
             )}
 
-            {hasSalePrice && product.compareAtPrice && (
+            {hasSalePrice && displayCompareAtPrice && (
               <span className="text-gray-400 dark:text-gray-500 line-through text-xl font-medium">
-                ₦{product.compareAtPrice.toLocaleString()}
+                ₦{displayCompareAtPrice.toLocaleString()}
               </span>
             )}
             {hasDiscount && (
@@ -545,7 +558,7 @@ const ProductDetail = () => {
               { label:'Unit Price', value: `₦${displayPrice.toLocaleString()}` },
               ...(product.brand ? [{ label:'Brand', value: product.brand }] : []),
               ...(product.sku   ? [{ label:'SKU',   value: product.sku   }] : []),
-              ...(hasSalePrice && product.compareAtPrice ? [{ label:'Original Price', value: `₦${product.compareAtPrice.toLocaleString()}` }] : []),
+              ...(hasSalePrice && displayCompareAtPrice ? [{ label:'Original Price', value: `₦${displayCompareAtPrice.toLocaleString()}` }] : []),
             ].map(item => (
               <div key={item.label} className="p-3 rounded-xl
                 bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.07]">

@@ -1,11 +1,9 @@
-// Shared interfaces and constants for the Home page
-
-// ✅ New – variant type used in product detail and cart
 export interface IVariant {
   sku?: string;
   color?: string;
   size?: string;
   price?: number;
+  compareAtPrice?: number;
   stock?: number;
   images?: string[];
   isActive?: boolean;
@@ -32,7 +30,7 @@ export interface ProductItem {
   attributes?: Record<string, string | number | boolean>;
   barcode?: string;
   taxClass?: string;
-  variants?: IVariant[];   // ✅ added
+  variants?: IVariant[];  
 }
 
 export interface HeroSlide {

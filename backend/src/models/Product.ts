@@ -7,6 +7,7 @@ export interface IVariant {
   color?: string;
   size?: string;
   price?: number;
+  compareAtPrice?: number;
   stock?: number;
   images?: string[];
   isActive?: boolean;
@@ -17,6 +18,7 @@ const VariantSchema = new Schema<IVariant>({
   color:   { type: String },
   size:    { type: String },
   price:   { type: Number },
+  compareAtPrice: { type: Number, min: 0 },
   stock:   { type: Number },
   images:  { type: [String] },
   isActive:{ type: Boolean, default: true },
@@ -71,7 +73,7 @@ export interface IProduct extends Document {
   description: string;
   price: number;
   compareAtPrice?: number;
-  category: mongoose.Types.ObjectId;   // 🔁 now a reference
+  category: mongoose.Types.ObjectId;
   images: string[];
   stock: number;
   isFeatured: boolean;

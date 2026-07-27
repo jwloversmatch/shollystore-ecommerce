@@ -76,6 +76,7 @@ interface Variant {
   size?: string;
   price?: number;
   stock?: number;
+  compareAtPrice?: number;
 }
 
 // ─── Input helpers ────────────────────────────────────────────────────────────
@@ -263,6 +264,7 @@ const Products = () => {
           size: v.size,
           price: v.price,
           stock: v.stock,
+          compareAtPrice: v.compareAtPrice,
         })) || [],
       );
     } else {
@@ -364,7 +366,7 @@ const Products = () => {
   const addVariant = () => {
     setVariants((prev) => [
       ...prev,
-      { sku: "", color: "", size: "", price: 0, stock: 0 },
+      { sku: "", color: "", size: "", price: 0, stock: 0, compareAtPrice: undefined },
     ]);
   };
 
@@ -407,7 +409,7 @@ const Products = () => {
             v.color?.toLowerCase() === color.toLowerCase(),
         );
         if (!exists) {
-          newVariants.push({ size, color, price: 0, stock: 0, sku: "" });
+          newVariants.push({ size, color, price: 0, stock: 0, compareAtPrice: undefined, sku: "" });
           addedCount++;
         }
       });
@@ -445,8 +447,17 @@ const Products = () => {
             .filter((t) => t.length > 0)
         : [];
 
-      // Clean variants (remove empty rows)
-      const validVariants = variants.filter((v) => v.size || v.color || v.sku);
+      // Clean variants (remove empty rows) and include compareAtPrice
+      const validVariants = variants
+        .filter((v) => v.size || v.color || v.sku)
+        .map((v) => ({
+          sku: v.sku,
+          color: v.color,
+          size: v.size,
+          price: v.price,
+          stock: v.stock,
+          compareAtPrice: v.compareAtPrice || undefined,
+        }));
 
       const payload = {
         name: data.name,
@@ -1179,7 +1190,7 @@ const Products = () => {
                             className="px-3 py-2 rounded-lg text-xs text-white bg-[#2a2a2a] placeholder-gray-500 outline-none border border-white/[0.08]"
                           />
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-3 gap-2">
                           <input
                             type="number"
                             placeholder="Price (₦)"
@@ -1188,6 +1199,19 @@ const Products = () => {
                               updateVariant(
                                 idx,
                                 "price",
+                                Number(e.target.value),
+                              )
+                            }
+                            className="px-3 py-2 rounded-lg text-xs text-white bg-[#2a2a2a] placeholder-gray-500 outline-none border border-white/[0.08]"
+                          />
+                          <input
+                            type="number"
+                            placeholder="Compare At (₦)"
+                            value={v.compareAtPrice || ""}
+                            onChange={(e) =>
+                              updateVariant(
+                                idx,
+                                "compareAtPrice",
                                 Number(e.target.value),
                               )
                             }
