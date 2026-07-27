@@ -1,4 +1,4 @@
-import { CheckCircle, Clock, Truck, Package, AlertCircle } from "lucide-react";
+import { CheckCircle, Clock, Truck, Package, AlertCircle, XCircle } from "lucide-react";
 import type { ReactNode } from "react";
 
 export const getStatusInfo = (
@@ -24,6 +24,11 @@ export const getStatusInfo = (
       icon: <Package className="w-4 h-4" />,
       color: "bg-purple-100 text-purple-700",
       label: "Delivered",
+    },
+    Cancelled: {
+      icon: <XCircle className="w-4 h-4" />,
+      color: "bg-red-100 text-red-700",
+      label: "Cancelled",
     },
   };
   return (

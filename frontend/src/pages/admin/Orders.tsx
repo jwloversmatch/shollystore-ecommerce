@@ -21,11 +21,12 @@ import {
   CreditCard,
   Calendar,
   Package,
-  Ticket,            
+  Ticket,
+  XCircle,
 } from 'lucide-react';
 import { StatsCardSkeleton, OrderRowSkeleton } from '../../components/Skeletons';
 
-// ---------- Types (now includes coupon fields) ----------
+// ---------- Types ----------
 interface OrderItem {
   _id: string;
   user: { email: string; name?: string; phone?: string };
@@ -42,8 +43,8 @@ interface OrderItem {
     postalCode?: string;
     country?: string;
   };
-  couponCode?: string;   
-  discount?: number;     
+  couponCode?: string;
+  discount?: number;
 }
 
 // ---------- Constants ----------
@@ -58,10 +59,22 @@ const STATUS_COLORS: Record<string, string> = {
   Paid: 'bg-green-100 text-green-700',
   Shipped: 'bg-blue-100 text-blue-700',
   Delivered: 'bg-gray-100 text-gray-700',
+  Cancelled: 'bg-red-100 text-red-700',
 };
 
-const STATUS_OPTIONS = ['All', 'Pending', 'Paid', 'Shipped', 'Delivered'];
+const STATUS_OPTIONS = ['All', 'Pending', 'Paid', 'Shipped', 'Delivered', 'Cancelled'];
 const PAYMENT_OPTIONS = ['All', 'paystack', 'bank_transfer', 'whatsapp'];
+
+// Status progression — which statuses can follow from current
+const STATUS_FLOW: Record<string, string[]> = {
+  Pending:   ['Pending', 'Paid', 'Cancelled'],
+  Paid:      ['Paid', 'Shipped'],
+  Shipped:   ['Shipped', 'Delivered'],
+  Delivered: ['Delivered'],
+  Cancelled: ['Cancelled'],
+};
+
+const ALL_STATUSES = ['Pending', 'Paid', 'Shipped', 'Delivered', 'Cancelled'];
 
 // ---------- Animation Variants ----------
 const containerVariants = {
@@ -135,14 +148,15 @@ const Orders = () => {
     const total = orders.length;
     const paid = orders.filter((o: OrderItem) => o.status === 'Paid').length;
     const pending = orders.filter((o: OrderItem) => o.status === 'Pending').length;
-    return { total, paid, pending };
+    const cancelled = orders.filter((o: OrderItem) => o.status === 'Cancelled').length;
+    return { total, paid, pending, cancelled };
   }, [orders]);
 
   if (isLoading) {
     return (
       <div className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {Array.from({ length: 3 }).map((_, i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
             <StatsCardSkeleton key={i} />
           ))}
         </div>
@@ -186,11 +200,12 @@ const Orders = () => {
       </motion.div>
 
       {/* Stats Cards */}
-      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         {[
           { title: 'Total', value: stats.total, icon: <ShoppingBag className="w-5 h-5" />, color: 'text-blue-600', bg: 'bg-blue-100' },
           { title: 'Paid', value: stats.paid, icon: <CheckCircle className="w-5 h-5" />, color: 'text-green-600', bg: 'bg-green-100' },
           { title: 'Pending', value: stats.pending, icon: <Clock className="w-5 h-5" />, color: 'text-yellow-600', bg: 'bg-yellow-100' },
+          { title: 'Cancelled', value: stats.cancelled, icon: <XCircle className="w-5 h-5" />, color: 'text-red-600', bg: 'bg-red-100' },
         ].map((stat, idx) => (
           <motion.div
             key={idx}
@@ -302,83 +317,101 @@ const Orders = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {orders.map((order: OrderItem) => (
-                <motion.tr
-                  key={order._id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.2 }}
-                  whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
-                  className="transition-colors"
-                >
-                  <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm">
-                    <div className="flex flex-col">
-                      <span className="font-medium text-gray-800">
-                        {order.user?.name || order.name || 'N/A'}
-                      </span>
-                      <span className="text-gray-600">{order.user?.email}</span>
-                      {(order.user?.phone || order.phone) && (
-                        <span className="text-gray-400 flex items-center gap-1 mt-0.5">
-                          <Phone className="w-3 h-3" />
-                          {order.user?.phone || order.phone}
+              {orders.map((order: OrderItem) => {
+                const isLocked = order.status === 'Delivered' || order.status === 'Cancelled';
+                return (
+                  <motion.tr
+                    key={order._id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                    whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
+                    className="transition-colors"
+                  >
+                    <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-gray-800">
+                          {order.user?.name || order.name || 'N/A'}
                         </span>
+                        <span className="text-gray-600">{order.user?.email}</span>
+                        {(order.user?.phone || order.phone) && (
+                          <span className="text-gray-400 flex items-center gap-1 mt-0.5">
+                            <Phone className="w-3 h-3" />
+                            {order.user?.phone || order.phone}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm">
+                      {order.orderItems?.length > 0 ? (
+                        order.orderItems.map((item, idx) => (
+                          <span key={idx}>
+                            {item.qty}x {item.name}
+                            {idx < order.orderItems.length - 1 ? ', ' : ''}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-gray-400">—</span>
                       )}
-                    </div>
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm">
-                    {order.orderItems?.length > 0 ? (
-                      order.orderItems.map((item, idx) => (
-                        <span key={idx}>
-                          {item.qty}x {item.name}
-                          {idx < order.orderItems.length - 1 ? ', ' : ''}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 font-medium text-xs sm:text-sm text-gray-800">
+                      ₦{order.totalPrice.toLocaleString()}
+                    </td>
+                    <td className="hidden sm:table-cell px-4 sm:px-6 py-3 text-xs sm:text-sm text-gray-500">
+                      {new Date(order.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="hidden sm:table-cell px-4 sm:px-6 py-3 text-xs sm:text-sm text-gray-600 capitalize">
+                      {PAYMENT_METHOD_LABELS[order.paymentMethod || ''] || '—'}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm">
+                      {order.couponCode ? (
+                        <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                          <Ticket className="w-3 h-3" />
+                          {order.couponCode} (-₦{order.discount?.toLocaleString() || 0})
                         </span>
-                      ))
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 font-medium text-xs sm:text-sm text-gray-800">
-                    ₦{order.totalPrice.toLocaleString()}
-                  </td>
-                  <td className="hidden sm:table-cell px-4 sm:px-6 py-3 text-xs sm:text-sm text-gray-500">
-                    {new Date(order.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="hidden sm:table-cell px-4 sm:px-6 py-3 text-xs sm:text-sm text-gray-600 capitalize">
-                    {PAYMENT_METHOD_LABELS[order.paymentMethod || ''] || '—'}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 text-xs sm:text-sm">
-                    {order.couponCode ? (
-                      <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
-                        <Ticket className="w-3 h-3" />
-                        {order.couponCode} (-₦{order.discount?.toLocaleString() || 0})
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3">
-                    <select
-                      value={order.status}
-                      onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                      className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold border-0 focus:ring-2 focus:ring-leaf-green ${STATUS_COLORS[order.status]} cursor-pointer outline-none transition-all`}
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Paid">Paid</option>
-                      <option value="Shipped">Shipped</option>
-                      <option value="Delivered">Delivered</option>
-                    </select>
-                  </td>
-                  <td className="px-4 sm:px-6 py-3">
-                    <button
-                      onClick={() => setSelectedOrder(order)}
-                      className="text-leaf-green hover:underline flex items-center gap-1 text-xs sm:text-sm font-medium"
-                    >
-                      <Eye className="w-4 h-4" />
-                      View
-                    </button>
-                  </td>
-                </motion.tr>
-              ))}
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={order.status}
+                          onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                          disabled={isLocked}
+                          className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold border-0 focus:ring-2 focus:ring-leaf-green ${STATUS_COLORS[order.status]} cursor-pointer outline-none transition-all`}
+                          style={{ opacity: isLocked ? 0.5 : 1, cursor: isLocked ? 'not-allowed' : 'pointer' }}
+                        >
+                          {ALL_STATUSES.map(s => (
+                            <option key={s} value={s} disabled={!STATUS_FLOW[order.status]?.includes(s)}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                        {/* Quick cancel for pending orders */}
+                        {order.status === 'Pending' && (
+                          <button
+                            onClick={() => handleStatusChange(order._id, 'Cancelled')}
+                            className="text-[10px] font-bold px-2 py-1 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors whitespace-nowrap"
+                            title="Cancel this order"
+                          >
+                            ✕ Cancel
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <button
+                        onClick={() => setSelectedOrder(order)}
+                        className="text-leaf-green hover:underline flex items-center gap-1 text-xs sm:text-sm font-medium"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View
+                      </button>
+                    </td>
+                  </motion.tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -523,25 +556,26 @@ const Orders = () => {
                   </div>
 
                   {/* Quick status update inside modal */}
-                  <div className="flex items-center gap-3 pt-2">
-                    <span className="text-sm text-gray-600">Update Status:</span>
-                    <select
-                      value={selectedOrder.status}
-                      onChange={(e) => {
-                        handleStatusChange(selectedOrder._id, e.target.value);
-                        setSelectedOrder({
-                          ...selectedOrder,
-                          status: e.target.value,
-                        });
-                      }}
-                      className={`px-3 py-1.5 rounded-full text-xs font-bold border-0 focus:ring-2 focus:ring-leaf-green ${STATUS_COLORS[selectedOrder.status]} cursor-pointer outline-none transition-all`}
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Paid">Paid</option>
-                      <option value="Shipped">Shipped</option>
-                      <option value="Delivered">Delivered</option>
-                    </select>
-                  </div>
+                  {selectedOrder.status !== 'Delivered' && selectedOrder.status !== 'Cancelled' && (
+                    <div className="flex items-center gap-3 pt-2">
+                      <span className="text-sm text-gray-600">Update Status:</span>
+                      <select
+                        value={selectedOrder.status}
+                        onChange={(e) => {
+                          handleStatusChange(selectedOrder._id, e.target.value);
+                          setSelectedOrder({
+                            ...selectedOrder,
+                            status: e.target.value,
+                          });
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold border-0 focus:ring-2 focus:ring-leaf-green ${STATUS_COLORS[selectedOrder.status]} cursor-pointer outline-none transition-all`}
+                      >
+                        {ALL_STATUSES.filter(s => STATUS_FLOW[selectedOrder.status]?.includes(s)).map(s => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>

@@ -35,13 +35,23 @@ const STATUS_DARK: Record<string, { bg: string; text: string; border: string }> 
   Paid:      { bg:"rgba(52,211,153,0.10)",  text:"#34d399", border:"rgba(52,211,153,0.3)"  },
   Shipped:   { bg:"rgba(96,165,250,0.10)",  text:"#60a5fa", border:"rgba(96,165,250,0.3)"  },
   Delivered: { bg:"rgba(156,163,175,0.10)", text:"#9ca3af", border:"rgba(156,163,175,0.25)"},
+  Cancelled: { bg:"rgba(239,68,68,0.10)",   text:"#f87171", border:"rgba(239,68,68,0.3)"   },
 };
 const STATUS_PIE: Record<string, string> = {
-  Pending:"#fbbf24", Paid:"#34d399", Shipped:"#60a5fa", Delivered:"#6b7280",
+  Pending:"#fbbf24", Paid:"#34d399", Shipped:"#60a5fa", Delivered:"#6b7280", Cancelled:"#ef4444",
 };
 const CHART_COLORS = ["#e8622a","#10b981","#3b82f6","#f59e0b","#8b5cf6","#ec4899"];
 const PAYMENT_LABELS: Record<string, string> = {
   paystack:"Paystack", bank_transfer:"Bank Transfer", whatsapp:"WhatsApp",
+};
+
+// ─── Status progression ────────────────────────────────────────────────────────
+const STATUS_FLOW: Record<string, string[]> = {
+  Pending:   ["Pending", "Paid", "Cancelled"],
+  Paid:      ["Paid", "Shipped"],
+  Shipped:   ["Shipped", "Delivered"],
+  Delivered: ["Delivered"],
+  Cancelled: ["Cancelled"],
 };
 
 // ─── Interfaces ────────────────────────────────────────────────────────────────
@@ -99,14 +109,6 @@ const PieTooltip = ({ active, payload }: CustomTooltipProps) => {
   );
 };
 
-// ─── Status progression helper ─────────────────────────────────────────────────
-const STATUS_FLOW: Record<string, string[]> = {
-  Pending:   ["Pending", "Paid"],
-  Paid:      ["Paid", "Shipped"],
-  Shipped:   ["Shipped", "Delivered"],
-  Delivered: ["Delivered"],
-};
-
 // ═══════════════════════════════════════════════════════════════════════════════
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -158,7 +160,6 @@ const Dashboard = () => {
       >
         <SEO title="Admin Dashboard" description="Manage your store." />
 
-        {/* Header skeleton */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="space-y-2">
             <div className="h-5 w-32 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
@@ -170,14 +171,12 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Stat cards skeleton */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <StatsCardSkeleton key={i} dark />
           ))}
         </div>
 
-        {/* Charts skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="lg:col-span-2">
             <DarkCardSkeleton>
@@ -197,7 +196,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Quick Inventory + Top Products skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <DarkCardSkeleton>
             <div className="p-5">
@@ -238,7 +236,6 @@ const Dashboard = () => {
           </DarkCardSkeleton>
         </div>
 
-        {/* Recent Orders skeleton */}
         <DarkCardSkeleton>
           <div className="p-5">
             <div className="h-6 w-40 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse mb-4" />
@@ -248,7 +245,6 @@ const Dashboard = () => {
           </div>
         </DarkCardSkeleton>
 
-        {/* User Management skeleton */}
         <DarkCardSkeleton>
           <div className="p-5">
             <div className="h-6 w-48 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse mb-4" />
@@ -527,23 +523,38 @@ const Dashboard = () => {
                       </span>
                     </td>
                     <td className="px-5 py-3.5">
-                      <select
-                        value={order.status}
-                        onChange={e => handleStatusChange(order._id, e.target.value)}
-                        disabled={order.status === "Delivered"}
-                        className="text-xs font-bold px-2.5 py-1.5 rounded-xl outline-none cursor-pointer transition-all appearance-none"
-                        style={{
-                          background: STATUS_DARK[order.status]?.bg   || "rgba(255,255,255,0.07)",
-                          color:      STATUS_DARK[order.status]?.text  || "#fff",
-                          border:     `1px solid ${STATUS_DARK[order.status]?.border || "rgba(255,255,255,0.1)"}`,
-                          opacity:    order.status === "Delivered" ? 0.5 : 1,
-                          cursor:     order.status === "Delivered" ? "not-allowed" : "pointer",
-                        }}>
-                        <option value="Pending" disabled={!STATUS_FLOW[order.status]?.includes("Pending")}>Pending</option>
-                        <option value="Paid" disabled={!STATUS_FLOW[order.status]?.includes("Paid")}>Paid</option>
-                        <option value="Shipped" disabled={!STATUS_FLOW[order.status]?.includes("Shipped")}>Shipped</option>
-                        <option value="Delivered" disabled={!STATUS_FLOW[order.status]?.includes("Delivered")}>Delivered</option>
-                      </select>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={order.status}
+                          onChange={e => handleStatusChange(order._id, e.target.value)}
+                          disabled={order.status === "Delivered" || order.status === "Cancelled"}
+                          className="text-xs font-bold px-2.5 py-1.5 rounded-xl outline-none cursor-pointer transition-all appearance-none"
+                          style={{
+                            background: STATUS_DARK[order.status]?.bg   || "rgba(255,255,255,0.07)",
+                            color:      STATUS_DARK[order.status]?.text  || "#fff",
+                            border:     `1px solid ${STATUS_DARK[order.status]?.border || "rgba(255,255,255,0.1)"}`,
+                            opacity:    order.status === "Delivered" || order.status === "Cancelled" ? 0.5 : 1,
+                            cursor:     order.status === "Delivered" || order.status === "Cancelled" ? "not-allowed" : "pointer",
+                          }}>
+                          <option value="Pending" disabled={!STATUS_FLOW[order.status]?.includes("Pending")}>Pending</option>
+                          <option value="Paid" disabled={!STATUS_FLOW[order.status]?.includes("Paid")}>Paid</option>
+                          <option value="Shipped" disabled={!STATUS_FLOW[order.status]?.includes("Shipped")}>Shipped</option>
+                          <option value="Delivered" disabled={!STATUS_FLOW[order.status]?.includes("Delivered")}>Delivered</option>
+                          <option value="Cancelled" disabled={!STATUS_FLOW[order.status]?.includes("Cancelled")}>Cancelled</option>
+                        </select>
+                        
+                        {/* Quick cancel button for pending orders */}
+                        {order.status === "Pending" && (
+                          <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleStatusChange(order._id, "Cancelled")}
+                            className="text-[10px] font-bold px-2 py-1 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors whitespace-nowrap"
+                            title="Cancel this order"
+                          >
+                            ✕ Cancel
+                          </motion.button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
