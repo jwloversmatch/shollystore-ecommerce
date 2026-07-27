@@ -24,9 +24,8 @@ import {
   TableRowSkeleton,
   DarkCardSkeleton,
 } from "../../components/Skeletons";
-// ✅ Import the shared ProductItem type
 import type { ProductItem } from "../../types/home";
-import { getCloudinaryUrl } from "../../utils/cloudinary";   // ✅ added
+import { getCloudinaryUrl } from "../../utils/cloudinary";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
@@ -47,7 +46,6 @@ const PAYMENT_LABELS: Record<string, string> = {
 
 // ─── Interfaces ────────────────────────────────────────────────────────────────
 interface OrderItem  { _id:string; user:{email:string}; totalPrice:number; status:string; createdAt?:string; paymentMethod?:string; }
-// ❌ Local ProductItem removed – using imported type
 interface CategorySale{ _id:string; totalSales:number; revenue:number; }
 interface TopProduct { _id:string; name:string; images:string[]; price:number; totalQuantity:number; totalRevenue:number; }
 interface UserData   { _id:string; email:string; role:"user"|"admin"; }
@@ -101,6 +99,14 @@ const PieTooltip = ({ active, payload }: CustomTooltipProps) => {
   );
 };
 
+// ─── Status progression helper ─────────────────────────────────────────────────
+const STATUS_FLOW: Record<string, string[]> = {
+  Pending:   ["Pending", "Paid"],
+  Paid:      ["Paid", "Shipped"],
+  Shipped:   ["Shipped", "Delivered"],
+  Delivered: ["Delivered"],
+};
+
 // ═══════════════════════════════════════════════════════════════════════════════
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -108,7 +114,6 @@ const Dashboard = () => {
   const [productToDelete,  setProductToDelete]  = useState<string | null>(null);
 
   const { data:statsData,    isLoading:statsLoading,    refetch:refetchStats    } = useGetAdminStatsQuery({});
-  // ✅ Extract products from the paginated response
   const { data:productsResponse, isLoading:productsLoading, refetch:refetchProducts } = useGetProductsQuery({ limit: 9999 });
   const { data:analyticsData,isLoading:analyticsLoading,refetch:refetchAnalytics} = useGetSalesAnalyticsQuery({});
   const { data:topProductsData, refetch:refetchTopProducts } = useGetTopProductsQuery({});
@@ -121,7 +126,6 @@ const Dashboard = () => {
   const [updateStock]   = useUpdateStockMutation();
 
   const stats      = statsData   || { orders:[], totalRevenue:0 };
-  // ✅ Use imported ProductItem type; array is correctly typed
   const products   = useMemo<ProductItem[]>(() => productsResponse?.products || [], [productsResponse]);
   const analytics  = analyticsData || { totalRevenue:0, totalOrders:0, categorySales:[] };
   const topProducts: TopProduct[] = topProductsData || [];
@@ -410,7 +414,6 @@ const Dashboard = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-semibold text-sm truncate">{p.name}</p>
-                    {/* ✅ Use safe category helper */}
                     <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
                       style={{ background:`${ACCENT}15`, color:ACCENT }}>
                       {getCategoryName(p.category)}
@@ -524,15 +527,22 @@ const Dashboard = () => {
                       </span>
                     </td>
                     <td className="px-5 py-3.5">
-                      <select value={order.status}
+                      <select
+                        value={order.status}
                         onChange={e => handleStatusChange(order._id, e.target.value)}
+                        disabled={order.status === "Delivered"}
                         className="text-xs font-bold px-2.5 py-1.5 rounded-xl outline-none cursor-pointer transition-all appearance-none"
                         style={{
                           background: STATUS_DARK[order.status]?.bg   || "rgba(255,255,255,0.07)",
                           color:      STATUS_DARK[order.status]?.text  || "#fff",
                           border:     `1px solid ${STATUS_DARK[order.status]?.border || "rgba(255,255,255,0.1)"}`,
+                          opacity:    order.status === "Delivered" ? 0.5 : 1,
+                          cursor:     order.status === "Delivered" ? "not-allowed" : "pointer",
                         }}>
-                        {["Pending","Paid","Shipped","Delivered"].map(s => <option key={s} value={s}>{s}</option>)}
+                        <option value="Pending" disabled={!STATUS_FLOW[order.status]?.includes("Pending")}>Pending</option>
+                        <option value="Paid" disabled={!STATUS_FLOW[order.status]?.includes("Paid")}>Paid</option>
+                        <option value="Shipped" disabled={!STATUS_FLOW[order.status]?.includes("Shipped")}>Shipped</option>
+                        <option value="Delivered" disabled={!STATUS_FLOW[order.status]?.includes("Delivered")}>Delivered</option>
                       </select>
                     </td>
                   </tr>
