@@ -5,7 +5,7 @@ import { addToCart } from '../features/cart/cartSlice';
 import toast from 'react-hot-toast';
 import { ShoppingCart, X, Minus, Plus, ImageOff } from 'lucide-react';
 import { getCloudinaryUrl } from '../utils/cloudinary';
-import type { IVariant } from '../types/home';   // ✅ added
+import type { IVariant } from '../types/home';
 
 const ACCENT = '#e8622a';
 
@@ -21,7 +21,7 @@ interface ProductModalProps {
     slug?: string;
     compareAtPrice?: number;
     discount?: { percentage: number; validUntil?: Date };
-    variants?: IVariant[];   // ✅ added
+    variants?: IVariant[];
   } | null;
   isOpen: boolean;
   onClose: () => void;
@@ -31,7 +31,7 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
   const dispatch = useDispatch();
   const [qty, setQty] = useState(1);
   const [imageError, setImageError] = useState(false);
-  const [selectedVariant, setSelectedVariant] = useState<number | null>(null);   // ✅ new
+  const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
 
   if (!product) return null;
 
@@ -149,13 +149,14 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                     <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white">{product.name}</h2>
                   </div>
 
-                  {/* Variant selector */}
+                  {/* Variant selector (fixed) */}
                   {hasVariants && (
                     <div>
                       <p className="text-xs font-bold text-gray-500 mb-2">Select variant</p>
                       <div className="flex gap-2 flex-wrap">
                         {variants.map((v, idx) => {
-                          const label = v.size || v.color || v.sku || `Variant ${idx+1}`;
+                          const parts = [v.size, v.color].filter(Boolean);
+                          const label = parts.join(', ') || v.sku || `Variant ${idx+1}`;
                           const active = selectedVariant === idx;
                           return (
                             <button

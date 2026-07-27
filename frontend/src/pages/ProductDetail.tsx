@@ -10,7 +10,7 @@ import {
   Check, Tag, Truck, RefreshCw, ChevronRight,
 } from 'lucide-react';
 import { useGetProductsQuery, useGetCategoryTreeQuery } from '../features/api/apiSlice';
-import type { ProductItem, } from '../types/home';
+import type { ProductItem } from '../types/home';
 import { getCloudinaryUrl } from '../utils/cloudinary';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -45,7 +45,7 @@ const ProductDetail = () => {
   const [imgError,      setImgError]      = useState(false);
   const [added,         setAdded]         = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedVariant, setSelectedVariant] = useState<number | null>(null);   // ✅ variant index
+  const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
 
   const { data: productsData, isLoading } = useGetProductsQuery({ limit: 9999 });
   const products: ProductItem[]           = productsData?.products ?? [];
@@ -55,7 +55,7 @@ const ProductDetail = () => {
   const categoryId   = product ? getCategoryId(product.category) : undefined;
   const categoryNode = categoryId ? findCategoryById(categoryTree, categoryId) : null;
 
-  // Calculate the effective price and stock based on selected variant
+  // Variant logic
   const variants = product?.variants || [];
   const hasVariants = variants.length > 0;
   const activeVariant = hasVariants && selectedVariant !== null ? variants[selectedVariant] : null;
@@ -78,7 +78,7 @@ const ProductDetail = () => {
       price: displayPrice,
       qty,
       stock: displayStock,
-      variant: variantInfo,   // stored in cart (cartSlice supports variant)
+      variant: variantInfo,
     }));
     toast.success(`${product.name} added! 🛒`);
     setAdded(true);
@@ -146,7 +146,7 @@ const ProductDetail = () => {
   const categoryName = getCategoryName(product.category);
   const images       = product.images?.length ? product.images : [PLACEHOLDER];
 
-  // Derived sale values (from base product, not variant)
+  // Sale logic (base product)
   const hasDiscount = product.discount?.percentage && product.discount.percentage > 0;
   const discountPercent = product.discount?.percentage;
   const hasSalePrice = product.compareAtPrice && product.compareAtPrice > product.price;
@@ -164,7 +164,7 @@ const ProductDetail = () => {
       <div className="fixed pointer-events-none rounded-full blur-[130px] -z-10"
         style={{ width:500, height:500, top:-100, right:-100, background:ACCENT, opacity:0.05 }} />
 
-      {/* ── Breadcrumb nav ── */}
+      {/* Breadcrumb */}
       <motion.div initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.05 }}
         className="flex items-center gap-2 mb-5 overflow-x-auto no-scrollbar pb-1">
         <motion.button whileHover={{ scale:1.06 }} whileTap={{ scale:0.94 }}
@@ -188,14 +188,13 @@ const ProductDetail = () => {
         )}
       </motion.div>
 
-      {/* ══════════ MAIN GRID ══════════════════════════════════════════════════ */}
+      {/* Main grid */}
       <div className="grid md:grid-cols-2 gap-6 md:gap-10 lg:gap-14 items-start">
 
-        {/* ─── IMAGE PANEL ─── */}
+        {/* Image panel */}
         <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.1 }}
           className="md:sticky md:top-24 space-y-3">
 
-          {/* Main image */}
           <div className="relative rounded-2xl md:rounded-3xl overflow-hidden
             bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]">
             <div className="absolute top-0 inset-x-0 h-px"
@@ -225,7 +224,6 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {/* Out-of-stock overlay */}
             {isOutOfStock && (
               <div className="absolute inset-0 flex items-center justify-center"
                 style={{ background:'rgba(0,0,0,0.6)' }}>
@@ -237,7 +235,7 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {/* Thumbnails — horizontal scroll on mobile */}
+          {/* Thumbnails */}
           {images.length > 1 && (
             <div className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar">
               {images.map((img, idx) => (
@@ -257,7 +255,7 @@ const ProductDetail = () => {
           )}
         </motion.div>
 
-        {/* ─── PRODUCT INFO ─── */}
+        {/* Product info */}
         <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.15 }}
           className="space-y-5">
 
@@ -277,13 +275,14 @@ const ProductDetail = () => {
             </h1>
           </div>
 
-          {/* Variant selector (if variants exist) */}
+          {/* Variant selector (fixed) */}
           {hasVariants && (
             <div>
               <p className="text-xs font-bold text-gray-500 mb-2">Select variant</p>
               <div className="flex gap-2 flex-wrap">
                 {variants.map((v, idx) => {
-                  const label = v.size || v.color || v.sku || `Variant ${idx+1}`;
+                  const parts = [v.size, v.color].filter(Boolean);
+                  const label = parts.join(', ') || v.sku || `Variant ${idx+1}`;
                   const active = selectedVariant === idx;
                   return (
                     <button
@@ -303,7 +302,7 @@ const ProductDetail = () => {
             </div>
           )}
 
-          {/* Price (now dynamic) */}
+          {/* Price */}
           <div className="flex items-baseline gap-3 flex-wrap">
             <div className="flex items-baseline gap-1">
               <span className="text-gray-600 dark:text-gray-400 text-xl font-bold">₦</span>
@@ -354,10 +353,9 @@ const ProductDetail = () => {
             </span>
           </div>
 
-          {/* ─── Desktop qty + CTA (hidden on mobile) ─── */}
+          {/* Desktop qty + CTA */}
           {!isOutOfStock && (
             <div className="hidden sm:flex items-center gap-3">
-              {/* Qty */}
               <div className="flex items-center rounded-xl overflow-hidden shrink-0
                 bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.09]">
                 <motion.button whileTap={{ scale:0.85 }} onClick={() => qty > 1 && setQty(q=>q-1)}
@@ -377,7 +375,6 @@ const ProductDetail = () => {
                   <Plus className="w-4 h-4" />
                 </motion.button>
               </div>
-              {/* Add to Cart */}
               <motion.button onClick={handleAddToCart}
                 whileHover={{ scale:1.03, boxShadow: added ? '0 14px 36px rgba(16,185,129,0.45)' : `0 14px 36px ${ACCENT}55` }}
                 whileTap={{ scale:0.97 }}
@@ -416,7 +413,7 @@ const ProductDetail = () => {
             ))}
           </div>
 
-          {/* Shipping + returns — small text */}
+          {/* Shipping + returns */}
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1.5">
               <Truck className="w-3.5 h-3.5 shrink-0" />
@@ -430,7 +427,7 @@ const ProductDetail = () => {
         </motion.div>
       </div>
 
-      {/* ══ MOBILE STICKY CTA BAR (sm and below only) ═══════════════════════════ */}
+      {/* Mobile sticky CTA bar */}
       <AnimatePresence>
         {!isOutOfStock && (
           <motion.div
