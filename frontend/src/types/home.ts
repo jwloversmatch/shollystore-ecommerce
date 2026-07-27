@@ -1,5 +1,16 @@
 // Shared interfaces and constants for the Home page
 
+// ✅ New – variant type used in product detail and cart
+export interface IVariant {
+  sku?: string;
+  color?: string;
+  size?: string;
+  price?: number;
+  stock?: number;
+  images?: string[];
+  isActive?: boolean;
+}
+
 export interface ProductItem {
   _id: string;
   name: string;
@@ -11,7 +22,6 @@ export interface ProductItem {
   description?: string;
   brand?: string;
   sku?: string;
-  // ─── Newly added fields from the product schema ────────────────────────
   compareAtPrice?: number;
   discount?: {
     percentage: number;
@@ -22,6 +32,7 @@ export interface ProductItem {
   attributes?: Record<string, string | number | boolean>;
   barcode?: string;
   taxClass?: string;
+  variants?: IVariant[];   // ✅ added
 }
 
 export interface HeroSlide {

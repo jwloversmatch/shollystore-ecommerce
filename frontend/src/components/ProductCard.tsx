@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import { addToCart } from "../features/cart/cartSlice";
 import { getCloudinaryUrl } from "../utils/cloudinary";
+import type { IVariant } from "../types/home";   // ✅ added
 
 interface ProductProps {
   _id: string;
@@ -14,8 +15,9 @@ interface ProductProps {
   category?: string;
   stock?: number;
   onClick?: () => void;
-  compareAtPrice?: number;          // ✅ original price
-  discountPercent?: number;         // ✅ discount percentage
+  compareAtPrice?: number;
+  discountPercent?: number;
+  variants?: IVariant[];   // ✅ new
 }
 
 const FALLBACK = "https://via.placeholder.com/300x300?text=No+Image";
@@ -30,6 +32,7 @@ const ProductCard = ({
   onClick,
   compareAtPrice,
   discountPercent,
+  variants,
 }: ProductProps) => {
   const dispatch = useDispatch();
   const [imgError, setImgError] = useState(false);
@@ -121,9 +124,24 @@ const ProductCard = ({
           {category}
         </span>
 
-        <h3 className="font-bold text-sm leading-snug line-clamp-2 mb-3 text-gray-900 dark:text-white">
+        <h3 className="font-bold text-sm leading-snug line-clamp-2 mb-1 text-gray-900 dark:text-white">
           {name}
         </h3>
+
+        {/* Variant pills (just visual hint) */}
+        {variants && variants.length > 0 && (
+          <div className="flex gap-1 mb-2 flex-wrap">
+            {variants.map((v, idx) => {
+              const label = v.size || v.color || v.sku;
+              if (!label) return null;
+              return (
+                <span key={idx} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                  {label}
+                </span>
+              );
+            })}
+          </div>
+        )}
 
         <div className="mt-auto space-y-1.5">
           {/* Sale price + discount badge */}

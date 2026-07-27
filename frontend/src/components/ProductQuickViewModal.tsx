@@ -5,6 +5,7 @@ import { addToCart } from '../features/cart/cartSlice';
 import toast from 'react-hot-toast';
 import { ShoppingCart, X, Minus, Plus, ImageOff } from 'lucide-react';
 import { getCloudinaryUrl } from '../utils/cloudinary';
+import type { IVariant } from '../types/home';   // ✅ added
 
 const ACCENT = '#e8622a';
 
@@ -18,8 +19,9 @@ interface ProductModalProps {
     stock?: number;
     category?: string | { _id: string; name: string; slug?: string; parent?: string | null };
     slug?: string;
-    compareAtPrice?: number;                      // ✅ original price
-    discount?: { percentage: number; validUntil?: Date };  // ✅ discount object
+    compareAtPrice?: number;
+    discount?: { percentage: number; validUntil?: Date };
+    variants?: IVariant[];   // ✅ added
   } | null;
   isOpen: boolean;
   onClose: () => void;
@@ -29,6 +31,7 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
   const dispatch = useDispatch();
   const [qty, setQty] = useState(1);
   const [imageError, setImageError] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<number | null>(null);   // ✅ new
 
   if (!product) return null;
 
@@ -37,27 +40,35 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
       ? product.category
       : product.category?.name ?? 'General';
 
-  const stock = product.stock ?? 0;
-  const isOutOfStock = stock === 0;
+  const variants = product.variants || [];
+  const hasVariants = variants.length > 0;
+  const activeVariant = hasVariants && selectedVariant !== null ? variants[selectedVariant] : null;
+  const displayPrice = activeVariant?.price ?? product.price;
+  const displayStock = activeVariant?.stock ?? product.stock ?? 0;
+  const isOutOfStock = displayStock === 0;
 
   const handleAddToCart = () => {
     if (isOutOfStock) {
       toast.error('Sorry, this item is out of stock!');
       return;
     }
+    const variantInfo = activeVariant
+      ? { sku: activeVariant.sku, color: activeVariant.color, size: activeVariant.size }
+      : undefined;
     dispatch(addToCart({
       _id: product._id,
       name: product.name,
       image: product.images?.[0] || 'https://via.placeholder.com/600',
-      price: product.price,
+      price: displayPrice,
       qty,
-      stock,
+      stock: displayStock,
+      variant: variantInfo,
     }));
     toast.success(`Added ${product.name} to cart!`);
   };
 
   const increment = () => {
-    if (!isOutOfStock && qty < stock) setQty((prev) => prev + 1);
+    if (!isOutOfStock && qty < displayStock) setQty((prev) => prev + 1);
   };
   const decrement = () => {
     if (qty > 1) setQty((prev) => prev - 1);
@@ -138,10 +149,36 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                     <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white">{product.name}</h2>
                   </div>
 
-                  {/* Price + sale badge + original price */}
+                  {/* Variant selector */}
+                  {hasVariants && (
+                    <div>
+                      <p className="text-xs font-bold text-gray-500 mb-2">Select variant</p>
+                      <div className="flex gap-2 flex-wrap">
+                        {variants.map((v, idx) => {
+                          const label = v.size || v.color || v.sku || `Variant ${idx+1}`;
+                          const active = selectedVariant === idx;
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => setSelectedVariant(idx)}
+                              className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
+                                active
+                                  ? 'bg-[#e8622a] text-white border-[#e8622a]'
+                                  : 'bg-gray-100 dark:bg-[#1c1c1c] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/[0.08]'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Price + sale badge */}
                   <div className="flex items-baseline gap-3 flex-wrap">
                     <p className="font-black text-3xl" style={{ color: ACCENT }}>
-                      ₦{product.price.toLocaleString()}
+                      ₦{displayPrice.toLocaleString()}
                     </p>
                     {product.compareAtPrice && product.compareAtPrice > product.price && (
                       <span className="text-gray-400 dark:text-gray-500 line-through text-xl font-medium">
@@ -169,7 +206,7 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                       }`}
                     />
                     <span className="text-sm font-bold text-gray-600 dark:text-gray-300">
-                      {isOutOfStock ? 'Out of Stock' : `In Stock (${stock} available)`}
+                      {isOutOfStock ? 'Out of Stock' : `In Stock (${displayStock} available)`}
                     </span>
                   </div>
 
@@ -193,7 +230,7 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                         <span className="font-bold w-8 text-center text-gray-900 dark:text-white">{qty}</span>
                         <button
                           onClick={increment}
-                          disabled={qty >= stock}
+                          disabled={qty >= displayStock}
                           className="w-10 h-10 flex items-center justify-center rounded-lg
                             text-gray-500 hover:text-gray-900 dark:hover:text-white
                             hover:bg-gray-200 dark:hover:bg-white/5 transition disabled:opacity-40"

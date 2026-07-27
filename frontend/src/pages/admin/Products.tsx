@@ -31,7 +31,7 @@ interface CategoryItem {
   parent?: string | null;
 }
 
-// ─── Schema (simplified – no JSON attributes) ─────────────────────────────────
+// ─── Schema (extended) ────────────────────────────────────────────────────────
 const productSchema = z.object({
   name:            z.string().min(1, 'Product name is required'),
   price:           z.string().min(1, 'Price is required').refine(v => Number(v) > 0, 'Price must be greater than 0'),
@@ -40,12 +40,21 @@ const productSchema = z.object({
   description:     z.string().optional(),
   brand:           z.string().optional(),
   sku:             z.string().optional(),
-  tags:            z.string().optional(),               // comma separated
-  compareAtPrice:  z.string().optional(),               // original price (for sale)
-  discountPercent: z.string().optional(),               // e.g. "10"
+  tags:            z.string().optional(),
+  compareAtPrice:  z.string().optional(),
+  discountPercent: z.string().optional(),
   isFeatured:      z.boolean().optional(),
 });
 type ProductFormData = z.infer<typeof productSchema>;
+
+// ─── Variant interface (not in the schema, managed separately) ─────────────────
+interface Variant {
+  sku?: string;
+  color?: string;
+  size?: string;
+  price?: number;
+  stock?: number;
+}
 
 // ─── Input helpers ────────────────────────────────────────────────────────────
 const buildInputCls = (hasError: boolean) =>
@@ -109,8 +118,11 @@ const Products = () => {
   const [isDrawerOpen,   setIsDrawerOpen]   = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
   const [uploading,      setUploading]      = useState(false);
-  const [files,          setFiles]          = useState<File[]>([]);       // multiple files
+  const [files,          setFiles]          = useState<File[]>([]);
   const [notifyCustomers,setNotifyCustomers]= useState(false);
+
+  // Variants state (separate from react-hook-form)
+  const [variants, setVariants] = useState<Variant[]>([]);
 
   // Delete modal
   const [modalOpen,   setModalOpen]   = useState(false);
@@ -180,6 +192,14 @@ const Products = () => {
       });
       setRawPrice(product.price.toString());
       setRawCompareAt(product.compareAtPrice?.toString() || '');
+      // Load variants if they exist
+      setVariants(product.variants?.map(v => ({
+        sku:   v.sku,
+        color: v.color,
+        size:  v.size,
+        price: v.price,
+        stock: v.stock,
+      })) || []);
     } else {
       setEditingProduct(null);
       reset({
@@ -189,6 +209,7 @@ const Products = () => {
       });
       setRawPrice('');
       setRawCompareAt('');
+      setVariants([]);
     }
     setFiles([]);
     setNotifyCustomers(false);
@@ -200,6 +221,7 @@ const Products = () => {
     setEditingProduct(null);
     setFiles([]);
     setNotifyCustomers(false);
+    setVariants([]);
   };
 
   const confirmDelete = async () => {
@@ -238,6 +260,23 @@ const Products = () => {
     setValue(fieldName, cleaned, { shouldValidate: true });
   };
 
+  // ── Variant handlers ────────────────────────────────────────────────────
+  const addVariant = () => {
+    setVariants(prev => [...prev, { sku:'', color:'', size:'', price:0, stock:0 }]);
+  };
+
+  const updateVariant = (index: number, field: keyof Variant, value: string | number) => {
+    setVariants(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const removeVariant = (index: number) => {
+    setVariants(prev => prev.filter((_, i) => i !== index));
+  };
+
   // ── Submit ─────────────────────────────────────────────────────────────────
   const onSubmit = async (data: ProductFormData) => {
     try {
@@ -257,6 +296,9 @@ const Products = () => {
         ? data.tags.split(',').map(t => t.trim()).filter(t => t.length > 0)
         : [];
 
+      // Clean variants (remove empty rows)
+      const validVariants = variants.filter(v => v.size || v.color || v.sku);
+
       const payload = {
         name:           data.name,
         price:          Number(data.price),
@@ -273,7 +315,7 @@ const Products = () => {
           ? { percentage: Number(data.discountPercent) }
           : undefined,
         isFeatured:     data.isFeatured || false,
-        // Attributes removed
+        variants:       validVariants.length > 0 ? validVariants : undefined,   // ✅ variants included
       };
 
       if (editingProduct) {
@@ -418,7 +460,7 @@ const Products = () => {
                   className="border-t transition-colors hover:bg-white/[0.015] group"
                   style={{ borderColor:'rgba(255,255,255,0.05)' }}>
 
-                  {/* Image – optimised */}
+                  {/* Image – now optimised */}
                   <td className="px-4 sm:px-5 py-3">
                     <div className="w-11 h-11 rounded-xl overflow-hidden border shrink-0" style={{ borderColor:'rgba(255,255,255,0.08)' }}>
                       <img
@@ -505,7 +547,7 @@ const Products = () => {
         </div>
       </motion.div>
 
-      {/* ══ Slide-in Drawer (Add / Edit) – SIMPLIFIED ══════════════════════════ */}
+      {/* ══ Slide-in Drawer (Add / Edit) – WITH VARIANT BUILDER ═══════════════ */}
       <AnimatePresence>
         {isDrawerOpen && (
           <>
@@ -546,7 +588,7 @@ const Products = () => {
                   {errors.name && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"><AlertCircle className="w-3 h-3" /> {errors.name.message}</p>}
                 </div>
 
-                {/* Price + Original Price (Compare At) + Stock + Discount */}
+                {/* Price + Compare At Price + Stock + Discount */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <DLabel>Price (₦)</DLabel>
@@ -628,6 +670,66 @@ const Products = () => {
                   <DLabel>Description</DLabel>
                   <textarea {...register('description')} rows={3} placeholder="Brief product description…"
                     className="w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none resize-none border border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/12 transition-all" />
+                </div>
+
+                {/* Variants builder */}
+                <div>
+                  <DLabel hint="Add sizes, colors, and their own price/stock if different from the main product.">
+                    Variants (optional)
+                  </DLabel>
+                  <div className="space-y-3">
+                    {variants.map((v, idx) => (
+                      <div key={idx} className="p-3 rounded-xl bg-[#1c1c1c] border border-white/[0.08] space-y-2 relative">
+                        <button type="button" onClick={() => removeVariant(idx)}
+                          className="absolute top-2 right-2 p-1 rounded-lg text-gray-600 hover:text-red-400">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                        <div className="grid grid-cols-3 gap-2">
+                          <input
+                            type="text"
+                            placeholder="Size (e.g. M)"
+                            value={v.size || ''}
+                            onChange={e => updateVariant(idx, 'size', e.target.value)}
+                            className="px-3 py-2 rounded-lg text-xs text-white bg-[#2a2a2a] placeholder-gray-500 outline-none border border-white/[0.08]"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Color (e.g. Red)"
+                            value={v.color || ''}
+                            onChange={e => updateVariant(idx, 'color', e.target.value)}
+                            className="px-3 py-2 rounded-lg text-xs text-white bg-[#2a2a2a] placeholder-gray-500 outline-none border border-white/[0.08]"
+                          />
+                          <input
+                            type="text"
+                            placeholder="SKU (optional)"
+                            value={v.sku || ''}
+                            onChange={e => updateVariant(idx, 'sku', e.target.value)}
+                            className="px-3 py-2 rounded-lg text-xs text-white bg-[#2a2a2a] placeholder-gray-500 outline-none border border-white/[0.08]"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="number"
+                            placeholder="Price (₦)"
+                            value={v.price || ''}
+                            onChange={e => updateVariant(idx, 'price', Number(e.target.value))}
+                            className="px-3 py-2 rounded-lg text-xs text-white bg-[#2a2a2a] placeholder-gray-500 outline-none border border-white/[0.08]"
+                          />
+                          <input
+                            type="number"
+                            placeholder="Stock"
+                            value={v.stock || ''}
+                            onChange={e => updateVariant(idx, 'stock', Number(e.target.value))}
+                            className="px-3 py-2 rounded-lg text-xs text-white bg-[#2a2a2a] placeholder-gray-500 outline-none border border-white/[0.08]"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <button type="button" onClick={addVariant}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-gray-400 hover:text-white transition-colors bg-[#1c1c1c] border border-white/[0.08]">
+                      <Plus className="w-3.5 h-3.5" /> Add Variant
+                    </button>
+                  </div>
                 </div>
 
                 {/* Featured toggle */}

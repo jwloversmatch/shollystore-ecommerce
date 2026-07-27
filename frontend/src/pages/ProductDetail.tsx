@@ -10,7 +10,7 @@ import {
   Check, Tag, Truck, RefreshCw, ChevronRight,
 } from 'lucide-react';
 import { useGetProductsQuery, useGetCategoryTreeQuery } from '../features/api/apiSlice';
-import type { ProductItem } from '../types/home';
+import type { ProductItem, } from '../types/home';
 import { getCloudinaryUrl } from '../utils/cloudinary';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -45,6 +45,7 @@ const ProductDetail = () => {
   const [imgError,      setImgError]      = useState(false);
   const [added,         setAdded]         = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedVariant, setSelectedVariant] = useState<number | null>(null);   // ✅ variant index
 
   const { data: productsData, isLoading } = useGetProductsQuery({ limit: 9999 });
   const products: ProductItem[]           = productsData?.products ?? [];
@@ -54,9 +55,31 @@ const ProductDetail = () => {
   const categoryId   = product ? getCategoryId(product.category) : undefined;
   const categoryNode = categoryId ? findCategoryById(categoryTree, categoryId) : null;
 
+  // Calculate the effective price and stock based on selected variant
+  const variants = product?.variants || [];
+  const hasVariants = variants.length > 0;
+  const activeVariant = hasVariants && selectedVariant !== null ? variants[selectedVariant] : null;
+  const displayPrice = activeVariant?.price ?? product?.price ?? 0;
+  const displayStock = activeVariant?.stock ?? product?.stock ?? 0;
+  const isOutOfStock = displayStock === 0;
+
   const handleAddToCart = () => {
-    if (!product || product.stock === 0) { toast.error('Out of stock!'); return; }
-    dispatch(addToCart({ _id:product._id, name:product.name, image:product.images?.[0]||PLACEHOLDER, price:product.price, qty, stock:product.stock??0 }));
+    if (!product || isOutOfStock) {
+      toast.error('Out of stock!');
+      return;
+    }
+    const variantInfo = activeVariant
+      ? { sku: activeVariant.sku, color: activeVariant.color, size: activeVariant.size }
+      : undefined;
+    dispatch(addToCart({
+      _id: product._id,
+      name: product.name,
+      image: product.images?.[0] || PLACEHOLDER,
+      price: displayPrice,
+      qty,
+      stock: displayStock,
+      variant: variantInfo,   // stored in cart (cartSlice supports variant)
+    }));
     toast.success(`${product.name} added! 🛒`);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
@@ -120,11 +143,10 @@ const ProductDetail = () => {
     );
   }
 
-  const isOutOfStock = product.stock === 0;
   const categoryName = getCategoryName(product.category);
   const images       = product.images?.length ? product.images : [PLACEHOLDER];
 
-  // Derived values
+  // Derived sale values (from base product, not variant)
   const hasDiscount = product.discount?.percentage && product.discount.percentage > 0;
   const discountPercent = product.discount?.percentage;
   const hasSalePrice = product.compareAtPrice && product.compareAtPrice > product.price;
@@ -255,12 +277,38 @@ const ProductDetail = () => {
             </h1>
           </div>
 
-          {/* Price with sale badge and original price */}
+          {/* Variant selector (if variants exist) */}
+          {hasVariants && (
+            <div>
+              <p className="text-xs font-bold text-gray-500 mb-2">Select variant</p>
+              <div className="flex gap-2 flex-wrap">
+                {variants.map((v, idx) => {
+                  const label = v.size || v.color || v.sku || `Variant ${idx+1}`;
+                  const active = selectedVariant === idx;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedVariant(idx)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
+                        active
+                          ? 'bg-[#e8622a] text-white border-[#e8622a]'
+                          : 'bg-gray-100 dark:bg-[#1c1c1c] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/[0.08]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Price (now dynamic) */}
           <div className="flex items-baseline gap-3 flex-wrap">
             <div className="flex items-baseline gap-1">
               <span className="text-gray-600 dark:text-gray-400 text-xl font-bold">₦</span>
-              <span className="text-3xl sm:text-4xl font-black" style={{ color: hasSalePrice ? ACCENT : ACCENT }}>
-                {product.price.toLocaleString()}
+              <span className="text-3xl sm:text-4xl font-black" style={{ color:ACCENT }}>
+                {displayPrice.toLocaleString()}
               </span>
             </div>
             {hasSalePrice && product.compareAtPrice && (
@@ -302,7 +350,7 @@ const ProductDetail = () => {
               className="w-2 h-2 rounded-full shrink-0"
               style={{ background: isOutOfStock ? '#ef4444' : '#10b981' }} />
             <span className="text-sm font-bold text-gray-900 dark:text-white">
-              {isOutOfStock ? 'Out of Stock' : `In Stock — ${product.stock} units left`}
+              {isOutOfStock ? 'Out of Stock' : `In Stock — ${displayStock} units left`}
             </span>
           </div>
 
@@ -323,8 +371,8 @@ const ProductDetail = () => {
                   className="w-10 text-center text-lg font-black text-gray-900 dark:text-white select-none">
                   {qty}
                 </motion.span>
-                <motion.button whileTap={{ scale:0.85 }} onClick={() => qty < (product.stock??0) && setQty(q=>q+1)}
-                  disabled={qty>=(product.stock??0)}
+                <motion.button whileTap={{ scale:0.85 }} onClick={() => qty < displayStock && setQty(q=>q+1)}
+                  disabled={qty>=displayStock}
                   className="w-11 h-12 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-30 transition-colors">
                   <Plus className="w-4 h-4" />
                 </motion.button>
@@ -355,7 +403,7 @@ const ProductDetail = () => {
           <div className="grid grid-cols-2 gap-2.5 pt-3 border-t border-gray-200 dark:border-white/[0.06]">
             {[
               { label:'Category', value: categoryName },
-              { label:'Unit Price', value: `₦${product.price.toLocaleString()}` },
+              { label:'Unit Price', value: `₦${displayPrice.toLocaleString()}` },
               ...(product.brand ? [{ label:'Brand', value: product.brand }] : []),
               ...(product.sku   ? [{ label:'SKU',   value: product.sku   }] : []),
               ...(hasSalePrice && product.compareAtPrice ? [{ label:'Original Price', value: `₦${product.compareAtPrice.toLocaleString()}` }] : []),
@@ -408,8 +456,8 @@ const ProductDetail = () => {
                     className="w-8 text-center text-base font-black text-gray-900 dark:text-white select-none">
                     {qty}
                   </motion.span>
-                  <motion.button whileTap={{ scale:0.85 }} onClick={() => qty < (product.stock??0) && setQty(q=>q+1)}
-                    disabled={qty>=(product.stock??0)}
+                  <motion.button whileTap={{ scale:0.85 }} onClick={() => qty < displayStock && setQty(q=>q+1)}
+                    disabled={qty>=displayStock}
                     className="w-10 h-12 flex items-center justify-center text-emerald-400 disabled:opacity-30 active:bg-emerald-500/10 transition-colors">
                     <Plus className="w-3.5 h-3.5" />
                   </motion.button>
@@ -425,7 +473,7 @@ const ProductDetail = () => {
                   <motion.span animate={added ? { rotate:[0,-15,15,0], scale:[1,1.2,1] } : {}} transition={{ duration:0.38 }}>
                     {added ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
                   </motion.span>
-                  {added ? 'Added!' : `Add to Cart · ₦${product.price.toLocaleString()}`}
+                  {added ? 'Added!' : `Add to Cart · ₦${displayPrice.toLocaleString()}`}
                 </motion.button>
               </div>
             </div>

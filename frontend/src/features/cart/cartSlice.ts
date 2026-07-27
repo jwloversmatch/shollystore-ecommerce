@@ -7,6 +7,11 @@ export interface CartItem {
   price: number;
   qty: number;
   stock: number;
+  variant?: {          // ✅ new – variant info from product detail
+    sku?: string;
+    color?: string;
+    size?: string;
+  };
 }
 
 interface CartState {
