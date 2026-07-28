@@ -1,7 +1,7 @@
 {
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
-  "buildCommand": "npm install --legacy-peer-deps && npm run build",
-  "outputDirectory": "frontend/dist",
+  "buildCommand": "rm -rf node_modules package-lock.json && npm install && npm run build",
+  "outputDirectory": "dist",
   "headers": [
     {
       "source": "/assets/(.*)",
