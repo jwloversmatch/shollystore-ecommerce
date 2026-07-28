@@ -85,22 +85,12 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks(id: string) {
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router-dom')) {
-            return 'react-vendor';
-          }
-          if (id.includes('node_modules/framer-motion')) {
-            return 'framer-motion';
-          }
-          if (id.includes('node_modules/lucide-react')) {
-            return 'ui-icons';
-          }
-          if (id.includes('node_modules/@reduxjs/toolkit') || id.includes('node_modules/react-redux')) {
-            return 'redux';
-          }
-          if (id.includes('node_modules/react-helmet-async')) {
-            return 'react-helmet';
-          }
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'framer-motion': ['framer-motion'],
+          'ui-icons': ['lucide-react'],
+          'redux': ['@reduxjs/toolkit', 'react-redux'],
+          'react-helmet': ['react-helmet-async'],
         },
       },
     },
@@ -110,9 +100,6 @@ export default defineConfig({
     cssMinify: true,
     cssCodeSplit: true,
     target: 'es2020',
-    modulePreload: {
-      polyfill: true,
-    },
   },
   css: {
     devSourcemap: false,
