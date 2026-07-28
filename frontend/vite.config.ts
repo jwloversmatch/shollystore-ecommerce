@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import viteImagemin from 'vite-plugin-imagemin';
 import { visualizer } from 'rollup-plugin-visualizer';
-import compression from 'vite-plugin-compression';
 
 export default defineConfig({
   plugins: [
@@ -86,18 +85,6 @@ export default defineConfig({
         plugins: [{ removeViewBox: false }, { removeEmptyAttrs: false }],
       },
       webp: { quality: 80 },
-    }),
-    compression({
-      algorithm: 'brotliCompress',
-      ext: '.br',
-      threshold: 1024,
-      deleteOriginFile: false,
-    }),
-    compression({
-      algorithm: 'gzip',
-      ext: '.gz',
-      threshold: 1024,
-      deleteOriginFile: false,
     }),
     visualizer({
       open: false,
