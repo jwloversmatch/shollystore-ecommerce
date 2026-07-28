@@ -1,7 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: 'class',   
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  darkMode: 'class',
+  content: [
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}',
+  ],
   theme: {
     extend: {
       fontFamily: {
@@ -14,9 +17,14 @@ export default {
         'leaf-green': '#4a8f29',
       },
       boxShadow: {
-        'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
-      }
+        glass: '0 4px 30px rgba(0, 0, 0, 0.1)',
+      },
     },
   },
   plugins: [],
-}
+  // Production optimizations
+  future: {
+    hoverOnlyWhenSupported: true,
+    respectDefaultRingColorOpacity: true,
+  },
+};
