@@ -1,5 +1,6 @@
+// src/App.tsx
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { HelmetProvider } from 'react-helmet-async';
 import { motion } from 'framer-motion';
@@ -7,9 +8,9 @@ import { motion } from 'framer-motion';
 import Navbar from './components/Navbar';
 import AdminRoute from './components/AdminRoute';
 import ProtectedRoute from './components/ProtectedRoute';
-import { ThemeProvider } from './context/ThemeContext';   // ✅ new
+import { ThemeProvider } from './context/ThemeContext';
 
-// --- Lazy Load Pages (unchanged) ---
+// --- Lazy Load Pages ---
 const Home = React.lazy(() => import('./pages/Home'));
 const Cart = React.lazy(() => import('./pages/Cart'));
 const Checkout = React.lazy(() => import('./pages/Checkout'));
@@ -27,7 +28,8 @@ const Account = React.lazy(() => import('./pages/Account'));
 const ProductDetail = React.lazy(() => import('./pages/ProductDetail'));
 const Coupons = React.lazy(() => import('./pages/admin/Coupons'));
 const ShopPage = React.lazy(() => import('./pages/ShopPage'));
-import Settings from './pages/admin/Settings';
+const Settings = React.lazy(() => import('./pages/admin/Settings'));
+const NotFound = React.lazy(() => import('./pages/NotFound')); // ✅ Custom 404
 
 const ACCENT = "#e8622a";
 
@@ -46,8 +48,11 @@ const LoadingFallback = () => (
 function AppContent() {
   const location = useLocation();
 
-  // Hide navbar on cart and checkout pages
-  const hideNavbar = location.pathname === '/cart' || location.pathname === '/checkout';
+  // Hide navbar on cart, checkout, and 404 pages
+  const hideNavbar =
+    location.pathname === '/cart' ||
+    location.pathname === '/checkout' ||
+    location.pathname === '/404';
 
   return (
     <>
@@ -79,7 +84,9 @@ function AppContent() {
             <Route path="/admin/coupons" element={<Coupons />} />
           </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* ✅ Custom 404 page for both /404 and any unmatched route */}
+          <Route path="/404" element={<NotFound />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </>
@@ -89,7 +96,7 @@ function AppContent() {
 function App() {
   return (
     <HelmetProvider>
-      <ThemeProvider>                                  {/* ✅ wrap with ThemeProvider */}
+      <ThemeProvider>
         <Router>
           <Toaster position="top-center" reverseOrder={false} />
           <AppContent />
