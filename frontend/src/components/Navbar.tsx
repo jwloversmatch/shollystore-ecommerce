@@ -122,7 +122,6 @@ const Navbar = () => {
 
           {/* Right: cart + auth + theme toggle */}
           <div className="flex items-center gap-4 shrink-0">
-            {/* Theme toggle */}
             <ThemeToggle />
 
             {showCart && (
@@ -165,11 +164,17 @@ const Navbar = () => {
       </nav>
 
       {/* ══════ MOBILE — FIXED top bar ═══════════════════════════════════ */}
-      <div 
-        className="md:hidden fixed top-0 left-0 right-0 z-40"
-        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      <nav 
+        className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center px-5
+          bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]"
+        style={{ 
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          height: 'calc(56px + env(safe-area-inset-top, 0px))',
+          boxSizing: 'border-box'
+        }}
+        aria-label="Mobile navigation"
       >
-        <div className="flex justify-between items-center px-5 h-14 bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]">
+        <div className="flex justify-between items-center w-full">
           <Link to={user?.role === 'admin' ? '/admin' : '/'}
             className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white">
             <Store className="w-5 h-5" style={{ color: ACCENT }} />
@@ -192,57 +197,60 @@ const Navbar = () => {
             )}
           </div>
         </div>
-      </div>
+      </nav>
 
       {/* ══════ MOBILE — fixed bottom nav ════════════════════════════════════ */}
-      <div 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      <nav 
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40
+          bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
+        style={{ 
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          boxSizing: 'border-box'
+        }}
+        aria-label="Bottom navigation"
       >
-        <div className="bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]">
-          <div className="flex justify-around items-center px-2 pt-2 pb-1">
-            <NavBtn to={user?.role === 'admin' ? '/admin' : '/'} icon={<Home className="w-5 h-5" />}
-              label="Home" active={user?.role === 'admin' ? pathname === '/admin' : pathname === '/'} />
+        <div className="flex justify-around items-center px-2 pt-2 pb-1">
+          <NavBtn to={user?.role === 'admin' ? '/admin' : '/'} icon={<Home className="w-5 h-5" />}
+            label="Home" active={user?.role === 'admin' ? pathname === '/admin' : pathname === '/'} />
 
-            {showCart && (
-              <NavBtn to="/cart" icon={<ShoppingCart className="w-5 h-5" />}
-                label="Cart" active={isActive('/cart')} badge={totalQty} />
-            )}
+          {showCart && (
+            <NavBtn to="/cart" icon={<ShoppingCart className="w-5 h-5" />}
+              label="Cart" active={isActive('/cart')} badge={totalQty} />
+          )}
 
-            {user?.role === 'admin' && (
-              <NavBtn to="/admin/coupons" icon={<BadgePercent className="w-5 h-5" />}
-                label="Coupons" active={isActive('/admin/coupons')} />
-            )}
+          {user?.role === 'admin' && (
+            <NavBtn to="/admin/coupons" icon={<BadgePercent className="w-5 h-5" />}
+              label="Coupons" active={isActive('/admin/coupons')} />
+          )}
 
-            {user?.role === 'user' && (
-              <NavBtn to="/account" icon={<User className="w-5 h-5" />}
-                label="Account" active={isActive('/account')} />
-            )}
+          {user?.role === 'user' && (
+            <NavBtn to="/account" icon={<User className="w-5 h-5" />}
+              label="Account" active={isActive('/account')} />
+          )}
 
-            {!user && (
-              <NavBtn to="/login" icon={<User className="w-5 h-5" />}
-                label="Login" active={isActive('/login')} />
-            )}
+          {!user && (
+            <NavBtn to="/login" icon={<User className="w-5 h-5" />}
+              label="Login" active={isActive('/login')} />
+          )}
 
-            {user?.role === 'admin' && (
-              <button onClick={() => setAdminDrawer(true)}
-                className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-colors duration-150"
-                style={{ color: adminDrawer ? ACCENT : '#6b7280' }}>
-                <MoreHorizontal className="w-5 h-5" />
-                <span className="text-[9px] font-extrabold uppercase tracking-wide">More</span>
-              </button>
-            )}
+          {user?.role === 'admin' && (
+            <button onClick={() => setAdminDrawer(true)}
+              className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-colors duration-150"
+              style={{ color: adminDrawer ? ACCENT : '#6b7280' }}>
+              <MoreHorizontal className="w-5 h-5" />
+              <span className="text-[9px] font-extrabold uppercase tracking-wide">More</span>
+            </button>
+          )}
 
-            {user?.role === 'user' && (
-              <button onClick={handleLogout}
-                className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] text-gray-600 hover:text-red-400 transition-colors">
-                <LogOut className="w-5 h-5" />
-                <span className="text-[9px] font-extrabold uppercase tracking-wide">Logout</span>
-              </button>
-            )}
-          </div>
+          {user?.role === 'user' && (
+            <button onClick={handleLogout}
+              className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] text-gray-600 hover:text-red-400 transition-colors">
+              <LogOut className="w-5 h-5" />
+              <span className="text-[9px] font-extrabold uppercase tracking-wide">Logout</span>
+            </button>
+          )}
         </div>
-      </div>
+      </nav>
 
       {/* ══════ ADMIN BOTTOM SHEET (mobile) ══════════════════════════════════ */}
       <AnimatePresence>
@@ -262,7 +270,10 @@ const Navbar = () => {
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
               className="fixed bottom-0 inset-x-0 z-[70] rounded-t-3xl md:hidden
                 bg-[#FCFAF5] dark:bg-[#141414] border-t border-gray-200 dark:border-white/[0.09]"
-              style={{ paddingBottom: 'env(safe-area-inset-bottom, 24px)' }}>
+              style={{ 
+                paddingBottom: 'env(safe-area-inset-bottom, 24px)',
+                boxSizing: 'border-box'
+              }}>
 
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-white/15" />
