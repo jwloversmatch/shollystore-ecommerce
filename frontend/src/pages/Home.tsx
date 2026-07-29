@@ -27,7 +27,9 @@ import { ArrowRight } from "lucide-react";
 
 const getProductCategoryName = (p: ProductItem): string => {
   if (!p.category) return "General";
-  return typeof p.category === "string" ? p.category : p.category.name ?? "General";
+  return typeof p.category === "string"
+    ? p.category
+    : (p.category.name ?? "General");
 };
 
 const Home = () => {
@@ -53,7 +55,7 @@ const Home = () => {
 
   const displayProducts = useMemo<ProductItem[]>(
     () => productsResp?.products || [],
-    [productsResp]
+    [productsResp],
   );
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -84,9 +86,8 @@ const Home = () => {
     return categories.map((c: CategoryItem) => ({
       name: c.name,
       slug: c.slug,
-      count: displayProducts.filter(
-        (p) => getProductCategoryName(p) === c.name
-      ).length,
+      count: displayProducts.filter((p) => getProductCategoryName(p) === c.name)
+        .length,
     }));
   }, [categories, displayProducts]);
 
@@ -95,7 +96,8 @@ const Home = () => {
   const heroDescription =
     publicSettings?.heroDescription ||
     "Quality products, unbeatable prices. Everything you need, delivered fast.";
-  const specialOfferTitle = publicSettings?.specialOfferTitle || "Special Offer";
+  const specialOfferTitle =
+    publicSettings?.specialOfferTitle || "Special Offer";
   const specialOfferText =
     publicSettings?.specialOfferText ||
     "Get ₦500 off your first order over ₦10,000. Use code FIRST500";
@@ -123,13 +125,24 @@ const Home = () => {
   const categoryNames = categories.map((c: CategoryItem) => c.name);
 
   return (
-    <main id="main-content" className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] relative overflow-x-hidden">
-      <SEO title={heroTitle.replace("|", "").trim()} description={heroDescription} canonicalUrl="https://shollystore-ecommerce.vercel.app" />
+    <main
+      id="main-content"
+      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] relative overflow-x-hidden"
+      style={{ paddingTop: 56, paddingBottom: 80 }}
+    >
+      <SEO
+        title={heroTitle.replace("|", "").trim()}
+        description={heroDescription}
+        canonicalUrl="https://shollystore-ecommerce.vercel.app"
+      />
       <StructuredData data={organizationSchema} />
       <StructuredData data={websiteSchema} />
 
       {/* Ambient background orbs – hidden from screen readers */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none" aria-hidden="true">
+      <div
+        className="fixed inset-0 -z-10 overflow-hidden pointer-events-none"
+        aria-hidden="true"
+      >
         <motion.div
           animate={{ x: ["-15%", "15%", "-15%"], y: ["-8%", "8%", "-8%"] }}
           transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
@@ -162,7 +175,10 @@ const Home = () => {
       />
 
       {/* Enter Shop CTA */}
-      <section className="py-10 bg-[#FCFAF5] dark:bg-[#0A0A0B]" aria-label="Call to action">
+      <section
+        className="py-10 bg-[#FCFAF5] dark:bg-[#0A0A0B]"
+        aria-label="Call to action"
+      >
         <div className="max-w-7xl mx-auto px-4 md:px-6 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -170,14 +186,21 @@ const Home = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-3">Ready to explore?</h2>
-            <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8">Browse our full catalog of products across all categories.</p>
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-3">
+              Ready to explore?
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8">
+              Browse our full catalog of products across all categories.
+            </p>
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: `0 18px 44px ${ACCENT}55` }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => navigate('/shop')}
+              onClick={() => navigate("/shop")}
               className="inline-flex items-center gap-2 px-10 py-4 rounded-full font-black text-lg text-white"
-              style={{ background: ACCENT, boxShadow: `0 8px 24px ${ACCENT}44` }}
+              style={{
+                background: ACCENT,
+                boxShadow: `0 8px 24px ${ACCENT}44`,
+              }}
               aria-label="Browse the full product catalog"
             >
               Enter Shop <ArrowRight className="w-5 h-5" aria-hidden="true" />
@@ -192,17 +215,30 @@ const Home = () => {
       <HomeCategoryBrowser categories={categoryData} />
 
       {/* Featured Products section */}
-      <section className="bg-[#FCFAF5] dark:bg-[#111111] py-14 md:py-18" aria-label="Featured best sellers">
+      <section
+        className="bg-[#FCFAF5] dark:bg-[#111111] py-14 md:py-18"
+        aria-label="Featured best sellers"
+      >
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="mb-8">
-            <p className="text-xs font-black uppercase tracking-[0.2em] mb-2" style={{ color: ACCENT }}>Featured</p>
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white">Best Sellers</h2>
+            <p
+              className="text-xs font-black uppercase tracking-[0.2em] mb-2"
+              style={{ color: ACCENT }}
+            >
+              Featured
+            </p>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white">
+              Best Sellers
+            </h2>
           </div>
           <FeaturedProductsGrid />
         </div>
       </section>
 
-      <HomeSpecialOffer specialOfferTitle={specialOfferTitle} specialOfferText={specialOfferText} />
+      <HomeSpecialOffer
+        specialOfferTitle={specialOfferTitle}
+        specialOfferText={specialOfferText}
+      />
 
       <ProductQuickViewModal
         product={modalProduct}
