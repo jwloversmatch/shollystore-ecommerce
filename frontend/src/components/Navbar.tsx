@@ -84,7 +84,13 @@ const Navbar = () => {
   const handleLogout = () => {
     dispatch(logout());
     setAdminDrawer(false);
-    window.location.href = '/';
+    
+    // Clear everything
+    localStorage.removeItem('token');
+    sessionStorage.clear();
+    
+    // Replace current URL with home, then force reload
+    window.location.replace('/');
   };
 
   const desktopLinkCls = (path: string) =>
@@ -204,9 +210,14 @@ const Navbar = () => {
 
       {/* ══════ MOBILE — FIXED top bar ═══════════════════════════════════ */}
       <nav
-        className="md:hidden fixed top-0 left-0 right-0 z-40 flex justify-between items-center px-5 py-4
-          bg-[#FCFAF5] dark:bg-[#0A0A0B] backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06]"
+        className="md:hidden fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-5 py-3
+          bg-[#FCFAF5] dark:bg-[#0A0A0B] backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06]
+          shadow-sm"
         aria-label="Mobile navigation"
+        style={{ 
+          backgroundColor: 'rgba(252, 250, 245, 0.95)',
+          // For dark mode, we need to use CSS custom property or a class
+        }}
       >
         <Link
           to={user?.role === 'admin' ? '/admin' : '/'}
@@ -244,7 +255,8 @@ const Navbar = () => {
       {/* ══════ MOBILE — fixed bottom nav ════════════════════════════════════ */}
       <nav
         className="md:hidden fixed bottom-0 inset-x-0 z-50
-          bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
+          bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]
+          shadow-lg"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 6px)' }}
         aria-label="Bottom navigation"
       >
