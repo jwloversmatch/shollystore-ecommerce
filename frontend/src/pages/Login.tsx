@@ -1,5 +1,5 @@
 import { useState } from "react";
-import {  Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
@@ -55,30 +55,23 @@ const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
-const onSubmit = async (data: LoginFormData) => {
-  try {
-    const res = await login({ email: data.email, password: data.password }).unwrap();
-    console.log("🔴 FULL RESPONSE:", res);
-    console.log("🔴 USER OBJECT:", res.user);
-    console.log("🔴 USER ROLE:", res.user.role);
-    console.log("🔴 ROLE TYPE:", typeof res.user.role);
-    
-    dispatch(setCredentials({ user: res.user, token: res.token }));
-    toast.success("Welcome back! 🎉");
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      const res = await login({ email: data.email, password: data.password }).unwrap();
+      dispatch(setCredentials({ user: res.user, token: res.token }));
+      toast.success("Welcome back! 🎉");
 
-    const destination = from
-      ? from
-      : res.user.role === "admin"
-      ? "/admin"
-      : "/shop";
+      // ✅ Admin always goes to /admin, ignoring the 'from' parameter
+      const destination = res.user.role === "admin"
+        ? "/admin"
+        : from || "/shop";
 
-    console.log("🔴 REDIRECTING TO:", destination);
-    window.location.replace(destination);
-  } catch (err) {
-    console.error(err);
-    toast.error("Login failed. Please check your credentials.");
-  }
-};
+      window.location.replace(destination);
+    } catch (err) {
+      console.error(err);
+      toast.error("Login failed. Please check your credentials.");
+    }
+  };
 
   const apiError = (error as { data?: { message: string } })?.data?.message;
 
