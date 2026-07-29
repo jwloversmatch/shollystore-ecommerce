@@ -209,7 +209,7 @@ const Navbar = () => {
         }}
         aria-label="Bottom navigation"
       >
-        <div className="flex justify-around items-center px-2 pt-2 pb-1">
+        <div className="flex justify-around items-center px-2 py-1">
           <NavBtn to={user?.role === 'admin' ? '/admin' : '/'} icon={<Home className="w-5 h-5" />}
             label="Home" active={user?.role === 'admin' ? pathname === '/admin' : pathname === '/'} />
 
