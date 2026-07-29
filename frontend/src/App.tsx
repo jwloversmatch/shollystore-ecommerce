@@ -1,5 +1,5 @@
 // src/App.tsx
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { HelmetProvider } from 'react-helmet-async';
@@ -53,36 +53,6 @@ const LoadingFallback = () => (
 function AppContent() {
   const location = useLocation();
 
-  // iOS PWA fix: Move scroll to a wrapper div, not body/root
-  useEffect(() => {
-    // Don't apply this on desktop
-    if (window.innerWidth >= 768) return;
-
-    const html = document.documentElement;
-    const body = document.body;
-
-    // Prevent body/html from scrolling
-    html.style.overflow = 'hidden';
-    html.style.height = '100%';
-    body.style.overflow = 'hidden';
-    body.style.height = '100%';
-    body.style.position = 'fixed';
-    body.style.width = '100%';
-    body.style.top = '0';
-    body.style.left = '0';
-
-    return () => {
-      html.style.overflow = '';
-      html.style.height = '';
-      body.style.overflow = '';
-      body.style.height = '';
-      body.style.position = '';
-      body.style.width = '';
-      body.style.top = '';
-      body.style.left = '';
-    };
-  }, []);
-
   // Hide navbar on specific pages
   const hideNavbar = ['/cart', '/checkout', '/404'].includes(location.pathname);
 
@@ -90,14 +60,12 @@ function AppContent() {
     <>
       {/* Navbar rendered OUTSIDE the scrollable area */}
       {!hideNavbar && <Navbar />}
-      
+
       {/* Scrollable content area */}
-      <div 
+      <div
         id="app-scroll-container"
         className="md:static"
         style={{
-          // On mobile, this becomes the scrollable container
-          height: window.innerWidth < 768 ? '100%' : 'auto',
           overflowY: window.innerWidth < 768 ? 'auto' : 'visible',
           WebkitOverflowScrolling: 'touch',
           position: window.innerWidth < 768 ? 'fixed' : 'static',
@@ -105,7 +73,6 @@ function AppContent() {
           left: 0,
           right: 0,
           bottom: 0,
-          width: '100%',
         }}
       >
         <Suspense fallback={<LoadingFallback />}>

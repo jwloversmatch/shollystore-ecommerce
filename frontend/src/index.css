@@ -59,22 +59,20 @@ body {
   @apply bg-[#0A0A0B] text-white;
   text-rendering: optimizeSpeed;
   -webkit-font-smoothing: antialiased;
-  height: 100%;
   overflow: hidden;
   position: fixed;
-  width: 100%;
-  top: 0;
-  left: 0;
+  inset: 0;
+  height: auto;
+  width: auto;
 }
 
 #root {
-  height: 100%;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
+  inset: 0;
+  height: auto;
+  width: auto;
 }
 
 img {
