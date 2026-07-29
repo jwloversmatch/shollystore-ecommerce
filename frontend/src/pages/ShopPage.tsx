@@ -140,11 +140,16 @@ const ShopPage = () => {
   return (
     <main
       id="main-content"
-      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] pt-20 md:pt-24 pb-28 md:pb-16"
+      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B]"
+      style={{ 
+        paddingTop: '56px', 
+        paddingBottom: '80px'
+      }}
     >
-      {/* ── Sticky search + sort bar ──────────────────────────────────── */}
+      {/* ── Search + sort bar (NOT sticky) ──────────────────────────────────── */}
       <div
-        className="sticky top-20 md:top-24 z-20 px-4 md:px-6 py-3 mb-6 bg-[#FCFAF5]/90 dark:bg-[#0A0A0B]/90 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06]"
+        className="px-4 md:px-6 py-3 mb-6 bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]"
+        style={{ transform: 'translateZ(0)' }}
       >
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
