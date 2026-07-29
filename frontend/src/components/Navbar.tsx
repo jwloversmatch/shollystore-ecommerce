@@ -1,4 +1,4 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useState } from 'react';
 import { RootState } from '../store';
@@ -67,7 +67,6 @@ const Navbar = () => {
   const { user }      = useSelector((s: RootState) => s.auth);
   const { cartItems } = useSelector((s: RootState) => s.cart);
   const dispatch      = useDispatch();
-  const navigate      = useNavigate();
   const { pathname }  = useLocation();
 
   const [adminDrawer, setAdminDrawer] = useState(false);
@@ -81,10 +80,11 @@ const Navbar = () => {
     return pathname.startsWith(path);
   };
 
+  // ✅ Force full page reload on logout to clear all cached state
   const handleLogout = () => {
     dispatch(logout());
-    navigate('/');
     setAdminDrawer(false);
+    window.location.href = '/';
   };
 
   const desktopLinkCls = (path: string) =>
