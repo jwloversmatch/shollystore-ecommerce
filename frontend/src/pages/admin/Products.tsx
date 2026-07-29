@@ -28,6 +28,7 @@ import {
   Flame,
   Loader2,
   Package,
+  Upload,
 } from "lucide-react";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import { ProductRowSkeleton } from "../../components/Skeletons";
@@ -54,7 +55,17 @@ const productSchema = z.object({
 });
 type ProductFormData = z.infer<typeof productSchema>;
 
-interface Variant { sku?: string; color?: string; size?: string; price?: number; stock?: number; compareAtPrice?: number; }
+interface Variant {
+  _id?: string;
+  sku?: string;
+  color?: string;
+  size?: string;
+  price?: number;
+  stock?: number;
+  compareAtPrice?: number;
+  isActive?: boolean;
+  images?: string[];
+}
 
 const buildInputCls = (hasError: boolean) => [
   "w-full px-4 py-3.5 rounded-xl text-sm text-white bg-[#1c1c1c] placeholder-gray-600 outline-none transition-all border",
@@ -152,7 +163,16 @@ const Products = () => {
       });
       setRawPrice(product.price.toString());
       setRawCompareAt(product.compareAtPrice?.toString() || "");
-      setVariants(product.variants?.map(v => ({ sku: v.sku, color: v.color, size: v.size, price: v.price, stock: v.stock, compareAtPrice: v.compareAtPrice })) || []);
+      setVariants(product.variants?.map(v => ({
+        sku: v.sku || "",
+        color: v.color || "",
+        size: v.size || "",
+        price: v.price || 0,
+        stock: v.stock || 0,
+        compareAtPrice: v.compareAtPrice || 0,
+        isActive: v.isActive,
+        images: v.images || []
+      })) || []);
     } else {
       setEditingProduct(null);
       reset({ name: "", price: "", stock: "", category: "", description: "", brand: "", sku: "", tags: "", compareAtPrice: "", discountPercent: "", isFeatured: false });
@@ -163,8 +183,8 @@ const Products = () => {
   };
 
   const handleCloseDrawer = () => { setIsDrawerOpen(false); setEditingProduct(null); setFiles([]); setNotifyCustomers(false); setVariants([]); };
-  const confirmDelete = async () => { if (!modalAction || modalAction.type !== "delete") return; await deleteProduct(modalAction.id).unwrap(); setModalAction(null); };
-  const handleQuickStock = async (id: string, cur: number, delta: number) => { try { await updateStock({ id, stock: Math.max(0, cur + delta) }).unwrap(); } catch { /* error handled silently */ } };
+  const confirmDelete = async () => { if (!modalAction || modalAction.type !== "delete") return; try { await deleteProduct(modalAction.id).unwrap(); toast.success("Product deleted"); } catch { toast.error("Failed to delete product"); } setModalOpen(false); setModalAction(null); };
+  const handleQuickStock = async (id: string, cur: number, delta: number) => { try { await updateStock({ id, stock: Math.max(0, cur + delta) }).unwrap(); } catch { toast.error("Failed to update stock"); } };
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>, setRaw: React.Dispatch<React.SetStateAction<string>>, fieldName: "price" | "compareAtPrice") => {
     const el = e.target; const cursor = el.selectionStart ?? el.value.length; const nonCommasBefore = el.value.slice(0, cursor).replace(/,/g, "").length;
     const stripped = el.value.replace(/,/g, ""); let cleaned = ""; let seenDot = false; let decCount = 0;
@@ -180,20 +200,72 @@ const Products = () => {
   const onSubmit = async (data: ProductFormData) => {
     try {
       const imageUrls: string[] = editingProduct?.images?.slice() || [];
-      if (files.length > 0) { setUploading(true); for (const file of files) { const fd = new FormData(); fd.append("image", file); const res = await uploadImage(fd).unwrap(); imageUrls.push(res.url); } setUploading(false); }
+      if (files.length > 0) { 
+        setUploading(true); 
+        for (const file of files) { 
+          const fd = new FormData(); 
+          fd.append("image", file); 
+          const res = await uploadImage(fd).unwrap(); 
+          imageUrls.push(res.url); 
+        } 
+        setUploading(false); 
+      }
       const tagsArray = data.tags ? data.tags.split(",").map(t => t.trim()).filter(t => t.length > 0) : [];
-      const validVariants = variants.filter(v => v.size || v.color || v.sku).map(v => ({ sku: v.sku, color: v.color, size: v.size, price: v.price, stock: v.stock, compareAtPrice: v.compareAtPrice || undefined }));
-      const payload = { name: data.name, price: Number(data.price), compareAtPrice: data.compareAtPrice ? Number(data.compareAtPrice) : undefined, stock: Number(data.stock), description: data.description || "", category: data.category, images: imageUrls.length > 0 ? imageUrls : undefined, slug: data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), brand: data.brand || undefined, sku: data.sku || undefined, tags: tagsArray.length > 0 ? tagsArray : undefined, discount: data.discountPercent && Number(data.discountPercent) > 0 ? { percentage: Number(data.discountPercent) } : undefined, isFeatured: data.isFeatured || false, variants: validVariants.length > 0 ? validVariants : undefined };
-      if (editingProduct) await updateProduct({ id: editingProduct._id, ...payload }).unwrap();
-      else await createProduct({ ...payload, notifyCustomers }).unwrap();
+      const validVariants = variants.filter(v => v.size || v.color || v.sku).map(v => ({ 
+        sku: v.sku || "", 
+        color: v.color || "", 
+        size: v.size || "", 
+        price: v.price || 0, 
+        stock: v.stock || 0, 
+        compareAtPrice: v.compareAtPrice || undefined,
+        isActive: v.isActive !== undefined ? v.isActive : true,
+        images: v.images || []
+      }));
+      const payload = { 
+        name: data.name, 
+        price: Number(data.price), 
+        compareAtPrice: data.compareAtPrice ? Number(data.compareAtPrice) : undefined, 
+        stock: Number(data.stock), 
+        description: data.description || "", 
+        category: data.category, 
+        images: imageUrls.length > 0 ? imageUrls : undefined, 
+        slug: data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), 
+        brand: data.brand || undefined, 
+        sku: data.sku || undefined, 
+        tags: tagsArray.length > 0 ? tagsArray : undefined, 
+        discount: data.discountPercent && Number(data.discountPercent) > 0 ? { percentage: Number(data.discountPercent) } : undefined, 
+        isFeatured: data.isFeatured || false, 
+        variants: validVariants.length > 0 ? validVariants : undefined 
+      };
+      if (editingProduct) {
+        await updateProduct({ id: editingProduct._id, ...payload }).unwrap();
+        toast.success("Product updated successfully");
+      } else {
+        await createProduct({ ...payload, notifyCustomers }).unwrap();
+        toast.success("Product created successfully");
+      }
       handleCloseDrawer();
-    } catch (err) { const e = err as { data?: { message: string } }; toast.error(e.data?.message || "Error saving product."); }
+    } catch (err) { 
+      const e = err as { data?: { message: string } }; 
+      toast.error(e.data?.message || "Error saving product."); 
+    }
   };
 
   const handleSendMarketing = async () => {
     if (!marketingProduct) return;
-    try { await sendMarketingEmail({ type: marketingType, productId: marketingProduct._id, customMessage: marketingType === "new_arrival" ? customMessage : undefined }).unwrap(); toast.success("Emails sent!"); setMarketingOpen(false); }
-    catch (err) { const e = err as { data?: { message?: string } }; toast.error(e?.data?.message || "Failed to send emails"); }
+    try { 
+      await sendMarketingEmail({ 
+        type: marketingType, 
+        productId: marketingProduct._id, 
+        customMessage: marketingType === "new_arrival" ? customMessage : undefined 
+      }).unwrap(); 
+      toast.success("Marketing emails sent!"); 
+      setMarketingOpen(false); 
+    }
+    catch (err) { 
+      const e = err as { data?: { message?: string } }; 
+      toast.error(e?.data?.message || "Failed to send emails"); 
+    }
   };
 
   if (isLoading) {
@@ -307,22 +379,320 @@ const Products = () => {
                 <button onClick={handleCloseDrawer} className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.07)" }} aria-label="Close drawer"><X className="w-4 h-4" aria-hidden="true" /></button>
               </div>
               <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5" aria-label={editingProduct ? `Edit ${editingProduct.name}` : "Create new product"}>
-                <div><DLabel>Product Name</DLabel><label htmlFor="prod-name" className="sr-only">Product Name</label><input id="prod-name" {...register("name")} placeholder="e.g. Luxury Lace Wig" className={buildInputCls(!!errors.name)} />{errors.name && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold" role="alert"><AlertCircle className="w-3 h-3" aria-hidden="true" /> {errors.name.message}</p>}</div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><DLabel>Price (₦)</DLabel><label htmlFor="prod-price" className="sr-only">Price</label><input id="prod-price" ref={priceInputRef} type="text" inputMode="decimal" value={formatPriceInput(rawPrice)} onChange={(e) => handlePriceChange(e, setRawPrice, "price")} placeholder="0.00" className={buildInputCls(!!errors.price)} />{errors.price && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold" role="alert"><AlertCircle className="w-3 h-3" aria-hidden="true" /> {errors.price.message}</p>}</div>
-                  <div><DLabel hint="The original price before discount.">Original Price (optional)</DLabel><label htmlFor="prod-compare-at" className="sr-only">Compare at price</label><input id="prod-compare-at" ref={compareAtRef} type="text" inputMode="decimal" value={formatPriceInput(rawCompareAt)} onChange={(e) => handlePriceChange(e, setRawCompareAt, "compareAtPrice")} placeholder="e.g. 5,000" className={buildInputCls(false)} /></div>
-                  <div><DLabel>Stock</DLabel><label htmlFor="prod-stock" className="sr-only">Stock</label><input id="prod-stock" type="number" min="0" step="1" {...register("stock")} placeholder="20" className={buildInputCls(!!errors.stock)} />{errors.stock && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold" role="alert"><AlertCircle className="w-3 h-3" aria-hidden="true" /> {errors.stock.message}</p>}</div>
-                  <div><DLabel hint="Enter a discount percentage.">Discount (%)</DLabel><label htmlFor="prod-discount" className="sr-only">Discount percentage</label><input id="prod-discount" type="number" min="0" max="100" step="1" {...register("discountPercent")} placeholder="10" className={buildInputCls(false)} /></div>
+                {/* Product Name */}
+                <div>
+                  <DLabel>Product Name</DLabel>
+                  <label htmlFor="prod-name" className="sr-only">Product Name</label>
+                  <input id="prod-name" {...register("name")} placeholder="e.g. Luxury Lace Wig" className={buildInputCls(!!errors.name)} />
+                  {errors.name && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold" role="alert"><AlertCircle className="w-3 h-3" aria-hidden="true" /> {errors.name.message}</p>}
                 </div>
-                <div><DLabel>Category</DLabel><label htmlFor="prod-category" className="sr-only">Category</label><select id="prod-category" {...register("category")} className="w-full px-4 py-3.5 rounded-xl text-sm text-white outline-none border border-white/[0.08] focus:border-[#e8622a]/70 transition-all cursor-pointer" style={{ background: "#1c1c1c" }}><option value="" className="text-gray-600">Select a category…</option>{categories.map((cat: CategoryItem) => <option key={cat._id} value={cat._id}>{cat.name}</option>)}</select>{errors.category && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold" role="alert"><AlertCircle className="w-3 h-3" aria-hidden="true" /> {errors.category.message}</p>}</div>
-                {/* Featured toggle with accessible switch */}
+
+                {/* Description */}
+                <div>
+                  <DLabel hint="A brief description of the product.">Description (optional)</DLabel>
+                  <label htmlFor="prod-description" className="sr-only">Description</label>
+                  <textarea 
+                    id="prod-description"
+                    {...register("description")} 
+                    rows={3}
+                    placeholder="Describe your product..."
+                    className={buildInputCls(false) + " resize-none"}
+                  />
+                </div>
+
+                {/* Price & Stock Row */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <DLabel>Price (₦)</DLabel>
+                    <label htmlFor="prod-price" className="sr-only">Price</label>
+                    <input id="prod-price" ref={priceInputRef} type="text" inputMode="decimal" value={formatPriceInput(rawPrice)} onChange={(e) => handlePriceChange(e, setRawPrice, "price")} placeholder="0.00" className={buildInputCls(!!errors.price)} />
+                    {errors.price && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold" role="alert"><AlertCircle className="w-3 h-3" aria-hidden="true" /> {errors.price.message}</p>}
+                  </div>
+                  <div>
+                    <DLabel hint="The original price before discount.">Compare at Price (optional)</DLabel>
+                    <label htmlFor="prod-compare-at" className="sr-only">Compare at price</label>
+                    <input id="prod-compare-at" ref={compareAtRef} type="text" inputMode="decimal" value={formatPriceInput(rawCompareAt)} onChange={(e) => handlePriceChange(e, setRawCompareAt, "compareAtPrice")} placeholder="e.g. 5,000" className={buildInputCls(false)} />
+                  </div>
+                  <div>
+                    <DLabel>Stock</DLabel>
+                    <label htmlFor="prod-stock" className="sr-only">Stock</label>
+                    <input id="prod-stock" type="number" min="0" step="1" {...register("stock")} placeholder="20" className={buildInputCls(!!errors.stock)} />
+                    {errors.stock && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold" role="alert"><AlertCircle className="w-3 h-3" aria-hidden="true" /> {errors.stock.message}</p>}
+                  </div>
+                  <div>
+                    <DLabel hint="Enter a discount percentage.">Discount (%)</DLabel>
+                    <label htmlFor="prod-discount" className="sr-only">Discount percentage</label>
+                    <input id="prod-discount" type="number" min="0" max="100" step="1" {...register("discountPercent")} placeholder="10" className={buildInputCls(false)} />
+                  </div>
+                </div>
+
+                {/* Brand & SKU */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <DLabel>Brand (optional)</DLabel>
+                    <label htmlFor="prod-brand" className="sr-only">Brand</label>
+                    <input id="prod-brand" {...register("brand")} placeholder="e.g. Louis Vuitton" className={buildInputCls(false)} />
+                  </div>
+                  <div>
+                    <DLabel>SKU (optional)</DLabel>
+                    <label htmlFor="prod-sku" className="sr-only">SKU</label>
+                    <input id="prod-sku" {...register("sku")} placeholder="e.g. APL-123" className={buildInputCls(false)} />
+                  </div>
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <DLabel hint="Comma-separated tags (e.g. New, Sale, Trending)">Tags (optional)</DLabel>
+                  <label htmlFor="prod-tags" className="sr-only">Tags</label>
+                  <input id="prod-tags" {...register("tags")} placeholder="e.g. New, Sale, Trending" className={buildInputCls(false)} />
+                </div>
+
+                {/* Category */}
+                <div>
+                  <DLabel>Category</DLabel>
+                  <label htmlFor="prod-category" className="sr-only">Category</label>
+                  <select id="prod-category" {...register("category")} className="w-full px-4 py-3.5 rounded-xl text-sm text-white outline-none border border-white/[0.08] focus:border-[#e8622a]/70 transition-all cursor-pointer" style={{ background: "#1c1c1c" }}>
+                    <option value="" className="text-gray-600">Select a category…</option>
+                    {categories.map((cat: CategoryItem) => <option key={cat._id} value={cat._id}>{cat.name}</option>)}
+                  </select>
+                  {errors.category && <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold" role="alert"><AlertCircle className="w-3 h-3" aria-hidden="true" /> {errors.category.message}</p>}
+                </div>
+
+                {/* Image Upload */}
+                <div>
+                  <DLabel hint="Upload product images. First image will be the main image.">Product Images</DLabel>
+                  
+                  {/* Show existing images if editing */}
+                  {editingProduct?.images && editingProduct.images.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2 mb-3">
+                      {editingProduct.images.map((img, idx) => (
+                        <div key={idx} className="relative group rounded-xl overflow-hidden border border-white/[0.08] aspect-square">
+                          <img 
+                            src={getCloudinaryUrl(img, 200)} 
+                            alt={`Product image ${idx + 1}`} 
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newImages = editingProduct.images?.filter((_, i) => i !== idx) || [];
+                              setEditingProduct({ ...editingProduct, images: newImages });
+                            }}
+                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label={`Remove image ${idx + 1}`}
+                          >
+                            <X className="w-3 h-3 text-white" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload new images */}
+                  <label 
+                    className="flex flex-col items-center justify-center w-full h-32 rounded-xl border-2 border-dashed cursor-pointer transition-all hover:border-[#e8622a]/60"
+                    style={{ 
+                      borderColor: "rgba(255,255,255,0.15)", 
+                      background: "rgba(255,255,255,0.03)" 
+                    }}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      {uploading ? (
+                        <>
+                          <Loader2 className="w-6 h-6 animate-spin" style={{ color: ACCENT }} />
+                          <p className="text-xs text-gray-500">Uploading...</p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-6 h-6 text-gray-500" />
+                          <p className="text-xs text-gray-500">
+                            <span className="font-bold" style={{ color: ACCENT }}>Click to upload</span> or drag and drop
+                          </p>
+                          <p className="text-[10px] text-gray-600">PNG, JPG, WEBP up to 10MB</p>
+                        </>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => {
+                        const selectedFiles = Array.from(e.target.files || []);
+                        setFiles(prev => [...prev, ...selectedFiles]);
+                      }}
+                    />
+                  </label>
+
+                  {/* Show newly selected files */}
+                  {files.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500">
+                        New Images ({files.length})
+                      </p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {files.map((file, idx) => (
+                          <div key={idx} className="relative group rounded-xl overflow-hidden border border-white/[0.08] aspect-square">
+                            <img 
+                              src={URL.createObjectURL(file)} 
+                              alt={`New image ${idx + 1}`} 
+                              className="w-full h-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setFiles(files.filter((_, i) => i !== idx))}
+                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              aria-label={`Remove new image ${idx + 1}`}
+                            >
+                              <X className="w-3 h-3 text-white" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Variants Section */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <DLabel>Variants</DLabel>
+                    <button
+                      type="button"
+                      onClick={() => setVariants([...variants, { sku: "", color: "", size: "", price: 0, stock: 0, compareAtPrice: 0 }])}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all"
+                      style={{ background: ACCENT }}
+                    >
+                      <Plus className="w-3 h-3" /> Add Variant
+                    </button>
+                  </div>
+                  
+                  {variants.length > 0 ? (
+                    <div className="space-y-3">
+                      {variants.map((variant, idx) => (
+                        <div 
+                          key={idx} 
+                          className="p-4 rounded-xl border space-y-3"
+                          style={{ 
+                            background: "rgba(255,255,255,0.03)", 
+                            borderColor: "rgba(255,255,255,0.07)" 
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-gray-400">Variant {idx + 1}</span>
+                            <button
+                              type="button"
+                              onClick={() => setVariants(variants.filter((_, i) => i !== idx))}
+                              className="text-red-400 hover:text-red-300 transition-colors"
+                              aria-label={`Remove variant ${idx + 1}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">Color</label>
+                              <input
+                                type="text"
+                                value={variant.color || ""}
+                                onChange={(e) => {
+                                  const newVariants = [...variants];
+                                  newVariants[idx].color = e.target.value;
+                                  setVariants(newVariants);
+                                }}
+                                placeholder="e.g. Red"
+                                className={buildInputCls(false)}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">Size</label>
+                              <input
+                                type="text"
+                                value={variant.size || ""}
+                                onChange={(e) => {
+                                  const newVariants = [...variants];
+                                  newVariants[idx].size = e.target.value;
+                                  setVariants(newVariants);
+                                }}
+                                placeholder="e.g. L"
+                                className={buildInputCls(false)}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">Price (₦)</label>
+                              <input
+                                type="number"
+                                value={variant.price || ""}
+                                onChange={(e) => {
+                                  const newVariants = [...variants];
+                                  newVariants[idx].price = Number(e.target.value);
+                                  setVariants(newVariants);
+                                }}
+                                placeholder="0"
+                                className={buildInputCls(false)}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">Stock</label>
+                              <input
+                                type="number"
+                                value={variant.stock || ""}
+                                onChange={(e) => {
+                                  const newVariants = [...variants];
+                                  newVariants[idx].stock = Number(e.target.value);
+                                  setVariants(newVariants);
+                                }}
+                                placeholder="0"
+                                className={buildInputCls(false)}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">Compare At Price</label>
+                              <input
+                                type="number"
+                                value={variant.compareAtPrice || ""}
+                                onChange={(e) => {
+                                  const newVariants = [...variants];
+                                  newVariants[idx].compareAtPrice = Number(e.target.value);
+                                  setVariants(newVariants);
+                                }}
+                                placeholder="0"
+                                className={buildInputCls(false)}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">SKU</label>
+                              <input
+                                type="text"
+                                value={variant.sku || ""}
+                                onChange={(e) => {
+                                  const newVariants = [...variants];
+                                  newVariants[idx].sku = e.target.value;
+                                  setVariants(newVariants);
+                                }}
+                                placeholder="e.g. VAR-001"
+                                className={buildInputCls(false)}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-600 text-center py-4">No variants added yet. Click "Add Variant" to create one.</p>
+                  )}
+                </div>
+
+                {/* Featured toggle */}
                 <div className="flex items-center justify-between p-4 rounded-xl border" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
                   <span id="featured-label" className="text-white text-sm font-bold">Featured Product</span>
                   <button type="button" onClick={() => setValue("isFeatured", !isFeatured)} className="relative w-11 h-6 rounded-full transition-colors duration-300 shrink-0" style={{ background: isFeatured ? ACCENT : "#2d2d2d" }} role="switch" aria-checked={isFeatured} aria-labelledby="featured-label">
                     <span className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-300" style={{ transform: isFeatured ? 'translateX(20px)' : 'translateX(0)' }} />
                   </button>
                 </div>
-                {/* Notify customers toggle */}
+
+                {/* Notify customers toggle - only for new products */}
                 {!editingProduct && (
                   <div className="flex items-center justify-between p-4 rounded-xl border" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
                     <span id="notify-label" className="text-white text-sm font-bold">Notify customers</span>
@@ -331,6 +701,7 @@ const Products = () => {
                     </button>
                   </div>
                 )}
+
                 {/* Footer buttons */}
                 <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
                   <button type="button" onClick={handleCloseDrawer} className="px-5 py-3 rounded-xl text-sm font-bold text-gray-500 hover:text-white transition-colors" style={{ background: "#1c1c1c", border: "1px solid rgba(255,255,255,0.08)" }}>Cancel</button>

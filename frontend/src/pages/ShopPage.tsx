@@ -140,13 +140,11 @@ const ShopPage = () => {
   return (
     <main
       id="main-content"
-      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B]"
-      style={{ paddingTop: 56, paddingBottom: 80 }}
+      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] pt-20 md:pt-24 pb-28 md:pb-16"
     >
       {/* ── Sticky search + sort bar ──────────────────────────────────── */}
       <div
-        className="sticky z-20 px-4 md:px-6 py-3 mb-6 bg-[#FCFAF5]/90 dark:bg-[#0A0A0B]/90 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06]"
-        style={{ top: 56 }}
+        className="sticky top-20 md:top-24 z-20 px-4 md:px-6 py-3 mb-6 bg-[#FCFAF5]/90 dark:bg-[#0A0A0B]/90 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06]"
       >
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
@@ -204,7 +202,7 @@ const ShopPage = () => {
       </div>
 
       {/* ── Page content ───────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-8">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
           <div>
