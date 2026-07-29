@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { RootState } from "../store";
 import { logout } from "../features/auth/authSlice";
 import {
@@ -131,7 +132,7 @@ const Navbar = () => {
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <>
-      {/* ══════ DESKTOP — fixed top bar ═══════════════════════════════════ */}
+      {/* ══════ DESKTOP — fixed top bar (left exactly where it was) ═══════ */}
       <nav className="hidden md:block fixed top-0 left-0 right-0 z-50">
         <div
           className="absolute inset-0 
@@ -228,224 +229,233 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* ══════ MOBILE — FIXED top bar ═══════════════════════════════════ */}
-      <nav
-        className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center px-5
-          bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]"
-        style={{
-          paddingTop: "env(safe-area-inset-top, 0px)",
-          height: "calc(56px + env(safe-area-inset-top, 0px))",
-          boxSizing: "border-box",
-        }}
-        aria-label="Mobile navigation"
-      >
-        <div className="flex justify-between items-center w-full">
-          <Link
-            to={user?.role === "admin" ? "/admin" : "/"}
-            className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white"
+      {/* ══════ Everything mobile-fixed is portaled straight to <body> ══════
+          No ancestor between here and the real viewport, so nothing upstream
+          (ThemeProvider or otherwise) can hijack what "fixed" is measured
+          against. */}
+      {createPortal(
+        <>
+          {/* ══════ MOBILE — FIXED top bar ═══════════════════════════════ */}
+          <nav
+            className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center px-5
+              bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]"
+            style={{
+              paddingTop: "env(safe-area-inset-top, 0px)",
+              height: "calc(56px + env(safe-area-inset-top, 0px))",
+              boxSizing: "border-box",
+            }}
+            aria-label="Mobile navigation"
           >
-            <Store className="w-5 h-5" style={{ color: ACCENT }} />
-            <span>{BRAND_NAME}</span>
-          </Link>
-
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            {showCart && (
+            <div className="flex justify-between items-center w-full">
               <Link
-                to="/cart"
-                className="relative p-1.5 rounded-xl transition-colors"
-                style={{ color: isActive("/cart") ? ACCENT : "#6b7280" }}
+                to={user?.role === "admin" ? "/admin" : "/"}
+                className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white"
               >
-                <ShoppingCart className="w-5 h-5" />
-                {totalQty > 0 && (
-                  <span
-                    className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
-                    style={{ background: ACCENT }}
-                  >
-                    {totalQty}
-                  </span>
-                )}
+                <Store className="w-5 h-5" style={{ color: ACCENT }} />
+                <span>{BRAND_NAME}</span>
               </Link>
-            )}
-          </div>
-        </div>
-      </nav>
 
-      {/* ══════ MOBILE — fixed bottom nav ════════════════════════════════════ */}
-      <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40
-    bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
-        aria-label="Bottom navigation"
-      >
-        <div
-          className="flex justify-around items-center px-2 py-1"
-          style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-        >
-          <NavBtn
-            to={user?.role === "admin" ? "/admin" : "/"}
-            icon={<Home className="w-5 h-5" />}
-            label="Home"
-            active={
-              user?.role === "admin" ? pathname === "/admin" : pathname === "/"
-            }
-          />
-
-          {showCart && (
-            <NavBtn
-              to="/cart"
-              icon={<ShoppingCart className="w-5 h-5" />}
-              label="Cart"
-              active={isActive("/cart")}
-              badge={totalQty}
-            />
-          )}
-
-          {user?.role === "admin" && (
-            <NavBtn
-              to="/admin/coupons"
-              icon={<BadgePercent className="w-5 h-5" />}
-              label="Coupons"
-              active={isActive("/admin/coupons")}
-            />
-          )}
-
-          {user?.role === "user" && (
-            <NavBtn
-              to="/account"
-              icon={<User className="w-5 h-5" />}
-              label="Account"
-              active={isActive("/account")}
-            />
-          )}
-
-          {!user && (
-            <NavBtn
-              to="/login"
-              icon={<User className="w-5 h-5" />}
-              label="Login"
-              active={isActive("/login")}
-            />
-          )}
-
-          {user?.role === "admin" && (
-            <button
-              onClick={() => setAdminDrawer(true)}
-              className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-colors duration-150"
-              style={{ color: adminDrawer ? ACCENT : "#6b7280" }}
-            >
-              <MoreHorizontal className="w-5 h-5" />
-              <span className="text-[9px] font-extrabold uppercase tracking-wide">
-                More
-              </span>
-            </button>
-          )}
-
-          {user?.role === "user" && (
-            <button
-              onClick={handleLogout}
-              className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] text-gray-600 hover:text-red-400 transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="text-[9px] font-extrabold uppercase tracking-wide">
-                Logout
-              </span>
-            </button>
-          )}
-        </div>
-      </nav>
-
-      {/* ══════ ADMIN BOTTOM SHEET (mobile) ══════════════════════════════════ */}
-      <AnimatePresence>
-        {adminDrawer && (
-          <>
-            <motion.div
-              key="scrim"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[60] md:hidden bg-black/70 dark:bg-black/70"
-              onClick={() => setAdminDrawer(false)}
-            />
-
-            <motion.div
-              key="sheet"
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", stiffness: 320, damping: 32 }}
-              className="fixed bottom-0 inset-x-0 z-[70] rounded-t-3xl md:hidden
-                bg-[#FCFAF5] dark:bg-[#141414] border-t border-gray-200 dark:border-white/[0.09]"
-              style={{
-                paddingBottom: "env(safe-area-inset-bottom, 24px)",
-                boxSizing: "border-box",
-              }}
-            >
-              <div className="flex justify-center pt-3 pb-1">
-                <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-white/15" />
-              </div>
-
-              <div className="flex justify-between items-center px-6 py-4">
-                <div>
-                  <p
-                    className="text-xs font-extrabold uppercase tracking-widest"
-                    style={{ color: ACCENT }}
+              <div className="flex items-center gap-3">
+                <ThemeToggle />
+                {showCart && (
+                  <Link
+                    to="/cart"
+                    className="relative p-1.5 rounded-xl transition-colors"
+                    style={{ color: isActive("/cart") ? ACCENT : "#6b7280" }}
                   >
-                    Admin
-                  </p>
-                  <h2 className="text-xl font-black text-gray-900 dark:text-white">
-                    Menu
-                  </h2>
-                </div>
-                <motion.button
-                  onClick={() => setAdminDrawer(false)}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-200 dark:bg-white/7"
-                >
-                  <X className="w-4 h-4" />
-                </motion.button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 px-5 pb-2">
-                {ADMIN_LINKS.map((l, i) => {
-                  const active = isActive(l.to);
-                  return (
-                    <motion.div
-                      key={l.to}
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                    >
-                      <Link
-                        to={l.to}
-                        onClick={() => setAdminDrawer(false)}
-                        className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
-                          active
-                            ? "bg-[#e8622a]/15 border-[#e8622a]/40 text-[#e8622a]"
-                            : "bg-gray-200 dark:bg-[#1c1c1c] border-gray-300 dark:border-white/6 text-gray-700 dark:text-[#9ca3af]"
-                        }`}
+                    <ShoppingCart className="w-5 h-5" />
+                    {totalQty > 0 && (
+                      <span
+                        className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
+                        style={{ background: ACCENT }}
                       >
-                        {l.icon}
-                        <span className="text-sm font-bold">{l.label}</span>
-                      </Link>
-                    </motion.div>
-                  );
-                })}
+                        {totalQty}
+                      </span>
+                    )}
+                  </Link>
+                )}
               </div>
+            </div>
+          </nav>
 
-              <div className="px-5 pt-3 pb-2">
-                <motion.button
-                  onClick={handleLogout}
-                  whileTap={{ scale: 0.97 }}
-                  className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold text-red-400 border border-red-500/20 transition-colors bg-red-50 dark:bg-red-500/6"
+          {/* ══════ MOBILE — fixed bottom nav ══════════════════════════════ */}
+          <nav
+            className="md:hidden fixed bottom-0 left-0 right-0 z-40
+        bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
+            aria-label="Bottom navigation"
+          >
+            <div
+              className="flex justify-around items-center px-2 py-1"
+              style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+            >
+              <NavBtn
+                to={user?.role === "admin" ? "/admin" : "/"}
+                icon={<Home className="w-5 h-5" />}
+                label="Home"
+                active={
+                  user?.role === "admin" ? pathname === "/admin" : pathname === "/"
+                }
+              />
+
+              {showCart && (
+                <NavBtn
+                  to="/cart"
+                  icon={<ShoppingCart className="w-5 h-5" />}
+                  label="Cart"
+                  active={isActive("/cart")}
+                  badge={totalQty}
+                />
+              )}
+
+              {user?.role === "admin" && (
+                <NavBtn
+                  to="/admin/coupons"
+                  icon={<BadgePercent className="w-5 h-5" />}
+                  label="Coupons"
+                  active={isActive("/admin/coupons")}
+                />
+              )}
+
+              {user?.role === "user" && (
+                <NavBtn
+                  to="/account"
+                  icon={<User className="w-5 h-5" />}
+                  label="Account"
+                  active={isActive("/account")}
+                />
+              )}
+
+              {!user && (
+                <NavBtn
+                  to="/login"
+                  icon={<User className="w-5 h-5" />}
+                  label="Login"
+                  active={isActive("/login")}
+                />
+              )}
+
+              {user?.role === "admin" && (
+                <button
+                  onClick={() => setAdminDrawer(true)}
+                  className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-colors duration-150"
+                  style={{ color: adminDrawer ? ACCENT : "#6b7280" }}
                 >
-                  <LogOut className="w-4 h-4" /> Sign Out
-                </motion.button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+                  <MoreHorizontal className="w-5 h-5" />
+                  <span className="text-[9px] font-extrabold uppercase tracking-wide">
+                    More
+                  </span>
+                </button>
+              )}
+
+              {user?.role === "user" && (
+                <button
+                  onClick={handleLogout}
+                  className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] text-gray-600 hover:text-red-400 transition-colors"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span className="text-[9px] font-extrabold uppercase tracking-wide">
+                    Logout
+                  </span>
+                </button>
+              )}
+            </div>
+          </nav>
+
+          {/* ══════ ADMIN BOTTOM SHEET (mobile) ═══════════════════════════ */}
+          <AnimatePresence>
+            {adminDrawer && (
+              <>
+                <motion.div
+                  key="scrim"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-[60] md:hidden bg-black/70 dark:bg-black/70"
+                  onClick={() => setAdminDrawer(false)}
+                />
+
+                <motion.div
+                  key="sheet"
+                  initial={{ y: "100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "100%" }}
+                  transition={{ type: "spring", stiffness: 320, damping: 32 }}
+                  className="fixed bottom-0 inset-x-0 z-[70] rounded-t-3xl md:hidden
+                    bg-[#FCFAF5] dark:bg-[#141414] border-t border-gray-200 dark:border-white/[0.09]"
+                  style={{
+                    paddingBottom: "env(safe-area-inset-bottom, 24px)",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <div className="flex justify-center pt-3 pb-1">
+                    <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-white/15" />
+                  </div>
+
+                  <div className="flex justify-between items-center px-6 py-4">
+                    <div>
+                      <p
+                        className="text-xs font-extrabold uppercase tracking-widest"
+                        style={{ color: ACCENT }}
+                      >
+                        Admin
+                      </p>
+                      <h2 className="text-xl font-black text-gray-900 dark:text-white">
+                        Menu
+                      </h2>
+                    </div>
+                    <motion.button
+                      onClick={() => setAdminDrawer(false)}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-200 dark:bg-white/7"
+                    >
+                      <X className="w-4 h-4" />
+                    </motion.button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 px-5 pb-2">
+                    {ADMIN_LINKS.map((l, i) => {
+                      const active = isActive(l.to);
+                      return (
+                        <motion.div
+                          key={l.to}
+                          initial={{ opacity: 0, y: 16 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                        >
+                          <Link
+                            to={l.to}
+                            onClick={() => setAdminDrawer(false)}
+                            className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
+                              active
+                                ? "bg-[#e8622a]/15 border-[#e8622a]/40 text-[#e8622a]"
+                                : "bg-gray-200 dark:bg-[#1c1c1c] border-gray-300 dark:border-white/6 text-gray-700 dark:text-[#9ca3af]"
+                            }`}
+                          >
+                            {l.icon}
+                            <span className="text-sm font-bold">{l.label}</span>
+                          </Link>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="px-5 pt-3 pb-2">
+                    <motion.button
+                      onClick={handleLogout}
+                      whileTap={{ scale: 0.97 }}
+                      className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold text-red-400 border border-red-500/20 transition-colors bg-red-50 dark:bg-red-500/6"
+                    >
+                      <LogOut className="w-4 h-4" /> Sign Out
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </>,
+        document.body
+      )}
     </>
   );
 };
