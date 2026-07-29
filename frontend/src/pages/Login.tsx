@@ -55,22 +55,24 @@ const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data: LoginFormData) => {
+const onSubmit = async (data: LoginFormData) => {
   try {
     const res = await login({ email: data.email, password: data.password }).unwrap();
     dispatch(setCredentials({ user: res.user, token: res.token }));
     toast.success("Welcome back! 🎉");
 
+    console.log("🔴 LOGIN SUCCESS - User role:", res.user.role);
+    
     const destination = from
       ? from
       : res.user.role === "admin"
       ? "/admin"
       : "/shop";
 
-    // Force full navigation to ensure correct page renders
+    console.log("🔴 REDIRECTING TO:", destination);
     window.location.replace(destination);
   } catch (err) {
-    console.error(err);
+    console.error("🔴 LOGIN FAILED:", err);
     toast.error("Login failed. Please check your credentials.");
   }
 };
