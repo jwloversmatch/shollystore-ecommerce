@@ -38,7 +38,6 @@ const Home = () => {
   const navigate = useNavigate();
   const { user } = useSelector((s: RootState) => s.auth);
 
-  // Redirect logged‑in users
   useEffect(() => {
     if (user) {
       if (user.role === "admin") {
@@ -124,13 +123,13 @@ const Home = () => {
   const categoryNames = categories.map((c: CategoryItem) => c.name);
 
   return (
-    <div className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] relative overflow-x-hidden">
+    <main id="main-content" className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] relative overflow-x-hidden">
       <SEO title={heroTitle.replace("|", "").trim()} description={heroDescription} canonicalUrl="https://shollystore-ecommerce.vercel.app" />
       <StructuredData data={organizationSchema} />
       <StructuredData data={websiteSchema} />
 
-      {/* Ambient background orbs – unchanged (low opacity) */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+      {/* Ambient background orbs – hidden from screen readers */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none" aria-hidden="true">
         <motion.div
           animate={{ x: ["-15%", "15%", "-15%"], y: ["-8%", "8%", "-8%"] }}
           transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
@@ -163,7 +162,7 @@ const Home = () => {
       />
 
       {/* Enter Shop CTA */}
-      <section className="py-10 bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+      <section className="py-10 bg-[#FCFAF5] dark:bg-[#0A0A0B]" aria-label="Call to action">
         <div className="max-w-7xl mx-auto px-4 md:px-6 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -179,8 +178,9 @@ const Home = () => {
               onClick={() => navigate('/shop')}
               className="inline-flex items-center gap-2 px-10 py-4 rounded-full font-black text-lg text-white"
               style={{ background: ACCENT, boxShadow: `0 8px 24px ${ACCENT}44` }}
+              aria-label="Browse the full product catalog"
             >
-              Enter Shop <ArrowRight className="w-5 h-5" />
+              Enter Shop <ArrowRight className="w-5 h-5" aria-hidden="true" />
             </motion.button>
           </motion.div>
         </div>
@@ -192,7 +192,7 @@ const Home = () => {
       <HomeCategoryBrowser categories={categoryData} />
 
       {/* Featured Products section */}
-      <section className="bg-[#FCFAF5] dark:bg-[#111111] py-14 md:py-18">
+      <section className="bg-[#FCFAF5] dark:bg-[#111111] py-14 md:py-18" aria-label="Featured best sellers">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="mb-8">
             <p className="text-xs font-black uppercase tracking-[0.2em] mb-2" style={{ color: ACCENT }}>Featured</p>
@@ -210,7 +210,7 @@ const Home = () => {
         onClose={() => setModalProduct(null)}
       />
       <Footer />
-    </div>
+    </main>
   );
 };
 

@@ -52,9 +52,10 @@ const Footer = () => {
       viewport={{ once: true, margin: '-20px' }}
       className="relative mt-20 border-t border-gray-200 dark:border-white/10 shadow-2xl overflow-hidden
         bg-white dark:bg-gray-900/90 backdrop-blur-xl pb-16"
+      aria-label="Site footer"
     >
-      {/* Subtle background glow */}
-      <div className="absolute inset-0 -z-10 pointer-events-none">
+      {/* Subtle background glow – hidden from screen readers */}
+      <div className="absolute inset-0 -z-10 pointer-events-none" aria-hidden="true">
         <motion.div
           animate={{ x: ['-10%', '10%', '-10%'], y: ['-5%', '5%', '-5%'] }}
           transition={{ repeat: Infinity, duration: 25, ease: 'linear' }}
@@ -69,19 +70,24 @@ const Footer = () => {
 
       <div className="max-w-7xl mx-auto px-6 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+          
           {/* Brand Column */}
           <motion.div variants={columnVariants} className="space-y-4">
-            <Link to="/" className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+            <Link 
+              to="/" 
+              className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
+              aria-label="ShollyStore - Home"
+            >
               Sholly<span className="text-[#e8622a]">Store</span>
             </Link>
             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
               Your one‑stop destination for quality products – from fashion to beverages, delivered fast and reliably.
             </p>
-            <div className="flex gap-3 pt-2">
-              <SocialIcon href="https://facebook.com/shollystore" icon={<FaFacebook size={20} />} />
-              <SocialIcon href="https://instagram.com/shollystore" icon={<FaInstagram size={20} />} />
-              <SocialIcon href="https://twitter.com/shollystore" icon={<FaTwitter size={20} />} />
-              <SocialIcon href="https://youtube.com/@shollystore" icon={<FaYoutube size={20} />} />
+            <div className="flex gap-3 pt-2" aria-label="Social media links">
+              <SocialIcon href="https://facebook.com/shollystore" icon={<FaFacebook size={20} />} label="Facebook" />
+              <SocialIcon href="https://instagram.com/shollystore" icon={<FaInstagram size={20} />} label="Instagram" />
+              <SocialIcon href="https://twitter.com/shollystore" icon={<FaTwitter size={20} />} label="Twitter" />
+              <SocialIcon href="https://youtube.com/@shollystore" icon={<FaYoutube size={20} />} label="YouTube" />
             </div>
           </motion.div>
 
@@ -112,18 +118,26 @@ const Footer = () => {
             <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Contact Us</h4>
             <ul className="space-y-3 text-sm text-gray-500 dark:text-gray-400">
               <li className="flex items-center gap-3">
-                <MapPin size={18} className="text-[#e8622a]" />
+                <MapPin size={18} className="text-[#e8622a]" aria-hidden="true" />
                 <span>Lagos, Nigeria</span>
               </li>
               <li className="flex items-center gap-3">
-                <Phone size={18} className="text-[#e8622a]" />
-                <a href="tel:+2349012345678" className="hover:text-[#e8622a] transition-colors">
+                <Phone size={18} className="text-[#e8622a]" aria-hidden="true" />
+                <a 
+                  href="tel:+2349012345678" 
+                  className="hover:text-[#e8622a] transition-colors"
+                  aria-label="Call us at +234 901 234 5678"
+                >
                   +234 901 234 5678
                 </a>
               </li>
               <li className="flex items-center gap-3">
-                <Mail size={18} className="text-[#e8622a]" />
-                <a href="mailto:hello@shollystore.com" className="hover:text-[#e8622a] transition-colors">
+                <Mail size={18} className="text-[#e8622a]" aria-hidden="true" />
+                <a 
+                  href="mailto:hello@shollystore.com" 
+                  className="hover:text-[#e8622a] transition-colors"
+                  aria-label="Email us at hello@shollystore.com"
+                >
                   hello@shollystore.com
                 </a>
               </li>
@@ -136,10 +150,13 @@ const Footer = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               Subscribe for exclusive deals, new arrivals, and discounts.
             </p>
-            <form className="flex flex-col sm:flex-row gap-3 w-full">
+            <form className="flex flex-col sm:flex-row gap-3 w-full" aria-label="Newsletter subscription">
+              <label htmlFor="newsletter-email" className="sr-only">Email address</label>
               <input
+                id="newsletter-email"
                 type="email"
                 placeholder="Your email"
+                required
                 className="flex-1 min-w-[160px] px-5 py-3.5 text-base bg-white dark:bg-white border border-gray-300 dark:border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#e8622a] placeholder:text-gray-500 text-gray-800"
               />
               <motion.button
@@ -147,6 +164,7 @@ const Footer = () => {
                 whileHover={{ scale: 1.03, boxShadow: '0 8px 20px rgba(232,98,42,0.3)' }}
                 whileTap={{ scale: 0.98 }}
                 className="px-8 py-3.5 text-base bg-[#e8622a] text-white rounded-xl font-medium hover:bg-[#c9511f] transition-colors whitespace-nowrap shrink-0"
+                aria-label="Subscribe to newsletter"
               >
                 Subscribe
               </motion.button>
@@ -174,7 +192,15 @@ const Footer = () => {
   );
 };
 
-const SocialIcon = ({ href, icon }: { href: string; icon: React.ReactNode }) => (
+const SocialIcon = ({ 
+  href, 
+  icon, 
+  label 
+}: { 
+  href: string; 
+  icon: React.ReactNode; 
+  label: string;
+}) => (
   <motion.a
     href={href}
     target="_blank"
@@ -182,6 +208,7 @@ const SocialIcon = ({ href, icon }: { href: string; icon: React.ReactNode }) => 
     variants={socialIconSpring}
     initial="rest"
     whileHover="hover"
+    aria-label={`Follow us on ${label}`}
     className="p-2.5 backdrop-blur-sm rounded-full border border-gray-300 dark:border-white/20 bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-[#e8622a] hover:border-[#e8622a]/50 transition-all duration-200"
   >
     {icon}

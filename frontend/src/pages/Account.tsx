@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "../store";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { updateProfile, logout } from "../features/auth/authSlice";
 import {
   useUpdateProfileMutation,
@@ -30,7 +30,6 @@ const Account = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  // Orders – no argument needed
   const {
     data: orders = [],
     isLoading: loading,
@@ -42,18 +41,14 @@ const Account = () => {
     : null;
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-
-  // tabs
   const [activeTab, setActiveTab] = useState<"orders" | "profile">("orders");
 
-  // profile editing
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [updateProfileApi, { isLoading: isUpdating }] =
     useUpdateProfileMutation();
 
-  // addresses
   const { data: addresses = [], refetch: refetchAddresses } =
     useGetAddressesQuery({});
   const [addAddress] = useAddAddressMutation();
@@ -72,11 +67,9 @@ const Account = () => {
     isDefault: false,
   });
 
-  // change password
   const [changePassword, { isLoading: changingPassword }] =
     useChangePasswordMutation();
 
-  // Redirect if not authenticated
   if (!user) {
     navigate("/login");
     return null;
@@ -120,7 +113,6 @@ const Account = () => {
     }
   };
 
-  // address handlers
   const openAddAddress = () => {
     setEditingAddressId(null);
     setAddressForm({
@@ -179,26 +171,19 @@ const Account = () => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 pb-24 md:pb-16 max-w-6xl mx-auto space-y-8"
-      style={{ background: "#0A0A0B" }}
-    >
-      <SEO
-        title="My Account"
-        description="Manage your orders and profile settings."
-      />
+    <main id="main-content" className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 pb-24 md:pb-16 max-w-6xl mx-auto space-y-8" style={{ background: "#0A0A0B" }}>
+      <SEO title="My Account" description="Manage your orders and profile settings." />
 
       <AccountHeader user={user} />
 
-      {/* Tabs - dark themed */}
-      <div
-        className="flex gap-4 border-b"
-        style={{ borderColor: "rgba(255,255,255,0.08)" }}
-      >
+      {/* Tabs */}
+      <nav className="flex gap-4 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }} role="tablist" aria-label="Account sections">
         <button
           onClick={() => setActiveTab("orders")}
+          role="tab"
+          aria-selected={activeTab === "orders"}
+          aria-controls="panel-orders"
+          id="tab-orders"
           className={`pb-3 px-1 text-sm font-semibold transition-colors border-b-2 ${
             activeTab === "orders"
               ? "border-[#e8622a] text-[#e8622a]"
@@ -209,6 +194,10 @@ const Account = () => {
         </button>
         <button
           onClick={() => setActiveTab("profile")}
+          role="tab"
+          aria-selected={activeTab === "profile"}
+          aria-controls="panel-profile"
+          id="tab-profile"
           className={`pb-3 px-1 text-sm font-semibold transition-colors border-b-2 ${
             activeTab === "profile"
               ? "border-[#e8622a] text-[#e8622a]"
@@ -217,16 +206,15 @@ const Account = () => {
         >
           👤 Profile Settings
         </button>
-      </div>
+      </nav>
 
       <AnimatePresence mode="wait">
         {activeTab === "orders" ? (
-          <motion.div
+          <div
             key="orders"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
+            role="tabpanel"
+            id="panel-orders"
+            aria-labelledby="tab-orders"
           >
             <AccountOrders
               orders={orders}
@@ -234,37 +222,42 @@ const Account = () => {
               error={error}
               onViewOrder={setSelectedOrder}
             />
-          </motion.div>
+          </div>
         ) : (
-          <AccountProfile
-            user={user}
-            editing={editing}
-            onStartEdit={startEditing}
-            onCancelEdit={cancelEditing}
-            onSaveProfile={handleSaveProfile}
-            editName={editName}
-            setEditName={setEditName}
-            editPhone={editPhone}
-            setEditPhone={setEditPhone}
-            isUpdating={isUpdating}
-            onChangePassword={handleChangePassword}
-            changingPassword={changingPassword}
-            addresses={addresses}
-            addressModalOpen={addressModalOpen}
-            editingAddressId={editingAddressId}
-            addressForm={addressForm}
-            onChangeAddressForm={setAddressForm}
-            onOpenAddAddress={openAddAddress}
-            onOpenEditAddress={openEditAddress}
-            onCloseAddressModal={() => setAddressModalOpen(false)}
-            onSaveAddress={handleSaveAddress}
-            onDeleteAddress={handleDeleteAddress}
-            onSetDefaultAddress={handleSetDefaultAddress}
-          />
-        )}
-        {activeTab === "profile" && (
-          <div className="mt-8">
-            <PushNotificationManager />
+          <div
+            key="profile"
+            role="tabpanel"
+            id="panel-profile"
+            aria-labelledby="tab-profile"
+          >
+            <AccountProfile
+              user={user}
+              editing={editing}
+              onStartEdit={startEditing}
+              onCancelEdit={cancelEditing}
+              onSaveProfile={handleSaveProfile}
+              editName={editName}
+              setEditName={setEditName}
+              editPhone={editPhone}
+              setEditPhone={setEditPhone}
+              isUpdating={isUpdating}
+              onChangePassword={handleChangePassword}
+              changingPassword={changingPassword}
+              addresses={addresses}
+              addressModalOpen={addressModalOpen}
+              editingAddressId={editingAddressId}
+              addressForm={addressForm}
+              onChangeAddressForm={setAddressForm}
+              onOpenAddAddress={openAddAddress}
+              onOpenEditAddress={openEditAddress}
+              onCloseAddressModal={() => setAddressModalOpen(false)}
+              onSaveAddress={handleSaveAddress}
+              onDeleteAddress={handleDeleteAddress}
+              onSetDefaultAddress={handleSetDefaultAddress}
+            />
+            <div className="mt-8">
+              <PushNotificationManager />
+            </div>
           </div>
         )}
       </AnimatePresence>
@@ -273,7 +266,7 @@ const Account = () => {
         order={selectedOrder}
         onClose={() => setSelectedOrder(null)}
       />
-    </motion.div>
+    </main>
   );
 };
 

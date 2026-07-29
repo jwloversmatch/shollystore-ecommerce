@@ -15,11 +15,11 @@ const ACCENT = '#e8622a';
 const BRAND_NAME = 'ShollyStore';
 
 const ADMIN_LINKS = [
-  { to: '/admin',              label: 'Dashboard',  icon: <LayoutDashboard className="w-5 h-5" /> },
-  { to: '/admin/hero-slides',  label: 'Hero Slides', icon: <Image className="w-5 h-5" />          },
-  { to: '/admin/categories',   label: 'Categories', icon: <Tag className="w-5 h-5" />             },
-  { to: '/admin/coupons',      label: 'Coupons',    icon: <BadgePercent className="w-5 h-5" />    },
-  { to: '/admin/settings',     label: 'Settings',   icon: <Settings className="w-5 h-5" />        },
+  { to: '/admin',              label: 'Dashboard',  icon: <LayoutDashboard className="w-5 h-5" aria-hidden="true" /> },
+  { to: '/admin/hero-slides',  label: 'Hero Slides', icon: <Image className="w-5 h-5" aria-hidden="true" />          },
+  { to: '/admin/categories',   label: 'Categories', icon: <Tag className="w-5 h-5" aria-hidden="true" />             },
+  { to: '/admin/coupons',      label: 'Coupons',    icon: <BadgePercent className="w-5 h-5" aria-hidden="true" />    },
+  { to: '/admin/settings',     label: 'Settings',   icon: <Settings className="w-5 h-5" aria-hidden="true" />        },
 ];
 
 // ─── Bottom-nav button ────────────────────────────────────────────────────────
@@ -27,7 +27,12 @@ interface NavBtnProps {
   to: string; icon: React.ReactNode; label: string; active: boolean; badge?: number;
 }
 const NavBtn: React.FC<NavBtnProps> = ({ to, icon, label, active, badge }) => (
-  <Link to={to} className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] group">
+  <Link
+    to={to}
+    className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] group"
+    aria-label={label}
+    aria-current={active ? 'page' : undefined}
+  >
     {active && (
       <motion.div
         layoutId="bottom-nav-indicator"
@@ -37,11 +42,15 @@ const NavBtn: React.FC<NavBtnProps> = ({ to, icon, label, active, badge }) => (
       />
     )}
     <div className="relative transition-transform duration-150 group-active:scale-90"
-      style={{ color: active ? ACCENT : '#6b7280' }}>
+      style={{ color: active ? ACCENT : '#6b7280' }}
+      aria-hidden="true"
+    >
       {icon}
       {(badge ?? 0) > 0 && (
         <span className="absolute -top-1.5 -right-1.5 text-white text-[8px] font-black min-w-[14px] min-h-[14px] rounded-full flex items-center justify-center px-0.5"
-          style={{ background: ACCENT }}>
+          style={{ background: ACCENT }}
+          aria-label={`${badge} items`}
+        >
           {badge}
         </span>
       )}
@@ -86,8 +95,19 @@ const Navbar = () => {
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <>
+      {/* Skip to content */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-[#e8622a] focus:text-white focus:rounded-xl focus:font-bold"
+      >
+        Skip to main content
+      </a>
+
       {/* ══════ DESKTOP — fixed top bar ═══════════════════════════════════ */}
-      <nav className="hidden md:block fixed top-0 left-0 right-0 z-50">
+      <nav
+        className="hidden md:block fixed top-0 left-0 right-0 z-50"
+        aria-label="Main navigation"
+      >
         <div className="absolute inset-0 
           bg-[#FCFAF5]/95 dark:bg-[#111]/95 
           backdrop-blur-xl 
@@ -96,17 +116,20 @@ const Navbar = () => {
         />
         <div className="relative max-w-7xl mx-auto px-6 flex justify-between items-center py-4">
           {/* Logo */}
-          <Link to={user?.role === 'admin' ? '/admin' : '/'}
-            className="text-2xl font-black tracking-tight shrink-0 flex items-center gap-2 text-gray-900 dark:text-white">
-            <Store className="w-6 h-6" style={{ color: ACCENT }} />
+          <Link
+            to={user?.role === 'admin' ? '/admin' : '/'}
+            className="text-2xl font-black tracking-tight shrink-0 flex items-center gap-2 text-gray-900 dark:text-white"
+            aria-label={`${BRAND_NAME} - Home`}
+          >
+            <Store className="w-6 h-6" style={{ color: ACCENT }} aria-hidden="true" />
             <span>{BRAND_NAME}</span>
           </Link>
 
           {/* Admin links */}
           {user?.role === 'admin' && (
-            <div className="flex items-center gap-5">
+            <div className="flex items-center gap-5" role="menubar">
               {ADMIN_LINKS.map(l => (
-                <Link key={l.to} to={l.to} className={desktopLinkCls(l.to)}>
+                <Link key={l.to} to={l.to} className={desktopLinkCls(l.to)} role="menuitem">
                   {l.icon} {l.label}
                 </Link>
               ))}
@@ -116,20 +139,26 @@ const Navbar = () => {
           {/* User links */}
           {user?.role === 'user' && (
             <Link to="/account" className={desktopLinkCls('/account')}>
-              <User className="w-4 h-4" /> Account
+              <User className="w-4 h-4" aria-hidden="true" /> Account
             </Link>
           )}
 
           {/* Right: cart + auth + theme toggle */}
           <div className="flex items-center gap-4 shrink-0">
-            {/* Theme toggle */}
             <ThemeToggle />
 
             {showCart && (
-              <Link to="/cart" className="relative p-1">
-                <ShoppingCart className={`w-5 h-5 transition-colors ${
-                  isActive('/cart') ? 'text-[#e8622a]' : 'text-gray-600 dark:text-gray-500 hover:text-black dark:hover:text-white'
-                }`} />
+              <Link
+                to="/cart"
+                className="relative p-1"
+                aria-label={`Cart with ${totalQty} items`}
+              >
+                <ShoppingCart
+                  className={`w-5 h-5 transition-colors ${
+                    isActive('/cart') ? 'text-[#e8622a]' : 'text-gray-600 dark:text-gray-500 hover:text-black dark:hover:text-white'
+                  }`}
+                  aria-hidden="true"
+                />
                 <AnimatePresence>
                   {totalQty > 0 && (
                     <motion.span
@@ -138,7 +167,9 @@ const Navbar = () => {
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0, opacity: 0 }}
                       className="absolute -top-1 -right-1 text-white text-[9px] font-black min-w-[18px] min-h-[18px] rounded-full flex items-center justify-center px-1"
-                      style={{ background: ACCENT }}>
+                      style={{ background: ACCENT }}
+                      aria-hidden="true"
+                    >
                       {totalQty}
                     </motion.span>
                   )}
@@ -147,16 +178,23 @@ const Navbar = () => {
             )}
 
             {user ? (
-              <motion.button onClick={handleLogout} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-1.5 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-red-500 transition-colors">
-                <LogOut className="w-4 h-4" /> Logout
+              <motion.button
+                onClick={handleLogout}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-1.5 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-red-500 transition-colors"
+                aria-label="Log out"
+              >
+                <LogOut className="w-4 h-4" aria-hidden="true" /> Logout
               </motion.button>
             ) : (
               <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
-                <Link to="/login"
+                <Link
+                  to="/login"
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
-                  style={{ background: ACCENT, boxShadow: `0 4px 14px ${ACCENT}55` }}>
-                  <User className="w-4 h-4" /> Login
+                  style={{ background: ACCENT, boxShadow: `0 4px 14px ${ACCENT}55` }}
+                >
+                  <User className="w-4 h-4" aria-hidden="true" /> Login
                 </Link>
               </motion.div>
             )}
@@ -165,78 +203,101 @@ const Navbar = () => {
       </nav>
 
       {/* ══════ MOBILE — FIXED top bar ═══════════════════════════════════ */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex justify-between items-center px-5 py-4
-  bg-[#FCFAF5] dark:bg-[#0A0A0B] backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06]">
-  <Link to={user?.role === 'admin' ? '/admin' : '/'}
-    className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white">
-    <Store className="w-5 h-5" style={{ color: ACCENT }} />
-    <span>{BRAND_NAME}</span>
-  </Link>
+      <nav
+        className="md:hidden fixed top-0 left-0 right-0 z-40 flex justify-between items-center px-5 py-4
+          bg-[#FCFAF5] dark:bg-[#0A0A0B] backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06]"
+        aria-label="Mobile navigation"
+      >
+        <Link
+          to={user?.role === 'admin' ? '/admin' : '/'}
+          className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white"
+          aria-label={`${BRAND_NAME} - Home`}
+        >
+          <Store className="w-5 h-5" style={{ color: ACCENT }} aria-hidden="true" />
+          <span>{BRAND_NAME}</span>
+        </Link>
 
-  <div className="flex items-center gap-3">
-    <ThemeToggle />
-    {showCart && (
-      <Link to="/cart" className="relative p-1.5 rounded-xl transition-colors"
-        style={{ color: isActive('/cart') ? ACCENT : '#6b7280' }}>
-        <ShoppingCart className="w-5 h-5" />
-        {totalQty > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
-            style={{ background: ACCENT }}>
-            {totalQty}
-          </span>
-        )}
-      </Link>
-    )}
-  </div>
-</div>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          {showCart && (
+            <Link
+              to="/cart"
+              className="relative p-1.5 rounded-xl transition-colors"
+              style={{ color: isActive('/cart') ? ACCENT : '#6b7280' }}
+              aria-label={`Cart with ${totalQty} items`}
+            >
+              <ShoppingCart className="w-5 h-5" aria-hidden="true" />
+              {totalQty > 0 && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
+                  style={{ background: ACCENT }}
+                  aria-hidden="true"
+                >
+                  {totalQty}
+                </span>
+              )}
+            </Link>
+          )}
+        </div>
+      </nav>
 
       {/* ══════ MOBILE — fixed bottom nav ════════════════════════════════════ */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-50
-        bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 6px)' }}>
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-50
+          bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 6px)' }}
+        aria-label="Bottom navigation"
+      >
         <div className="flex justify-around items-center px-2 pt-2 pb-1">
 
-          <NavBtn to={user?.role === 'admin' ? '/admin' : '/'} icon={<Home className="w-5 h-5" />}
+          <NavBtn to={user?.role === 'admin' ? '/admin' : '/'} icon={<Home className="w-5 h-5" aria-hidden="true" />}
             label="Home" active={user?.role === 'admin' ? pathname === '/admin' : pathname === '/'} />
 
           {showCart && (
-            <NavBtn to="/cart" icon={<ShoppingCart className="w-5 h-5" />}
+            <NavBtn to="/cart" icon={<ShoppingCart className="w-5 h-5" aria-hidden="true" />}
               label="Cart" active={isActive('/cart')} badge={totalQty} />
           )}
 
           {user?.role === 'admin' && (
-            <NavBtn to="/admin/coupons" icon={<BadgePercent className="w-5 h-5" />}
+            <NavBtn to="/admin/coupons" icon={<BadgePercent className="w-5 h-5" aria-hidden="true" />}
               label="Coupons" active={isActive('/admin/coupons')} />
           )}
 
           {user?.role === 'user' && (
-            <NavBtn to="/account" icon={<User className="w-5 h-5" />}
+            <NavBtn to="/account" icon={<User className="w-5 h-5" aria-hidden="true" />}
               label="Account" active={isActive('/account')} />
           )}
 
           {!user && (
-            <NavBtn to="/login" icon={<User className="w-5 h-5" />}
+            <NavBtn to="/login" icon={<User className="w-5 h-5" aria-hidden="true" />}
               label="Login" active={isActive('/login')} />
           )}
 
           {user?.role === 'admin' && (
-            <button onClick={() => setAdminDrawer(true)}
+            <button
+              onClick={() => setAdminDrawer(true)}
               className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-colors duration-150"
-              style={{ color: adminDrawer ? ACCENT : '#6b7280' }}>
-              <MoreHorizontal className="w-5 h-5" />
+              style={{ color: adminDrawer ? ACCENT : '#6b7280' }}
+              aria-label="More admin options"
+              aria-expanded={adminDrawer}
+            >
+              <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
               <span className="text-[9px] font-extrabold uppercase tracking-wide">More</span>
             </button>
           )}
 
           {user?.role === 'user' && (
-            <button onClick={handleLogout}
-              className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] text-gray-600 hover:text-red-400 transition-colors">
-              <LogOut className="w-5 h-5" />
+            <button
+              onClick={handleLogout}
+              className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] text-gray-600 hover:text-red-400 transition-colors"
+              aria-label="Log out"
+            >
+              <LogOut className="w-5 h-5" aria-hidden="true" />
               <span className="text-[9px] font-extrabold uppercase tracking-wide">Logout</span>
             </button>
           )}
         </div>
-      </div>
+      </nav>
 
       {/* ══════ ADMIN BOTTOM SHEET (mobile) ══════════════════════════════════ */}
       <AnimatePresence>
@@ -246,7 +307,10 @@ const Navbar = () => {
               key="scrim"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 z-[60] md:hidden bg-black/70 dark:bg-black/70"
-              onClick={() => setAdminDrawer(false)} />
+              onClick={() => setAdminDrawer(false)}
+              role="presentation"
+              aria-hidden="true"
+            />
 
             <motion.div
               key="sheet"
@@ -256,7 +320,11 @@ const Navbar = () => {
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
               className="fixed bottom-0 inset-x-0 z-[70] rounded-t-3xl md:hidden
                 bg-[#FCFAF5] dark:bg-[#141414] border-t border-gray-200 dark:border-white/[0.09]"
-              style={{ paddingBottom: 'env(safe-area-inset-bottom, 24px)' }}>
+              style={{ paddingBottom: 'env(safe-area-inset-bottom, 24px)' }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Admin menu"
+            >
 
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-white/15" />
@@ -267,10 +335,13 @@ const Navbar = () => {
                   <p className="text-xs font-extrabold uppercase tracking-widest" style={{ color: ACCENT }}>Admin</p>
                   <h2 className="text-xl font-black text-gray-900 dark:text-white">Menu</h2>
                 </div>
-                <motion.button onClick={() => setAdminDrawer(false)}
+                <motion.button
+                  onClick={() => setAdminDrawer(false)}
                   whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-200 dark:bg-white/7">
-                  <X className="w-4 h-4" />
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-200 dark:bg-white/7"
+                  aria-label="Close admin menu"
+                >
+                  <X className="w-4 h-4" aria-hidden="true" />
                 </motion.button>
               </div>
 
@@ -282,12 +353,16 @@ const Navbar = () => {
                       initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}>
-                      <Link to={l.to} onClick={() => setAdminDrawer(false)}
+                      <Link
+                        to={l.to}
+                        onClick={() => setAdminDrawer(false)}
                         className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
                           active
                             ? 'bg-[#e8622a]/15 border-[#e8622a]/40 text-[#e8622a]'
                             : 'bg-gray-200 dark:bg-[#1c1c1c] border-gray-300 dark:border-white/6 text-gray-700 dark:text-[#9ca3af]'
-                        }`}>
+                        }`}
+                        aria-current={active ? 'page' : undefined}
+                      >
                         {l.icon}
                         <span className="text-sm font-bold">{l.label}</span>
                       </Link>
@@ -297,10 +372,13 @@ const Navbar = () => {
               </div>
 
               <div className="px-5 pt-3 pb-2">
-                <motion.button onClick={handleLogout}
+                <motion.button
+                  onClick={handleLogout}
                   whileTap={{ scale: 0.97 }}
-                  className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold text-red-400 border border-red-500/20 transition-colors bg-red-50 dark:bg-red-500/6">
-                  <LogOut className="w-4 h-4" /> Sign Out
+                  className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold text-red-400 border border-red-500/20 transition-colors bg-red-50 dark:bg-red-500/6"
+                  aria-label="Sign out"
+                >
+                  <LogOut className="w-4 h-4" aria-hidden="true" /> Sign Out
                 </motion.button>
               </div>
             </motion.div>
