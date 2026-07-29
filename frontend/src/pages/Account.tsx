@@ -99,19 +99,19 @@ const Account = () => {
   };
 
   const handleChangePassword = async (current: string, newPw: string) => {
-    try {
-      await changePassword({
-        currentPassword: current,
-        newPassword: newPw,
-      }).unwrap();
-      toast.success("Password changed. Please log in again.");
-      dispatch(logout());
-      navigate("/login");
-    } catch (err: unknown) {
-      const error = err as { data?: { message?: string } };
-      toast.error(error?.data?.message || "Failed to change password");
-    }
-  };
+  try {
+    await changePassword({
+      currentPassword: current,
+      newPassword: newPw,
+    }).unwrap();
+    toast.success("Password changed. Please log in again.");
+    dispatch(logout());
+    window.location.href = '/login';
+  } catch (err: unknown) {
+    const error = err as { data?: { message?: string } };
+    toast.error(error?.data?.message || "Failed to change password");
+  }
+};
 
   const openAddAddress = () => {
     setEditingAddressId(null);
