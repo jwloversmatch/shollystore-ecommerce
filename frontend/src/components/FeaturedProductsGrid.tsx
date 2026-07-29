@@ -1,9 +1,11 @@
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useGetProductsQuery } from "../features/api/apiSlice";
 import ProductCard from "./ProductCard";
 import { PLACEHOLDER } from "../types/home";
 
 const FeaturedProductsGrid = () => {
+  const navigate = useNavigate();
   const { data, isLoading } = useGetProductsQuery({ featured: true, limit: 8 });
   const products = data?.products ?? [];
 
@@ -26,7 +28,7 @@ const FeaturedProductsGrid = () => {
                     : product.category?.name ?? "General"
                 }
                 stock={product.stock}
-                onClick={() => window.location.href = `/products/${product.slug || product._id}`}
+                onClick={() => navigate(`/products/${product.slug || product._id}`)}
               />
             </motion.div>
           ))}

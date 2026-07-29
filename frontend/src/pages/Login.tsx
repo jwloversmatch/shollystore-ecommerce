@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import {  Link, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
@@ -45,7 +45,6 @@ const buildInputCls = (hasError: boolean, extraPr = "pr-4") =>
 // ═══════════════════════════════════════════════════════════════════════════════
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const navigate  = useNavigate();
   const location  = useLocation();
   const dispatch  = useDispatch();
   const [login, { isLoading, error }] = useLoginMutation();
@@ -57,23 +56,24 @@ const Login = () => {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    try {
-      const res = await login({ email: data.email, password: data.password }).unwrap();
-      dispatch(setCredentials({ user: res.user, token: res.token }));
-      toast.success("Welcome back! 🎉");
+  try {
+    const res = await login({ email: data.email, password: data.password }).unwrap();
+    dispatch(setCredentials({ user: res.user, token: res.token }));
+    toast.success("Welcome back! 🎉");
 
-      const destination = from
-        ? from
-        : res.user.role === "admin"
-        ? "/admin"
-        : "/shop";
+    const destination = from
+      ? from
+      : res.user.role === "admin"
+      ? "/admin"
+      : "/shop";
 
-      navigate(destination, { replace: true });
-    } catch (err) {
-      console.error(err);
-      toast.error("Login failed. Please check your credentials.");
-    }
-  };
+    // Force full navigation to ensure correct page renders
+    window.location.replace(destination);
+  } catch (err) {
+    console.error(err);
+    toast.error("Login failed. Please check your credentials.");
+  }
+};
 
   const apiError = (error as { data?: { message: string } })?.data?.message;
 

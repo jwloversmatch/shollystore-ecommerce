@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronLeft, ChevronRight, Home } from "lucide-react";
 import {
@@ -32,6 +33,7 @@ const getCategoryName = (p: ProductItem): string =>
   typeof p.category === "string" ? p.category : p.category?.name ?? "General";
 
 const ShopPage = () => {
+  const navigate = useNavigate();
   const { data: tree = [] } = useGetCategoryTreeQuery(undefined);
   const [selectedPath, setSelectedPath] = useState<string[]>([]);
   const [page, setPage] = useState(1);
@@ -252,7 +254,7 @@ const ShopPage = () => {
                   image={product.images?.[0] || PLACEHOLDER}
                   category={getCategoryName(product)}
                   stock={product.stock}
-                  onClick={() => window.location.href = `/products/${product.slug || product._id}`}
+                  onClick={() => navigate(`/products/${product.slug || product._id}`)}
                 />
               </motion.div>
             ))}
