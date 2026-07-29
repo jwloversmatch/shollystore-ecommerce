@@ -2,7 +2,7 @@
 <html lang="en-NG">
   <head>
     <meta charset="UTF-8" />
-    
+
     <!-- DNS Prefetch & Preconnect -->
     <link rel="dns-prefetch" href="https://iresstore.vercel.app" />
     <link rel="preconnect" href="https://iresstore.vercel.app" />
@@ -12,20 +12,32 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    
+
     <!-- Preload Critical Assets -->
     <link rel="preload" href="/favicon.svg" as="image" type="image/svg+xml" />
     <link rel="preload" href="/og-default.jpg" as="image" />
-    <link rel="preload" href="/fonts/inter-latin-regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link
+      rel="preload"
+      href="/fonts/inter-latin-regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
+    />
 
     <!-- Web App Manifest -->
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#0A0A0B" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <meta name="apple-mobile-web-app-title" content="Sholly" />
 
     <!-- Robots -->
@@ -34,8 +46,14 @@
 
     <!-- Basic SEO -->
     <title>SholexStore – Your One‑Stop Shop for Quality Products</title>
-    <meta name="description" content="Shop the best deals on fashion, beverages, electronics and more. Fast delivery across Nigeria." />
-    <meta name="keywords" content="fashion, beverages, electronics, online store, Nigeria, fast delivery, shopping, SholexStore" />
+    <meta
+      name="description"
+      content="Shop the best deals on fashion, beverages, electronics and more. Fast delivery across Nigeria."
+    />
+    <meta
+      name="keywords"
+      content="fashion, beverages, electronics, online store, Nigeria, fast delivery, shopping, SholexStore"
+    />
     <meta name="author" content="SholexStore" />
     <meta name="rating" content="General" />
     <meta name="format-detection" content="telephone=no" />
@@ -44,9 +62,18 @@
     <link rel="canonical" href="https://iresstore.vercel.app" />
 
     <!-- Open Graph -->
-    <meta property="og:title" content="SholexStore – Your One‑Stop Shop for Quality Products" />
-    <meta property="og:description" content="Quality products at unbeatable prices – from fashion to beverages, delivered fast and reliably." />
-    <meta property="og:image" content="https://iresstore.vercel.app/og-default.jpg" />
+    <meta
+      property="og:title"
+      content="SholexStore – Your One‑Stop Shop for Quality Products"
+    />
+    <meta
+      property="og:description"
+      content="Quality products at unbeatable prices – from fashion to beverages, delivered fast and reliably."
+    />
+    <meta
+      property="og:image"
+      content="https://iresstore.vercel.app/og-default.jpg"
+    />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="SholexStore – Quality Products" />
@@ -57,9 +84,18 @@
 
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="SholexStore – Your One‑Stop Shop for Quality Products" />
-    <meta name="twitter:description" content="Quality products at unbeatable prices – from fashion to beverages, delivered fast and reliably." />
-    <meta name="twitter:image" content="https://iresstore.vercel.app/og-default.jpg" />
+    <meta
+      name="twitter:title"
+      content="SholexStore – Your One‑Stop Shop for Quality Products"
+    />
+    <meta
+      name="twitter:description"
+      content="Quality products at unbeatable prices – from fashion to beverages, delivered fast and reliably."
+    />
+    <meta
+      name="twitter:image"
+      content="https://iresstore.vercel.app/og-default.jpg"
+    />
     <meta name="twitter:image:alt" content="SholexStore – Quality Products" />
     <meta name="twitter:site" content="@sholexstore" />
     <meta name="twitter:creator" content="@sholexstore" />
@@ -111,36 +147,50 @@
 
     <!-- Inline Critical CSS -->
     <style>
-      *,::before,::after{box-sizing:border-box;margin:0;padding:0}
-      html{
-        font-size:16px;
-        -webkit-text-size-adjust:100%;
-        height:100%;
-        overflow:hidden;
+      *,
+      ::before,
+      ::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
-      body{
-        font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-        background:#0A0A0B;
-        color:#fff;
-        height:100%;
-        overflow:hidden;
-        position:fixed;
-        width:100%;
-        top:0;
-        left:0;
+      html {
+        font-size: 16px;
+        -webkit-text-size-adjust: 100%;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
       }
-      #root{
-        height:100%;
-        overflow-y:auto;
-        -webkit-overflow-scrolling:touch;
-        position:fixed;
-        top:0;
-        left:0;
-        width:100%;
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        background: #0a0a0b;
+        color: #fff;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
       }
-      img{max-width:100%;height:auto;display:block}
+      #root {
+        height: 100%;
+        width: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+      }
+      img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
       @media (prefers-reduced-motion: no-preference) {
-        :root{scroll-behavior:smooth}
+        :root {
+          scroll-behavior: smooth;
+        }
       }
     </style>
   </head>
