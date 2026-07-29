@@ -82,10 +82,16 @@ const Navbar = () => {
 
   // ✅ Force full page reload on logout to clear all cached state
   const handleLogout = () => {
-    dispatch(logout());
-    setAdminDrawer(false);
-    window.location.href = '/';
-  };
+  dispatch(logout());
+  setAdminDrawer(false);
+  
+  // Clear everything
+  localStorage.removeItem('token');
+  sessionStorage.clear();
+  
+  // Replace current URL with home, then force reload
+  window.location.replace('/');
+};
 
   const desktopLinkCls = (path: string) =>
     `flex items-center gap-1.5 text-sm font-bold transition-colors duration-150 ${
