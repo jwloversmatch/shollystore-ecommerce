@@ -12,6 +12,11 @@ const resolveCategoryWithDescendants = async (identifier: string) => {
   return [category._id, ...childIds];
 };
 
+// Escapes regex special characters so user input can't break the pattern
+// or be used to craft a catastrophic-backtracking (ReDoS) regex.
+const escapeRegex = (str: string): string =>
+  str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // @desc    Fetch products (with optional filters, pagination)
 // @route   GET /api/products
 export const getProducts = async (req: Request, res: Response): Promise<void> => {
@@ -22,7 +27,6 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
     if (req.query.category) {
       const includeSubcategories = req.query.includeSubcategories !== "false";
 
-      // Convert to plain string (Express can sometimes give an array, but we expect a single value)
       const categoryParam = Array.isArray(req.query.category)
         ? String(req.query.category[0])
         : String(req.query.category);
@@ -35,7 +39,6 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
         }
         filter.category = { $in: categoryIds };
       } else {
-        // Only the exact category (by ID or slug)
         const isObjectId = /^[0-9a-fA-F]{24}$/.test(categoryParam);
         if (isObjectId) {
           filter.category = categoryParam;
@@ -53,6 +56,17 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
     // Featured filter
     if (req.query.featured === "true") {
       filter.isFeatured = true;
+    }
+
+    // Search filtering — case-insensitive substring match on product name
+    if (req.query.search) {
+      const searchParam = Array.isArray(req.query.search)
+        ? String(req.query.search[0])
+        : String(req.query.search);
+      const trimmed = searchParam.trim();
+      if (trimmed) {
+        filter.name = { $regex: escapeRegex(trimmed), $options: "i" };
+      }
     }
 
     // Pagination

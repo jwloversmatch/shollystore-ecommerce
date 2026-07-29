@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronLeft, ChevronRight, Home } from "lucide-react";
@@ -38,7 +38,18 @@ const ShopPage = () => {
   const [selectedPath, setSelectedPath] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const limit = 12;
+
+  // Debounce the raw input before it hits the server, so we're not
+  // firing a request on every keystroke.
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(timeout);
+  }, [search]);
 
   const currentNode = useMemo<CategoryNode | null>(() => {
     if (selectedPath.length === 0) return null;
@@ -65,16 +76,13 @@ const ShopPage = () => {
 
   const { data, isLoading } = useGetProductsQuery({
     ...(categoryId ? { category: categoryId, includeSubcategories: true } : {}),
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
     page,
     limit,
   });
 
   const products: ProductItem[] = data?.products ?? [];
   const pagination = data?.pagination ?? { page: 1, pages: 1, total: 0 };
-
-  const filtered = search
-    ? products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
-    : products;
 
   const handleChipClick = (id: string | null) => {
     if (id === null) {
@@ -89,11 +97,11 @@ const ShopPage = () => {
     }
     setPage(1);
     setSearch("");
+    setDebouncedSearch("");
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
-    setPage(1);
   };
 
   return (
@@ -230,7 +238,7 @@ const ShopPage = () => {
             <div key={i} className="h-64 rounded-2xl animate-pulse bg-gray-200 dark:bg-[#141414]" />
           ))}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : products.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">No products found</p>
           <p className="text-gray-500 dark:text-gray-400">Try adjusting your search or filter criteria.</p>
@@ -238,7 +246,7 @@ const ShopPage = () => {
       ) : (
         <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6" aria-label="Product list">
           <AnimatePresence mode="popLayout">
-            {filtered.map(product => (
+            {products.map(product => (
               <motion.div
                 key={product._id}
                 layout

@@ -53,6 +53,7 @@ export const apiSlice = createApi({
       category?: string;
       includeSubcategories?: boolean;
       featured?: boolean;
+      search?: string;
       page?: number;
       limit?: number;
     }>({
@@ -64,6 +65,7 @@ export const apiSlice = createApi({
             searchParams.append("includeSubcategories", String(params.includeSubcategories));
         }
         if (params?.featured) searchParams.append("featured", "true");
+        if (params?.search) searchParams.append("search", params.search);
         if (params?.page) searchParams.append("page", String(params.page));
         if (params?.limit) searchParams.append("limit", String(params.limit));
         else searchParams.append("limit", "12"); // default page size
