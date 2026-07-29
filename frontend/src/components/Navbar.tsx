@@ -165,76 +165,82 @@ const Navbar = () => {
       </nav>
 
       {/* ══════ MOBILE — FIXED top bar ═══════════════════════════════════ */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex justify-between items-center px-5 py-4
-  bg-[#FCFAF5] dark:bg-[#0A0A0B] backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06]">
-  <Link to={user?.role === 'admin' ? '/admin' : '/'}
-    className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white">
-    <Store className="w-5 h-5" style={{ color: ACCENT }} />
-    <span>{BRAND_NAME}</span>
-  </Link>
+      <div 
+        className="md:hidden fixed top-0 left-0 right-0 z-40"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
+        <div className="flex justify-between items-center px-5 h-14 bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]">
+          <Link to={user?.role === 'admin' ? '/admin' : '/'}
+            className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white">
+            <Store className="w-5 h-5" style={{ color: ACCENT }} />
+            <span>{BRAND_NAME}</span>
+          </Link>
 
-  <div className="flex items-center gap-3">
-    <ThemeToggle />
-    {showCart && (
-      <Link to="/cart" className="relative p-1.5 rounded-xl transition-colors"
-        style={{ color: isActive('/cart') ? ACCENT : '#6b7280' }}>
-        <ShoppingCart className="w-5 h-5" />
-        {totalQty > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
-            style={{ background: ACCENT }}>
-            {totalQty}
-          </span>
-        )}
-      </Link>
-    )}
-  </div>
-</div>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            {showCart && (
+              <Link to="/cart" className="relative p-1.5 rounded-xl transition-colors"
+                style={{ color: isActive('/cart') ? ACCENT : '#6b7280' }}>
+                <ShoppingCart className="w-5 h-5" />
+                {totalQty > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
+                    style={{ background: ACCENT }}>
+                    {totalQty}
+                  </span>
+                )}
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* ══════ MOBILE — fixed bottom nav ════════════════════════════════════ */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-50
-        bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 6px)' }}>
-        <div className="flex justify-around items-center px-2 pt-2 pb-1">
+      <div 
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        <div className="bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]">
+          <div className="flex justify-around items-center px-2 pt-2 pb-1">
+            <NavBtn to={user?.role === 'admin' ? '/admin' : '/'} icon={<Home className="w-5 h-5" />}
+              label="Home" active={user?.role === 'admin' ? pathname === '/admin' : pathname === '/'} />
 
-          <NavBtn to={user?.role === 'admin' ? '/admin' : '/'} icon={<Home className="w-5 h-5" />}
-            label="Home" active={user?.role === 'admin' ? pathname === '/admin' : pathname === '/'} />
+            {showCart && (
+              <NavBtn to="/cart" icon={<ShoppingCart className="w-5 h-5" />}
+                label="Cart" active={isActive('/cart')} badge={totalQty} />
+            )}
 
-          {showCart && (
-            <NavBtn to="/cart" icon={<ShoppingCart className="w-5 h-5" />}
-              label="Cart" active={isActive('/cart')} badge={totalQty} />
-          )}
+            {user?.role === 'admin' && (
+              <NavBtn to="/admin/coupons" icon={<BadgePercent className="w-5 h-5" />}
+                label="Coupons" active={isActive('/admin/coupons')} />
+            )}
 
-          {user?.role === 'admin' && (
-            <NavBtn to="/admin/coupons" icon={<BadgePercent className="w-5 h-5" />}
-              label="Coupons" active={isActive('/admin/coupons')} />
-          )}
+            {user?.role === 'user' && (
+              <NavBtn to="/account" icon={<User className="w-5 h-5" />}
+                label="Account" active={isActive('/account')} />
+            )}
 
-          {user?.role === 'user' && (
-            <NavBtn to="/account" icon={<User className="w-5 h-5" />}
-              label="Account" active={isActive('/account')} />
-          )}
+            {!user && (
+              <NavBtn to="/login" icon={<User className="w-5 h-5" />}
+                label="Login" active={isActive('/login')} />
+            )}
 
-          {!user && (
-            <NavBtn to="/login" icon={<User className="w-5 h-5" />}
-              label="Login" active={isActive('/login')} />
-          )}
+            {user?.role === 'admin' && (
+              <button onClick={() => setAdminDrawer(true)}
+                className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-colors duration-150"
+                style={{ color: adminDrawer ? ACCENT : '#6b7280' }}>
+                <MoreHorizontal className="w-5 h-5" />
+                <span className="text-[9px] font-extrabold uppercase tracking-wide">More</span>
+              </button>
+            )}
 
-          {user?.role === 'admin' && (
-            <button onClick={() => setAdminDrawer(true)}
-              className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-colors duration-150"
-              style={{ color: adminDrawer ? ACCENT : '#6b7280' }}>
-              <MoreHorizontal className="w-5 h-5" />
-              <span className="text-[9px] font-extrabold uppercase tracking-wide">More</span>
-            </button>
-          )}
-
-          {user?.role === 'user' && (
-            <button onClick={handleLogout}
-              className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] text-gray-600 hover:text-red-400 transition-colors">
-              <LogOut className="w-5 h-5" />
-              <span className="text-[9px] font-extrabold uppercase tracking-wide">Logout</span>
-            </button>
-          )}
+            {user?.role === 'user' && (
+              <button onClick={handleLogout}
+                className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] text-gray-600 hover:text-red-400 transition-colors">
+                <LogOut className="w-5 h-5" />
+                <span className="text-[9px] font-extrabold uppercase tracking-wide">Logout</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

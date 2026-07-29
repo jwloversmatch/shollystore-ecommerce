@@ -1,5 +1,5 @@
 // src/App.tsx
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { HelmetProvider } from 'react-helmet-async';
@@ -53,93 +53,45 @@ const LoadingFallback = () => (
 function AppContent() {
   const location = useLocation();
 
-  // iOS PWA fix: Move scroll to a wrapper div, not body/root
-  useEffect(() => {
-    // Don't apply this on desktop
-    if (window.innerWidth >= 768) return;
-
-    const html = document.documentElement;
-    const body = document.body;
-
-    // Prevent body/html from scrolling
-    html.style.overflow = 'hidden';
-    html.style.height = '100%';
-    body.style.overflow = 'hidden';
-    body.style.height = '100%';
-    body.style.position = 'fixed';
-    body.style.width = '100%';
-    body.style.top = '0';
-    body.style.left = '0';
-
-    return () => {
-      html.style.overflow = '';
-      html.style.height = '';
-      body.style.overflow = '';
-      body.style.height = '';
-      body.style.position = '';
-      body.style.width = '';
-      body.style.top = '';
-      body.style.left = '';
-    };
-  }, []);
-
   // Hide navbar on specific pages
   const hideNavbar = ['/cart', '/checkout', '/404'].includes(location.pathname);
 
   return (
     <>
-      {/* Navbar rendered OUTSIDE the scrollable area */}
+      {/* Navbar rendered OUTSIDE #root's scroll flow — stays fixed */}
       {!hideNavbar && <Navbar />}
       
-      {/* Scrollable content area */}
-      <div 
-        id="app-scroll-container"
-        className="md:static"
-        style={{
-          // On mobile, this becomes the scrollable container
-          height: window.innerWidth < 768 ? '100%' : 'auto',
-          overflowY: window.innerWidth < 768 ? 'auto' : 'visible',
-          WebkitOverflowScrolling: 'touch',
-          position: window.innerWidth < 768 ? 'fixed' : 'static',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: '100%',
-        }}
-      >
-        <Suspense fallback={<LoadingFallback />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/account" element={<Account />} />
-            <Route path="/products/:slug" element={<ProductDetail />} />
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/products/:slug" element={<ProductDetail />} />
 
-            <Route element={<ProtectedRoute />}>
-              <Route path="/shop/*" element={<ShopPage />} />
-            </Route>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/shop/*" element={<ShopPage />} />
+          </Route>
 
-            <Route element={<AdminRoute />}>
-              <Route path="/admin" element={<Dashboard />} />
-              <Route path="/admin/products" element={<Products />} />
-              <Route path="/admin/settings" element={<Settings />} />
-              <Route path="/admin/orders" element={<Orders />} />
-              <Route path="/admin/hero-slides" element={<HeroSlides />} />
-              <Route path="/admin/categories" element={<Categories />} />
-              <Route path="/admin/coupons" element={<Coupons />} />
-            </Route>
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<Dashboard />} />
+            <Route path="/admin/products" element={<Products />} />
+            <Route path="/admin/settings" element={<Settings />} />
+            <Route path="/admin/orders" element={<Orders />} />
+            <Route path="/admin/hero-slides" element={<HeroSlides />} />
+            <Route path="/admin/categories" element={<Categories />} />
+            <Route path="/admin/coupons" element={<Coupons />} />
+          </Route>
 
-            <Route path="/404" element={<NotFound />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </div>
+          <Route path="/404" element={<NotFound />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }
