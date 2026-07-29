@@ -201,15 +201,15 @@ const Navbar = () => {
 
       {/* ══════ MOBILE — fixed bottom nav ════════════════════════════════════ */}
       <nav 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40
-          bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 dark:border-white/[0.07]"
         style={{ 
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          backgroundColor: '#FCFAF5',
         }}
         aria-label="Bottom navigation"
       >
-        <div className="flex justify-around items-center px-2 py-1">
+        <div className="flex justify-around items-center px-2 py-1 bg-[#FCFAF5] dark:bg-[#111111]">
           <NavBtn to={user?.role === 'admin' ? '/admin' : '/'} icon={<Home className="w-5 h-5" />}
             label="Home" active={user?.role === 'admin' ? pathname === '/admin' : pathname === '/'} />
 

@@ -140,10 +140,18 @@ const ProductDetail = () => {
     setTimeout(() => setAdded(false), 2000);
   };
 
-  // ══════ LOADING (unchanged, just added aria) ═══════════════════════════════
+  // ══════ LOADING ═══════════════════════════════
   if (isLoading) {
     return (
-      <div className="min-h-screen pt-20 pb-16 px-4 md:px-8 max-w-7xl mx-auto bg-[#FCFAF5] dark:bg-[#0A0A0B]" role="status" aria-label="Loading product details">
+      <div 
+        className="min-h-screen px-4 md:px-8 max-w-7xl mx-auto bg-[#FCFAF5] dark:bg-[#0A0A0B]" 
+        role="status" 
+        aria-label="Loading product details"
+        style={{ 
+          paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))', 
+          paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' 
+        }}
+      >
         <span className="sr-only">Loading...</span>
         <div className="h-8 w-24 rounded-xl animate-pulse mb-6 mt-4 bg-gray-200 dark:bg-[#141414]" />
         <div className="grid md:grid-cols-2 gap-8">
@@ -163,7 +171,7 @@ const ProductDetail = () => {
     );
   }
 
-  // ══════ NOT FOUND (unchanged, just added button labels) ═══════════════════
+  // ══════ NOT FOUND ═══════════════════════════════
   if (!product) {
     return (
       <main className="min-h-screen flex items-center justify-center px-4 bg-[#FCFAF5] dark:bg-[#0A0A0B]">
@@ -204,12 +212,19 @@ const ProductDetail = () => {
   const images       = product.images?.length ? product.images : [PLACEHOLDER];
 
   return (
-    <main id="main-content" className="min-h-screen pt-20 md:pt-24 pb-36 md:pb-16 px-4 md:px-8 max-w-7xl mx-auto bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+    <main 
+      id="main-content" 
+      className="min-h-screen px-4 md:px-8 max-w-7xl mx-auto bg-[#FCFAF5] dark:bg-[#0A0A0B]" 
+      style={{ 
+        paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))', 
+        paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' 
+      }}
+    >
       <SEO title={product.name}
         description={`Buy ${product.name} from ShollyStore. ${product.description||''}`}
         ogImage={product.images?.[0]} ogType="product" />
 
-      {/* Breadcrumb (added aria-label) */}
+      {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-2 mb-5 overflow-x-auto no-scrollbar pb-1">
         <motion.button whileHover={{ scale:1.06 }} whileTap={{ scale:0.94 }}
           onClick={() => navigate(-1)}
@@ -236,7 +251,7 @@ const ProductDetail = () => {
       {/* Main grid */}
       <div className="grid md:grid-cols-2 gap-6 md:gap-10 lg:gap-14 items-start">
 
-        {/* Image panel (added aria-labels to thumbnails and main image) */}
+        {/* Image panel */}
         <section aria-label="Product images" className="md:sticky md:top-24 space-y-3">
           <div className="relative rounded-2xl md:rounded-3xl overflow-hidden
             bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]">
@@ -294,7 +309,7 @@ const ProductDetail = () => {
           )}
         </section>
 
-        {/* Product info (added labels, aria, and semantic elements) */}
+        {/* Product info */}
         <section aria-label="Product details" className="space-y-5">
           <div>
             <div className="flex items-center gap-2 mb-2.5">
@@ -308,7 +323,7 @@ const ProductDetail = () => {
             </h1>
           </div>
 
-          {/* Size + Color picker (added aria-labels) */}
+          {/* Size + Color picker */}
           {hasVariants && (
             <div className="space-y-4">
               {variantSizes.length > 0 && (
@@ -380,7 +395,7 @@ const ProductDetail = () => {
             </div>
           )}
 
-          {/* Price (added aria-label) */}
+          {/* Price */}
           <div className="flex items-baseline gap-3 flex-wrap" aria-label="Product pricing">
             <div className="flex items-baseline gap-1">
               <span className="text-gray-600 dark:text-gray-400 text-xl font-bold">₦</span>
@@ -409,7 +424,7 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {/* Tags (added aria-label) */}
+          {/* Tags */}
           {product.tags && product.tags.length > 0 && (
             <div className="flex flex-wrap gap-2" aria-label="Product tags">
               {product.tags.map((tag, idx) => (
@@ -418,12 +433,12 @@ const ProductDetail = () => {
             </div>
           )}
 
-          {/* Description (unchanged) */}
+          {/* Description */}
           {product.description && (
             <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-sm md:text-[15px]">{product.description}</p>
           )}
 
-          {/* Stock status (added role and aria-label) */}
+          {/* Stock status */}
           <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.07]" role="status" aria-label={isOutOfStock ? 'Out of stock' : `In stock, ${displayStock} units available`}>
             <div className={`w-2 h-2 rounded-full shrink-0 ${isOutOfStock ? 'bg-red-500' : 'bg-emerald-500'}`} aria-hidden="true" />
             <span className="text-sm font-bold text-gray-900 dark:text-white">
@@ -431,7 +446,7 @@ const ProductDetail = () => {
             </span>
           </div>
 
-          {/* Desktop CTA (added aria-labels to qty buttons) */}
+          {/* Desktop CTA */}
           {!isOutOfStock && (
             <div className="hidden sm:flex items-center gap-3">
               <div className="flex items-center rounded-xl overflow-hidden shrink-0 bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.09]" aria-label="Quantity selector">
@@ -457,14 +472,14 @@ const ProductDetail = () => {
             </div>
           )}
 
-          {/* Out of stock message (added role) */}
+          {/* Out of stock message */}
           {isOutOfStock && (
             <div className="px-5 py-4 rounded-xl border text-sm text-red-400 font-semibold bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20" role="alert">
               Currently unavailable. Check back later.
             </div>
           )}
 
-          {/* Meta grid (unchanged) */}
+          {/* Meta grid */}
           <div className="grid grid-cols-2 gap-2.5 pt-3 border-t border-gray-200 dark:border-white/[0.06]" role="list" aria-label="Product details">
             {[
               { label:'Category', value: categoryName },
@@ -480,7 +495,7 @@ const ProductDetail = () => {
             ))}
           </div>
 
-          {/* Shipping (added aria-label) */}
+          {/* Shipping */}
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-500 dark:text-gray-400" aria-label="Shipping information">
             <div className="flex items-center gap-1.5">
               <Truck className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
@@ -494,14 +509,16 @@ const ProductDetail = () => {
         </section>
       </div>
 
-      {/* Mobile sticky CTA (added aria-labels) */}
+      {/* Mobile sticky CTA */}
       <AnimatePresence>
         {!isOutOfStock && (
           <motion.div
             initial={{ y:120, opacity:0 }} animate={{ y:0, opacity:1 }} exit={{ y:120, opacity:0 }}
             transition={{ type:'spring', stiffness:280, damping:28 }}
             className="fixed inset-x-0 z-40 sm:hidden"
-            style={{ bottom:72 }}>
+            style={{ 
+              bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' 
+            }}>
             <div className="bg-[#FCFAF5] dark:bg-[#0A0A0B] px-4 pb-3 pt-2 border-t border-gray-200 dark:border-white/[0.07]">
               <div className="flex gap-2.5">
                 <div className="flex items-center rounded-xl overflow-hidden shrink-0 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.1]" aria-label="Quantity selector">

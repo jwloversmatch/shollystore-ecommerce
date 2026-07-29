@@ -99,19 +99,19 @@ const Account = () => {
   };
 
   const handleChangePassword = async (current: string, newPw: string) => {
-  try {
-    await changePassword({
-      currentPassword: current,
-      newPassword: newPw,
-    }).unwrap();
-    toast.success("Password changed. Please log in again.");
-    dispatch(logout());
-    window.location.href = '/login';
-  } catch (err: unknown) {
-    const error = err as { data?: { message?: string } };
-    toast.error(error?.data?.message || "Failed to change password");
-  }
-};
+    try {
+      await changePassword({
+        currentPassword: current,
+        newPassword: newPw,
+      }).unwrap();
+      toast.success("Password changed. Please log in again.");
+      dispatch(logout());
+      window.location.href = "/login";
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      toast.error(error?.data?.message || "Failed to change password");
+    }
+  };
 
   const openAddAddress = () => {
     setEditingAddressId(null);
@@ -171,13 +171,29 @@ const Account = () => {
   };
 
   return (
-    <main id="main-content" className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 pb-24 md:pb-16 max-w-6xl mx-auto space-y-8" style={{ background: "#0A0A0B" }}>
-      <SEO title="My Account" description="Manage your orders and profile settings." />
+    <main
+      id="main-content"
+      className="min-h-screen p-4 md:p-6 max-w-6xl mx-auto space-y-8"
+      style={{
+        background: "#0A0A0B",
+        paddingTop: "calc(56px + env(safe-area-inset-top, 0px))",
+        paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
+      }}
+    >
+      <SEO
+        title="My Account"
+        description="Manage your orders and profile settings."
+      />
 
       <AccountHeader user={user} />
 
       {/* Tabs */}
-      <nav className="flex gap-4 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }} role="tablist" aria-label="Account sections">
+      <nav
+        className="flex gap-4 border-b"
+        style={{ borderColor: "rgba(255,255,255,0.08)" }}
+        role="tablist"
+        aria-label="Account sections"
+      >
         <button
           onClick={() => setActiveTab("orders")}
           role="tab"
