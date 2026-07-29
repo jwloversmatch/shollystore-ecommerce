@@ -40,12 +40,41 @@
   src: url('/fonts/inter-latin-700.woff2') format('woff2');
 }
 
+/* ── CSS Variables for Safe Areas ────────────────────────────────────────── */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
 /* ── Base styles ──────────────────────────────────────────────────────────── */
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   @apply bg-[#0A0A0B] text-white;
   text-rendering: optimizeSpeed;
   -webkit-font-smoothing: antialiased;
+  height: 100%;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  left: 0;
+}
+
+#root {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
 }
 
 img {
