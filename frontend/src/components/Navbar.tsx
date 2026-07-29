@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { RootState } from '../store';
 import { logout } from '../features/auth/authSlice';
 import {
@@ -70,9 +70,76 @@ const Navbar = () => {
   const { pathname }  = useLocation();
 
   const [adminDrawer, setAdminDrawer] = useState(false);
+  const topNavRef = useRef<HTMLDivElement>(null);
+  const bottomNavRef = useRef<HTMLDivElement>(null);
 
   const totalQty = cartItems.reduce((acc, i) => acc + i.qty, 0);
   const showCart = !user || user.role === 'user';
+
+  // iOS fix: prevent body scroll from affecting fixed elements
+ // iOS fix: prevent body scroll from affecting fixed elements
+useEffect(() => {
+  // Add viewport-fit=cover meta tag for PWA
+  const existingMeta = document.querySelector('meta[name="viewport"]');
+  if (existingMeta) {
+    existingMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no');
+  } else {
+    const meta = document.createElement('meta');
+    meta.name = 'viewport';
+    meta.content = 'width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no';
+    document.head.appendChild(meta);
+  }
+
+  // Prevent overscroll/bounce on iOS
+  document.body.style.overflow = 'hidden';
+  document.body.style.position = 'fixed';
+  document.body.style.width = '100%';
+  document.body.style.height = '100%';
+  
+  // Create a scrollable wrapper
+  const appRoot = document.getElementById('root');
+  if (appRoot) {
+    appRoot.style.overflow = 'auto';
+    appRoot.style.height = '100%';
+    appRoot.style.width = '100%';
+    appRoot.style.position = 'fixed';
+    appRoot.style.top = '0';
+    appRoot.style.left = '0';
+    // Use setProperty for non-standard CSS properties
+    appRoot.style.setProperty('-webkit-overflow-scrolling', 'touch');
+  }
+
+  return () => {
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.height = '';
+    if (appRoot) {
+      appRoot.style.overflow = '';
+      appRoot.style.height = '';
+      appRoot.style.width = '';
+      appRoot.style.position = '';
+      appRoot.style.top = '';
+      appRoot.style.left = '';
+      appRoot.style.removeProperty('-webkit-overflow-scrolling');
+    }
+  };
+}, []);
+
+  // Force repaint on scroll for iOS
+  useEffect(() => {
+    const handleScroll = () => {
+      if (topNavRef.current) {
+        topNavRef.current.style.transform = 'translateZ(0)';
+      }
+      if (bottomNavRef.current) {
+        bottomNavRef.current.style.transform = 'translateZ(0)';
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const isActive = (path: string) => {
     if (path === '/')      return pathname === '/';
@@ -80,16 +147,11 @@ const Navbar = () => {
     return pathname.startsWith(path);
   };
 
-  // ✅ Force full page reload on logout to clear all cached state
   const handleLogout = () => {
     dispatch(logout());
     setAdminDrawer(false);
-    
-    // Clear everything
     localStorage.removeItem('token');
     sessionStorage.clear();
-    
-    // Replace current URL with home, then force reload
     window.location.replace('/');
   };
 
@@ -98,7 +160,6 @@ const Navbar = () => {
       isActive(path) ? 'text-[#e8622a]' : 'text-gray-600 dark:text-gray-500 hover:text-black dark:hover:text-white'
     }`;
 
-  // ═══════════════════════════════════════════════════════════════════════════
   return (
     <>
       {/* Skip to content */}
@@ -113,6 +174,7 @@ const Navbar = () => {
       <nav
         className="hidden md:block fixed top-0 left-0 right-0 z-50"
         aria-label="Main navigation"
+        style={{ transform: 'translateZ(0)' }}
       >
         <div className="absolute inset-0 
           bg-[#FCFAF5]/95 dark:bg-[#111]/95 
@@ -121,7 +183,6 @@ const Navbar = () => {
           shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]" 
         />
         <div className="relative max-w-7xl mx-auto px-6 flex justify-between items-center py-4">
-          {/* Logo */}
           <Link
             to={user?.role === 'admin' ? '/admin' : '/'}
             className="text-2xl font-black tracking-tight shrink-0 flex items-center gap-2 text-gray-900 dark:text-white"
@@ -131,7 +192,6 @@ const Navbar = () => {
             <span>{BRAND_NAME}</span>
           </Link>
 
-          {/* Admin links */}
           {user?.role === 'admin' && (
             <div className="flex items-center gap-5" role="menubar">
               {ADMIN_LINKS.map(l => (
@@ -142,14 +202,12 @@ const Navbar = () => {
             </div>
           )}
 
-          {/* User links */}
           {user?.role === 'user' && (
             <Link to="/account" className={desktopLinkCls('/account')}>
               <User className="w-4 h-4" aria-hidden="true" /> Account
             </Link>
           )}
 
-          {/* Right: cart + auth + theme toggle */}
           <div className="flex items-center gap-4 shrink-0">
             <ThemeToggle />
 
@@ -209,107 +267,121 @@ const Navbar = () => {
       </nav>
 
       {/* ══════ MOBILE — FIXED top bar ═══════════════════════════════════ */}
-      <nav
-        className="md:hidden fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-5 py-3
-          bg-[#FCFAF5] dark:bg-[#0A0A0B] backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.06]
-          shadow-sm"
-        aria-label="Mobile navigation"
+      <div 
+        ref={topNavRef}
+        className="md:hidden fixed top-0 left-0 right-0 z-50"
         style={{ 
-          backgroundColor: 'rgba(252, 250, 245, 0.95)',
-          // For dark mode, we need to use CSS custom property or a class
+          height: '56px',
+          transform: 'translateZ(0)',
+          WebkitTransform: 'translateZ(0)',
+          willChange: 'transform',
         }}
       >
-        <Link
-          to={user?.role === 'admin' ? '/admin' : '/'}
-          className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white"
-          aria-label={`${BRAND_NAME} - Home`}
+        <nav
+          className="w-full h-full flex justify-between items-center px-5
+            bg-[#FCFAF5] dark:bg-[#0A0A0B] 
+            border-b border-gray-200 dark:border-white/[0.06]"
+          aria-label="Mobile navigation"
         >
-          <Store className="w-5 h-5" style={{ color: ACCENT }} aria-hidden="true" />
-          <span>{BRAND_NAME}</span>
-        </Link>
+          <Link
+            to={user?.role === 'admin' ? '/admin' : '/'}
+            className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white"
+            aria-label={`${BRAND_NAME} - Home`}
+          >
+            <Store className="w-5 h-5" style={{ color: ACCENT }} aria-hidden="true" />
+            <span>{BRAND_NAME}</span>
+          </Link>
 
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          {showCart && (
-            <Link
-              to="/cart"
-              className="relative p-1.5 rounded-xl transition-colors"
-              style={{ color: isActive('/cart') ? ACCENT : '#6b7280' }}
-              aria-label={`Cart with ${totalQty} items`}
-            >
-              <ShoppingCart className="w-5 h-5" aria-hidden="true" />
-              {totalQty > 0 && (
-                <span
-                  className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
-                  style={{ background: ACCENT }}
-                  aria-hidden="true"
-                >
-                  {totalQty}
-                </span>
-              )}
-            </Link>
-          )}
-        </div>
-      </nav>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            {showCart && (
+              <Link
+                to="/cart"
+                className="relative p-1.5 rounded-xl transition-colors"
+                style={{ color: isActive('/cart') ? ACCENT : '#6b7280' }}
+                aria-label={`Cart with ${totalQty} items`}
+              >
+                <ShoppingCart className="w-5 h-5" aria-hidden="true" />
+                {totalQty > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
+                    style={{ background: ACCENT }}
+                    aria-hidden="true"
+                  >
+                    {totalQty}
+                  </span>
+                )}
+              </Link>
+            )}
+          </div>
+        </nav>
+      </div>
 
       {/* ══════ MOBILE — fixed bottom nav ════════════════════════════════════ */}
-      <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-50
-          bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]
-          shadow-lg"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 6px)' }}
-        aria-label="Bottom navigation"
+      <div
+        ref={bottomNavRef}
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50"
+        style={{ 
+          paddingBottom: 'env(safe-area-inset-bottom, 6px)',
+          transform: 'translateZ(0)',
+          WebkitTransform: 'translateZ(0)',
+          willChange: 'transform',
+        }}
       >
-        <div className="flex justify-around items-center px-2 pt-2 pb-1">
+        <nav
+          className="w-full bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
+          aria-label="Bottom navigation"
+        >
+          <div className="flex justify-around items-center px-2 pt-2 pb-1">
+            <NavBtn to={user?.role === 'admin' ? '/admin' : '/'} icon={<Home className="w-5 h-5" aria-hidden="true" />}
+              label="Home" active={user?.role === 'admin' ? pathname === '/admin' : pathname === '/'} />
 
-          <NavBtn to={user?.role === 'admin' ? '/admin' : '/'} icon={<Home className="w-5 h-5" aria-hidden="true" />}
-            label="Home" active={user?.role === 'admin' ? pathname === '/admin' : pathname === '/'} />
+            {showCart && (
+              <NavBtn to="/cart" icon={<ShoppingCart className="w-5 h-5" aria-hidden="true" />}
+                label="Cart" active={isActive('/cart')} badge={totalQty} />
+            )}
 
-          {showCart && (
-            <NavBtn to="/cart" icon={<ShoppingCart className="w-5 h-5" aria-hidden="true" />}
-              label="Cart" active={isActive('/cart')} badge={totalQty} />
-          )}
+            {user?.role === 'admin' && (
+              <NavBtn to="/admin/coupons" icon={<BadgePercent className="w-5 h-5" aria-hidden="true" />}
+                label="Coupons" active={isActive('/admin/coupons')} />
+            )}
 
-          {user?.role === 'admin' && (
-            <NavBtn to="/admin/coupons" icon={<BadgePercent className="w-5 h-5" aria-hidden="true" />}
-              label="Coupons" active={isActive('/admin/coupons')} />
-          )}
+            {user?.role === 'user' && (
+              <NavBtn to="/account" icon={<User className="w-5 h-5" aria-hidden="true" />}
+                label="Account" active={isActive('/account')} />
+            )}
 
-          {user?.role === 'user' && (
-            <NavBtn to="/account" icon={<User className="w-5 h-5" aria-hidden="true" />}
-              label="Account" active={isActive('/account')} />
-          )}
+            {!user && (
+              <NavBtn to="/login" icon={<User className="w-5 h-5" aria-hidden="true" />}
+                label="Login" active={isActive('/login')} />
+            )}
 
-          {!user && (
-            <NavBtn to="/login" icon={<User className="w-5 h-5" aria-hidden="true" />}
-              label="Login" active={isActive('/login')} />
-          )}
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => setAdminDrawer(true)}
+                className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-colors duration-150"
+                style={{ color: adminDrawer ? ACCENT : '#6b7280' }}
+                aria-label="More admin options"
+                aria-expanded={adminDrawer}
+              >
+                <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
+                <span className="text-[9px] font-extrabold uppercase tracking-wide">More</span>
+              </button>
+            )}
 
-          {user?.role === 'admin' && (
-            <button
-              onClick={() => setAdminDrawer(true)}
-              className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-colors duration-150"
-              style={{ color: adminDrawer ? ACCENT : '#6b7280' }}
-              aria-label="More admin options"
-              aria-expanded={adminDrawer}
-            >
-              <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
-              <span className="text-[9px] font-extrabold uppercase tracking-wide">More</span>
-            </button>
-          )}
-
-          {user?.role === 'user' && (
-            <button
-              onClick={handleLogout}
-              className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] text-gray-600 hover:text-red-400 transition-colors"
-              aria-label="Log out"
-            >
-              <LogOut className="w-5 h-5" aria-hidden="true" />
-              <span className="text-[9px] font-extrabold uppercase tracking-wide">Logout</span>
-            </button>
-          )}
-        </div>
-      </nav>
+            {user?.role === 'user' && (
+              <button
+                onClick={handleLogout}
+                className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] text-gray-600 hover:text-red-400 transition-colors"
+                aria-label="Log out"
+              >
+                <LogOut className="w-5 h-5" aria-hidden="true" />
+                <span className="text-[9px] font-extrabold uppercase tracking-wide">Logout</span>
+              </button>
+            )}
+          </div>
+        </nav>
+      </div>
 
       {/* ══════ ADMIN BOTTOM SHEET (mobile) ══════════════════════════════════ */}
       <AnimatePresence>
@@ -332,12 +404,15 @@ const Navbar = () => {
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
               className="fixed bottom-0 inset-x-0 z-[70] rounded-t-3xl md:hidden
                 bg-[#FCFAF5] dark:bg-[#141414] border-t border-gray-200 dark:border-white/[0.09]"
-              style={{ paddingBottom: 'env(safe-area-inset-bottom, 24px)' }}
+              style={{ 
+                paddingBottom: 'env(safe-area-inset-bottom, 24px)',
+                transform: 'translateZ(0)',
+                WebkitTransform: 'translateZ(0)',
+              }}
               role="dialog"
               aria-modal="true"
               aria-label="Admin menu"
             >
-
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-white/15" />
               </div>
@@ -397,7 +472,6 @@ const Navbar = () => {
           </>
         )}
       </AnimatePresence>
-
     </>
   );
 };
