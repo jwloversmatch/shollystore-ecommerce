@@ -7,8 +7,12 @@ const ProtectedRoute = () => {
   const location = useLocation();
 
   if (!user) {
-    // Remember where the user was trying to go
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+
+  // Admins shouldn't land in the customer shop flow — send them to their own dashboard
+  if (user.role === "admin") {
+    return <Navigate to="/admin" replace />;
   }
 
   return <Outlet />;
