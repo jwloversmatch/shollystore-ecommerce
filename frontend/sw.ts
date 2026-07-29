@@ -9,15 +9,11 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
 declare let self: ServiceWorkerGlobalScope;
 
-// Define missing types
 interface ExtendedNotificationOptions extends NotificationOptions {
   vibrate?: number[];
   tag?: string;
   renotify?: boolean;
-  actions?: Array<{
-    action: string;
-    title: string;
-  }>;
+  actions?: Array<{ action: string; title: string }>;
 }
 
 interface SyncEventLike {
@@ -28,7 +24,21 @@ interface SyncEventLike {
 // Precache assets injected by vite-plugin-pwa
 precacheAndRoute(self.__WB_MANIFEST);
 
-// Immediately claim clients
+// Clear old caches on activate
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((name) => name !== 'images' && name !== 'fonts' && name !== 'static-resources' && name !== 'api-cache')
+          .map((name) => caches.delete(name))
+      );
+    }).then(() => {
+      self.clients.claim();
+    })
+  );
+});
+
 self.skipWaiting();
 clientsClaim();
 
@@ -38,14 +48,8 @@ registerRoute(
   new CacheFirst({
     cacheName: 'images',
     plugins: [
-      new ExpirationPlugin({
-        maxEntries: 60,
-        maxAgeSeconds: 30 * 24 * 60 * 60,
-        purgeOnQuotaError: true,
-      }),
-      new CacheableResponsePlugin({
-        statuses: [0, 200],
-      }),
+      new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 30 * 24 * 60 * 60, purgeOnQuotaError: true }),
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
     ],
   })
 );
@@ -56,34 +60,20 @@ registerRoute(
   new CacheFirst({
     cacheName: 'fonts',
     plugins: [
-      new ExpirationPlugin({
-        maxEntries: 10,
-        maxAgeSeconds: 60 * 60 * 24 * 365,
-        purgeOnQuotaError: true,
-      }),
-      new CacheableResponsePlugin({
-        statuses: [0, 200],
-      }),
+      new ExpirationPlugin({ maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365, purgeOnQuotaError: true }),
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
     ],
   })
 );
 
 // ── Static Assets (JS, CSS) ────────────────────────────────────────────────
 registerRoute(
-  ({ request }) =>
-    request.destination === 'script' ||
-    request.destination === 'style',
+  ({ request }) => request.destination === 'script' || request.destination === 'style',
   new StaleWhileRevalidate({
     cacheName: 'static-resources',
     plugins: [
-      new ExpirationPlugin({
-        maxEntries: 30,
-        maxAgeSeconds: 24 * 60 * 60,
-        purgeOnQuotaError: true,
-      }),
-      new CacheableResponsePlugin({
-        statuses: [0, 200],
-      }),
+      new ExpirationPlugin({ maxEntries: 30, maxAgeSeconds: 24 * 60 * 60, purgeOnQuotaError: true }),
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
     ],
   })
 );
@@ -95,28 +85,8 @@ registerRoute(
     cacheName: 'api-cache',
     networkTimeoutSeconds: 3,
     plugins: [
-      new ExpirationPlugin({
-        maxEntries: 50,
-        maxAgeSeconds: 5 * 60,
-        purgeOnQuotaError: true,
-      }),
-      new CacheableResponsePlugin({
-        statuses: [0, 200],
-      }),
-    ],
-  })
-);
-
-// ── Offline Fallback ───────────────────────────────────────────────────────
-registerRoute(
-  ({ request }) => request.mode === 'navigate',
-  new NetworkFirst({
-    cacheName: 'pages',
-    plugins: [
-      new ExpirationPlugin({
-        maxEntries: 10,
-        maxAgeSeconds: 60 * 60 * 24,
-      }),
+      new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 5 * 60, purgeOnQuotaError: true }),
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
     ],
   })
 );
@@ -144,12 +114,9 @@ self.addEventListener('push', (event: Event) => {
       ],
     };
 
-    pushEvent.waitUntil(
-      self.registration.showNotification(title, options)
-    );
+    pushEvent.waitUntil(self.registration.showNotification(title, options));
   } catch (error) {
     console.error('[SW] Push notification error:', error);
-
     pushEvent.waitUntil(
       self.registration.showNotification('ShollyStore', {
         body: 'You have a new notification',
