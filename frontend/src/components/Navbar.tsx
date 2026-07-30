@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { RootState } from "../store";
 import { logout } from "../features/auth/authSlice";
@@ -24,32 +24,34 @@ import ThemeToggle from "./ThemeToggle";
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
 const BRAND_NAME = "ShollyStore";
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 const ADMIN_LINKS = [
   {
     to: "/admin",
     label: "Dashboard",
-    icon: <LayoutDashboard className="w-5 h-5" />,
+    icon: <LayoutDashboard className="w-5 h-5" aria-hidden="true" />,
   },
   {
     to: "/admin/hero-slides",
     label: "Hero Slides",
-    icon: <Image className="w-5 h-5" />,
+    icon: <Image className="w-5 h-5" aria-hidden="true" />,
   },
   {
     to: "/admin/categories",
     label: "Categories",
-    icon: <Tag className="w-5 h-5" />,
+    icon: <Tag className="w-5 h-5" aria-hidden="true" />,
   },
   {
     to: "/admin/coupons",
     label: "Coupons",
-    icon: <BadgePercent className="w-5 h-5" />,
+    icon: <BadgePercent className="w-5 h-5" aria-hidden="true" />,
   },
   {
     to: "/admin/settings",
     label: "Settings",
-    icon: <Settings className="w-5 h-5" />,
+    icon: <Settings className="w-5 h-5" aria-hidden="true" />,
   },
 ];
 
@@ -61,41 +63,51 @@ interface NavBtnProps {
   active: boolean;
   badge?: number;
 }
-const NavBtn: React.FC<NavBtnProps> = ({ to, icon, label, active, badge }) => (
-  <Link
-    to={to}
-    className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] group"
-  >
-    {active && (
-      <motion.div
-        layoutId="bottom-nav-indicator"
-        className="absolute -top-2 left-1/2 -translate-x-1/2 w-5 h-[3px] rounded-full"
-        style={{ background: ACCENT }}
-        transition={{ type: "spring", stiffness: 420, damping: 30 }}
-      />
-    )}
-    <div
-      className="relative transition-transform duration-150 group-active:scale-90"
-      style={{ color: active ? ACCENT : "#6b7280" }}
+const NavBtn: React.FC<NavBtnProps> = ({ to, icon, label, active, badge }) => {
+  const accessibleLabel =
+    badge && badge > 0 ? `${label}, ${badge} ${badge === 1 ? "item" : "items"}` : label;
+
+  return (
+    <Link
+      to={to}
+      className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] group"
+      aria-label={accessibleLabel}
+      aria-current={active ? "page" : undefined}
     >
-      {icon}
-      {(badge ?? 0) > 0 && (
-        <span
-          className="absolute -top-1.5 -right-1.5 text-white text-[8px] font-black min-w-[14px] min-h-[14px] rounded-full flex items-center justify-center px-0.5"
+      {active && (
+        <motion.div
+          layoutId="bottom-nav-indicator"
+          className="absolute -top-2 left-1/2 -translate-x-1/2 w-5 h-[3px] rounded-full"
           style={{ background: ACCENT }}
-        >
-          {badge}
-        </span>
+          transition={{ type: "spring", stiffness: 420, damping: 30 }}
+          aria-hidden="true"
+        />
       )}
-    </div>
-    <span
-      className="text-[9px] font-extrabold uppercase tracking-wide"
-      style={{ color: active ? ACCENT : "#6b7280" }}
-    >
-      {label}
-    </span>
-  </Link>
-);
+      <div
+        className="relative transition-transform duration-150 group-active:scale-90"
+        style={{ color: active ? ACCENT : "#6b7280" }}
+        aria-hidden="true"
+      >
+        {icon}
+        {(badge ?? 0) > 0 && (
+          <span
+            className="absolute -top-1.5 -right-1.5 text-white text-[8px] font-black min-w-[14px] min-h-[14px] rounded-full flex items-center justify-center px-0.5"
+            style={{ background: ACCENT }}
+          >
+            {badge}
+          </span>
+        )}
+      </div>
+      <span
+        className="text-[9px] font-extrabold uppercase tracking-wide"
+        style={{ color: active ? ACCENT : "#6b7280" }}
+        aria-hidden="true"
+      >
+        {label}
+      </span>
+    </Link>
+  );
+};
 
 // ─── Main component ───────────────────────────────────────────────────────────
 const Navbar = () => {
@@ -106,6 +118,8 @@ const Navbar = () => {
   const { pathname } = useLocation();
 
   const [adminDrawer, setAdminDrawer] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
 
   const totalQty = cartItems.reduce((acc, i) => acc + i.qty, 0);
   const showCart = !user || user.role === "user";
@@ -129,11 +143,60 @@ const Navbar = () => {
         : "text-gray-600 dark:text-gray-500 hover:text-black dark:hover:text-white"
     }`;
 
+  // Focus trap for the admin bottom sheet: moves focus in on open, cycles
+  // Tab within it, closes on Escape, restores focus to the trigger on close.
+    useEffect(() => {
+    if (!adminDrawer) return;
+
+    const drawer = drawerRef.current;
+    const moreButton = moreButtonRef.current; 
+    const focusable = drawer
+      ? Array.from(drawer.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+      : [];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    first?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setAdminDrawer(false);
+        return;
+      }
+      if (e.key === "Tab" && focusable.length > 0) {
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      moreButton?.focus(); // Use captured variable
+    };
+  }, [adminDrawer]);
+
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <>
+            {/* Skip to content */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-[#e8622a] focus:text-white focus:rounded-xl focus:font-bold"
+      >
+        Skip to main content
+      </a>
+
       {/* ══════ DESKTOP — fixed top bar (left exactly where it was) ═══════ */}
-      <nav className="hidden md:block fixed top-0 left-0 right-0 z-50">
+      <nav
+        className="hidden md:block fixed top-0 left-0 right-0 z-50"
+        aria-label="Main navigation"
+      >
         <div
           className="absolute inset-0 
           bg-[#FCFAF5]/95 dark:bg-[#111]/95 
@@ -146,8 +209,9 @@ const Navbar = () => {
           <Link
             to={user?.role === "admin" ? "/admin" : "/"}
             className="text-2xl font-black tracking-tight shrink-0 flex items-center gap-2 text-gray-900 dark:text-white"
+            aria-label={`${BRAND_NAME} - Home`}
           >
-            <Store className="w-6 h-6" style={{ color: ACCENT }} />
+            <Store className="w-6 h-6" style={{ color: ACCENT }} aria-hidden="true" />
             <span>{BRAND_NAME}</span>
           </Link>
 
@@ -155,7 +219,12 @@ const Navbar = () => {
           {user?.role === "admin" && (
             <div className="flex items-center gap-5">
               {ADMIN_LINKS.map((l) => (
-                <Link key={l.to} to={l.to} className={desktopLinkCls(l.to)}>
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  className={desktopLinkCls(l.to)}
+                  aria-current={isActive(l.to) ? "page" : undefined}
+                >
                   {l.icon} {l.label}
                 </Link>
               ))}
@@ -164,8 +233,12 @@ const Navbar = () => {
 
           {/* User links */}
           {user?.role === "user" && (
-            <Link to="/account" className={desktopLinkCls("/account")}>
-              <User className="w-4 h-4" /> Account
+            <Link
+              to="/account"
+              className={desktopLinkCls("/account")}
+              aria-current={isActive("/account") ? "page" : undefined}
+            >
+              <User className="w-4 h-4" aria-hidden="true" /> Account
             </Link>
           )}
 
@@ -174,13 +247,18 @@ const Navbar = () => {
             <ThemeToggle />
 
             {showCart && (
-              <Link to="/cart" className="relative p-1">
+              <Link
+                to="/cart"
+                className="relative p-1"
+                aria-label={`Cart with ${totalQty} ${totalQty === 1 ? "item" : "items"}`}
+              >
                 <ShoppingCart
                   className={`w-5 h-5 transition-colors ${
                     isActive("/cart")
                       ? "text-[#e8622a]"
                       : "text-gray-600 dark:text-gray-500 hover:text-black dark:hover:text-white"
                   }`}
+                  aria-hidden="true"
                 />
                 <AnimatePresence>
                   {totalQty > 0 && (
@@ -191,6 +269,7 @@ const Navbar = () => {
                       exit={{ scale: 0, opacity: 0 }}
                       className="absolute -top-1 -right-1 text-white text-[9px] font-black min-w-[18px] min-h-[18px] rounded-full flex items-center justify-center px-1"
                       style={{ background: ACCENT }}
+                      aria-hidden="true"
                     >
                       {totalQty}
                     </motion.span>
@@ -206,7 +285,7 @@ const Navbar = () => {
                 whileTap={{ scale: 0.97 }}
                 className="flex items-center gap-1.5 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-red-500 transition-colors"
               >
-                <LogOut className="w-4 h-4" /> Logout
+                <LogOut className="w-4 h-4" aria-hidden="true" /> Logout
               </motion.button>
             ) : (
               <motion.div
@@ -221,7 +300,7 @@ const Navbar = () => {
                     boxShadow: `0 4px 14px ${ACCENT}55`,
                   }}
                 >
-                  <User className="w-4 h-4" /> Login
+                  <User className="w-4 h-4" aria-hidden="true" /> Login
                 </Link>
               </motion.div>
             )}
@@ -229,10 +308,7 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* ══════ Everything mobile-fixed is portaled straight to <body> ══════
-          No ancestor between here and the real viewport, so nothing upstream
-          (ThemeProvider or otherwise) can hijack what "fixed" is measured
-          against. */}
+      {/* ══════ Everything mobile-fixed is portaled straight to <body> ══════ */}
       {createPortal(
         <>
           {/* ══════ MOBILE — FIXED top bar ═══════════════════════════════ */}
@@ -250,8 +326,9 @@ const Navbar = () => {
               <Link
                 to={user?.role === "admin" ? "/admin" : "/"}
                 className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white"
+                aria-label={`${BRAND_NAME} - Home`}
               >
-                <Store className="w-5 h-5" style={{ color: ACCENT }} />
+                <Store className="w-5 h-5" style={{ color: ACCENT }} aria-hidden="true" />
                 <span>{BRAND_NAME}</span>
               </Link>
 
@@ -262,12 +339,14 @@ const Navbar = () => {
                     to="/cart"
                     className="relative p-1.5 rounded-xl transition-colors"
                     style={{ color: isActive("/cart") ? ACCENT : "#6b7280" }}
+                    aria-label={`Cart with ${totalQty} ${totalQty === 1 ? "item" : "items"}`}
                   >
-                    <ShoppingCart className="w-5 h-5" />
+                    <ShoppingCart className="w-5 h-5" aria-hidden="true" />
                     {totalQty > 0 && (
                       <span
                         className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
                         style={{ background: ACCENT }}
+                        aria-hidden="true"
                       >
                         {totalQty}
                       </span>
@@ -336,11 +415,16 @@ const Navbar = () => {
 
               {user?.role === "admin" && (
                 <button
+                  ref={moreButtonRef}
                   onClick={() => setAdminDrawer(true)}
                   className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-colors duration-150"
                   style={{ color: adminDrawer ? ACCENT : "#6b7280" }}
+                  aria-label="More admin options"
+                  aria-haspopup="dialog"
+                  aria-expanded={adminDrawer}
+                  aria-controls="admin-drawer-sheet"
                 >
-                  <MoreHorizontal className="w-5 h-5" />
+                  <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
                   <span className="text-[9px] font-extrabold uppercase tracking-wide">
                     More
                   </span>
@@ -352,7 +436,7 @@ const Navbar = () => {
                   onClick={handleLogout}
                   className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] text-gray-600 hover:text-red-400 transition-colors"
                 >
-                  <LogOut className="w-5 h-5" />
+                  <LogOut className="w-5 h-5" aria-hidden="true" />
                   <span className="text-[9px] font-extrabold uppercase tracking-wide">
                     Logout
                   </span>
@@ -372,10 +456,13 @@ const Navbar = () => {
                   exit={{ opacity: 0 }}
                   className="fixed inset-0 z-[60] md:hidden bg-black/70 dark:bg-black/70"
                   onClick={() => setAdminDrawer(false)}
+                  aria-hidden="true"
                 />
 
                 <motion.div
                   key="sheet"
+                  ref={drawerRef}
+                  id="admin-drawer-sheet"
                   initial={{ y: "100%" }}
                   animate={{ y: 0 }}
                   exit={{ y: "100%" }}
@@ -386,8 +473,11 @@ const Navbar = () => {
                     paddingBottom: "env(safe-area-inset-bottom, 24px)",
                     boxSizing: "border-box",
                   }}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="admin-drawer-title"
                 >
-                  <div className="flex justify-center pt-3 pb-1">
+                  <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
                     <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-white/15" />
                   </div>
 
@@ -399,7 +489,10 @@ const Navbar = () => {
                       >
                         Admin
                       </p>
-                      <h2 className="text-xl font-black text-gray-900 dark:text-white">
+                      <h2
+                        id="admin-drawer-title"
+                        className="text-xl font-black text-gray-900 dark:text-white"
+                      >
                         Menu
                       </h2>
                     </div>
@@ -408,8 +501,9 @@ const Navbar = () => {
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-200 dark:bg-white/7"
+                      aria-label="Close admin menu"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-4 h-4" aria-hidden="true" />
                     </motion.button>
                   </div>
 
@@ -431,6 +525,7 @@ const Navbar = () => {
                                 ? "bg-[#e8622a]/15 border-[#e8622a]/40 text-[#e8622a]"
                                 : "bg-gray-200 dark:bg-[#1c1c1c] border-gray-300 dark:border-white/6 text-gray-700 dark:text-[#9ca3af]"
                             }`}
+                            aria-current={active ? "page" : undefined}
                           >
                             {l.icon}
                             <span className="text-sm font-bold">{l.label}</span>
@@ -446,7 +541,7 @@ const Navbar = () => {
                       whileTap={{ scale: 0.97 }}
                       className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold text-red-400 border border-red-500/20 transition-colors bg-red-50 dark:bg-red-500/6"
                     >
-                      <LogOut className="w-4 h-4" /> Sign Out
+                      <LogOut className="w-4 h-4" aria-hidden="true" /> Sign Out
                     </motion.button>
                   </div>
                 </motion.div>

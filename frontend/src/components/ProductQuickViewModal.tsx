@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '../features/cart/cartSlice';
@@ -8,6 +8,8 @@ import { getCloudinaryUrl } from '../utils/cloudinary';
 import type { IVariant } from '../types/home';
 
 const ACCENT = '#e8622a';
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 // ─── Color mapping ──────────────────────────────────────────────────────────
 const colorMap: Record<string, string> = {
@@ -60,6 +62,7 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
   const dispatch = useDispatch();
   const [qty, setQty] = useState(1);
   const [imageError, setImageError] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   // ── Variant state: size + color ────────────────────────────────────────
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -123,6 +126,45 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
   const displayCompareAtPrice: number | undefined = activeVariant?.compareAtPrice ?? product?.compareAtPrice ?? undefined;
   const hasSalePrice = !!(displayCompareAtPrice && displayCompareAtPrice > displayPrice);
 
+  // Focus trap: moves focus into the dialog on open, cycles Tab within it,
+  // closes on Escape, restores focus to whatever opened it (e.g. the
+  // product card) on close.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const dialog = dialogRef.current;
+    const focusable = dialog
+      ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+      : [];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    first?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key === 'Tab' && focusable.length > 0) {
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [isOpen, onClose]);
+
   // ══════ EARLY RETURN (after all hooks) ════════════════════════════════
   if (!product) return null;
 
@@ -168,6 +210,7 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/60 dark:bg-black/70 backdrop-blur-sm z-50"
             onClick={onClose}
+            aria-hidden="true"
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -177,6 +220,10 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
             className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
           >
             <div
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="quickview-product-name"
               className="rounded-3xl shadow-2xl w-full max-w-2xl border relative max-h-[90vh] overflow-y-auto
                 bg-[#FCFAF5] dark:bg-[#141414]
                 border-gray-200 dark:border-white/[0.08]
@@ -188,13 +235,15 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                 className="absolute top-4 right-4 p-2 rounded-full transition z-10
                   text-gray-500 hover:text-gray-900 dark:hover:text-white
                   hover:bg-gray-100 dark:hover:bg-white/10"
+                aria-label="Close quick view"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
 
               <div
                 className="absolute top-0 inset-x-0 h-px rounded-t-3xl"
                 style={{ background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }}
+                aria-hidden="true"
               />
 
               <div className="grid md:grid-cols-2 gap-6 p-6 md:p-8">
@@ -215,7 +264,7 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                     />
                   ) : (
                     <div className="flex flex-col items-center text-gray-500 dark:text-gray-600">
-                      <ImageOff className="w-16 h-16" />
+                      <ImageOff className="w-16 h-16" aria-hidden="true" />
                       <span className="text-xs mt-2">No image</span>
                     </div>
                   )}
@@ -230,7 +279,7 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                     >
                       {categoryName}
                     </span>
-                    <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white">
+                    <h2 id="quickview-product-name" className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white">
                       {product.name}
                     </h2>
                   </div>
@@ -239,8 +288,8 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                   {hasVariants && (
                     <div className="space-y-3">
                       {variantSizes.length > 0 && (
-                        <>
-                          <p className="text-xs font-bold text-gray-500 mb-1">Size</p>
+                        <fieldset className="border-0 m-0 p-0">
+                          <legend className="text-xs font-bold text-gray-500 mb-1">Size</legend>
                           <div className="flex gap-2 flex-wrap">
                             {variantSizes.map(size => (
                               <button
@@ -254,6 +303,7 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                                     return prev;
                                   });
                                 }}
+                                aria-pressed={selectedSize === size}
                                 className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
                                   selectedSize === size
                                     ? 'bg-[#e8622a] text-white border-[#e8622a]'
@@ -264,13 +314,15 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                               </button>
                             ))}
                           </div>
-                        </>
+                        </fieldset>
                       )}
 
                       {/* PATCH 4: show colorsToShow directly */}
                       {colorsToShow.length > 0 && (
-                        <>
-                          <p className="text-xs font-bold text-gray-500 mb-1">Color</p>
+                        <fieldset className="border-0 m-0 p-0">
+                          <legend className="text-xs font-bold text-gray-500 mb-1">
+                            Color{selectedColor ? `: ${selectedColor}` : ''}
+                          </legend>
                           <div className="flex gap-2.5 flex-wrap">
                             {colorsToShow.map(color => {
                               const hex = getColorHex(color);
@@ -279,6 +331,8 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                                   key={color}
                                   onClick={() => setSelectedColor(color)}
                                   title={color}
+                                  aria-label={`Color: ${color}`}
+                                  aria-pressed={selectedColor === color}
                                   className="relative w-9 h-9 rounded-full border-2 transition-all hover:scale-110"
                                   style={{
                                     backgroundColor: hex || '#e5e7eb',
@@ -293,12 +347,12 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                                   }}
                                 >
                                   {!hex && (
-                                    <span className="text-[10px] font-black uppercase text-gray-800 dark:text-white">
+                                    <span className="text-[10px] font-black uppercase text-gray-800 dark:text-white" aria-hidden="true">
                                       {color.charAt(0)}
                                     </span>
                                   )}
                                   {selectedColor === color && (
-                                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white flex items-center justify-center">
+                                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white flex items-center justify-center" aria-hidden="true">
                                       <svg
                                         className="w-2.5 h-2.5 text-[#e8622a]"
                                         fill="currentColor"
@@ -316,7 +370,7 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                               );
                             })}
                           </div>
-                        </>
+                        </fieldset>
                       )}
                     </div>
                   )}
@@ -327,14 +381,12 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                       ₦{displayPrice.toLocaleString()}
                     </p>
 
-                    {/* Show "Starting Price" badge when no variant is selected */}
                     {hasVariants && !activeVariant && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-extrabold bg-[#e8622a]/10 text-[#e8622a] border border-[#e8622a]/25">
                         Starting Price
                       </span>
                     )}
 
-                    {/* Show selected variant info when a variant is active */}
                     {activeVariant && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-extrabold bg-[#e8622a]/15 text-[#e8622a] border border-[#e8622a]/30">
                         {[activeVariant.size, activeVariant.color].filter(Boolean).join(' / ')} Price
@@ -365,6 +417,7 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                       className={`inline-block w-3 h-3 rounded-full ${
                         isOutOfStock ? 'bg-red-500' : 'bg-green-500'
                       }`}
+                      aria-hidden="true"
                     />
                     <span className="text-sm font-bold text-gray-600 dark:text-gray-300">
                       {isOutOfStock
@@ -384,23 +437,25 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                         <button
                           onClick={decrement}
                           disabled={qty <= 1}
+                          aria-label="Decrease quantity"
                           className="w-10 h-10 flex items-center justify-center rounded-lg
                             text-gray-500 hover:text-gray-900 dark:hover:text-white
                             hover:bg-gray-200 dark:hover:bg-white/5 transition disabled:opacity-40"
                         >
-                          <Minus className="w-4 h-4" />
+                          <Minus className="w-4 h-4" aria-hidden="true" />
                         </button>
-                        <span className="font-bold w-8 text-center text-gray-900 dark:text-white">
+                        <span className="font-bold w-8 text-center text-gray-900 dark:text-white" aria-live="polite">
                           {qty}
                         </span>
                         <button
                           onClick={increment}
                           disabled={qty >= displayStock}
+                          aria-label="Increase quantity"
                           className="w-10 h-10 flex items-center justify-center rounded-lg
                             text-gray-500 hover:text-gray-900 dark:hover:text-white
                             hover:bg-gray-200 dark:hover:bg-white/5 transition disabled:opacity-40"
                         >
-                          <Plus className="w-4 h-4" />
+                          <Plus className="w-4 h-4" aria-hidden="true" />
                         </button>
                       </div>
 
@@ -413,7 +468,7 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
                           boxShadow: `0 8px 24px ${ACCENT}44`,
                         }}
                       >
-                        <ShoppingCart className="w-5 h-5" />
+                        <ShoppingCart className="w-5 h-5" aria-hidden="true" />
                         Add to Cart
                       </button>
                     </div>

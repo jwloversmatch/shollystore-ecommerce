@@ -1,9 +1,9 @@
 // src/App.tsx
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { HelmetProvider } from 'react-helmet-async';
-import { motion } from 'framer-motion';
+import { motion, MotionConfig } from 'framer-motion';
 
 import Navbar from './components/Navbar';
 import AdminRoute from './components/AdminRoute';
@@ -52,6 +52,50 @@ const LoadingFallback = () => (
 
 function AppContent() {
   const location = useLocation();
+  const isFirstRender = useRef(true);
+
+  // Move focus to the page's <main> on every route change AFTER the first,
+  // so keyboard/screen-reader users get re-oriented instead of silently
+  // staying focused on the nav link they clicked. Skipped on first mount
+  // so it doesn't steal the browser's normal initial-load focus.
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const main = document.getElementById('main-content');
+    main?.focus({ preventScroll: true });
+  }, [location.pathname]);
+
+  // iOS PWA fix: Move scroll to a wrapper div, not body/root
+  useEffect(() => {
+    // Don't apply this on desktop
+    if (window.innerWidth >= 768) return;
+
+    const html = document.documentElement;
+    const body = document.body;
+
+    // Prevent body/html from scrolling
+    html.style.overflow = 'hidden';
+    html.style.height = '100%';
+    body.style.overflow = 'hidden';
+    body.style.height = '100%';
+    body.style.position = 'fixed';
+    body.style.width = '100%';
+    body.style.top = '0';
+    body.style.left = '0';
+
+    return () => {
+      html.style.overflow = '';
+      html.style.height = '';
+      body.style.overflow = '';
+      body.style.height = '';
+      body.style.position = '';
+      body.style.width = '';
+      body.style.top = '';
+      body.style.left = '';
+    };
+  }, []);
 
   // Hide navbar on specific pages
   const hideNavbar = ['/cart', '/checkout', '/404'].includes(location.pathname);
@@ -60,12 +104,13 @@ function AppContent() {
     <>
       {/* Navbar rendered OUTSIDE the scrollable area */}
       {!hideNavbar && <Navbar />}
-
+      
       {/* Scrollable content area */}
-      <div
+      <div 
         id="app-scroll-container"
         className="md:static"
         style={{
+          height: window.innerWidth < 768 ? '100%' : 'auto',
           overflowY: window.innerWidth < 768 ? 'auto' : 'visible',
           WebkitOverflowScrolling: 'touch',
           position: window.innerWidth < 768 ? 'fixed' : 'static',
@@ -73,6 +118,7 @@ function AppContent() {
           left: 0,
           right: 0,
           bottom: 0,
+          width: '100%',
         }}
       >
         <Suspense fallback={<LoadingFallback />}>
@@ -115,21 +161,23 @@ function App() {
   return (
     <HelmetProvider>
       <ThemeProvider>
-        <Router>
-          <Toaster 
-            position="top-center" 
-            reverseOrder={false}
-            toastOptions={{
-              duration: 3000,
-              style: {
-                background: 'var(--bg-surface)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border-soft)',
-              },
-            }}
-          />
-          <AppContent />
-        </Router>
+        <MotionConfig reducedMotion="user">
+          <Router>
+            <Toaster 
+              position="top-center" 
+              reverseOrder={false}
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-soft)',
+                },
+              }}
+            />
+            <AppContent />
+          </Router>
+        </MotionConfig>
       </ThemeProvider>
     </HelmetProvider>
   );

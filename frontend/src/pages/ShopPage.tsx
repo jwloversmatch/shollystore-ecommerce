@@ -139,13 +139,10 @@ const ShopPage = () => {
 
   return (
     <main
-      id="main-content"
-      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B]"
-      style={{ 
-        paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))', 
-        paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' 
-      }}
-    >
+  id="main-content"
+  tabIndex={-1}
+  className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] pt-20 md:pt-24 pb-28 md:pb-16 focus:outline-none"
+>
       {/* ── Search + sort bar (NOT sticky) ──────────────────────────────────── */}
       <div
         className="px-4 md:px-6 py-3 mb-6 bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]"

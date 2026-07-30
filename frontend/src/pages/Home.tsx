@@ -62,14 +62,26 @@ const Home = () => {
   const [direction, setDirection] = useState(0);
   const [modalProduct, setModalProduct] = useState<ProductItem | null>(null);
 
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
   useEffect(() => {
-    if (!heroSlides?.length) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handler = () => setPrefersReducedMotion(mq.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+
+  useEffect(() => {
+    if (!heroSlides?.length || prefersReducedMotion || isCarouselPaused) return;
     const id = setInterval(() => {
       setDirection(1);
       setCurrentIndex((p) => (p + 1) % heroSlides.length);
     }, 6000);
     return () => clearInterval(id);
-  }, [heroSlides]);
+  }, [heroSlides, prefersReducedMotion, isCarouselPaused]);
 
   const handleNext = () => {
     if (!heroSlides?.length) return;
@@ -127,7 +139,8 @@ const Home = () => {
   return (
     <main
       id="main-content"
-      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] relative overflow-x-hidden"
+      tabIndex={-1}
+      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] relative overflow-x-hidden focus:outline-none"
       style={{ paddingTop: 56, paddingBottom: 80 }}
     >
       <SEO
@@ -157,27 +170,34 @@ const Home = () => {
         />
       </div>
 
-      <HomeHero
-        landingMode={landingMode}
-        heroTagline={heroTagline}
-        heroTitle={heroTitle}
-        heroDescription={heroDescription}
-        heroPart1={heroPart1}
-        heroPart2={heroPart2}
-        displayProductsCount={displayProducts.length}
-        heroSlides={heroSlides}
-        currentIndex={currentIndex}
-        direction={direction}
-        handlePrev={handlePrev}
-        handleNext={handleNext}
-        setDirection={setDirection}
-        setCurrentIndex={setCurrentIndex}
-      />
+      <div
+        onMouseEnter={() => setIsCarouselPaused(true)}
+        onMouseLeave={() => setIsCarouselPaused(false)}
+        onFocus={() => setIsCarouselPaused(true)}
+        onBlur={() => setIsCarouselPaused(false)}
+      >
+        <HomeHero
+          landingMode={landingMode}
+          heroTagline={heroTagline}
+          heroTitle={heroTitle}
+          heroDescription={heroDescription}
+          heroPart1={heroPart1}
+          heroPart2={heroPart2}
+          displayProductsCount={displayProducts.length}
+          heroSlides={heroSlides}
+          currentIndex={currentIndex}
+          direction={direction}
+          handlePrev={handlePrev}
+          handleNext={handleNext}
+          setDirection={setDirection}
+          setCurrentIndex={setCurrentIndex}
+        />
+      </div>
 
       {/* Enter Shop CTA */}
       <section
         className="py-10 bg-[#FCFAF5] dark:bg-[#0A0A0B]"
-        aria-label="Call to action"
+        aria-labelledby="cta-heading"
       >
         <div className="max-w-7xl mx-auto px-4 md:px-6 text-center">
           <motion.div
@@ -186,7 +206,10 @@ const Home = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-3">
+            <h2
+              id="cta-heading"
+              className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-3"
+            >
               Ready to explore?
             </h2>
             <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8">
@@ -217,7 +240,7 @@ const Home = () => {
       {/* Featured Products section */}
       <section
         className="bg-[#FCFAF5] dark:bg-[#111111] py-14 md:py-18"
-        aria-label="Featured best sellers"
+        aria-labelledby="featured-heading"
       >
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="mb-8">
@@ -227,7 +250,10 @@ const Home = () => {
             >
               Featured
             </p>
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white">
+            <h2
+              id="featured-heading"
+              className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white"
+            >
               Best Sellers
             </h2>
           </div>
