@@ -18,6 +18,7 @@ import {
 import SEO from "../components/SEO";
 
 const ACCENT = "#e8622a";
+const FOCUS_RING = "focus-within:ring-2 focus-within:ring-[#e8622a] focus-within:ring-offset-2";
 
 interface IAddress { _id: string; label: string; address: string; city: string; postalCode?: string; country?: string; isDefault: boolean; }
 interface CartItem { _id: string; name: string; price: number; qty: number; image: string; stock?: number; }
@@ -100,7 +101,7 @@ const Checkout = () => {
     const d = publicSettings || { bankAccountName:"ShollyStore", bankAccountNumber:"0123456789", bankName:"GTBank", whatsappNumber:"+2348000000000" };
     const waLink = `https://wa.me/${d.whatsappNumber?.replace(/\D/g,"")}`;
     return (
-      <main id="main-content" className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+      <main id="main-content" tabIndex={-1} className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none">
         <SEO title="Order Placed" description="Your order has been placed successfully." />
         <AmbientBg />
         <div className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 bg-[#FCFAF5] dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07] shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.65)]">
@@ -139,7 +140,7 @@ const Checkout = () => {
 
   if (cart.cartItems.length === 0) {
     return (
-      <main id="main-content" className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+      <main id="main-content" tabIndex={-1} className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none">
         <SEO title="Checkout" description="Complete your order securely." />
         <div className="text-center p-8"><p className="text-gray-500 dark:text-gray-400 mb-4 text-lg">Your cart is empty.</p><button onClick={() => navigate("/")} className="font-bold hover:opacity-80 transition-opacity" style={{ color:ACCENT }} aria-label="Back to shop">← Back to Shop</button></div>
       </main>
@@ -147,7 +148,7 @@ const Checkout = () => {
   }
 
   return (
-    <main id="main-content" className="min-h-screen px-4 py-8 pb-28 md:pb-10 md:py-10 relative overflow-x-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+    <main id="main-content" tabIndex={-1} className="min-h-screen px-4 py-8 pb-28 md:pb-10 md:py-10 relative overflow-x-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none">
       <SEO title="Checkout" description="Complete your order with secure payment options." />
       <AmbientBg />
       <div className="max-w-6xl mx-auto">
@@ -172,7 +173,7 @@ const Checkout = () => {
                     {savedAddresses.map((addr: IAddress) => {
                       const active = selectedAddressId === addr._id && !isNewAddress;
                       return (
-                        <label key={addr._id} className={`flex items-center gap-3.5 p-3.5 rounded-xl border cursor-pointer transition-all ${active?'bg-[#e8622a]/10 border-[#e8622a] shadow-[0_0_0_1px_#e8622a]':'bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.07]'}`}>
+                        <label key={addr._id} className={`flex items-center gap-3.5 p-3.5 rounded-xl border cursor-pointer transition-all ${FOCUS_RING} ${active?'bg-[#e8622a]/10 border-[#e8622a] shadow-[0_0_0_1px_#e8622a]':'bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.07]'}`}>
                           <input type="radio" name="savedAddress" className="sr-only" checked={active} onChange={() => selectSavedAddress(addr)} />
                           <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors" style={{ borderColor:active?ACCENT:"#4b5563" }}>{active && <div className="w-2 h-2 rounded-full" style={{ background:ACCENT }} />}</div>
                           <div className="flex-1 min-w-0">
@@ -182,7 +183,7 @@ const Checkout = () => {
                         </label>
                       );
                     })}
-                    <label className={`flex items-center gap-3.5 p-3.5 rounded-xl border cursor-pointer transition-all ${isNewAddress?'bg-[#e8622a]/10 border-[#e8622a] shadow-[0_0_0_1px_#e8622a]':'bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.07]'}`}>
+                    <label className={`flex items-center gap-3.5 p-3.5 rounded-xl border cursor-pointer transition-all ${FOCUS_RING} ${isNewAddress?'bg-[#e8622a]/10 border-[#e8622a] shadow-[0_0_0_1px_#e8622a]':'bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.07]'}`}>
                       <input type="radio" name="savedAddress" className="sr-only" checked={isNewAddress} onChange={selectNewAddress} />
                       <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors" style={{ borderColor:isNewAddress?ACCENT:"#4b5563" }}>{isNewAddress && <div className="w-2 h-2 rounded-full" style={{ background:ACCENT }} />}</div>
                       <span className="text-sm font-bold text-gray-600 dark:text-gray-400">+ Enter new address</span>
@@ -213,7 +214,7 @@ const Checkout = () => {
                   {PAYMENT_METHODS.map((pm) => {
                     const active = paymentMethod === pm.id;
                     return (
-                      <label key={pm.id} className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${active?`bg-${pm.color}/10 border-${pm.color} shadow-[0_0_0_1px_${pm.color}]`:'bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.07]'}`}>
+                      <label key={pm.id} className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${FOCUS_RING} ${active?`bg-${pm.color}/10 border-${pm.color} shadow-[0_0_0_1px_${pm.color}]`:'bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.07]'}`}>
                         <input type="radio" className="sr-only" value={pm.id} checked={active} onChange={() => setPaymentMethod(pm.id as typeof paymentMethod)} />
                         <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors" style={{ borderColor:active?pm.color:"#4b5563" }}>{active && <div className="w-2 h-2 rounded-full" style={{ background:pm.color }} />}</div>
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background:`${pm.color}18`, color:pm.color }}>{pm.icon}</div>

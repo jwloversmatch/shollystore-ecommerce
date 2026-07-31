@@ -10,7 +10,7 @@ const ACCENT = '#e8622a';
 
 // ─── Ambient background (light/dark) ──────────────────────────────────────────
 const AmbientBg = () => (
-  <>
+  <div aria-hidden="true">
     <motion.div
       animate={{ x: ['-12%', '12%', '-12%'], y: ['-8%', '10%', '-8%'] }}
       transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
@@ -29,7 +29,7 @@ const AmbientBg = () => (
         dark:bg-[radial-gradient(rgba(255,255,255,0.025)_1px,transparent_1px)]
         bg-[length:28px_28px]"
     />
-  </>
+  </div>
 );
 
 const ForgotPassword = () => {
@@ -52,7 +52,7 @@ const ForgotPassword = () => {
   // ── Success screen ──────────────────────────────────────────────────────────
   if (sent) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+      <main id="main-content" tabIndex={-1} className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none">
         <SEO title="Check Your Email" description="Password reset link sent" />
         <AmbientBg />
 
@@ -79,6 +79,7 @@ const ForgotPassword = () => {
                 transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
                 className="absolute -inset-4 rounded-full border-2 border-dashed pointer-events-none"
                 style={{ borderColor: `${ACCENT}30` }}
+                aria-hidden="true"
               />
               <motion.div
                 initial={{ scale: 0 }}
@@ -87,7 +88,7 @@ const ForgotPassword = () => {
                 className="w-20 h-20 rounded-full flex items-center justify-center"
                 style={{ background: `${ACCENT}15`, boxShadow: `0 0 0 3px ${ACCENT}` }}
               >
-                <CheckCircle className="w-9 h-9" style={{ color: ACCENT }} />
+                <CheckCircle className="w-9 h-9" style={{ color: ACCENT }} aria-hidden="true" />
               </motion.div>
             </div>
           </div>
@@ -136,16 +137,16 @@ const ForgotPassword = () => {
             className="inline-flex items-center gap-2 text-sm font-bold hover:opacity-80 transition-opacity"
             style={{ color: ACCENT }}
           >
-            <ArrowLeft className="w-4 h-4" /> Back to Login
+            <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Back to Login
           </Link>
         </motion.div>
-      </div>
+      </main>
     );
   }
 
   // ── Main form ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+    <main id="main-content" tabIndex={-1} className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none">
       <SEO title="Forgot Password" description="Reset your ShollyStore account password" />
       <AmbientBg />
 
@@ -168,7 +169,7 @@ const ForgotPassword = () => {
           to="/login"
           className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-6"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Login
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Back to Login
         </Link>
 
         <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] mb-2" style={{ color: ACCENT }}>
@@ -185,15 +186,17 @@ const ForgotPassword = () => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+            <label htmlFor="forgot-email" className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400 dark:text-gray-600" />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400 dark:text-gray-600" aria-hidden="true" />
               <input
+                id="forgot-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm
                   bg-gray-100 dark:bg-[#1c1c1c]
                   text-gray-900 dark:text-white
@@ -212,6 +215,7 @@ const ForgotPassword = () => {
               initial={{ opacity: 0, y: -8, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.97 }}
+              role="alert"
               className="flex items-start gap-2.5 p-3.5 rounded-xl border text-sm"
               style={{
                 background: 'rgba(239,68,68,0.07)',
@@ -219,7 +223,7 @@ const ForgotPassword = () => {
                 color: '#f87171',
               }}
             >
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
               <span>{errorMessage}</span>
             </motion.div>
           )}
@@ -239,14 +243,14 @@ const ForgotPassword = () => {
               'Sending…'
             ) : (
               <>
-                <Send className="w-5 h-5" />
+                <Send className="w-5 h-5" aria-hidden="true" />
                 Send Reset Link
               </>
             )}
           </motion.button>
         </form>
       </motion.div>
-    </div>
+    </main>
   );
 };
 

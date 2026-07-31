@@ -45,7 +45,7 @@ const ResetPassword = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+      <main id="main-content" tabIndex={-1} className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none">
         <SEO title="Password Reset" description="Your password has been reset" />
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -66,6 +66,7 @@ const ResetPassword = () => {
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                 className="absolute -inset-4 rounded-full border-2 border-dashed pointer-events-none"
                 style={{ borderColor: `${ACCENT}30` }}
+                aria-hidden="true"
               />
               <motion.div
                 initial={{ scale: 0 }}
@@ -74,7 +75,7 @@ const ResetPassword = () => {
                 className="w-20 h-20 rounded-full flex items-center justify-center"
                 style={{ background: `${ACCENT}15`, boxShadow: `0 0 0 3px ${ACCENT}` }}
               >
-                <CheckCircle className="w-9 h-9" style={{ color: ACCENT }} />
+                <CheckCircle className="w-9 h-9" style={{ color: ACCENT }} aria-hidden="true" />
               </motion.div>
             </div>
           </div>
@@ -97,12 +98,12 @@ const ResetPassword = () => {
             Go to Login
           </Link>
         </motion.div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+    <main id="main-content" tabIndex={-1} className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none">
       <SEO title="Reset Password" description="Set a new password for your account" />
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -121,7 +122,7 @@ const ResetPassword = () => {
           to="/login"
           className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-6"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Login
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Back to Login
         </Link>
 
         <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] mb-2" style={{ color: ACCENT }}>
@@ -136,15 +137,17 @@ const ResetPassword = () => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+            <label htmlFor="reset-new-password" className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
               New Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400 dark:text-gray-600" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400 dark:text-gray-600" aria-hidden="true" />
               <input
+                id="reset-new-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
                 className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm
                   bg-gray-100 dark:bg-[#1c1c1c]
                   text-gray-900 dark:text-white
@@ -159,15 +162,17 @@ const ResetPassword = () => {
           </div>
 
           <div>
-            <label className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+            <label htmlFor="reset-confirm-password" className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
               Confirm Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400 dark:text-gray-600" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400 dark:text-gray-600" aria-hidden="true" />
               <input
+                id="reset-confirm-password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
                 className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm
                   bg-gray-100 dark:bg-[#1c1c1c]
                   text-gray-900 dark:text-white
@@ -186,6 +191,7 @@ const ResetPassword = () => {
               initial={{ opacity: 0, y: -8, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.97 }}
+              role="alert"
               className="flex items-start gap-2.5 p-3.5 rounded-xl border text-sm"
               style={{
                 background: 'rgba(239,68,68,0.07)',
@@ -193,7 +199,7 @@ const ResetPassword = () => {
                 color: '#f87171',
               }}
             >
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
               <span>{errorMsg}</span>
             </motion.div>
           )}
@@ -213,7 +219,7 @@ const ResetPassword = () => {
           </motion.button>
         </form>
       </motion.div>
-    </div>
+    </main>
   );
 };
 

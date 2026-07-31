@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,6 +14,8 @@ import { getCloudinaryUrl } from '../utils/cloudinary';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT = '#e8622a';
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 interface PersistState { _persist: { version: number; rehydrated: boolean } }
 
@@ -51,8 +53,8 @@ const AmbientBg = () => (
 const EmptyCart = () => {
   const navigate = useNavigate();
   return (
-    <main id="main-content" className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden
-      bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+    <main id="main-content" tabIndex={-1} className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden
+      bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none">
       <SEO title="Your Cart" description="Review your items and proceed to secure checkout." />
       <AmbientBg />
       <motion.div initial={{ opacity: 0, scale: 0.93, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -98,7 +100,9 @@ const EmptyCart = () => {
 };
 
 // ── Cart header ─────────────────────────────────────────────────────────────
-const CartHeader = ({ totalItems, onClearAll }: { totalItems: number; onClearAll: () => void }) => {
+const CartHeader = ({
+  totalItems, onClearAll, isClearModalOpen,
+}: { totalItems: number; onClearAll: () => void; isClearModalOpen: boolean }) => {
   const navigate = useNavigate();
   return (
     <motion.header initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}
@@ -125,7 +129,10 @@ const CartHeader = ({ totalItems, onClearAll }: { totalItems: number; onClearAll
         onClick={onClearAll}
         className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl shrink-0 text-red-400 hover:text-red-300 transition-colors
           bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20"
-        aria-label={`Remove all ${totalItems} items from cart`}>
+        aria-label={`Remove all ${totalItems} items from cart`}
+        aria-haspopup="dialog"
+        aria-expanded={isClearModalOpen}
+        aria-controls="clear-cart-dialog">
         <Trash2 className="w-4 h-4" aria-hidden="true" />
         <span className="hidden sm:inline text-xs font-bold">Clear All</span>
       </motion.button>
@@ -280,61 +287,104 @@ const OrderSummary = ({ totalPrice, totalItems, onCheckout }: { totalPrice: numb
 );
 
 // ── Clear cart modal ─────────────────────────────────────────────────────────
-const ClearCartModal = ({ isOpen, onClose, onConfirm, totalItems }: { isOpen: boolean; onClose: () => void; onConfirm: () => void; totalItems: number }) => (
-  <AnimatePresence>
-    {isOpen && (
-      <>
-        <motion.div key="scrim" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50" style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)' }}
-          onClick={onClose}
-          role="presentation"
-          aria-hidden="true" />
-        <motion.div key="modal" initial={{ scale: 0.9, y: 24, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.93, y: 16, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="clear-cart-title">
-          <div className="relative w-full max-w-sm rounded-2xl p-7
-            bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.08]
-            shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.6)]"
-            onClick={e => e.stopPropagation()}>
+const ClearCartModal = ({ isOpen, onClose, onConfirm, totalItems }: { isOpen: boolean; onClose: () => void; onConfirm: () => void; totalItems: number }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
 
-            <div className="absolute top-0 inset-x-0 h-px rounded-t-2xl"
-              style={{ background: 'linear-gradient(90deg, transparent, rgba(239,68,68,0.6), transparent)' }} />
+  // Focus trap: moves focus into the dialog on open, cycles Tab within it,
+  // closes on Escape, restores focus to the "Clear All" trigger on close.
+  useEffect(() => {
+    if (!isOpen) return;
 
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5
-              bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20">
-              <Trash2 className="w-6 h-6 text-red-500" aria-hidden="true" />
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const dialog = dialogRef.current;
+    const focusable = dialog
+      ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+      : [];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    first?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key === 'Tab' && focusable.length > 0) {
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [isOpen, onClose]);
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div key="scrim" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50" style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)' }}
+            onClick={onClose}
+            role="presentation"
+            aria-hidden="true" />
+          <motion.div key="modal" initial={{ scale: 0.9, y: 24, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.93, y: 16, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            role="dialog"
+            id="clear-cart-dialog"
+            aria-modal="true"
+            aria-labelledby="clear-cart-title">
+            <div ref={dialogRef} className="relative w-full max-w-sm rounded-2xl p-7
+              bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.08]
+              shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.6)]"
+              onClick={e => e.stopPropagation()}>
+
+              <div className="absolute top-0 inset-x-0 h-px rounded-t-2xl"
+                style={{ background: 'linear-gradient(90deg, transparent, rgba(239,68,68,0.6), transparent)' }} />
+
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5
+                bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20">
+                <Trash2 className="w-6 h-6 text-red-500" aria-hidden="true" />
+              </div>
+
+              <h3 id="clear-cart-title" className="text-2xl font-black text-gray-900 dark:text-white mb-2">Clear your cart?</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-7">
+                All {totalItems} {totalItems === 1 ? 'item' : 'items'} will be removed. This action cannot be undone.
+              </p>
+
+              <div className="flex gap-3">
+                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  onClick={onClose}
+                  className="flex-1 py-3.5 rounded-xl text-sm font-bold
+                    text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors
+                    bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.08]">
+                  Cancel
+                </motion.button>
+                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  onClick={onConfirm}
+                  className="flex-1 py-3.5 rounded-xl text-sm font-bold text-white"
+                  style={{ background: 'rgba(239,68,68,0.9)', boxShadow: '0 6px 18px rgba(239,68,68,0.3)' }}
+                  aria-label={`Remove all ${totalItems} items from cart`}>
+                  Clear Cart
+                </motion.button>
+              </div>
             </div>
-
-            <h3 id="clear-cart-title" className="text-2xl font-black text-gray-900 dark:text-white mb-2">Clear your cart?</h3>
-            <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-7">
-              All {totalItems} {totalItems === 1 ? 'item' : 'items'} will be removed. This action cannot be undone.
-            </p>
-
-            <div className="flex gap-3">
-              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                onClick={onClose}
-                className="flex-1 py-3.5 rounded-xl text-sm font-bold
-                  text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors
-                  bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.08]">
-                Cancel
-              </motion.button>
-              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                onClick={onConfirm}
-                className="flex-1 py-3.5 rounded-xl text-sm font-bold text-white"
-                style={{ background: 'rgba(239,68,68,0.9)', boxShadow: '0 6px 18px rgba(239,68,68,0.3)' }}
-                aria-label={`Remove all ${totalItems} items from cart`}>
-                Clear Cart
-              </motion.button>
-            </div>
-          </div>
-        </motion.div>
-      </>
-    )}
-  </AnimatePresence>
-);
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  MAIN CART COMPONENT
@@ -363,7 +413,7 @@ const Cart = () => {
   // ══════ LOADING (rehydration) ═══════════════════════════════════════════════
   if (isRehydrated === false) {
     return (
-      <main id="main-content" className="min-h-screen pt-20 pb-24 px-4 md:px-8 bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+      <main id="main-content" tabIndex={-1} className="min-h-screen pt-20 pb-24 px-4 md:px-8 bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none">
         <SEO title="Your Cart" description="Review your items and proceed to secure checkout." />
         <div className="max-w-4xl mx-auto space-y-4">
           {Array.from({ length: 3 }).map((_, i) => <DarkCartSkeleton key={i} />)}
@@ -377,13 +427,13 @@ const Cart = () => {
 
   // ══════ CART WITH ITEMS ═══════════════════════════════════════════════════════
   return (
-    <main id="main-content" className="min-h-screen pt-20 md:pt-24 pb-28 md:pb-16 px-4 md:px-6 relative overflow-x-hidden
-      bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+    <main id="main-content" tabIndex={-1} className="min-h-screen pt-20 md:pt-24 pb-28 md:pb-16 px-4 md:px-6 relative overflow-x-hidden
+      bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none">
       <SEO title="Your Cart" description="Review your items and proceed to secure checkout." />
       <AmbientBg />
 
       <div className="max-w-7xl mx-auto">
-        <CartHeader totalItems={totalItems} onClearAll={() => setShowClearModal(true)} />
+        <CartHeader totalItems={totalItems} onClearAll={() => setShowClearModal(true)} isClearModalOpen={showClearModal} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-8">
           <div className="lg:col-span-2 space-y-3" aria-label="Cart items">
