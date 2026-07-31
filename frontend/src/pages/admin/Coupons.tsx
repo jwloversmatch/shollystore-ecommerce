@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
@@ -26,6 +26,8 @@ interface Coupon {
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT = '#e8622a';
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 // ─── Shared formatting helper (unchanged) ─────────────────────────────────────
 const formatWithCommas = (raw: string): string => {
@@ -110,11 +112,40 @@ const Coupons = () => {
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [couponToDelete, setCouponToDelete] = useState<string | null>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
 
   const discountAmountInput = useFormattedInput(10);
   const minOrderAmountInput = useFormattedInput(0);
 
   const { register, handleSubmit, reset } = useForm();
+
+  const closeDrawer = () => {
+    setDrawerOpen(false);
+    setEditingCoupon(null);
+  };
+
+  // Focus trap: coupon drawer
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const dialog = drawerRef.current;
+    const focusable = dialog ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)) : [];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    first?.focus();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { closeDrawer(); return; }
+      if (e.key === 'Tab' && focusable.length > 0) {
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [drawerOpen]);
 
   const openDrawer = (coupon?: Coupon) => {
     if (coupon) {
@@ -139,11 +170,6 @@ const Coupons = () => {
       minOrderAmountInput.set(0);
     }
     setDrawerOpen(true);
-  };
-
-  const closeDrawer = () => {
-    setDrawerOpen(false);
-    setEditingCoupon(null);
   };
 
   const onSubmit = async (data: Record<string, unknown>) => {
@@ -186,7 +212,7 @@ const Coupons = () => {
   // ══════ LOADING SKELETON ═════════════════════════════════════════════════════
   if (isLoading) {
     return (
-      <main id="main-content" className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6" style={{ background: '#0A0A0B' }}>
+      <main id="main-content" tabIndex={-1} className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6 focus:outline-none" style={{ background: '#0A0A0B' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
@@ -225,7 +251,7 @@ const Coupons = () => {
 
   // ══════ MAIN PAGE ════════════════════════════════════════════════════════════
   return (
-    <main id="main-content" className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6" style={{ background: '#0A0A0B' }}>
+    <main id="main-content" tabIndex={-1} className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6 focus:outline-none" style={{ background: '#0A0A0B' }}>
       <ConfirmationModal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} onConfirm={confirmDelete} title="Delete Coupon" message="Are you sure you want to delete this coupon?" confirmText="Delete" cancelText="Cancel" type="danger" />
 
       {/* Header */}
@@ -305,7 +331,7 @@ const Coupons = () => {
         {drawerOpen && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={closeDrawer} role="presentation" aria-hidden="true" />
-            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="fixed right-0 top-0 h-full w-full max-w-full sm:max-w-md shadow-2xl z-50 overflow-y-auto p-6" style={{ background: '#141414', borderLeft: '1px solid rgba(255,255,255,0.08)' }} role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+            <motion.div ref={drawerRef} initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }} className="fixed right-0 top-0 h-full w-full max-w-full sm:max-w-md shadow-2xl z-50 overflow-y-auto p-6" style={{ background: '#141414', borderLeft: '1px solid rgba(255,255,255,0.08)' }} role="dialog" aria-modal="true" aria-labelledby="drawer-title">
               <div className="flex justify-between items-center mb-6">
                 <h2 id="drawer-title" className="text-xl font-black text-white">{editingCoupon ? 'Edit Coupon' : 'New Coupon'}</h2>
                 <button onClick={closeDrawer} className="p-2 rounded-xl hover:bg-white/5 transition text-gray-500 hover:text-white" aria-label="Close drawer">

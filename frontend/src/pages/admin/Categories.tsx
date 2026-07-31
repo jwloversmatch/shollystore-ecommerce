@@ -120,7 +120,7 @@ const Categories = () => {
 
   if (isLoading) {
     return (
-      <main id="main-content" className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-4xl mx-auto pb-28 md:pb-10 space-y-5" style={{ background: "#0A0A0B" }}>
+      <main id="main-content" tabIndex={-1} className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-4xl mx-auto pb-28 md:pb-10 space-y-5 focus:outline-none" style={{ background: "#0A0A0B" }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl animate-pulse" style={{ background: "#141414" }} />
@@ -139,7 +139,7 @@ const Categories = () => {
   }
 
   return (
-    <main id="main-content" className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-4xl mx-auto pb-28 md:pb-10 space-y-5" style={{ background: "#0A0A0B" }}>
+    <main id="main-content" tabIndex={-1} className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-4xl mx-auto pb-28 md:pb-10 space-y-5 focus:outline-none" style={{ background: "#0A0A0B" }}>
       <ConfirmationModal isOpen={deleteModal} onClose={() => setDeleteModal(false)} onConfirm={confirmDelete} title="Delete Category" message="Are you sure you want to delete this category? This action cannot be undone." confirmText="Delete" cancelText="Cancel" type="danger" />
 
       {/* Header */}
@@ -166,7 +166,7 @@ const Categories = () => {
       {/* Create new category */}
       <AnimatePresence>
         {isCreating && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.28 }} className="overflow-hidden" aria-label="Create category form">
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.28 }} className="overflow-hidden" role="region" aria-label="Create category form">
             <div className="relative rounded-2xl p-4 md:p-5" style={{ background: "#141414", border: `1px solid ${ACCENT}40`, boxShadow: `0 0 0 1px ${ACCENT}20, 0 8px 32px rgba(0,0,0,0.4)` }}>
               <div className="absolute top-0 inset-x-0 h-px rounded-t-2xl" style={{ background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
               <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] mb-3" style={{ color: ACCENT }}>New Category</p>
@@ -222,7 +222,7 @@ const Categories = () => {
               return (
                 <motion.div key={cat._id} layout initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.18 } }} transition={{ type: "spring", stiffness: 300, damping: 26, delay: idx * 0.04 }} className="relative rounded-2xl overflow-hidden" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)" }} role="listitem">
                   {editingId === cat._id ? (
-                    <div className="p-4 md:p-5" aria-label={`Editing category: ${cat.name}`}>
+                    <div className="p-4 md:p-5" role="group" aria-label={`Editing category: ${cat.name}`}>
                       <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] mb-2.5" style={{ color: ACCENT }}>Editing</p>
                       <div className="space-y-3">
                         <label htmlFor={`edit-category-name-${cat._id}`} className="sr-only">Category name</label>

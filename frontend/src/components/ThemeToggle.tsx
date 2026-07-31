@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const ThemeToggle = () => {
   const { theme, toggleTheme } = useTheme();
+  const label = `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`;
 
   return (
     <motion.button
@@ -15,12 +16,13 @@ const ThemeToggle = () => {
         background: theme === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
         color: theme === 'dark' ? '#9ca3af' : '#4b5563',
       }}
-      title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      title={label}
+      aria-label={label}
     >
       {theme === 'dark' ? (
-        <Sun className="w-4 h-4" />
+        <Sun className="w-4 h-4" aria-hidden="true" />
       ) : (
-        <Moon className="w-4 h-4" />
+        <Moon className="w-4 h-4" aria-hidden="true" />
       )}
     </motion.button>
   );

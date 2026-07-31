@@ -145,14 +145,14 @@ const Settings = () => {
 
   if (isLoading) {
     return (
-      <main id="main-content" className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-4xl mx-auto space-y-5 pb-28 md:pb-10" style={{ background:"#0A0A0B" }}>
+      <main id="main-content" tabIndex={-1} className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-4xl mx-auto space-y-5 pb-28 md:pb-10 focus:outline-none" style={{ background:"#0A0A0B" }}>
         {/* skeleton unchanged */}
       </main>
     );
   }
 
   return (
-    <main id="main-content" className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-4xl mx-auto space-y-5 pb-28 md:pb-10" style={{ background:"#0A0A0B" }}>
+    <main id="main-content" tabIndex={-1} className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-4xl mx-auto space-y-5 pb-28 md:pb-10 focus:outline-none" style={{ background:"#0A0A0B" }}>
       <ConfirmationModal isOpen={clearModal} onClose={()=>setClearModal(false)} onConfirm={handleClearAll} title="Clear All Settings?" message="This will remove all payment details and homepage content. This cannot be undone." confirmText="Clear All" cancelText="Cancel" type="danger" />
 
       {/* Header */}
@@ -185,7 +185,7 @@ const Settings = () => {
 
       <AnimatePresence mode="wait">
         {!isEditing && (
-          <div className="space-y-5" role="tabpanel" aria-label="View settings">
+          <div className="space-y-5" role="region" aria-label="View settings">
             {/* Homepage Content */}
             <DarkCard>
               <div className="p-6 md:p-7">
@@ -259,7 +259,7 @@ const Settings = () => {
         )}
 
         {isEditing && (
-          <div className="space-y-5" role="tabpanel" aria-label="Edit settings">
+          <div className="space-y-5" role="region" aria-label="Edit settings">
             {/* Homepage Content Form */}
             <DarkCard>
               <div className="p-6 md:p-7">

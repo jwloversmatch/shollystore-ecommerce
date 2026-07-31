@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {AnimatePresence } from 'framer-motion';
 import {
@@ -27,6 +27,8 @@ import { getCloudinaryUrl } from '../../utils/cloudinary';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT = '#e8622a';
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 // ─── Interfaces ────────────────────────────────────────────────────────────────
 interface HeroSlide {
@@ -53,9 +55,39 @@ const HeroSlides = () => {
   const [formData, setFormData] = useState({ title: '', subtitle: '', imageUrl: '', isActive: true, order: 0 });
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [slideToDelete, setSlideToDelete] = useState<string | null>(null);
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingSlide(null);
+    setFile(null);
+  };
+
+  // Focus trap: add/edit slide modal
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const dialog = modalRef.current;
+    const focusable = dialog ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)) : [];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    first?.focus();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { handleCloseModal(); return; }
+      if (e.key === 'Tab' && focusable.length > 0) {
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [isModalOpen]);
 
   const handleOpenModal = (slide?: HeroSlide) => {
     if (slide) {
@@ -67,12 +99,6 @@ const HeroSlides = () => {
     }
     setFile(null);
     setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingSlide(null);
-    setFile(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,7 +157,7 @@ const HeroSlides = () => {
   // ══════ LOADING ═════════════════════════════════════════════════════════════
   if (isLoading) {
     return (
-      <main id="main-content" className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6" style={{ background: '#0A0A0B' }}>
+      <main id="main-content" tabIndex={-1} className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6 focus:outline-none" style={{ background: '#0A0A0B' }}>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
@@ -173,7 +199,7 @@ const HeroSlides = () => {
 
   // ══════ MAIN PAGE ════════════════════════════════════════════════════════════
   return (
-    <main id="main-content" className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6" style={{ background: '#0A0A0B' }}>
+    <main id="main-content" tabIndex={-1} className="min-h-screen p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6 focus:outline-none" style={{ background: '#0A0A0B' }}>
       <ConfirmationModal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} onConfirm={confirmDelete} title="Delete Slide" message="Are you sure you want to delete this hero slide? This action cannot be undone." confirmText="Delete" cancelText="Cancel" type="danger" />
 
       {/* Header */}
@@ -259,7 +285,7 @@ const HeroSlides = () => {
           <>
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" onClick={handleCloseModal} role="presentation" aria-hidden="true" />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="slide-modal-title">
-              <div className="rounded-2xl p-6 max-w-lg w-full border" style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 40px 90px rgba(0,0,0,0.65)' }}>
+              <div ref={modalRef} className="rounded-2xl p-6 max-w-lg w-full border" style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 40px 90px rgba(0,0,0,0.65)' }}>
                 <div className="flex justify-between items-center mb-6">
                   <h2 id="slide-modal-title" className="text-xl font-black text-white">{editingSlide ? 'Edit Slide' : 'Add New Slide'}</h2>
                   <button onClick={handleCloseModal} className="p-2 rounded-xl hover:bg-white/5 transition text-gray-500 hover:text-white" aria-label="Close modal">
@@ -286,7 +312,7 @@ const HeroSlides = () => {
                           <UploadCloud className="w-5 h-5" aria-hidden="true" />
                           {file ? file.name : 'Click to upload image'}
                         </div>
-                        <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} className="hidden" />
+                        <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} className="sr-only" />
                       </label>
                       {(formData.imageUrl || file) && (
                         <img src={file ? URL.createObjectURL(file) : getCloudinaryUrl(formData.imageUrl, 150)} alt="Preview of selected image" className="w-14 h-14 rounded-lg object-cover border" style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
