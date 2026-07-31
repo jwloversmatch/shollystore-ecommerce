@@ -140,8 +140,7 @@ const Home = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] relative overflow-x-hidden focus:outline-none"
-      style={{ paddingTop: 56, paddingBottom: 80 }}
+      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] relative overflow-x-hidden focus:outline-none pt-14 md:pt-20"
     >
       <SEO
         title={heroTitle.replace("|", "").trim()}

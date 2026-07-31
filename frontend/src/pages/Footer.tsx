@@ -51,8 +51,8 @@ const Footer = () => {
       whileInView="visible"
       viewport={{ once: true, margin: '-20px' }}
       className="relative mt-20 border-t border-gray-200 dark:border-white/10 shadow-2xl overflow-hidden
-        bg-white dark:bg-gray-900/90 backdrop-blur-xl md:pb-0"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        bg-white dark:bg-gray-900/90 backdrop-blur-xl pb-16 md:pb-0"
+      style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}
       aria-label="Site footer"
     >
       {/* Subtle background glow – hidden from screen readers */}
