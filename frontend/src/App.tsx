@@ -33,11 +33,6 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 
 const ACCENT = "#e8622a";
 
-// Extend CSSStyleDeclaration to include vendor-prefixed properties
-interface ExtendedCSSStyleDeclaration extends CSSStyleDeclaration {
-  WebkitOverflowScrolling: string;
-}
-
 // Loading fallback – lightweight, no heavy animations
 const LoadingFallback = () => (
   <div 
@@ -72,115 +67,44 @@ function AppContent() {
     main?.focus({ preventScroll: true });
   }, [location.pathname]);
 
-  // iOS PWA fix: Move scroll to a wrapper div, not body/root
-  useEffect(() => {
-    // Don't apply this on desktop
-    if (window.innerWidth >= 768) return;
-
-    const html = document.documentElement;
-    const body = document.body;
-    const scrollContainer = document.getElementById('app-scroll-container');
-
-    // Prevent body/html from scrolling
-    html.style.overflow = 'hidden';
-    html.style.height = '100%';
-    body.style.overflow = 'hidden';
-    body.style.height = '100%';
-    body.style.margin = '0';
-    body.style.padding = '0';
-
-    // Ensure scroll container fills the viewport
-    if (scrollContainer) {
-      const containerStyle = scrollContainer.style as ExtendedCSSStyleDeclaration;
-      containerStyle.height = '100%';
-      containerStyle.overflowY = 'auto';
-      containerStyle.WebkitOverflowScrolling = 'touch';
-      containerStyle.position = 'fixed';
-      containerStyle.top = '0';
-      containerStyle.left = '0';
-      containerStyle.right = '0';
-      containerStyle.bottom = '0';
-      containerStyle.width = '100%';
-    }
-
-    return () => {
-      html.style.overflow = '';
-      html.style.height = '';
-      body.style.overflow = '';
-      body.style.height = '';
-      body.style.margin = '';
-      body.style.padding = '';
-      if (scrollContainer) {
-        const containerStyle = scrollContainer.style as ExtendedCSSStyleDeclaration;
-        containerStyle.height = '';
-        containerStyle.overflowY = '';
-        containerStyle.WebkitOverflowScrolling = '';
-        containerStyle.position = '';
-        containerStyle.top = '';
-        containerStyle.left = '';
-        containerStyle.right = '';
-        containerStyle.bottom = '';
-        containerStyle.width = '';
-      }
-    };
-  }, []);
-
   // Hide navbar on specific pages
   const hideNavbar = ['/cart', '/checkout', '/404'].includes(location.pathname);
 
   return (
     <>
-      {/* Navbar rendered OUTSIDE the scrollable area */}
       {!hideNavbar && <Navbar />}
       
-      {/* Scrollable content area */}
-      <div 
-        id="app-scroll-container"
-        className="md:static"
-        style={{
-          height: window.innerWidth < 768 ? '100%' : 'auto',
-          overflowY: window.innerWidth < 768 ? 'auto' : 'visible',
-          WebkitOverflowScrolling: 'touch',
-          position: window.innerWidth < 768 ? 'fixed' : 'static',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: '100%',
-        }}
-      >
-        <Suspense fallback={<LoadingFallback />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/account" element={<Account />} />
-            <Route path="/products/:slug" element={<ProductDetail />} />
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/products/:slug" element={<ProductDetail />} />
 
-            <Route element={<ProtectedRoute />}>
-              <Route path="/shop/*" element={<ShopPage />} />
-            </Route>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/shop/*" element={<ShopPage />} />
+          </Route>
 
-            <Route element={<AdminRoute />}>
-              <Route path="/admin" element={<Dashboard />} />
-              <Route path="/admin/products" element={<Products />} />
-              <Route path="/admin/settings" element={<Settings />} />
-              <Route path="/admin/orders" element={<Orders />} />
-              <Route path="/admin/hero-slides" element={<HeroSlides />} />
-              <Route path="/admin/categories" element={<Categories />} />
-              <Route path="/admin/coupons" element={<Coupons />} />
-            </Route>
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<Dashboard />} />
+            <Route path="/admin/products" element={<Products />} />
+            <Route path="/admin/settings" element={<Settings />} />
+            <Route path="/admin/orders" element={<Orders />} />
+            <Route path="/admin/hero-slides" element={<HeroSlides />} />
+            <Route path="/admin/categories" element={<Categories />} />
+            <Route path="/admin/coupons" element={<Coupons />} />
+          </Route>
 
-            <Route path="/404" element={<NotFound />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </div>
+          <Route path="/404" element={<NotFound />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }
