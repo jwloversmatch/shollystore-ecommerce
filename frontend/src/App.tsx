@@ -33,6 +33,11 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 
 const ACCENT = "#e8622a";
 
+// Extend CSSStyleDeclaration to include vendor-prefixed properties
+interface ExtendedCSSStyleDeclaration extends CSSStyleDeclaration {
+  WebkitOverflowScrolling: string;
+}
+
 // Loading fallback – lightweight, no heavy animations
 const LoadingFallback = () => (
   <div 
@@ -74,26 +79,49 @@ function AppContent() {
 
     const html = document.documentElement;
     const body = document.body;
+    const scrollContainer = document.getElementById('app-scroll-container');
 
     // Prevent body/html from scrolling
     html.style.overflow = 'hidden';
     html.style.height = '100%';
     body.style.overflow = 'hidden';
     body.style.height = '100%';
-    body.style.position = 'fixed';
-    body.style.width = '100%';
-    body.style.top = '0';
-    body.style.left = '0';
+    body.style.margin = '0';
+    body.style.padding = '0';
+
+    // Ensure scroll container fills the viewport
+    if (scrollContainer) {
+      const containerStyle = scrollContainer.style as ExtendedCSSStyleDeclaration;
+      containerStyle.height = '100%';
+      containerStyle.overflowY = 'auto';
+      containerStyle.WebkitOverflowScrolling = 'touch';
+      containerStyle.position = 'fixed';
+      containerStyle.top = '0';
+      containerStyle.left = '0';
+      containerStyle.right = '0';
+      containerStyle.bottom = '0';
+      containerStyle.width = '100%';
+    }
 
     return () => {
       html.style.overflow = '';
       html.style.height = '';
       body.style.overflow = '';
       body.style.height = '';
-      body.style.position = '';
-      body.style.width = '';
-      body.style.top = '';
-      body.style.left = '';
+      body.style.margin = '';
+      body.style.padding = '';
+      if (scrollContainer) {
+        const containerStyle = scrollContainer.style as ExtendedCSSStyleDeclaration;
+        containerStyle.height = '';
+        containerStyle.overflowY = '';
+        containerStyle.WebkitOverflowScrolling = '';
+        containerStyle.position = '';
+        containerStyle.top = '';
+        containerStyle.left = '';
+        containerStyle.right = '';
+        containerStyle.bottom = '';
+        containerStyle.width = '';
+      }
     };
   }, []);
 
