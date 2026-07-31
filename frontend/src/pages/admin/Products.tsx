@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useLayoutEffect } from "react";
+import { useState, useMemo, useRef, useLayoutEffect, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { useForm, useWatch } from "react-hook-form";
@@ -36,6 +36,8 @@ import { getCloudinaryUrl } from "../../utils/cloudinary";
 
 const ACCENT = "#e8622a";
 const PLACEHOLDER = "https://via.placeholder.com/150";
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 import type { ProductItem } from "../../types/home";
 interface CategoryItem { _id: string; name: string; slug: string; parent?: string | null; }
@@ -117,6 +119,7 @@ const Products = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [notifyCustomers, setNotifyCustomers] = useState(false);
   const [variants, setVariants] = useState<Variant[]>([]);
+  const drawerRef = useRef<HTMLDivElement>(null);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<{ type: "delete"; id: string } | null>(null);
@@ -125,6 +128,7 @@ const Products = () => {
   const [marketingProduct, setMarketingProduct] = useState<ProductItem | null>(null);
   const [marketingType, setMarketingType] = useState<"new_arrival" | "back_in_stock">("new_arrival");
   const [customMessage, setCustomMessage] = useState("");
+  const marketingModalRef = useRef<HTMLDivElement>(null);
 
   const { register, handleSubmit, reset, setValue, control, formState: { errors, isSubmitting } } = useForm<ProductFormData>({ resolver: zodResolver(productSchema) });
   const isFeatured = useWatch({ control, name: "isFeatured" });
@@ -141,6 +145,54 @@ const Products = () => {
       pendingCursorRef.current = null;
     }
   });
+
+  const handleCloseDrawer = () => { setIsDrawerOpen(false); setEditingProduct(null); setFiles([]); setNotifyCustomers(false); setVariants([]); };
+
+  // Focus trap: slide-in product drawer
+  useEffect(() => {
+    if (!isDrawerOpen) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const dialog = drawerRef.current;
+    const focusable = dialog ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)) : [];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    first?.focus();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { handleCloseDrawer(); return; }
+      if (e.key === "Tab" && focusable.length > 0) {
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [isDrawerOpen]);
+
+  // Focus trap: marketing-email modal
+  useEffect(() => {
+    if (!marketingOpen) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const dialog = marketingModalRef.current;
+    const focusable = dialog ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)) : [];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    first?.focus();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setMarketingOpen(false); return; }
+      if (e.key === "Tab" && focusable.length > 0) {
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [marketingOpen]);
 
   const filterCategories = useMemo(() => [{ _id: "All", name: "All" }, ...categories], [categories]);
   const filteredProducts = useMemo(() => {
@@ -182,7 +234,6 @@ const Products = () => {
     setIsDrawerOpen(true);
   };
 
-  const handleCloseDrawer = () => { setIsDrawerOpen(false); setEditingProduct(null); setFiles([]); setNotifyCustomers(false); setVariants([]); };
   const confirmDelete = async () => { if (!modalAction || modalAction.type !== "delete") return; try { await deleteProduct(modalAction.id).unwrap(); toast.success("Product deleted"); } catch { toast.error("Failed to delete product"); } setModalOpen(false); setModalAction(null); };
   const handleQuickStock = async (id: string, cur: number, delta: number) => { try { await updateStock({ id, stock: Math.max(0, cur + delta) }).unwrap(); } catch { toast.error("Failed to update stock"); } };
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>, setRaw: React.Dispatch<React.SetStateAction<string>>, fieldName: "price" | "compareAtPrice") => {
@@ -270,7 +321,7 @@ const Products = () => {
 
   if (isLoading) {
     return (
-      <main id="main-content" className="p-4 md:p-6 pt-16 md:pt-24 max-w-7xl mx-auto space-y-5 pb-28 md:pb-10" style={{ background: "#0A0A0B" }}>
+      <main id="main-content" tabIndex={-1} className="p-4 md:p-6 pt-16 md:pt-24 max-w-7xl mx-auto space-y-5 pb-28 md:pb-10 focus:outline-none" style={{ background: "#0A0A0B" }}>
         <div className="rounded-2xl overflow-hidden" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.07)" }}>
           {Array.from({ length: 8 }).map((_, i) => <ProductRowSkeleton key={i} dark />)}
         </div>
@@ -279,7 +330,7 @@ const Products = () => {
   }
 
   return (
-    <main id="main-content" className="p-4 md:p-6 pt-16 md:pt-24 max-w-7xl mx-auto space-y-5 pb-28 md:pb-10" style={{ background: "#0A0A0B" }}>
+    <main id="main-content" tabIndex={-1} className="p-4 md:p-6 pt-16 md:pt-24 max-w-7xl mx-auto space-y-5 pb-28 md:pb-10 focus:outline-none" style={{ background: "#0A0A0B" }}>
       <ConfirmationModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onConfirm={confirmDelete} title="Delete Product" message="Are you sure you want to delete this product? This action cannot be undone." confirmText="Delete" cancelText="Cancel" type="danger" />
 
       {/* Header */}
@@ -341,7 +392,7 @@ const Products = () => {
                     <td className="px-4 sm:px-5 py-3"><span className="font-black text-sm" style={{ color: ACCENT }}>₦{product.price.toLocaleString()}</span></td>
                     <td className="px-4 sm:px-5 py-3">
                       <div className="flex items-center gap-1.5">
-                        <div className="flex items-center rounded-xl overflow-hidden" style={{ background: "#1c1c1c", border: "1px solid rgba(255,255,255,0.08)" }} aria-label={`Stock for ${product.name}: ${product.stock ?? 0}`}>
+                        <div className="flex items-center rounded-xl overflow-hidden" style={{ background: "#1c1c1c", border: "1px solid rgba(255,255,255,0.08)" }} role="group" aria-label={`Stock for ${product.name}: ${product.stock ?? 0}`}>
                           <button onClick={() => handleQuickStock(product._id, product.stock ?? 0, -1)} className="w-7 h-7 flex items-center justify-center text-red-400 hover:bg-red-500/10 transition-colors" aria-label={`Decrease stock of ${product.name}`}><Minus className="w-3 h-3" aria-hidden="true" /></button>
                           <span className={`w-8 text-center text-sm font-black ${(product.stock??0)<5?"text-red-400":"text-white"}`} aria-live="polite">{product.stock ?? 0}</span>
                           <button onClick={() => handleQuickStock(product._id, product.stock ?? 0, 1)} className="w-7 h-7 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/10 transition-colors" aria-label={`Increase stock of ${product.name}`}><Plus className="w-3 h-3" aria-hidden="true" /></button>
@@ -370,7 +421,7 @@ const Products = () => {
         {isDrawerOpen && (
           <>
             <div className="fixed inset-0 z-40" style={{ background: "rgba(0,0,0,0.68)", backdropFilter: "blur(8px)" }} onClick={handleCloseDrawer} role="presentation" aria-hidden="true" />
-            <div className="fixed right-0 top-0 h-full w-full max-w-xl z-50 overflow-y-auto" style={{ background: "#141414", borderLeft: "1px solid rgba(255,255,255,0.08)", boxShadow: "-20px 0 60px rgba(0,0,0,0.6)" }} role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+            <div ref={drawerRef} className="fixed right-0 top-0 h-full w-full max-w-xl z-50 overflow-y-auto" style={{ background: "#141414", borderLeft: "1px solid rgba(255,255,255,0.08)", boxShadow: "-20px 0 60px rgba(0,0,0,0.6)" }} role="dialog" aria-modal="true" aria-labelledby="drawer-title">
               <div className="sticky top-0 z-10 flex justify-between items-center px-6 py-5 border-b" style={{ background: "#141414", borderColor: "rgba(255,255,255,0.07)" }}>
                 <div>
                   <p className="text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: ACCENT }}>{editingProduct ? "Editing" : "New Product"}</p>
@@ -481,7 +532,7 @@ const Products = () => {
                             className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                             aria-label={`Remove image ${idx + 1}`}
                           >
-                            <X className="w-3 h-3 text-white" />
+                            <X className="w-3 h-3 text-white" aria-hidden="true" />
                           </button>
                         </div>
                       ))}
@@ -499,12 +550,12 @@ const Products = () => {
                     <div className="flex flex-col items-center gap-2">
                       {uploading ? (
                         <>
-                          <Loader2 className="w-6 h-6 animate-spin" style={{ color: ACCENT }} />
+                          <Loader2 className="w-6 h-6 animate-spin" style={{ color: ACCENT }} aria-hidden="true" />
                           <p className="text-xs text-gray-500">Uploading...</p>
                         </>
                       ) : (
                         <>
-                          <Upload className="w-6 h-6 text-gray-500" />
+                          <Upload className="w-6 h-6 text-gray-500" aria-hidden="true" />
                           <p className="text-xs text-gray-500">
                             <span className="font-bold" style={{ color: ACCENT }}>Click to upload</span> or drag and drop
                           </p>
@@ -544,7 +595,7 @@ const Products = () => {
                               className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                               aria-label={`Remove new image ${idx + 1}`}
                             >
-                              <X className="w-3 h-3 text-white" />
+                              <X className="w-3 h-3 text-white" aria-hidden="true" />
                             </button>
                           </div>
                         ))}
@@ -563,7 +614,7 @@ const Products = () => {
                       className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all"
                       style={{ background: ACCENT }}
                     >
-                      <Plus className="w-3 h-3" /> Add Variant
+                      <Plus className="w-3 h-3" aria-hidden="true" /> Add Variant
                     </button>
                   </div>
                   
@@ -586,14 +637,15 @@ const Products = () => {
                               className="text-red-400 hover:text-red-300 transition-colors"
                               aria-label={`Remove variant ${idx + 1}`}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4" aria-hidden="true" />
                             </button>
                           </div>
                           
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">Color</label>
+                              <label htmlFor={`variant-${idx}-color`} className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">Color</label>
                               <input
+                                id={`variant-${idx}-color`}
                                 type="text"
                                 value={variant.color || ""}
                                 onChange={(e) => {
@@ -606,8 +658,9 @@ const Products = () => {
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">Size</label>
+                              <label htmlFor={`variant-${idx}-size`} className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">Size</label>
                               <input
+                                id={`variant-${idx}-size`}
                                 type="text"
                                 value={variant.size || ""}
                                 onChange={(e) => {
@@ -620,8 +673,9 @@ const Products = () => {
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">Price (₦)</label>
+                              <label htmlFor={`variant-${idx}-price`} className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">Price (₦)</label>
                               <input
+                                id={`variant-${idx}-price`}
                                 type="number"
                                 value={variant.price || ""}
                                 onChange={(e) => {
@@ -634,8 +688,9 @@ const Products = () => {
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">Stock</label>
+                              <label htmlFor={`variant-${idx}-stock`} className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">Stock</label>
                               <input
+                                id={`variant-${idx}-stock`}
                                 type="number"
                                 value={variant.stock || ""}
                                 onChange={(e) => {
@@ -648,8 +703,9 @@ const Products = () => {
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">Compare At Price</label>
+                              <label htmlFor={`variant-${idx}-compare-at`} className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">Compare At Price</label>
                               <input
+                                id={`variant-${idx}-compare-at`}
                                 type="number"
                                 value={variant.compareAtPrice || ""}
                                 onChange={(e) => {
@@ -662,8 +718,9 @@ const Products = () => {
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">SKU</label>
+                              <label htmlFor={`variant-${idx}-sku`} className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 block mb-1">SKU</label>
                               <input
+                                id={`variant-${idx}-sku`}
                                 type="text"
                                 value={variant.sku || ""}
                                 onChange={(e) => {
@@ -719,7 +776,7 @@ const Products = () => {
           <>
             <div className="fixed inset-0 z-50" style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(8px)" }} onClick={() => setMarketingOpen(false)} role="presentation" aria-hidden="true" />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="marketing-modal-title">
-              <div className="relative w-full max-w-md rounded-2xl p-6" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 40px 90px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
+              <div ref={marketingModalRef} className="relative w-full max-w-md rounded-2xl p-6" style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 40px 90px rgba(0,0,0,0.6)" }} onClick={(e) => e.stopPropagation()}>
                 <div className="absolute top-0 inset-x-0 h-px rounded-t-2xl" style={{ background: `linear-gradient(90deg, transparent, #10b981, transparent)` }} />
                 <div className="flex justify-between items-center mb-5">
                   <div>

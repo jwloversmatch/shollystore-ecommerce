@@ -71,7 +71,7 @@ const VerifyEmail = () => {
 
     const verify = async () => {
       try {
-        const res = await api.get(`/auth/verify-email?token=${token}`);   // ✅ axios
+        const res = await api.get(`/auth/verify-email?token=${token}`);  
         const data = res.data;
         if (isMounted.current) {
           if (data.success) {
@@ -101,7 +101,7 @@ const VerifyEmail = () => {
     }
     setIsResending(true);
     try {
-      const res = await api.post('/auth/resend-verification', { email: resendEmail }); // ✅ axios
+      const res = await api.post('/auth/resend-verification', { email: resendEmail }); 
       const data = res.data;
       if (data.success) {
         toast.success(data.message);
@@ -117,13 +117,13 @@ const VerifyEmail = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative bg-gradient-to-br from-leaf-green/5 via-pastel-pink/30 to-blob-orange/10 overflow-hidden">
+    <main id="main-content" tabIndex={-1} className="min-h-screen flex items-center justify-center p-4 relative bg-gradient-to-br from-leaf-green/5 via-pastel-pink/30 to-blob-orange/10 overflow-hidden focus:outline-none">
       <SEO
         title="Verify Your Email"
         description="Verify your email address to activate your LotceWieth account."
       />
       {/* Animated background blobs */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <motion.div
           animate={{
             x: ['-10%', '10%', '-10%'],
@@ -160,6 +160,7 @@ const VerifyEmail = () => {
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
           className="absolute top-4 right-4 text-leaf-green/30"
+          aria-hidden="true"
         >
           <Sparkles className="w-6 h-6" />
         </motion.div>
@@ -167,146 +168,153 @@ const VerifyEmail = () => {
           animate={{ rotate: -360 }}
           transition={{ repeat: Infinity, duration: 15, ease: 'linear' }}
           className="absolute bottom-4 left-4 text-blob-orange/30"
+          aria-hidden="true"
         >
           <Sparkles className="w-5 h-5" />
         </motion.div>
 
-        {/* ---- Loading State ---- */}
-        <AnimatePresence mode="wait">
-          {status === 'loading' && (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center"
-            >
+        {/* Announces the loading→success/error transition to screen reader users */}
+        <div aria-live="polite" aria-atomic="true">
+          <AnimatePresence mode="wait">
+            {status === 'loading' && (
               <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-                className="rounded-full h-16 w-16 border-4 border-leaf-green/30 border-t-leaf-green mb-6"
-              />
-              <motion.h2 variants={itemFadeUp} className="text-2xl font-bold text-gray-800 mb-2">
-                Verifying…
-              </motion.h2>
-              <motion.p variants={itemFadeUp} className="text-gray-500">
-                Please wait while we verify your email.
-              </motion.p>
-            </motion.div>
-          )}
-
-          {/* ---- Success State ---- */}
-          {status === 'success' && (
-            <motion.div
-              key="success"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center"
-            >
-              <motion.div
-                variants={successIcon}
-                initial="hidden"
-                animate="visible"
-                className="mx-auto mb-6 bg-green-50/50 p-4 rounded-full w-fit"
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center"
               >
-                <CheckCircle className="w-16 h-16 text-green-500" />
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                  className="rounded-full h-16 w-16 border-4 border-leaf-green/30 border-t-leaf-green mb-6"
+                  aria-hidden="true"
+                />
+                <motion.h2 variants={itemFadeUp} className="text-2xl font-bold text-gray-800 mb-2">
+                  Verifying…
+                </motion.h2>
+                <motion.p variants={itemFadeUp} className="text-gray-500">
+                  Please wait while we verify your email.
+                </motion.p>
               </motion.div>
-              <motion.h2 variants={itemFadeUp} className="text-2xl font-bold text-gray-800 mb-2">
-                Email Verified! ✅
-              </motion.h2>
-              <motion.p variants={itemFadeUp} className="text-gray-600 mb-6">
-                {message}
-              </motion.p>
-              <motion.button
-                variants={itemFadeUp}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => navigate('/')}
-                className="w-full bg-leaf-green text-white py-3.5 rounded-xl font-bold shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2 group"
-              >
-                Go to Home
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </motion.button>
-            </motion.div>
-          )}
+            )}
 
-          {/* ---- Error State ---- */}
-          {status === 'error' && (
-            <motion.div
-              key="error"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center"
-            >
+            {/* ---- Success State ---- */}
+            {status === 'success' && (
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="mx-auto mb-6 bg-red-50/50 p-4 rounded-full w-fit"
+                key="success"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center"
               >
-                <XCircle className="w-16 h-16 text-red-500" />
-              </motion.div>
-              <motion.h2 variants={itemFadeUp} className="text-2xl font-bold text-gray-800 mb-2">
-                Verification Failed
-              </motion.h2>
-              <motion.p variants={itemFadeUp} className="text-gray-600 mb-6">
-                {message}
-              </motion.p>
-
-              <motion.form
-                variants={itemFadeUp}
-                onSubmit={handleResend}
-                className="w-full space-y-3"
-              >
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-                  <input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={resendEmail}
-                    onChange={(e) => setResendEmail(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent placeholder:text-gray-400 bg-white/70 backdrop-blur-sm"
-                    required
-                  />
-                </div>
+                <motion.div
+                  variants={successIcon}
+                  initial="hidden"
+                  animate="visible"
+                  className="mx-auto mb-6 bg-green-50/50 p-4 rounded-full w-fit"
+                >
+                  <CheckCircle className="w-16 h-16 text-green-500" aria-hidden="true" />
+                </motion.div>
+                <motion.h2 variants={itemFadeUp} className="text-2xl font-bold text-gray-800 mb-2">
+                  Email Verified! ✅
+                </motion.h2>
+                <motion.p variants={itemFadeUp} className="text-gray-600 mb-6">
+                  {message}
+                </motion.p>
                 <motion.button
-                  type="submit"
-                  disabled={isResending}
+                  variants={itemFadeUp}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate('/')}
+                  className="w-full bg-leaf-green text-white py-3.5 rounded-xl font-bold shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2 group"
+                >
+                  Go to Home
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+                </motion.button>
+              </motion.div>
+            )}
+
+            {/* ---- Error State ---- */}
+            {status === 'error' && (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className="mx-auto mb-6 bg-red-50/50 p-4 rounded-full w-fit"
+                >
+                  <XCircle className="w-16 h-16 text-red-500" aria-hidden="true" />
+                </motion.div>
+                <motion.h2 variants={itemFadeUp} className="text-2xl font-bold text-gray-800 mb-2">
+                  Verification Failed
+                </motion.h2>
+                <motion.p variants={itemFadeUp} className="text-gray-600 mb-6">
+                  {message}
+                </motion.p>
+
+                <motion.form
+                  variants={itemFadeUp}
+                  onSubmit={handleResend}
+                  className="w-full space-y-3"
+                >
+                  <div className="relative">
+                    <label htmlFor="verify-resend-email" className="sr-only">Email address</label>
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" aria-hidden="true" />
+                    <input
+                      id="verify-resend-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={resendEmail}
+                      onChange={(e) => setResendEmail(e.target.value)}
+                      autoComplete="email"
+                      className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent placeholder:text-gray-400 bg-white/70 backdrop-blur-sm"
+                      required
+                    />
+                  </div>
+                  <motion.button
+                    type="submit"
+                    disabled={isResending}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full bg-blob-orange text-white py-3.5 rounded-xl font-bold shadow-lg shadow-blob-orange/30 hover:shadow-blob-orange/50 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isResending ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                        Sending…
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-5 h-5" aria-hidden="true" />
+                        Resend Verification Email
+                      </>
+                    )}
+                  </motion.button>
+                </motion.form>
+
+                <motion.button
+                  variants={itemFadeUp}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full bg-blob-orange text-white py-3.5 rounded-xl font-bold shadow-lg shadow-blob-orange/30 hover:shadow-blob-orange/50 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  onClick={() => navigate('/')}
+                  className="w-full mt-3 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all"
                 >
-                  {isResending ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Sending…
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-5 h-5" />
-                      Resend Verification Email
-                    </>
-                  )}
+                  Go to Home
                 </motion.button>
-              </motion.form>
-
-              <motion.button
-                variants={itemFadeUp}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => navigate('/')}
-                className="w-full mt-3 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all"
-              >
-                Go to Home
-              </motion.button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </motion.div>
-    </div>
+    </main>
   );
-};
+};  
 
 export default VerifyEmail;

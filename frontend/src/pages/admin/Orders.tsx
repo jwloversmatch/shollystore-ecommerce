@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {  AnimatePresence } from 'framer-motion';
 import { useGetAllOrdersQuery, useUpdateOrderStatusMutation } from '../../features/api/apiSlice';
@@ -21,6 +21,8 @@ const STATUS_OPTIONS = ['All', 'Pending', 'Paid', 'Shipped', 'Delivered', 'Cance
 const PAYMENT_OPTIONS = ['All', 'paystack', 'bank_transfer', 'whatsapp'];
 const STATUS_FLOW: Record<string, string[]> = { Pending: ['Pending','Paid','Cancelled'], Paid: ['Paid','Shipped'], Shipped: ['Shipped','Delivered'], Delivered: ['Delivered'], Cancelled: ['Cancelled'] };
 const ALL_STATUSES = ['Pending','Paid','Shipped','Delivered','Cancelled'];
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), select:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 
 const Orders = () => {
@@ -34,6 +36,7 @@ const Orders = () => {
   const { data, isLoading, refetch } = useGetAllOrdersQuery({ page, limit, status: statusFilter, paymentMethod: paymentFilter, search: searchTerm, startDate, endDate });
   const [updateStatus] = useUpdateOrderStatusMutation();
   const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
+  const orderModalRef = useRef<HTMLDivElement>(null);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try { await updateStatus({ id: orderId, status: newStatus }).unwrap(); refetch(); }
@@ -50,9 +53,32 @@ const Orders = () => {
     return { total, paid: orders.filter((o: OrderItem) => o.status === 'Paid').length, pending: orders.filter((o: OrderItem) => o.status === 'Pending').length, cancelled: orders.filter((o: OrderItem) => o.status === 'Cancelled').length };
   }, [orders]);
 
+  // Focus trap: order detail modal
+  useEffect(() => {
+    if (!selectedOrder) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const dialog = orderModalRef.current;
+    const focusable = dialog ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)) : [];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    first?.focus();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setSelectedOrder(null); return; }
+      if (e.key === 'Tab' && focusable.length > 0) {
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [selectedOrder]);
+
   if (isLoading) {
     return (
-      <main id="main-content" className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6">
+      <main id="main-content" tabIndex={-1} className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6 focus:outline-none">
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">{Array.from({ length: 4 }).map((_, i) => <StatsCardSkeleton key={i} />)}</div>
         <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-100">{Array.from({ length: 5 }).map((_, i) => <OrderRowSkeleton key={i} />)}</div>
       </main>
@@ -60,7 +86,7 @@ const Orders = () => {
   }
 
   return (
-    <main id="main-content" className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6 md:space-y-8">
+    <main id="main-content" tabIndex={-1} className="p-4 md:p-6 pt-20 md:pt-24 max-w-7xl mx-auto space-y-6 md:space-y-8 focus:outline-none">
       {/* Header */}
       <header className="flex flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -77,7 +103,7 @@ const Orders = () => {
       </header>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4" aria-label="Order statistics">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4" role="group" aria-label="Order statistics">
         {[
           { title: 'Total', value: stats.total, icon: <ShoppingBag className="w-5 h-5" aria-hidden="true" />, color: 'text-blue-600', bg: 'bg-blue-100' },
           { title: 'Paid', value: stats.paid, icon: <CheckCircle className="w-5 h-5" aria-hidden="true" />, color: 'text-green-600', bg: 'bg-green-100' },
@@ -209,7 +235,7 @@ const Orders = () => {
           <>
             <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" onClick={() => setSelectedOrder(null)} role="presentation" aria-hidden="true" />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="order-detail-title">
-              <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto border border-white/40">
+              <div ref={orderModalRef} className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto border border-white/40">
                 <div className="sticky top-0 bg-white/90 backdrop-blur-md p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center">
                   <h2 id="order-detail-title" className="text-xl font-bold text-gray-800">Order #{selectedOrder._id.slice(-8).toUpperCase()}</h2>
                   <button onClick={() => setSelectedOrder(null)} className="p-2 rounded-xl hover:bg-gray-100 transition" aria-label="Close order details"><X className="w-5 h-5 text-gray-600" aria-hidden="true" /></button>
@@ -220,25 +246,25 @@ const Orders = () => {
                     <span className="text-sm text-gray-500 flex items-center gap-1"><Calendar className="w-4 h-4" aria-hidden="true" />{new Date(selectedOrder.createdAt).toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     {selectedOrder.paymentMethod && <span className="text-sm text-gray-500 flex items-center gap-1"><CreditCard className="w-4 h-4" aria-hidden="true" />{PAYMENT_METHOD_LABELS[selectedOrder.paymentMethod] || selectedOrder.paymentMethod}</span>}
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-4" aria-label="Customer information">
+                  <div className="bg-gray-50 rounded-xl p-4" role="group" aria-label="Customer information">
                     <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Customer</p>
                     <p className="font-medium text-gray-800">{selectedOrder.user?.name || selectedOrder.name || 'N/A'}</p>
                     <p className="text-sm text-gray-600">{selectedOrder.user?.email}</p>
                     {(selectedOrder.user?.phone || selectedOrder.phone) && <p className="text-sm text-gray-600 flex items-center gap-1"><Phone className="w-3.5 h-3.5" aria-hidden="true" /> {selectedOrder.user?.phone || selectedOrder.phone}</p>}
                   </div>
                   {selectedOrder.couponCode && (
-                    <div className="bg-green-50 rounded-xl p-4 border border-green-100" aria-label="Discount information">
+                    <div className="bg-green-50 rounded-xl p-4 border border-green-100" role="group" aria-label="Discount information">
                       <p className="text-xs text-green-600 uppercase tracking-wider mb-1 font-semibold">Discount Applied</p>
                       <div className="flex items-center gap-2"><Ticket className="w-5 h-5 text-green-600" aria-hidden="true" /><span className="font-medium text-green-800">{selectedOrder.couponCode}</span><span className="text-green-700">(-₦{selectedOrder.discount?.toLocaleString() || 0})</span></div>
                     </div>
                   )}
                   {selectedOrder.shippingAddress && (
-                    <div className="bg-gray-50 rounded-xl p-4" aria-label="Shipping address">
+                    <div className="bg-gray-50 rounded-xl p-4" role="group" aria-label="Shipping address">
                       <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Shipping Address</p>
                       <p className="text-sm text-gray-800 flex items-start gap-2"><MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" aria-hidden="true" />{selectedOrder.shippingAddress.address}, {selectedOrder.shippingAddress.city}{selectedOrder.shippingAddress.postalCode ? `, ${selectedOrder.shippingAddress.postalCode}` : ''}{selectedOrder.shippingAddress.country ? `, ${selectedOrder.shippingAddress.country}` : ''}</p>
                     </div>
                   )}
-                  <div aria-label="Order items">
+                  <div role="group" aria-label="Order items">
                     <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><Package className="w-4 h-4 text-leaf-green" aria-hidden="true" />Items</h3>
                     <div className="space-y-2">
                       {selectedOrder.orderItems.map((item, i) => (
@@ -246,7 +272,7 @@ const Orders = () => {
                       ))}
                     </div>
                   </div>
-                  <div className="flex justify-between items-center pt-4 border-t border-gray-100" aria-label="Order total">
+                  <div className="flex justify-between items-center pt-4 border-t border-gray-100" role="group" aria-label="Order total">
                     <span className="text-gray-800 font-semibold text-lg">Total</span>
                     <span className="text-2xl font-bold text-leaf-green">₦{selectedOrder.totalPrice.toLocaleString()}</span>
                   </div>

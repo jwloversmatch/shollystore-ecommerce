@@ -109,6 +109,13 @@ const Dashboard = () => {
 
   const sortedProducts = useMemo(() => [...products].sort((a,b) => b._id.localeCompare(a._id)), [products]);
 
+  // Text alternatives for the two charts below — a role="img" wrapper collapses
+  // the whole SVG into one labeled unit for assistive tech, and using the real
+  // data here (rather than a generic "bar chart" label) gives a screen reader
+  // user the actual numbers, not just notice that a chart exists.
+  const categorySalesLabel = `Bar chart of revenue by category: ${analytics.categorySales.map((c: CategorySale) => `${c._id}: ₦${c.revenue.toLocaleString()}`).join(', ')}`;
+  const statusPieLabel = `Order status breakdown: ${statusPieData.map(e => `${e.name}: ${e.value}`).join(', ')}`;
+
   const handleDeleteClick = (id: string) => { setProductToDelete(id); setDeleteModalOpen(true); };
   const confirmDelete = async () => { if (!productToDelete) return; await deleteProduct(productToDelete); refetchProducts(); setDeleteModalOpen(false); setProductToDelete(null); };
   const handleStatusChange = async (id: string, status: string) => { try { await updateStatus({ id, status }).unwrap(); refetchStats(); } catch (err) { console.error('Status update failed', err);} };
@@ -118,7 +125,7 @@ const Dashboard = () => {
 
   if (statsLoading || productsLoading || analyticsLoading) {
     return (
-      <main id="main-content" className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-7xl mx-auto space-y-5 md:space-y-6 pb-28 md:pb-10" style={{ background: "#0A0A0B" }}>
+      <main id="main-content" tabIndex={-1} className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-7xl mx-auto space-y-5 md:space-y-6 pb-28 md:pb-10 focus:outline-none" style={{ background: "#0A0A0B" }}>
         <SEO title="Admin Dashboard" description="Manage your store." />
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="space-y-2">
@@ -146,7 +153,7 @@ const Dashboard = () => {
   }
 
   return (
-    <main id="main-content" className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-7xl mx-auto space-y-5 md:space-y-6 pb-28 md:pb-10" style={{ background: "#0A0A0B" }}>
+    <main id="main-content" tabIndex={-1} className="min-h-screen p-4 md:p-6 pt-16 md:pt-24 max-w-7xl mx-auto space-y-5 md:space-y-6 pb-28 md:pb-10 focus:outline-none" style={{ background: "#0A0A0B" }}>
       <SEO title="Admin Dashboard" description="Manage your store, track sales, oversee orders & users." />
 
       <ConfirmationModal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} onConfirm={confirmDelete} title="Delete Product" message="Are you sure? This action cannot be undone." confirmText="Delete" cancelText="Cancel" type="danger" />
@@ -174,7 +181,7 @@ const Dashboard = () => {
       </header>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Store statistics">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" role="group" aria-label="Store statistics">
         {[
           { label:"Total Revenue", value:`₦${stats.totalRevenue.toLocaleString()}`, icon:<TrendingUp className="w-5 h-5" aria-hidden="true" />, color:"#e8622a", bg:"rgba(232,98,42,0.12)" },
           { label:"Recent Orders", value:stats.orders?.length||0, icon:<ShoppingBag className="w-5 h-5" aria-hidden="true" />, color:"#3b82f6", bg:"rgba(59,130,246,0.12)" },
@@ -205,14 +212,16 @@ const Dashboard = () => {
             {analytics.categorySales.length === 0 ? (
               <p className="text-gray-700 text-center py-14 text-sm">No paid orders yet.</p>
             ) : (
-              <ResponsiveContainer width="100%" height={230}>
-                <BarChart data={analytics.categorySales} margin={{ top:8, right:0, left:0, bottom:0 }} aria-label="Sales by category bar chart">
-                  <XAxis dataKey="_id" tick={{ fontSize:10, fill:"#6b7280" }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize:10, fill:"#6b7280" }} axisLine={false} tickLine={false} tickFormatter={(v:number) => `₦${(v/1000).toFixed(0)}k`} />
-                  <Tooltip content={<ChartTooltip />} cursor={{ fill:"rgba(255,255,255,0.04)" }} />
-                  <Bar dataKey="revenue" radius={[8,8,0,0]} barSize={28}>{analytics.categorySales.map((_:CategorySale, i:number) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}</Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <div role="img" aria-label={categorySalesLabel}>
+                <ResponsiveContainer width="100%" height={230}>
+                  <BarChart data={analytics.categorySales} margin={{ top:8, right:0, left:0, bottom:0 }}>
+                    <XAxis dataKey="_id" tick={{ fontSize:10, fill:"#6b7280" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize:10, fill:"#6b7280" }} axisLine={false} tickLine={false} tickFormatter={(v:number) => `₦${(v/1000).toFixed(0)}k`} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill:"rgba(255,255,255,0.04)" }} />
+                    <Bar dataKey="revenue" radius={[8,8,0,0]} barSize={28}>{analytics.categorySales.map((_:CategorySale, i:number) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}</Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </div>
         </DarkCard>
@@ -224,13 +233,15 @@ const Dashboard = () => {
             {statusPieData.length === 0 ? (
               <p className="text-gray-700 text-center py-14 text-sm">No orders yet.</p>
             ) : (
-              <ResponsiveContainer width="100%" height={200}>
-                <RePieChart aria-label="Order status pie chart">
-                  <Pie data={statusPieData} cx="50%" cy="50%" innerRadius={48} outerRadius={68} paddingAngle={3} dataKey="value">{statusPieData.map((e, i) => <Cell key={i} fill={STATUS_PIE[e.name] || "#6b7280"} />)}</Pie>
-                  <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" formatter={(v:string) => <span style={{ color:"#9ca3af", fontSize:11, fontWeight:700 }}>{v}</span>} />
-                  <Tooltip content={<PieTooltip />} />
-                </RePieChart>
-              </ResponsiveContainer>
+              <div role="img" aria-label={statusPieLabel}>
+                <ResponsiveContainer width="100%" height={200}>
+                  <RePieChart>
+                    <Pie data={statusPieData} cx="50%" cy="50%" innerRadius={48} outerRadius={68} paddingAngle={3} dataKey="value">{statusPieData.map((e, i) => <Cell key={i} fill={STATUS_PIE[e.name] || "#6b7280"} />)}</Pie>
+                    <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" formatter={(v:string) => <span style={{ color:"#9ca3af", fontSize:11, fontWeight:700 }}>{v}</span>} />
+                    <Tooltip content={<PieTooltip />} />
+                  </RePieChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </div>
         </DarkCard>
@@ -253,7 +264,7 @@ const Dashboard = () => {
                   <p className="text-white font-semibold text-sm truncate">{p.name}</p>
                   <span className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-full" style={{ background:`${ACCENT}15`, color:ACCENT }}>{getCategoryName(p.category)}</span>
                 </div>
-                <div className="flex items-center gap-2 shrink-0" aria-label={`Stock for ${p.name}: ${p.stock ?? 0}`}>
+                <div className="flex items-center gap-2 shrink-0" role="group" aria-label={`Stock for ${p.name}: ${p.stock ?? 0}`}>
                   <div className="flex items-center rounded-xl overflow-hidden" style={{ background:"#111", border:"1px solid rgba(255,255,255,0.08)" }}>
                     <button onClick={() => handleStockUpdate(p._id, p.stock ?? 0, -1)} className="w-7 h-7 flex items-center justify-center text-red-400 hover:bg-red-500/10 transition-colors" aria-label={`Decrease stock of ${p.name}`}><Minus className="w-3 h-3" aria-hidden="true" /></button>
                     <span className={`w-8 text-center text-xs font-black ${(p.stock??0)<5?"text-red-400":"text-white"}`} aria-live="polite">{p.stock ?? 0}</span>

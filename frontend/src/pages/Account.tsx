@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "../store";
@@ -42,6 +42,8 @@ const Account = () => {
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [activeTab, setActiveTab] = useState<"orders" | "profile">("orders");
+  const orderTabRef = useRef<HTMLButtonElement>(null);
+  const profileTabRef = useRef<HTMLButtonElement>(null);
 
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
@@ -70,10 +72,31 @@ const Account = () => {
   const [changePassword, { isLoading: changingPassword }] =
     useChangePasswordMutation();
 
+  // Side effects (like navigation) belong in an effect, not directly in the
+  // render body — calling navigate() during render can misbehave under
+  // React Strict Mode's double-invocation.
+  useEffect(() => {
+    if (!user) {
+      navigate("/login", { replace: true });
+    }
+  }, [user, navigate]);
+
   if (!user) {
-    navigate("/login");
     return null;
   }
+
+  // Arrow-key navigation between tabs, per the standard ARIA tabs pattern
+  // implied by role="tablist" — Left/Right toggles, Home/End jump to ends.
+  const handleTabKeyDown = (e: React.KeyboardEvent, current: "orders" | "profile") => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
+    e.preventDefault();
+    const next: "orders" | "profile" =
+      e.key === "Home" ? "orders" :
+      e.key === "End" ? "profile" :
+      current === "orders" ? "profile" : "orders";
+    setActiveTab(next);
+    (next === "orders" ? orderTabRef : profileTabRef).current?.focus();
+  };
 
   const startEditing = () => {
     setEditName(user?.name || "");
@@ -173,7 +196,8 @@ const Account = () => {
   return (
     <main
       id="main-content"
-      className="min-h-screen p-4 md:p-6 max-w-6xl mx-auto space-y-8"
+      tabIndex={-1}
+      className="min-h-screen p-4 md:p-6 max-w-6xl mx-auto space-y-8 focus:outline-none"
       style={{
         background: "#0A0A0B",
         paddingTop: "calc(56px + env(safe-area-inset-top, 0px))",
@@ -195,11 +219,14 @@ const Account = () => {
         aria-label="Account sections"
       >
         <button
+          ref={orderTabRef}
           onClick={() => setActiveTab("orders")}
+          onKeyDown={(e) => handleTabKeyDown(e, "orders")}
           role="tab"
           aria-selected={activeTab === "orders"}
           aria-controls="panel-orders"
           id="tab-orders"
+          tabIndex={activeTab === "orders" ? 0 : -1}
           className={`pb-3 px-1 text-sm font-semibold transition-colors border-b-2 ${
             activeTab === "orders"
               ? "border-[#e8622a] text-[#e8622a]"
@@ -209,11 +236,14 @@ const Account = () => {
           🧾 My Orders
         </button>
         <button
+          ref={profileTabRef}
           onClick={() => setActiveTab("profile")}
+          onKeyDown={(e) => handleTabKeyDown(e, "profile")}
           role="tab"
           aria-selected={activeTab === "profile"}
           aria-controls="panel-profile"
           id="tab-profile"
+          tabIndex={activeTab === "profile" ? 0 : -1}
           className={`pb-3 px-1 text-sm font-semibold transition-colors border-b-2 ${
             activeTab === "profile"
               ? "border-[#e8622a] text-[#e8622a]"
