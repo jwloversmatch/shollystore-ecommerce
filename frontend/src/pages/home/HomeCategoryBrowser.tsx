@@ -13,7 +13,7 @@ interface HomeCategoryBrowserProps {
 }
 
 const HomeCategoryBrowser = ({ categories }: HomeCategoryBrowserProps) => (
-  <section className="py-14 md:py-18 bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+  <section className="py-14 md:py-18 bg-[#FCFAF5] dark:bg-[#0A0A0B]" aria-labelledby="category-browser-heading">
     <div className="max-w-7xl mx-auto px-4 md:px-6">
       <div className="mb-8">
         <motion.p
@@ -26,6 +26,7 @@ const HomeCategoryBrowser = ({ categories }: HomeCategoryBrowserProps) => (
           Browse
         </motion.p>
         <motion.h2
+          id="category-browser-heading"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -42,7 +43,7 @@ const HomeCategoryBrowser = ({ categories }: HomeCategoryBrowserProps) => (
             to={`/category/${cat.slug}`}
             className="flex-shrink-0 relative flex flex-col items-center gap-2 px-5 py-4 rounded-2xl border transition-all min-w-[100px] hover:border-[#e8622a]/50 bg-[#FCFAF5] dark:bg-[#141414] border-gray-200 dark:border-white/[0.06]"
           >
-            <span className="text-2xl">🛍️</span>
+            <span className="text-2xl" aria-hidden="true">🛍️</span>
             <span className="text-xs font-bold whitespace-nowrap text-gray-500 dark:text-gray-400">
               {cat.name}
             </span>
@@ -50,6 +51,7 @@ const HomeCategoryBrowser = ({ categories }: HomeCategoryBrowserProps) => (
               <span
                 className="absolute -top-1.5 -right-1.5 text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center text-white"
                 style={{ background: ACCENT }}
+                aria-label={`${cat.count} products`}
               >
                 {cat.count}
               </span>

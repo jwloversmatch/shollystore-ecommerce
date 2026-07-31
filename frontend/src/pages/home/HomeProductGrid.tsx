@@ -40,8 +40,10 @@ const HomeProductGrid = ({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
           {/* Search input – light/dark aware */}
           <div className="relative w-full sm:w-60">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-600" />
+            <label htmlFor="home-product-search" className="sr-only">Search products</label>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-600" aria-hidden="true" />
             <input
+              id="home-product-search"
               type="text"
               placeholder="Search..."
               value={searchTerm}
@@ -55,6 +57,7 @@ const HomeProductGrid = ({
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
+                aria-pressed={selectedCategory === cat}
                 className="px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border"
                 style={{
                   background: selectedCategory === cat ? ACCENT : "transparent",
@@ -108,7 +111,7 @@ const HomeProductGrid = ({
               animate={{ opacity: 1 }}
               className="col-span-full py-24 flex flex-col items-center gap-3 text-gray-500 dark:text-gray-600"
             >
-              <span className="text-5xl">🔍</span>
+              <span className="text-5xl" aria-hidden="true">🔍</span>
               <p className="text-lg font-semibold">No products found</p>
               <button
                 onClick={() => {

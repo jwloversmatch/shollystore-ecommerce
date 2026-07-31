@@ -50,7 +50,7 @@ const HomeHero = ({
             color: ACCENT,
           }}
         >
-          <Flame className="w-3.5 h-3.5" /> {heroTagline}
+          <Flame className="w-3.5 h-3.5" aria-hidden="true" /> {heroTagline}
         </motion.span>
 
         <motion.h1
@@ -99,7 +99,7 @@ const HomeHero = ({
           style={{ background: ACCENT, boxShadow: `0 10px 28px ${ACCENT}44` }}
         >
           Browse Menu{" "}
-          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
         </motion.button>
       </section>
     );
@@ -114,7 +114,7 @@ const HomeHero = ({
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold border"
           style={{ background: "rgba(232,98,42,0.12)", borderColor: "rgba(232,98,42,0.3)", color: ACCENT }}
         >
-          <Flame className="w-3.5 h-3.5" /> {heroTagline}
+          <Flame className="w-3.5 h-3.5" aria-hidden="true" /> {heroTagline}
         </motion.span>
 
         <motion.h1
@@ -152,11 +152,11 @@ const HomeHero = ({
             style={{ background: ACCENT, boxShadow: `0 8px 24px ${ACCENT}44` }}
           >
             Explore Menu{" "}
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
           </motion.button>
           <div className="flex items-center gap-2">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="w-8 h-8 rounded-full border-2 border-gray-200 dark:border-[#0A0A0B] overflow-hidden bg-gray-100 dark:bg-[#1c1c1c]" />
+              <div key={i} className="w-8 h-8 rounded-full border-2 border-gray-200 dark:border-[#0A0A0B] overflow-hidden bg-gray-100 dark:bg-[#1c1c1c]" aria-hidden="true" />
             ))}
             <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">{displayProductsCount}+ items</span>
           </div>
@@ -180,12 +180,16 @@ const HomeHero = ({
             transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
             className="absolute -inset-6 rounded-full border-2 border-dashed pointer-events-none"
             style={{ borderColor: `${ACCENT}30` }}
+            aria-hidden="true"
           />
-          <div className="absolute -inset-3 rounded-full pointer-events-none" style={{ boxShadow: `0 0 0 1.5px ${ACCENT}25` }} />
+          <div className="absolute -inset-3 rounded-full pointer-events-none" style={{ boxShadow: `0 0 0 1.5px ${ACCENT}25` }} aria-hidden="true" />
 
           <div
             className="relative w-64 h-64 md:w-80 md:h-80 rounded-full overflow-hidden group"
             style={{ boxShadow: `0 0 0 4px ${ACCENT}, 0 24px 80px rgba(0,0,0,0.5), 0 0 60px ${ACCENT}20` }}
+            role="group"
+            aria-roledescription="carousel"
+            aria-label="Hero product images"
           >
             {heroSlides && heroSlides.length > 0 ? (
               <AnimatePresence initial={false} custom={direction} mode="wait">
@@ -215,20 +219,30 @@ const HomeHero = ({
               </div>
             )}
 
-            <button onClick={handlePrev} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-              <ChevronLeft className="w-4 h-4 text-white" />
+            <button
+              onClick={handlePrev}
+              aria-label="Previous slide"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 transition-opacity z-10"
+            >
+              <ChevronLeft className="w-4 h-4 text-white" aria-hidden="true" />
             </button>
-            <button onClick={handleNext} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-              <ChevronRight className="w-4 h-4 text-white" />
+            <button
+              onClick={handleNext}
+              aria-label="Next slide"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 transition-opacity z-10"
+            >
+              <ChevronRight className="w-4 h-4 text-white" aria-hidden="true" />
             </button>
           </div>
 
           {heroSlides && heroSlides.length > 1 && (
-            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
+            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-2" role="group" aria-label="Slide navigation">
               {heroSlides.map((_: HeroSlide, i: number) => (
                 <button
                   key={i}
                   onClick={() => { setDirection(i > currentIndex ? 1 : -1); setCurrentIndex(i); }}
+                  aria-label={`Go to slide ${i + 1}`}
+                  aria-current={i === currentIndex ? "true" : undefined}
                   className={`h-1.5 rounded-full transition-all duration-300 ${i === currentIndex ? "w-6" : "w-1.5 bg-gray-300 dark:bg-white/20"}`}
                   style={i === currentIndex ? { background: ACCENT } : {}}
                 />

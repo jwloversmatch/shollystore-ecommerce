@@ -11,7 +11,7 @@ const HomeSpecialOffer = ({
   specialOfferTitle,
   specialOfferText,
 }: HomeSpecialOfferProps) => (
-  <section className="bg-[#FCFAF5] dark:bg-[#0A0A0B] py-14 md:py-20 px-4 md:px-6">
+  <section className="bg-[#FCFAF5] dark:bg-[#0A0A0B] py-14 md:py-20 px-4 md:px-6" aria-labelledby="special-offer-heading">
     <div className="max-w-7xl mx-auto">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -29,18 +29,21 @@ const HomeSpecialOffer = ({
           style={{
             background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)`,
           }}
+          aria-hidden="true"
         />
         <div
           className="absolute bottom-0 inset-x-0 h-px"
           style={{
             background: "linear-gradient(90deg, transparent, #10b981, transparent)",
           }}
+          aria-hidden="true"
         />
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
           className="absolute top-6 right-6 opacity-30"
           style={{ color: ACCENT }}
+          aria-hidden="true"
         >
           <Sparkles className="w-8 h-8" />
         </motion.div>
@@ -49,6 +52,7 @@ const HomeSpecialOffer = ({
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
           className="absolute bottom-6 left-6 opacity-20"
           style={{ color: "#10b981" }}
+          aria-hidden="true"
         >
           <Sparkles className="w-6 h-6" />
         </motion.div>
@@ -64,9 +68,10 @@ const HomeSpecialOffer = ({
             color: ACCENT,
           }}
         >
-          <Flame className="w-3.5 h-3.5" /> Limited Offer
+          <Flame className="w-3.5 h-3.5" aria-hidden="true" /> Limited Offer
         </motion.div>
         <motion.h2
+          id="special-offer-heading"
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -100,7 +105,7 @@ const HomeSpecialOffer = ({
           style={{ background: ACCENT, boxShadow: `0 10px 28px ${ACCENT}44` }}
         >
           Shop Now{" "}
-          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
         </motion.button>
       </motion.div>
     </div>

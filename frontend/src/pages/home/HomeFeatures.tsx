@@ -4,7 +4,7 @@ import { fadeUp, stagger } from "../../types/home";
 
 const features = [
   {
-    icon: <Package className="w-6 h-6" />,
+    icon: <Package className="w-6 h-6" aria-hidden="true" />,
     label: "Bulk Orders",
     stat: "50+",
     desc: "Pack sizes available",
@@ -12,7 +12,7 @@ const features = [
     glow: "rgba(232,98,42,0.15)",
   },
   {
-    icon: <Truck className="w-6 h-6" />,
+    icon: <Truck className="w-6 h-6" aria-hidden="true" />,
     label: "Fast Delivery",
     stat: "24hr",
     desc: "Across Nigeria",
@@ -20,7 +20,7 @@ const features = [
     glow: "rgba(59,130,246,0.15)",
   },
   {
-    icon: <CreditCard className="w-6 h-6" />,
+    icon: <CreditCard className="w-6 h-6" aria-hidden="true" />,
     label: "Easy Payments",
     stat: "3+",
     desc: "Payment options",
@@ -28,7 +28,7 @@ const features = [
     glow: "rgba(139,92,246,0.15)",
   },
   {
-    icon: <Star className="w-6 h-6" />,
+    icon: <Star className="w-6 h-6" aria-hidden="true" />,
     label: "Customer Rating",
     stat: "4.9★",
     desc: "From verified buyers",
@@ -46,6 +46,8 @@ const HomeFeatures = () => (
         whileInView="visible"
         viewport={{ once: true, margin: "-60px" }}
         className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"
+        role="group"
+        aria-label="Store benefits"
       >
         {features.map((f, i) => (
           <motion.div
@@ -62,6 +64,7 @@ const HomeFeatures = () => (
               style={{
                 background: `radial-gradient(circle at 30% 30%, ${f.glow}, transparent 70%)`,
               }}
+              aria-hidden="true"
             />
             <div className="relative z-10">
               <div
