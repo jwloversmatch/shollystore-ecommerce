@@ -22,6 +22,7 @@ import adminCategoryRoutes from './routes/adminCategoryRoutes';
 import adminMarketingRoutes from './routes/adminMarketingRoutes';
 import couponRoutes from './routes/couponRoutes';
 import pushRoutes from './routes/pushRoutes';
+import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
 
@@ -70,5 +71,7 @@ app.get("/api/ping", (req: Request, res: Response) => {
 app.get("/ping", (req: Request, res: Response) => {
   res.status(200).json({ status: "pong" });
 });
+
+app.use(errorHandler);
 
 export default app;

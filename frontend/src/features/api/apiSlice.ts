@@ -457,6 +457,18 @@ export const apiSlice = createApi({
         body: data,
       }),
     }),
+
+    // ─── Push Notifications ─────────────────────────────────────────────────
+    sendPushNotification: builder.mutation<
+      { success: boolean; message: string },
+      { title: string; body: string; url?: string }
+    >({
+      query: (data) => ({
+        url: "/push/send",
+        method: "POST",
+        body: data,
+      }),
+    }),
   }),
 });
 
@@ -512,4 +524,5 @@ export const {
   useDeleteCouponMutation,
   useValidateCouponMutation,
   useSendMarketingEmailMutation,
+  useSendPushNotificationMutation,
 } = apiSlice;
