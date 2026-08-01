@@ -21,13 +21,11 @@ const CategorySchema = new Schema<ICategory>(
       type: String,
       required: [true, 'Category name is required'],
       trim: true,
-      // ✅ REMOVED: unique: true, 
-      // We only want unique names within the same parent, not globally.
     },
     slug: {
       type: String,
       required: [true, 'Category slug is required'],
-      unique: true, // Slug must still be globally unique for URLs
+      unique: true, 
       lowercase: true,
       trim: true,
     },
