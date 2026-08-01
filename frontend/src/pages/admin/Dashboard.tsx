@@ -109,12 +109,9 @@ const Dashboard = () => {
 
   const sortedProducts = useMemo(() => [...products].sort((a,b) => b._id.localeCompare(a._id)), [products]);
 
-  // Text alternatives for the two charts below — a role="img" wrapper collapses
-  // the whole SVG into one labeled unit for assistive tech, and using the real
-  // data here (rather than a generic "bar chart" label) gives a screen reader
-  // user the actual numbers, not just notice that a chart exists.
-  const categorySalesLabel = `Bar chart of revenue by category: ${analytics.categorySales.map((c: CategorySale) => `${c._id}: ₦${c.revenue.toLocaleString()}`).join(', ')}`;
-  const statusPieLabel = `Order status breakdown: ${statusPieData.map(e => `${e.name}: ${e.value}`).join(', ')}`;
+  // ✅ FIX: Compact and clean aria-labels for screen readers (No massive text bloat)
+  const categorySalesLabel = `Revenue bar chart by category. Total ₦${analytics.totalRevenue.toLocaleString()}`;
+  const statusPieLabel = `Order status breakdown. ${statusPieData.length} statuses found.`;
 
   const handleDeleteClick = (id: string) => { setProductToDelete(id); setDeleteModalOpen(true); };
   const confirmDelete = async () => { if (!productToDelete) return; await deleteProduct(productToDelete); refetchProducts(); setDeleteModalOpen(false); setProductToDelete(null); };
@@ -297,7 +294,7 @@ const Dashboard = () => {
         </DarkCard>
       </div>
 
-      {/* Recent Orders Table */}
+      {/* Recent Orders Table - ✅ FIXED OVERFLOW */}
       <DarkCard>
         <div className="flex justify-between items-center px-5 py-4 border-b" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
           <h2 className="font-black text-white flex items-center gap-2"><ShoppingBag className="w-4 h-4" style={{ color:"#3b82f6" }} aria-hidden="true" /> Recent Orders</h2>
@@ -307,17 +304,27 @@ const Dashboard = () => {
           <table className="w-full text-left" aria-label="Recent orders">
             <caption className="sr-only">Recent orders with status controls</caption>
             <thead style={{ background:"rgba(255,255,255,0.03)" }}>
-              <tr>{["Customer","Total","Date","Payment","Status"].map(h => <th key={h} scope="col" className="px-5 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">{h}</th>)}</tr>
+              <tr>
+                {/* ✅ Added responsive padding and min-width protection */}
+                <th scope="col" className="px-3 sm:px-5 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600 whitespace-nowrap">Customer</th>
+                <th scope="col" className="px-3 sm:px-5 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600 whitespace-nowrap">Total</th>
+                <th scope="col" className="px-3 sm:px-5 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600 whitespace-nowrap">Date</th>
+                <th scope="col" className="px-3 sm:px-5 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600 whitespace-nowrap">Payment</th>
+                <th scope="col" className="px-3 sm:px-5 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600 whitespace-nowrap">Status</th>
+              </tr>
             </thead>
             <tbody>
               {(stats.orders || []).slice(0,5).map((order: OrderItem) => (
                 <tr key={order._id} className="border-t transition-colors hover:bg-white/[0.015]" style={{ borderColor:"rgba(255,255,255,0.05)" }}>
-                  <td className="px-5 py-3.5 text-sm text-gray-400 max-w-[160px] truncate">{order.user?.email}</td>
-                  <td className="px-5 py-3.5 text-sm font-black text-white">₦{order.totalPrice.toLocaleString()}</td>
-                  <td className="px-5 py-3.5 text-xs text-gray-600">{order.createdAt ? new Date(order.createdAt).toLocaleDateString("en-NG",{day:"numeric",month:"short"}) : "—"}</td>
-                  <td className="px-5 py-3.5"><span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background:"rgba(255,255,255,0.06)", color:"#9ca3af" }}>{PAYMENT_LABELS[order.paymentMethod||""]||"—"}</span></td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2">
+                  {/* ✅ Added min-w-[0] and truncate to prevent long emails from breaking the table */}
+                  <td className="px-3 sm:px-5 py-3.5 text-sm text-gray-400 max-w-[120px] sm:max-w-[200px] truncate min-w-[0]">{order.user?.email}</td>
+                  <td className="px-3 sm:px-5 py-3.5 text-sm font-black text-white whitespace-nowrap">₦{order.totalPrice.toLocaleString()}</td>
+                  <td className="px-3 sm:px-5 py-3.5 text-xs text-gray-600 whitespace-nowrap">{order.createdAt ? new Date(order.createdAt).toLocaleDateString("en-NG",{day:"numeric",month:"short"}) : "—"}</td>
+                  <td className="px-3 sm:px-5 py-3.5 whitespace-nowrap">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background:"rgba(255,255,255,0.06)", color:"#9ca3af" }}>{PAYMENT_LABELS[order.paymentMethod||""]||"—"}</span>
+                  </td>
+                  <td className="px-3 sm:px-5 py-3.5">
+                    <div className="flex items-center gap-2 flex-wrap whitespace-nowrap">
                       <label htmlFor={`status-${order._id}`} className="sr-only">Status for order {order._id.slice(-8)}</label>
                       <select id={`status-${order._id}`} value={order.status} onChange={e => handleStatusChange(order._id, e.target.value)} disabled={order.status==="Delivered"||order.status==="Cancelled"}
                         className="text-xs font-bold px-2.5 py-1.5 rounded-xl outline-none cursor-pointer transition-all appearance-none"
@@ -341,7 +348,7 @@ const Dashboard = () => {
         </div>
       </DarkCard>
 
-      {/* User Management */}
+      {/* User Management - ✅ FIXED OVERFLOW */}
       <DarkCard>
         <div className="flex justify-between items-center px-5 py-4 border-b" style={{ borderColor:"rgba(255,255,255,0.06)" }}>
           <h2 className="font-black text-white flex items-center gap-2"><Shield className="w-4 h-4" style={{ color:"#8b5cf6" }} aria-hidden="true" /> User Management</h2>
@@ -351,16 +358,23 @@ const Dashboard = () => {
           <table className="w-full text-left" aria-label="User management">
             <caption className="sr-only">List of users with role controls</caption>
             <thead style={{ background:"rgba(255,255,255,0.03)" }}>
-              <tr>{["Email","Current Role","Change Role"].map(h => <th key={h} scope="col" className="px-5 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600">{h}</th>)}</tr>
+              <tr>
+                <th scope="col" className="px-3 sm:px-5 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600 whitespace-nowrap">Email</th>
+                <th scope="col" className="px-3 sm:px-5 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600 whitespace-nowrap">Current Role</th>
+                <th scope="col" className="px-3 sm:px-5 py-3 text-[10px] font-extrabold uppercase tracking-widest text-gray-600 whitespace-nowrap">Change Role</th>
+              </tr>
             </thead>
             <tbody>
               {users.slice(0,10).map((u: UserData) => (
                 <tr key={u._id} className="border-t transition-colors hover:bg-white/[0.015]" style={{ borderColor:"rgba(255,255,255,0.05)" }}>
-                  <td className="px-5 py-3.5 text-sm text-gray-400 max-w-[200px] truncate">{u.email}</td>
-                  <td className="px-5 py-3.5"><span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider" style={{ background:u.role==="admin"?`${ACCENT}15`:"rgba(156,163,175,0.1)", color:u.role==="admin"?ACCENT:"#9ca3af", border:`1px solid ${u.role==="admin"?`${ACCENT}30`:"rgba(156,163,175,0.2)"}` }}>{u.role}</span></td>
-                  <td className="px-5 py-3.5">
+                  {/* ✅ Added min-w-[0] and truncate to prevent long emails from breaking the table */}
+                  <td className="px-3 sm:px-5 py-3.5 text-sm text-gray-400 max-w-[150px] sm:max-w-[250px] truncate min-w-[0]">{u.email}</td>
+                  <td className="px-3 sm:px-5 py-3.5 whitespace-nowrap">
+                    <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider whitespace-nowrap" style={{ background:u.role==="admin"?`${ACCENT}15`:"rgba(156,163,175,0.1)", color:u.role==="admin"?ACCENT:"#9ca3af", border:`1px solid ${u.role==="admin"?`${ACCENT}30`:"rgba(156,163,175,0.2)"}` }}>{u.role}</span>
+                  </td>
+                  <td className="px-3 sm:px-5 py-3.5 whitespace-nowrap">
                     <label htmlFor={`role-${u._id}`} className="sr-only">Change role for {u.email}</label>
-                    <select id={`role-${u._id}`} value={u.role} onChange={e => handleRoleUpdate(u._id, e.target.value as "user"|"admin")} className="text-xs font-bold px-3 py-1.5 rounded-xl outline-none cursor-pointer transition-all" style={{ background:"#1c1c1c", color:"#9ca3af", border:"1px solid rgba(255,255,255,0.08)" }}>
+                    <select id={`role-${u._id}`} value={u.role} onChange={e => handleRoleUpdate(u._id, e.target.value as "user"|"admin")} className="text-xs font-bold px-3 py-1.5 rounded-xl outline-none cursor-pointer transition-all whitespace-nowrap" style={{ background:"#1c1c1c", color:"#9ca3af", border:"1px solid rgba(255,255,255,0.08)" }}>
                       <option value="user">User</option>
                       <option value="admin">Admin</option>
                     </select>
