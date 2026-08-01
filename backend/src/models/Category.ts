@@ -21,12 +21,13 @@ const CategorySchema = new Schema<ICategory>(
       type: String,
       required: [true, 'Category name is required'],
       trim: true,
-      unique: true,
+      // ✅ REMOVED: unique: true, 
+      // We only want unique names within the same parent, not globally.
     },
     slug: {
       type: String,
       required: [true, 'Category slug is required'],
-      unique: true,
+      unique: true, // Slug must still be globally unique for URLs
       lowercase: true,
       trim: true,
     },
@@ -53,6 +54,10 @@ CategorySchema.virtual('children', {
 // ---------- Indexes ----------
 CategorySchema.index({ parent: 1 });
 CategorySchema.index({ slug: 1 });
+
+// ✅ NEW: Compound index ensures uniqueness based on (parent + name)
+// This allows "Men's" under Clothing AND "Men's" under Shoes to both exist.
+CategorySchema.index({ parent: 1, name: 1 }, { unique: true });
 
 // ---------- Static method: get all descendant category IDs ----------
 CategorySchema.statics.getAllChildIds = async function (
