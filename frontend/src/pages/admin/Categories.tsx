@@ -1,8 +1,8 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  useGetCategoriesQuery,
+  useGetCategoryTreeQuery,
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
@@ -28,12 +28,14 @@ import { DarkCardSkeleton } from "../../components/Skeletons";
 const ACCENT = "#e8622a";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-interface Category {
+// The backend returns nested tree nodes.
+interface CategoryTreeNode {
   _id: string;
   name: string;
   slug: string;
   parent?: { _id: string; name: string } | null;
   createdAt: string;
+  children?: CategoryTreeNode[];
 }
 
 // ─── Input class helper ────────────────────────────────────────────────────────
@@ -88,11 +90,26 @@ const CategoryRowSkeleton = () => (
 // ═══════════════════════════════════════════════════════════════════════════════
 const Categories = () => {
   const navigate = useNavigate();
+
+  // ✅ 1. Use the Tree endpoint
   const {
-    data: categories = [],
+    data: treeData = [],
     isLoading,
     refetch,
-  } = useGetCategoriesQuery({});
+  } = useGetCategoryTreeQuery({});
+
+  // ✅ 2. Helper to flatten tree for the empty state count (strictly typed)
+  const flattenCategories = (nodes: CategoryTreeNode[]): CategoryTreeNode[] => {
+    return nodes.reduce<CategoryTreeNode[]>((acc, node) => {
+      acc.push(node);
+      if (node.children && node.children.length > 0) {
+        acc.push(...flattenCategories(node.children));
+      }
+      return acc;
+    }, []);
+  };
+  const categories = flattenCategories(treeData);
+
   const [createCategory] = useCreateCategoryMutation();
   const [updateCategory] = useUpdateCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
@@ -107,6 +124,28 @@ const Categories = () => {
 
   const [deleteModal, setDeleteModal] = useState(false);
   const [toDelete, setToDelete] = useState<string | null>(null);
+
+  // ✅ 3. Recursive function to render indented dropdown options (strictly typed)
+  const renderTreeOptions = (
+    nodes: CategoryTreeNode[],
+    depth = 0,
+    excludeId?: string
+  ): React.ReactNode[] => {
+    return nodes.reduce<React.ReactNode[]>((acc, node) => {
+      if (node._id !== excludeId) {
+        acc.push(
+          <option key={node._id} value={node._id}>
+            {'— '.repeat(depth)}
+            {node.name}
+          </option>
+        );
+        if (node.children && node.children.length > 0) {
+          acc.push(...renderTreeOptions(node.children, depth + 1, excludeId));
+        }
+      }
+      return acc;
+    }, []);
+  };
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -158,6 +197,221 @@ const Categories = () => {
       setDeleteModal(false);
       setToDelete(null);
     }
+  };
+
+  // ✅ 4. Recursive component to render indented category rows (strictly typed)
+  const renderCategoryRows = (nodes: CategoryTreeNode[], depth = 0) => {
+    return nodes.map((cat, idx) => {
+      const parentName = cat.parent?.name || "Top‑level";
+      return (
+        <React.Fragment key={cat._id}>
+          <motion.div
+            layout
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{
+              opacity: 0,
+              scale: 0.95,
+              transition: { duration: 0.18 },
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 26,
+              delay: idx * 0.04,
+            }}
+            className="relative rounded-2xl overflow-hidden"
+            style={{
+              background: "#141414",
+              border: "1px solid rgba(255,255,255,0.07)",
+              marginLeft: depth > 0 ? `${depth * 20}px` : "0px", // ✅ Visual indentation
+            }}
+            role="listitem"
+          >
+            {editingId === cat._id ? (
+              <div
+                className="p-4 md:p-5"
+                role="group"
+                aria-label={`Editing category: ${cat.name}`}
+              >
+                <p
+                  className="text-[10px] font-extrabold uppercase tracking-[0.2em] mb-2.5"
+                  style={{ color: ACCENT }}
+                >
+                  Editing
+                </p>
+                <div className="space-y-3">
+                  <label
+                    htmlFor={`edit-category-name-${cat._id}`}
+                    className="sr-only"
+                  >
+                    Category name
+                  </label>
+                  <input
+                    id={`edit-category-name-${cat._id}`}
+                    type="text"
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    className={inputCls}
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleUpdate(cat._id);
+                      if (e.key === "Escape") {
+                        setEditingId(null);
+                        setEditingName("");
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor={`edit-category-parent-${cat._id}`}
+                    className="sr-only"
+                  >
+                    Parent category
+                  </label>
+                  <select
+                    id={`edit-category-parent-${cat._id}`}
+                    value={editingParent}
+                    onChange={(e) => setEditingParent(e.target.value)}
+                    className={`${inputCls} cursor-pointer`}
+                    aria-label="Select parent category"
+                  >
+                    <option value="">Top‑level (no parent)</option>
+                    {/* ✅ Render tree but exclude itself to prevent circular reference */}
+                    {renderTreeOptions(treeData, 0, cat._id)}
+                  </select>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => handleUpdate(cat._id)}
+                    className="flex items-center gap-1.5 px-4 py-3 rounded-xl font-bold text-white text-sm"
+                    style={{ background: ACCENT }}
+                    aria-label={`Save changes to ${cat.name}`}
+                  >
+                    <Check className="w-4 h-4" aria-hidden="true" /> Save
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingId(null);
+                      setEditingName("");
+                      setEditingParent("");
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-3 rounded-xl font-bold text-gray-500 hover:text-white transition-colors text-sm"
+                    style={{
+                      background: "#1c1c1c",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <X className="w-4 h-4" aria-hidden="true" /> Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-4 md:p-5 group">
+                <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                  <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-lg font-black"
+                    style={{
+                      background: `${ACCENT}15`,
+                      color: ACCENT,
+                      border: `1px solid ${ACCENT}25`,
+                    }}
+                    aria-hidden="true"
+                  >
+                    <Tag className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-black text-white text-base truncate">
+                      {cat.name}
+                    </h3>
+                    <div className="flex items-center gap-2.5 mt-1 flex-wrap">
+                      <span
+                        className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{
+                          background: "rgba(255,255,255,0.06)",
+                          color: "#6b7280",
+                        }}
+                      >
+                        /{cat.slug}
+                      </span>
+                      <span
+                        className="text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
+                        style={{
+                          background: cat.parent
+                            ? "rgba(59,130,246,0.1)"
+                            : "rgba(16,185,129,0.1)",
+                          color: cat.parent ? "#60a5fa" : "#34d399",
+                        }}
+                      >
+                        {cat.parent ? (
+                          <>
+                            <ChevronRight
+                              className="w-3 h-3"
+                              aria-hidden="true"
+                            />{" "}
+                            {parentName}
+                          </>
+                        ) : (
+                          <>Top‑level</>
+                        )}
+                      </span>
+                      {cat.createdAt && (
+                        <span className="text-[10px] text-gray-700 flex items-center gap-1 font-medium">
+                          <Calendar className="w-3 h-3" aria-hidden="true" />
+                          {new Date(cat.createdAt).toLocaleDateString("en-NG", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0 ml-4">
+                  <button
+                    onClick={() => {
+                      setEditingId(cat._id);
+                      setEditingName(cat.name);
+                      setEditingParent(cat.parent?._id || "");
+                      setIsCreating(false);
+                    }}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
+                    style={{
+                      background: "rgba(59,130,246,0.1)",
+                      color: "#60a5fa",
+                      border: "1px solid rgba(59,130,246,0.2)",
+                    }}
+                    aria-label={`Edit category ${cat.name}`}
+                  >
+                    <Edit className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setToDelete(cat._id);
+                      setDeleteModal(true);
+                    }}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
+                    style={{
+                      background: "rgba(239,68,68,0.08)",
+                      color: "#f87171",
+                      border: "1px solid rgba(239,68,68,0.18)",
+                    }}
+                    aria-label={`Delete category ${cat.name}`}
+                  >
+                    <Trash2 className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+
+          {/* ✅ 5. Recursively render children */}
+          {cat.children && cat.children.length > 0 &&
+            renderCategoryRows(cat.children, depth + 1)}
+        </React.Fragment>
+      );
+    });
   };
 
   if (isLoading) {
@@ -233,11 +487,7 @@ const Categories = () => {
           </button>
           <div>
             <div className="flex items-center gap-1.5 mb-0.5">
-              <Flame
-                className="w-3 h-3"
-                style={{ color: ACCENT }}
-                aria-hidden="true"
-              />
+              <Flame className="w-3 h-3" style={{ color: ACCENT }} aria-hidden="true" />
               <p
                 className="text-[10px] font-extrabold uppercase tracking-[0.2em]"
                 style={{ color: ACCENT }}
@@ -332,11 +582,8 @@ const Categories = () => {
                   aria-label="Select parent category"
                 >
                   <option value="">Top‑level (no parent)</option>
-                  {categories.map((cat: Category) => (
-                    <option key={cat._id} value={cat._id}>
-                      {cat.name}
-                    </option>
-                  ))}
+                  {/* ✅ Render the tree hierarchy with indentation */}
+                  {renderTreeOptions(treeData)}
                 </select>
               </div>
 
@@ -387,11 +634,7 @@ const Categories = () => {
                     boxShadow: `0 0 0 3px ${ACCENT}`,
                   }}
                 >
-                  <FolderOpen
-                    className="w-9 h-9"
-                    style={{ color: ACCENT }}
-                    aria-hidden="true"
-                  />
+                  <FolderOpen className="w-9 h-9" style={{ color: ACCENT }} aria-hidden="true" />
                 </div>
               </div>
             </div>
@@ -421,222 +664,8 @@ const Categories = () => {
           </div>
         ) : (
           <AnimatePresence mode="popLayout">
-            {categories.map((cat: Category, idx: number) => {
-              const parentName = cat.parent?.name || "Top‑level";
-              return (
-                <motion.div
-                  key={cat._id}
-                  layout
-                  initial={{ opacity: 0, y: 16, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{
-                    opacity: 0,
-                    scale: 0.95,
-                    transition: { duration: 0.18 },
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 26,
-                    delay: idx * 0.04,
-                  }}
-                  className="relative rounded-2xl overflow-hidden"
-                  style={{
-                    background: "#141414",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                  }}
-                  role="listitem"
-                >
-                  {editingId === cat._id ? (
-                    <div
-                      className="p-4 md:p-5"
-                      role="group"
-                      aria-label={`Editing category: ${cat.name}`}
-                    >
-                      <p
-                        className="text-[10px] font-extrabold uppercase tracking-[0.2em] mb-2.5"
-                        style={{ color: ACCENT }}
-                      >
-                        Editing
-                      </p>
-                      <div className="space-y-3">
-                        <label
-                          htmlFor={`edit-category-name-${cat._id}`}
-                          className="sr-only"
-                        >
-                          Category name
-                        </label>
-                        <input
-                          id={`edit-category-name-${cat._id}`}
-                          type="text"
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          className={inputCls}
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleUpdate(cat._id);
-                            if (e.key === "Escape") {
-                              setEditingId(null);
-                              setEditingName("");
-                            }
-                          }}
-                        />
-                        <label
-                          htmlFor={`edit-category-parent-${cat._id}`}
-                          className="sr-only"
-                        >
-                          Parent category
-                        </label>
-                        <select
-                          id={`edit-category-parent-${cat._id}`}
-                          value={editingParent}
-                          onChange={(e) => setEditingParent(e.target.value)}
-                          className={`${inputCls} cursor-pointer`}
-                          aria-label="Select parent category"
-                        >
-                          <option value="">Top‑level (no parent)</option>
-                          {categories
-                            .filter((c: Category) => c._id !== cat._id)
-                            .map((c: Category) => (
-                              <option key={c._id} value={c._id}>
-                                {c.name}
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-                      <div className="flex gap-2 mt-4">
-                        <button
-                          onClick={() => handleUpdate(cat._id)}
-                          className="flex items-center gap-1.5 px-4 py-3 rounded-xl font-bold text-white text-sm"
-                          style={{ background: ACCENT }}
-                          aria-label={`Save changes to ${cat.name}`}
-                        >
-                          <Check className="w-4 h-4" aria-hidden="true" /> Save
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingId(null);
-                            setEditingName("");
-                            setEditingParent("");
-                          }}
-                          className="flex items-center gap-1.5 px-4 py-3 rounded-xl font-bold text-gray-500 hover:text-white transition-colors text-sm"
-                          style={{
-                            background: "#1c1c1c",
-                            border: "1px solid rgba(255,255,255,0.08)",
-                          }}
-                        >
-                          <X className="w-4 h-4" aria-hidden="true" /> Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between p-4 md:p-5 group">
-                      <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                        <div
-                          className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-lg font-black"
-                          style={{
-                            background: `${ACCENT}15`,
-                            color: ACCENT,
-                            border: `1px solid ${ACCENT}25`,
-                          }}
-                          aria-hidden="true"
-                        >
-                          <Tag className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="font-black text-white text-base truncate">
-                            {cat.name}
-                          </h3>
-                          <div className="flex items-center gap-2.5 mt-1 flex-wrap">
-                            <span
-                              className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                              style={{
-                                background: "rgba(255,255,255,0.06)",
-                                color: "#6b7280",
-                              }}
-                            >
-                              /{cat.slug}
-                            </span>
-                            <span
-                              className="text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
-                              style={{
-                                background: cat.parent
-                                  ? "rgba(59,130,246,0.1)"
-                                  : "rgba(16,185,129,0.1)",
-                                color: cat.parent ? "#60a5fa" : "#34d399",
-                              }}
-                            >
-                              {cat.parent ? (
-                                <>
-                                  <ChevronRight
-                                    className="w-3 h-3"
-                                    aria-hidden="true"
-                                  />{" "}
-                                  {parentName}
-                                </>
-                              ) : (
-                                <>Top‑level</>
-                              )}
-                            </span>
-                            {cat.createdAt && (
-                              <span className="text-[10px] text-gray-700 flex items-center gap-1 font-medium">
-                                <Calendar
-                                  className="w-3 h-3"
-                                  aria-hidden="true"
-                                />
-                                {new Date(cat.createdAt).toLocaleDateString(
-                                  "en-NG",
-                                  {
-                                    year: "numeric",
-                                    month: "short",
-                                    day: "numeric",
-                                  },
-                                )}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0 ml-4">
-                        <button
-                          onClick={() => {
-                            setEditingId(cat._id);
-                            setEditingName(cat.name);
-                            setEditingParent(cat.parent?._id || "");
-                            setIsCreating(false);
-                          }}
-                          className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
-                          style={{
-                            background: "rgba(59,130,246,0.1)",
-                            color: "#60a5fa",
-                            border: "1px solid rgba(59,130,246,0.2)",
-                          }}
-                          aria-label={`Edit category ${cat.name}`}
-                        >
-                          <Edit className="w-4 h-4" aria-hidden="true" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setToDelete(cat._id);
-                            setDeleteModal(true);
-                          }}
-                          className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
-                          style={{
-                            background: "rgba(239,68,68,0.08)",
-                            color: "#f87171",
-                            border: "1px solid rgba(239,68,68,0.18)",
-                          }}
-                          aria-label={`Delete category ${cat.name}`}
-                        >
-                          <Trash2 className="w-4 h-4" aria-hidden="true" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              );
-            })}
+            {/* ✅ Render the tree recursively instead of the flat map */}
+            {renderCategoryRows(treeData)}
           </AnimatePresence>
         )}
       </div>
