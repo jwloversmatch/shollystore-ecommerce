@@ -13,7 +13,7 @@ import {
   useUpdateProductMutation,
   useUploadImageMutation,
   useUpdateStockMutation,
-  useGetCategoriesQuery,
+  useGetCategoryTreeQuery,
   useSendMarketingEmailMutation,
 } from "../../features/api/apiSlice";
 import {
@@ -38,13 +38,15 @@ import { getCloudinaryUrl } from "../../utils/cloudinary";
 const ACCENT = "#e8622a";
 const PLACEHOLDER = "https://via.placeholder.com/150";
 
-
 import type { ProductItem } from "../../types/home";
+
+// ✅ Updated interface to handle tree children
 interface CategoryItem {
   _id: string;
   name: string;
   slug: string;
   parent?: string | null;
+  children?: CategoryItem[];
 }
 
 const productSchema = z.object({
@@ -130,7 +132,10 @@ const Products = () => {
     () => productsData?.products ?? [],
     [productsData?.products],
   );
-  const { data: categories = [] } = useGetCategoriesQuery({});
+
+  // Fetch the tree structure instead of flat list
+  const { data: categoryTree = [] } = useGetCategoryTreeQuery({});
+
   const [deleteProduct] = useDeleteProductMutation();
   const [createProduct] = useCreateProductMutation();
   const [updateProduct] = useUpdateProductMutation();
@@ -195,6 +200,36 @@ const Products = () => {
     }
   });
 
+  const { filterCategories } = useMemo(() => {
+    const flatten = (nodes: CategoryItem[]): CategoryItem[] => {
+      return nodes.reduce<CategoryItem[]>((acc, node) => {
+        acc.push(node);
+        if (node.children && node.children.length > 0) {
+          acc.push(...flatten(node.children));
+        }
+        return acc;
+      }, []);
+    };
+    const flat = flatten(categoryTree);
+    const filtered = [{ _id: "All", name: "All" }, ...flat];
+    return { flatCategories: flat, filterCategories: filtered };
+  }, [categoryTree]);
+
+  // ✅ Recursive helper to render indented options for the Category Dropdown
+  const renderCategoryOptions = (nodes: CategoryItem[], depth = 0): React.ReactNode[] => {
+    return nodes.reduce<React.ReactNode[]>((acc, node) => {
+      acc.push(
+        <option key={node._id} value={node._id}>
+          {'— '.repeat(depth)}{node.name}
+        </option>
+      );
+      if (node.children && node.children.length > 0) {
+        acc.push(...renderCategoryOptions(node.children, depth + 1));
+      }
+      return acc;
+    }, []);
+  };
+
   const handleCloseDrawer = () => {
     setIsDrawerOpen(false);
     setEditingProduct(null);
@@ -203,13 +238,9 @@ const Products = () => {
     setVariants([]);
   };
 
-useFocusTrap(drawerRef, isDrawerOpen, handleCloseDrawer);
-useFocusTrap(marketingModalRef, marketingOpen, () => setMarketingOpen(false));
+  useFocusTrap(drawerRef, isDrawerOpen, handleCloseDrawer);
+  useFocusTrap(marketingModalRef, marketingOpen, () => setMarketingOpen(false));
 
-  const filterCategories = useMemo(
-    () => [{ _id: "All", name: "All" }, ...categories],
-    [categories],
-  );
   const filteredProducts = useMemo(() => {
     let f = products;
     if (categoryFilter !== "All")
@@ -1054,11 +1085,7 @@ useFocusTrap(marketingModalRef, marketingOpen, () => setMarketingOpen(false));
                     <option value="" className="text-gray-600">
                       Select a category…
                     </option>
-                    {categories.map((cat: CategoryItem) => (
-                      <option key={cat._id} value={cat._id}>
-                        {cat.name}
-                      </option>
-                    ))}
+                    {renderCategoryOptions(categoryTree)}
                   </select>
                   {errors.category && (
                     <p
