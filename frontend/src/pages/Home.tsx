@@ -32,6 +32,22 @@ const getProductCategoryName = (p: ProductItem): string => {
     : (p.category.name ?? "General");
 };
 
+// ─── Decorative floating icons for the background ──────────────────────────
+const floatingIcons = [
+  { icon: "🛍️", size: "text-2xl", x: "5%", y: "15%", duration: 18, delay: 0 },
+  { icon: "📦", size: "text-xl", x: "92%", y: "25%", duration: 22, delay: 1.5 },
+  { icon: "💎", size: "text-3xl", x: "15%", y: "65%", duration: 20, delay: 0.8 },
+  { icon: "🚀", size: "text-xl", x: "85%", y: "55%", duration: 19, delay: 2.2 },
+  { icon: "⭐", size: "text-2xl", x: "45%", y: "80%", duration: 21, delay: 1 },
+  { icon: "🔥", size: "text-lg", x: "75%", y: "10%", duration: 17, delay: 0.5 },
+  { icon: "💫", size: "text-xl", x: "30%", y: "45%", duration: 24, delay: 3 },
+  { icon: "✨", size: "text-2xl", x: "60%", y: "70%", duration: 20, delay: 1.8 },
+  { icon: "🎯", size: "text-lg", x: "10%", y: "85%", duration: 23, delay: 2.5 },
+  { icon: "🏷️", size: "text-xl", x: "88%", y: "75%", duration: 18, delay: 0.3 },
+  { icon: "🎁", size: "text-2xl", x: "50%", y: "12%", duration: 21, delay: 1.2 },
+  { icon: "💳", size: "text-lg", x: "22%", y: "35%", duration: 19, delay: 2.8 },
+];
+
 const Home = () => {
   const { data: productsResp } = useGetProductsQuery({ limit: 9999 });
   const { data: heroSlides, isLoading: sLoad } = useGetHeroSlidesQuery({});
@@ -140,7 +156,10 @@ const Home = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] relative overflow-x-hidden focus:outline-none pt-14 md:pt-20"
+      className="min-h-screen relative overflow-x-hidden focus:outline-none pt-14 md:pt-20"
+      style={{
+        background: "linear-gradient(180deg, #FCFAF5 0%, #FFF8F3 30%, #FCFAF5 60%, #FFF5F0 100%)",
+      }}
     >
       <SEO
         title={heroTitle.replace("|", "").trim()}
@@ -150,23 +169,136 @@ const Home = () => {
       <StructuredData data={organizationSchema} />
       <StructuredData data={websiteSchema} />
 
-      {/* Ambient background orbs – hidden from screen readers */}
-      <div
-        className="fixed inset-0 -z-10 overflow-hidden pointer-events-none"
-        aria-hidden="true"
-      >
+      {/* ══════ Rich Background Elements ══════ */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none" aria-hidden="true">
+        
+        {/* Large ambient gradient orbs */}
         <motion.div
-          animate={{ x: ["-15%", "15%", "-15%"], y: ["-8%", "8%", "-8%"] }}
-          transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
-          className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full blur-[120px] opacity-[0.07]"
+          animate={{ x: ["-20%", "15%", "-20%"], y: ["-10%", "10%", "-10%"] }}
+          transition={{ repeat: Infinity, duration: 35, ease: "linear" }}
+          className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full blur-[150px]"
+          style={{ background: `${ACCENT}`, opacity: 0.06 }}
+        />
+        <motion.div
+          animate={{ x: ["15%", "-20%", "15%"], y: ["8%", "-12%", "8%"] }}
+          transition={{ repeat: Infinity, duration: 42, ease: "linear" }}
+          className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full blur-[140px]"
+          style={{ background: "#3b82f6", opacity: 0.04 }}
+        />
+        <motion.div
+          animate={{ x: ["-10%", "10%", "-10%"], y: ["5%", "-5%", "5%"] }}
+          transition={{ repeat: Infinity, duration: 38, ease: "linear" }}
+          className="absolute -bottom-40 left-1/4 w-[650px] h-[650px] rounded-full blur-[150px]"
+          style={{ background: "#10b981", opacity: 0.04 }}
+        />
+        <motion.div
+          animate={{ x: ["10%", "-10%", "10%"], y: ["-5%", "5%", "-5%"] }}
+          transition={{ repeat: Infinity, duration: 45, ease: "linear" }}
+          className="absolute top-1/2 -right-20 w-[500px] h-[500px] rounded-full blur-[130px]"
+          style={{ background: "#f59e0b", opacity: 0.03 }}
+        />
+
+        {/* Grid pattern overlay */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px)
+            `,
+            backgroundSize: "64px 64px",
+            backgroundPosition: "center center",
+          }}
+        />
+
+        {/* Dot pattern */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.03) 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
+          }}
+        />
+
+        {/* Floating emoji icons */}
+        {floatingIcons.map((item, i) => (
+          <motion.div
+            key={i}
+            className={`absolute ${item.size} select-none`}
+            style={{ left: item.x, top: item.y }}
+            animate={{
+              y: ["-15px", "15px", "-15px"],
+              rotate: ["-5deg", "5deg", "-5deg"],
+              scale: [1, 1.05, 1],
+            }}
+            transition={{
+              duration: item.duration,
+              delay: item.delay,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          >
+            {item.icon}
+          </motion.div>
+        ))}
+
+        {/* Subtle diagonal lines */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `
+              repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 80px,
+                rgba(0,0,0,0.008) 80px,
+                rgba(0,0,0,0.008) 81px
+              )
+            `,
+          }}
+        />
+
+        {/* Gradient lines at top */}
+        <div
+          className="absolute top-0 left-0 right-0 h-px"
+          style={{
+            background: `linear-gradient(90deg, transparent, ${ACCENT}30, #3b82f630, #10b98130, transparent)`,
+          }}
+        />
+
+        {/* Pulsing accent dot */}
+        <motion.div
+          animate={{ 
+            scale: [1, 1.8, 1],
+            opacity: [0.15, 0.35, 0.15],
+          }}
+          transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+          className="absolute top-20 right-[15%] w-3 h-3 rounded-full"
           style={{ background: ACCENT }}
         />
         <motion.div
-          animate={{ x: ["15%", "-15%", "15%"], y: ["8%", "-8%", "8%"] }}
-          transition={{ repeat: Infinity, duration: 38, ease: "linear" }}
-          className="absolute bottom-0 -right-32 w-[500px] h-[500px] rounded-full blur-[120px] opacity-[0.05]"
+          animate={{ 
+            scale: [1, 2, 1],
+            opacity: [0.1, 0.25, 0.1],
+          }}
+          transition={{ repeat: Infinity, duration: 4, ease: "easeInOut", delay: 1.5 }}
+          className="absolute bottom-40 left-[10%] w-2 h-2 rounded-full"
           style={{ background: "#10b981" }}
         />
+        <motion.div
+          animate={{ 
+            scale: [1, 1.5, 1],
+            opacity: [0.1, 0.3, 0.1],
+          }}
+          transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut", delay: 2.5 }}
+          className="absolute top-1/2 right-[25%] w-2.5 h-2.5 rounded-full"
+          style={{ background: "#f59e0b" }}
+        />
+      </div>
+
+      {/* Dark mode background overrides */}
+      <div className="dark:hidden">
+        {/* Light mode already handled by inline styles */}
       </div>
 
       <div
@@ -195,10 +327,18 @@ const Home = () => {
 
       {/* Enter Shop CTA */}
       <section
-        className="py-10 bg-[#FCFAF5] dark:bg-[#0A0A0B]"
+        className="py-10 relative"
         aria-labelledby="cta-heading"
       >
-        <div className="max-w-7xl mx-auto px-4 md:px-6 text-center">
+        {/* Section-specific background accent */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full blur-[100px]"
+            style={{ background: ACCENT, opacity: 0.03 }}
+          />
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 md:px-6 text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -238,10 +378,18 @@ const Home = () => {
 
       {/* Featured Products section */}
       <section
-        className="bg-[#FCFAF5] dark:bg-[#111111] py-14 md:py-18"
+        className="py-14 md:py-18 relative"
         aria-labelledby="featured-heading"
       >
-        <div className="max-w-7xl mx-auto px-4 md:px-6">
+        {/* Section accent */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div
+            className="absolute bottom-0 right-0 w-[300px] h-[300px] rounded-full blur-[100px]"
+            style={{ background: "#10b981", opacity: 0.04 }}
+          />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 md:px-6 relative z-10">
           <div className="mb-8">
             <p
               className="text-xs font-black uppercase tracking-[0.2em] mb-2"

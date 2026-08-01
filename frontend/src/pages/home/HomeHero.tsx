@@ -412,7 +412,7 @@ const HomeHero = ({
           />
 
           <div
-            className="relative w-72 h-72 md:w-84 md:h-84 rounded-full overflow-hidden group shadow-2xl"
+            className="relative w-64 h-64 md:w-[380px] md:h-[380px] lg:w-[440px] lg:h-[440px] rounded-full overflow-hidden group shadow-2xl"
             style={{ boxShadow: `0 0 0 5px ${ACCENT}, 0 30px 80px rgba(0,0,0,0.5), 0 0 80px ${ACCENT}25` }}
             role="group"
             aria-roledescription="carousel"
