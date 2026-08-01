@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
@@ -58,6 +58,9 @@ const Login = () => {
   const dispatch = useDispatch();
   const [login, { isLoading, error }] = useLoginMutation();
 
+  // ✅ State to hold the redirect destination safely
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
+
   const from = (location.state as { from?: string })?.from;
 
   const {
@@ -68,20 +71,31 @@ const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
+  // ✅ FIX: Move the redirect into a useEffect so React Compiler is happy
+  useEffect(() => {
+    if (redirectTo) {
+      window.location.href = redirectTo;
+    }
+  }, [redirectTo]);
+
   const onSubmit = async (data: LoginFormData) => {
     try {
       const res = await login({
         email: data.email,
         password: data.password,
       }).unwrap();
+      
+      // ✅ Dispatch first so Redux/Persist has time to write to localStorage
       dispatch(setCredentials({ user: res.user, token: res.token }));
+      
       toast.success("Welcome back! 🎉");
 
       // ✅ Admin always goes to /admin, ignoring the 'from' parameter
       const destination =
         res.user.role === "admin" ? "/admin" : from || "/shop";
 
-      window.location.replace(destination);
+      // ✅ Trigger the useEffect redirect safely
+      setRedirectTo(destination);
     } catch (err) {
       console.error(err);
       toast.error("Login failed. Please check your credentials.");
@@ -96,7 +110,6 @@ const Login = () => {
       tabIndex={-1}
       className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-16 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
     >
-      {" "}
       <SEO
         title="Sign In"
         description={`Log in to your ${BRAND_NAME} account to manage orders, track deliveries, and enjoy exclusive deals.`}
