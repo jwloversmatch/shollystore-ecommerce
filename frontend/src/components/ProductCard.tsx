@@ -77,11 +77,7 @@ const ProductCard = ({
       whileHover="hover"
       transition={{ type: "spring", stiffness: 200, damping: 22 }}
     >
-      {/* Full-card control for navigating to the product. A real <button>,
-          not a div+role, so Enter/Space work with no extra key handling.
-          It's invisible and sits BEHIND the content layer below — the
-          pointer-events split is what routes clicks to it or to Add to
-          Cart, not the z-index (kept for sane paint order regardless). */}
+      {/* Full-card control for navigating to the product. */}
       <button
         type="button"
         onClick={onClick}
@@ -89,9 +85,7 @@ const ProductCard = ({
         className="absolute inset-0 z-0 rounded-2xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e8622a] focus-visible:ring-offset-2"
       />
 
-      {/* Visual content ignores pointer events itself, so clicks fall
-          through to the button above — except Add to Cart, which
-          re-enables its own pointer events to stay independently clickable. */}
+      {/* Visual content ignores pointer events itself, so clicks fall through to the button above */}
       <div className="relative z-[1] flex flex-col flex-1 pointer-events-none">
         {/* Image area */}
         <div className="relative w-full h-48 bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center p-4">
@@ -141,7 +135,8 @@ const ProductCard = ({
             {category}
           </span>
 
-          <h3 className="font-bold text-sm leading-snug line-clamp-2 mb-1 text-gray-900 dark:text-white">
+          {/* ✅ FIX: ONE LINE + Ellipsis (...) */}
+          <h3 className="font-bold text-sm leading-snug truncate mb-1 text-gray-900 dark:text-white">
             {name}
           </h3>
 
