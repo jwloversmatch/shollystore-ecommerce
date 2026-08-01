@@ -19,6 +19,7 @@ import {
   Flame,
   Tag,
   ChevronRight,
+  ChevronDown, // ✅ Added
 } from "lucide-react";
 import toast from "react-hot-toast";
 import ConfirmationModal from "../../components/ConfirmationModal";
@@ -125,6 +126,32 @@ const Categories = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const [toDelete, setToDelete] = useState<string | null>(null);
 
+  // ✅ STATE: Track which parent categories are expanded
+  const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
+
+  // ✅ Toggle a specific parent
+  const toggleExpand = (id: string) => {
+    setExpandedMap((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // ✅ Expand or Collapse all parents
+  const toggleAll = (expand: boolean) => {
+    const getAllParentIds = (nodes: CategoryTreeNode[]): string[] => {
+      let ids: string[] = [];
+      nodes.forEach((node) => {
+        if (node.children && node.children.length > 0) {
+          ids.push(node._id);
+          ids = ids.concat(getAllParentIds(node.children));
+        }
+      });
+      return ids;
+    };
+    const allParentIds = getAllParentIds(treeData);
+    const newMap: Record<string, boolean> = {};
+    allParentIds.forEach((id) => { newMap[id] = expand; });
+    setExpandedMap(newMap);
+  };
+
   // ✅ 3. Recursive function to render indented dropdown options (strictly typed)
   const renderTreeOptions = (
     nodes: CategoryTreeNode[],
@@ -203,6 +230,9 @@ const Categories = () => {
   const renderCategoryRows = (nodes: CategoryTreeNode[], depth = 0) => {
     return nodes.map((cat, idx) => {
       const parentName = cat.parent?.name || "Top‑level";
+      const hasChildren = cat.children && cat.children.length > 0;
+      const isExpanded = expandedMap[cat._id] ?? false;
+
       return (
         <React.Fragment key={cat._id}>
           <motion.div
@@ -308,6 +338,26 @@ const Categories = () => {
             ) : (
               <div className="flex items-center justify-between p-4 md:p-5 group">
                 <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                  {/* ✅ Toggle Expand Button (Only for parents) */}
+                  {hasChildren && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleExpand(cat._id);
+                      }}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center transition-transform duration-200 hover:bg-white/5"
+                      style={{
+                        color: "#6b7280",
+                        transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)",
+                      }}
+                      aria-label={isExpanded ? `Collapse ${cat.name}` : `Expand ${cat.name}`}
+                    >
+                      <ChevronDown className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                  )}
+                  {/* Indentation spacer if no children */}
+                  {!hasChildren && <div className="w-8" />}
+
                   <div
                     className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-lg font-black"
                     style={{
@@ -364,6 +414,12 @@ const Categories = () => {
                           })}
                         </span>
                       )}
+                      {/* ✅ Show child count */}
+                      {hasChildren && (
+                        <span className="text-[10px] text-gray-500 font-bold px-2 py-0.5 rounded-full bg-white/5 border border-white/5">
+                          {cat.children!.length} sub
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -406,9 +462,9 @@ const Categories = () => {
             )}
           </motion.div>
 
-          {/* ✅ 5. Recursively render children */}
-          {cat.children && cat.children.length > 0 &&
-            renderCategoryRows(cat.children, depth + 1)}
+          {/* ✅ 5. Recursively render children ONLY if expanded */}
+          {hasChildren && isExpanded &&
+            renderCategoryRows(cat.children!, depth + 1)}
         </React.Fragment>
       );
     });
@@ -504,17 +560,43 @@ const Categories = () => {
           </div>
         </div>
 
-        <button
-          onClick={() => {
-            setIsCreating(true);
-            setEditingId(null);
-          }}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white text-sm shrink-0"
-          style={{ background: ACCENT, boxShadow: `0 6px 18px ${ACCENT}44` }}
-          aria-label="Add new category"
-        >
-          <Plus className="w-4 h-4" aria-hidden="true" /> Add Category
-        </button>
+        <div className="flex gap-2">
+          {/* ✅ Expand / Collapse All Buttons */}
+          <button
+            onClick={() => toggleAll(true)}
+            className="px-4 py-2.5 rounded-xl font-bold text-white text-sm border transition-colors"
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              borderColor: "rgba(255,255,255,0.1)",
+            }}
+            aria-label="Expand all categories"
+          >
+            Expand All
+          </button>
+          <button
+            onClick={() => toggleAll(false)}
+            className="px-4 py-2.5 rounded-xl font-bold text-white text-sm border transition-colors"
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              borderColor: "rgba(255,255,255,0.1)",
+            }}
+            aria-label="Collapse all categories"
+          >
+            Collapse All
+          </button>
+
+          <button
+            onClick={() => {
+              setIsCreating(true);
+              setEditingId(null);
+            }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white text-sm shrink-0"
+            style={{ background: ACCENT, boxShadow: `0 6px 18px ${ACCENT}44` }}
+            aria-label="Add new category"
+          >
+            <Plus className="w-4 h-4" aria-hidden="true" /> Add Category
+          </button>
+        </div>
       </header>
 
       {/* Create new category */}
@@ -664,7 +746,7 @@ const Categories = () => {
           </div>
         ) : (
           <AnimatePresence mode="popLayout">
-            {/* ✅ Render the tree recursively instead of the flat map */}
+            {/* ✅ Render the tree recursively, respecting expanded state */}
             {renderCategoryRows(treeData)}
           </AnimatePresence>
         )}
