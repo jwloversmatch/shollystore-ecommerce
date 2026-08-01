@@ -1,4 +1,3 @@
-// models/Category.ts
 import mongoose, { Document, Schema, Model } from 'mongoose';
 
 export interface ICategory extends Document {
@@ -51,7 +50,6 @@ CategorySchema.virtual('children', {
 
 // ---------- Indexes ----------
 CategorySchema.index({ parent: 1 });
-CategorySchema.index({ slug: 1 });
 
 // ✅ NEW: Compound index ensures uniqueness based on (parent + name)
 // This allows "Men's" under Clothing AND "Men's" under Shoes to both exist.

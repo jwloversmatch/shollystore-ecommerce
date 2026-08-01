@@ -23,6 +23,6 @@ const CouponSchema: Schema = new Schema({
   usedCount: { type: Number, default: 0 },
 }, { timestamps: true });
 
-CouponSchema.index({ code: 1 });
+// ✅ REMOVED: CouponSchema.index({ code: 1 }); (Already handled by unique: true)
 
 export const Coupon = mongoose.model<ICoupon>('Coupon', CouponSchema);

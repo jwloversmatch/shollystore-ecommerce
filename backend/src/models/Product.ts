@@ -1,4 +1,3 @@
-// models/Product.ts
 import mongoose, { Document, Schema } from 'mongoose';
 
 // ─── Variant sub‑schema ────────────────────────────────────────
@@ -138,15 +137,15 @@ const ProductSchema = new Schema<IProduct>(
     description:     { type: String, required: true },
     price:           { type: Number, required: true, min: 0 },
     compareAtPrice:  { type: Number, min: 0 },
-    category:        { type: Schema.Types.ObjectId, ref: 'Category', required: true, index: true },
+    category:        { type: Schema.Types.ObjectId, ref: 'Category', required: true }, // ✅ Removed index: true
     images:          { type: [String], default: [] },
     stock:           { type: Number, required: true, default: 0 },
     isFeatured:      { type: Boolean, default: false },
 
-    sku:            { type: String, unique: true, sparse: true },
+    sku:            { type: String, unique: true, sparse: true }, // ✅ Removed index: true
     barcode:        { type: String },
     brand:          { type: String },
-    tags:           { type: [String], index: true },
+    tags:           { type: [String] }, // ✅ Removed index: true
     discount: {
       percentage:   { type: Number, min: 0, max: 100 },
       validUntil:   { type: Date },
@@ -189,8 +188,9 @@ ProductSchema.index({ name: 'text', description: 'text' });
 ProductSchema.index({ stock: 1 });
 ProductSchema.index({ createdAt: -1 });
 ProductSchema.index({ 'variants.sku': 1 });
-ProductSchema.index({ tags: 1 });
-ProductSchema.index({ sku: 1 });
+ProductSchema.index({ tags: 1 });     // ✅ Defined here only
+ProductSchema.index({ sku: 1 });      // ✅ Defined here only
 ProductSchema.index({ isActive: 1 });
+ProductSchema.index({ category: 1 }); // ✅ Defined here only
 
 export const Product = mongoose.model<IProduct>('Product', ProductSchema);
