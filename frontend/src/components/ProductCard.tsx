@@ -87,8 +87,24 @@ const ProductCard = ({
 
       {/* Visual content ignores pointer events itself, so clicks fall through to the button above */}
       <div className="relative z-[1] flex flex-col flex-1 pointer-events-none">
-        {/* Image area */}
-        <div className="relative w-full h-48 bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center p-4">
+        
+        {/* ✅ UPGRADED: Image area with a custom branded spotlight background */}
+        <div 
+          className="relative w-full h-48 flex items-center justify-center p-4 overflow-hidden"
+          style={{
+            // A premium "spotlight" gradient that highlights the product in the center
+            background: "radial-gradient(circle at 50% 50%, #2a2a2a 0%, #141414 70%, #0A0A0B 100%)"
+          }}
+        >
+          {/* Subtle ambient glow ring behind the product */}
+          <div 
+            className="absolute w-32 h-32 rounded-full blur-3xl pointer-events-none opacity-30"
+            style={{ 
+              background: `radial-gradient(circle, ${accent}44, transparent 70%)` 
+            }}
+            aria-hidden="true"
+          />
+
           <motion.img
             src={imgSrc}
             srcSet={srcSet}
@@ -96,7 +112,7 @@ const ProductCard = ({
             alt={name}
             loading="lazy"
             onError={() => setImgError(true)}
-            className="max-w-full max-h-full object-contain"
+            className="max-w-full max-h-full object-contain z-10"
             variants={{ hover: { scale: 1.06 } }}
             transition={{ duration: 0.35 }}
           />
@@ -104,7 +120,7 @@ const ProductCard = ({
           {/* Stock badge */}
           {stock !== undefined && (
             <div
-              className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+              className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider z-20 ${
                 isOutOfStock
                   ? "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400"
                   : "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
@@ -118,7 +134,7 @@ const ProductCard = ({
 
           {/* Out of stock overlay */}
           {isOutOfStock && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center" aria-hidden="true">
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20" aria-hidden="true">
               <span className="text-white font-bold text-sm bg-black/60 px-4 py-2 rounded-full">
                 Unavailable
               </span>
@@ -135,7 +151,7 @@ const ProductCard = ({
             {category}
           </span>
 
-          {/* ✅ FIX: ONE LINE + Ellipsis (...) */}
+          {/* ONE LINE + Ellipsis (...) */}
           <h3 className="font-bold text-sm leading-snug truncate mb-1 text-gray-900 dark:text-white">
             {name}
           </h3>
