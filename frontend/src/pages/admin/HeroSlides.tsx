@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import {
@@ -27,8 +28,7 @@ import { getCloudinaryUrl } from "../../utils/cloudinary";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 
 // ─── Interfaces ────────────────────────────────────────────────────────────────
 interface HeroSlide {
@@ -72,38 +72,7 @@ const HeroSlides = () => {
     setFile(null);
   };
 
-  // Focus trap: add/edit slide modal
-  useEffect(() => {
-    if (!isModalOpen) return;
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const dialog = modalRef.current;
-    const focusable = dialog
-      ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-      : [];
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    first?.focus();
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        handleCloseModal();
-        return;
-      }
-      if (e.key === "Tab" && focusable.length > 0) {
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [isModalOpen]);
+useFocusTrap(modalRef, isModalOpen, handleCloseModal);
 
   const handleOpenModal = (slide?: HeroSlide) => {
     if (slide) {

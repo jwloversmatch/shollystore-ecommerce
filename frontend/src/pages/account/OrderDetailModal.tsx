@@ -1,11 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { motion } from "framer-motion";
 import { X, Calendar, CreditCard, MapPin, Ticket } from "lucide-react";
 import type { Order } from "../../types/account";
 import { getStatusInfo, paymentLabels } from "../../utils/statusHelpers";
 
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 interface OrderDetailModalProps {
   order: Order | null;
@@ -15,44 +14,7 @@ interface OrderDetailModalProps {
 const OrderDetailModal = ({ order, onClose }: OrderDetailModalProps) => {
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  // Focus trap: same pattern as every other modal in the app. Keyed on
-  // `order` since that's what actually drives this modal's visibility here
-  // (there's no separate isOpen boolean — order is null when it's closed).
-  useEffect(() => {
-    if (!order) return;
-
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const dialog = dialogRef.current;
-    const focusable = dialog
-      ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-      : [];
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-
-    first?.focus();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-        return;
-      }
-      if (e.key === "Tab" && focusable.length > 0) {
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [order, onClose]);
+useFocusTrap(dialogRef, !!order, onClose);
 
   if (!order) return null;
 

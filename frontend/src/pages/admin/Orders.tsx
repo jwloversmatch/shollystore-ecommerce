@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useNavigate } from 'react-router-dom';
 import {  AnimatePresence } from 'framer-motion';
 import { useGetAllOrdersQuery, useUpdateOrderStatusMutation } from '../../features/api/apiSlice';
@@ -21,8 +22,7 @@ const STATUS_OPTIONS = ['All', 'Pending', 'Paid', 'Shipped', 'Delivered', 'Cance
 const PAYMENT_OPTIONS = ['All', 'paystack', 'bank_transfer', 'whatsapp'];
 const STATUS_FLOW: Record<string, string[]> = { Pending: ['Pending','Paid','Cancelled'], Paid: ['Paid','Shipped'], Shipped: ['Shipped','Delivered'], Delivered: ['Delivered'], Cancelled: ['Cancelled'] };
 const ALL_STATUSES = ['Pending','Paid','Shipped','Delivered','Cancelled'];
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), select:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 
 
 const Orders = () => {
@@ -53,28 +53,7 @@ const Orders = () => {
     return { total, paid: orders.filter((o: OrderItem) => o.status === 'Paid').length, pending: orders.filter((o: OrderItem) => o.status === 'Pending').length, cancelled: orders.filter((o: OrderItem) => o.status === 'Cancelled').length };
   }, [orders]);
 
-  // Focus trap: order detail modal
-  useEffect(() => {
-    if (!selectedOrder) return;
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const dialog = orderModalRef.current;
-    const focusable = dialog ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)) : [];
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    first?.focus();
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setSelectedOrder(null); return; }
-      if (e.key === 'Tab' && focusable.length > 0) {
-        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [selectedOrder]);
+useFocusTrap(orderModalRef, !!selectedOrder, () => setSelectedOrder(null));
 
   if (isLoading) {
     return (

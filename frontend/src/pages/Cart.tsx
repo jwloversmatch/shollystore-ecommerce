@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,8 +15,7 @@ import { getCloudinaryUrl } from '../utils/cloudinary';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT = '#e8622a';
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 
 interface PersistState { _persist: { version: number; rehydrated: boolean } }
 
@@ -292,41 +292,7 @@ const ClearCartModal = ({ isOpen, onClose, onConfirm, totalItems }: { isOpen: bo
 
   // Focus trap: moves focus into the dialog on open, cycles Tab within it,
   // closes on Escape, restores focus to the "Clear All" trigger on close.
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const dialog = dialogRef.current;
-    const focusable = dialog
-      ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-      : [];
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-
-    first?.focus();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-        return;
-      }
-      if (e.key === 'Tab' && focusable.length > 0) {
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [isOpen, onClose]);
+useFocusTrap(dialogRef, isOpen, onClose);
 
   return (
     <AnimatePresence>

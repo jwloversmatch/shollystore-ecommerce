@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef } from 'react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '../features/cart/cartSlice';
@@ -8,8 +9,7 @@ import { getCloudinaryUrl } from '../utils/cloudinary';
 import type { IVariant } from '../types/home';
 
 const ACCENT = '#e8622a';
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 
 // ─── Color mapping ──────────────────────────────────────────────────────────
 const colorMap: Record<string, string> = {
@@ -129,41 +129,7 @@ const ProductQuickViewModal = ({ product, isOpen, onClose }: ProductModalProps) 
   // Focus trap: moves focus into the dialog on open, cycles Tab within it,
   // closes on Escape, restores focus to whatever opened it (e.g. the
   // product card) on close.
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const dialog = dialogRef.current;
-    const focusable = dialog
-      ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-      : [];
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-
-    first?.focus();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-        return;
-      }
-      if (e.key === 'Tab' && focusable.length > 0) {
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [isOpen, onClose]);
+useFocusTrap(dialogRef, isOpen, onClose);
 
   // ══════ EARLY RETURN (after all hooks) ════════════════════════════════
   if (!product) return null;

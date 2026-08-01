@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef, useLayoutEffect, useEffect } from "react";
+import { useState, useMemo, useRef, useLayoutEffect } from "react";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { useForm, useWatch } from "react-hook-form";
@@ -36,8 +37,7 @@ import { getCloudinaryUrl } from "../../utils/cloudinary";
 
 const ACCENT = "#e8622a";
 const PLACEHOLDER = "https://via.placeholder.com/150";
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 
 import type { ProductItem } from "../../types/home";
 interface CategoryItem {
@@ -203,71 +203,8 @@ const Products = () => {
     setVariants([]);
   };
 
-  // Focus trap: slide-in product drawer
-  useEffect(() => {
-    if (!isDrawerOpen) return;
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const dialog = drawerRef.current;
-    const focusable = dialog
-      ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-      : [];
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    first?.focus();
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        handleCloseDrawer();
-        return;
-      }
-      if (e.key === "Tab" && focusable.length > 0) {
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [isDrawerOpen]);
-
-  // Focus trap: marketing-email modal
-  useEffect(() => {
-    if (!marketingOpen) return;
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const dialog = marketingModalRef.current;
-    const focusable = dialog
-      ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-      : [];
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    first?.focus();
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setMarketingOpen(false);
-        return;
-      }
-      if (e.key === "Tab" && focusable.length > 0) {
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [marketingOpen]);
+useFocusTrap(drawerRef, isDrawerOpen, handleCloseDrawer);
+useFocusTrap(marketingModalRef, marketingOpen, () => setMarketingOpen(false));
 
   const filterCategories = useMemo(
     () => [{ _id: "All", name: "All" }, ...categories],

@@ -1,4 +1,5 @@
-import { useState, useRef, useLayoutEffect, useEffect } from "react";
+import { useState, useRef, useLayoutEffect } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
@@ -26,8 +27,8 @@ interface Coupon {
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+
 
 // ─── Shared formatting helper (unchanged) ─────────────────────────────────────
 const formatWithCommas = (raw: string): string => {
@@ -130,38 +131,7 @@ const Coupons = () => {
     setEditingCoupon(null);
   };
 
-  // Focus trap: coupon drawer
-  useEffect(() => {
-    if (!drawerOpen) return;
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const dialog = drawerRef.current;
-    const focusable = dialog
-      ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-      : [];
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    first?.focus();
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        closeDrawer();
-        return;
-      }
-      if (e.key === "Tab" && focusable.length > 0) {
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [drawerOpen]);
+useFocusTrap(drawerRef, drawerOpen, closeDrawer);
 
   const openDrawer = (coupon?: Coupon) => {
     if (coupon) {

@@ -1,6 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { RootState } from "../store";
 import { logout } from "../features/auth/authSlice";
@@ -20,12 +19,13 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
+import { useState, useRef } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
 const BRAND_NAME = "ShollyStore";
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 
 const ADMIN_LINKS = [
   {
@@ -118,8 +118,7 @@ const Navbar = () => {
   const { pathname } = useLocation();
 
   const [adminDrawer, setAdminDrawer] = useState(false);
-  const drawerRef = useRef<HTMLDivElement>(null);
-  const moreButtonRef = useRef<HTMLButtonElement>(null);
+ const drawerRef = useRef<HTMLDivElement>(null);
 
   const totalQty = cartItems.reduce((acc, i) => acc + i.qty, 0);
   const showCart = !user || user.role === "user";
@@ -145,41 +144,7 @@ const Navbar = () => {
 
   // Focus trap for the admin bottom sheet: moves focus in on open, cycles
   // Tab within it, closes on Escape, restores focus to the trigger on close.
-    useEffect(() => {
-    if (!adminDrawer) return;
-
-    const drawer = drawerRef.current;
-    const moreButton = moreButtonRef.current; 
-    const focusable = drawer
-      ? Array.from(drawer.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-      : [];
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-
-    first?.focus();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setAdminDrawer(false);
-        return;
-      }
-      if (e.key === "Tab" && focusable.length > 0) {
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      moreButton?.focus(); // Use captured variable
-    };
-  }, [adminDrawer]);
+useFocusTrap(drawerRef, adminDrawer, () => setAdminDrawer(false));
 
   // ═══════════════════════════════════════════════════════════════════════════
   return (
@@ -415,8 +380,7 @@ const Navbar = () => {
 
               {user?.role === "admin" && (
                 <button
-                  ref={moreButtonRef}
-                  onClick={() => setAdminDrawer(true)}
+  onClick={() => setAdminDrawer(true)}
                   className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-colors duration-150"
                   style={{ color: adminDrawer ? ACCENT : "#6b7280" }}
                   aria-label="More admin options"

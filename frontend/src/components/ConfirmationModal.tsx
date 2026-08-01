@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, X } from 'lucide-react';
 
@@ -14,8 +15,7 @@ interface ConfirmationModalProps {
 }
 
 const ACCENT = '#e8622a';
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 
 const ConfirmationModal = ({
   isOpen,
@@ -32,45 +32,7 @@ const ConfirmationModal = ({
   const iconColor = type === 'danger' ? 'text-red-600 dark:text-red-400' : 'text-[#e8622a] dark:text-[#e8622a]';
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  // Focus trap: same pattern used across every other modal in the app —
-  // moves focus in on open, cycles Tab within the dialog, closes on Escape,
-  // restores focus to whatever opened it on close. Fixing it here covers
-  // every one of this component's six call sites in one pass.
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const dialog = dialogRef.current;
-    const focusable = dialog
-      ? Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-      : [];
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-
-    first?.focus();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-        return;
-      }
-      if (e.key === 'Tab' && focusable.length > 0) {
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [isOpen, onClose]);
+useFocusTrap(dialogRef, isOpen, onClose);
 
   return (
     <AnimatePresence>
