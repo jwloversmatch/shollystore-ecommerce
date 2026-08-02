@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, ChevronLeft, ChevronRight, Home, SlidersHorizontal,
+  ChevronLeft, ChevronRight, Home, SlidersHorizontal,
   X, Package, ArrowUpDown,
 } from "lucide-react";
 import {
@@ -10,6 +10,7 @@ import {
   useGetCategoryTreeQuery,
 } from "../features/api/apiSlice";
 import ProductCard from "../components/ProductCard";
+import ProductSearchBox from "../components/ProductSearchBox";
 import { ACCENT, PLACEHOLDER } from "../types/home";
 import type { ProductItem } from "../types/home";
 
@@ -123,10 +124,6 @@ const ShopPage = () => {
     setDebouncedSearch("");
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-  };
-
   const clearAllFilters = () => {
     setSelectedPath([]);
     setSearch("");
@@ -150,27 +147,13 @@ const ShopPage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
             {/* Search */}
-            <div className="relative w-full sm:w-72">
-              <label htmlFor="shop-search" className="sr-only">Search products</label>
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-600" aria-hidden="true" />
-              <input
-                id="shop-search"
-                type="search"
-                placeholder="Search products..."
-                value={search}
-                onChange={handleSearchChange}
-                className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-600 outline-none text-sm focus:border-[#e8622a]/50 transition-colors"
-              />
-              {search && (
-                <button
-                  onClick={() => { setSearch(""); setDebouncedSearch(""); }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
-                  aria-label="Clear search"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
+            <ProductSearchBox
+              id="shop-search"
+              value={search}
+              onChange={setSearch}
+              onClear={() => { setSearch(""); setDebouncedSearch(""); }}
+              categoryId={categoryId}
+            />
 
             {/* Sort + Clear filters */}
             <div className="flex items-center gap-3 w-full sm:w-auto">

@@ -16,13 +16,22 @@ interface VerifyPaymentResponse {
 }
 
 export interface ProductsResponse {
-  products: ProductItem[]; // ✅ properly typed, no any
+  products: ProductItem[]; 
   pagination: {
     page: number;
     limit: number;
     total: number;
     pages: number;
   };
+}
+
+export interface ProductSuggestion {
+  _id: string;
+  name: string;
+  slug: string;
+  price: number;
+  images?: string[];
+  category?: { name: string; slug: string } | string;
 }
 
 // ─── API Slice ────────────────────────────────────────────────────────────────
@@ -49,20 +58,26 @@ export const apiSlice = createApi({
     // ══════════════════════════════════════════════════════════════════
     // Products (public)
     // ══════════════════════════════════════════════════════════════════
-    getProducts: builder.query<ProductsResponse, {
-      category?: string;
-      includeSubcategories?: boolean;
-      featured?: boolean;
-      search?: string;
-      page?: number;
-      limit?: number;
-    }>({
+    getProducts: builder.query<
+      ProductsResponse,
+      {
+        category?: string;
+        includeSubcategories?: boolean;
+        featured?: boolean;
+        search?: string;
+        page?: number;
+        limit?: number;
+      }
+    >({
       query: (params) => {
         const searchParams = new URLSearchParams();
         if (params?.category) {
           searchParams.append("category", params.category);
           if (params.includeSubcategories !== undefined)
-            searchParams.append("includeSubcategories", String(params.includeSubcategories));
+            searchParams.append(
+              "includeSubcategories",
+              String(params.includeSubcategories),
+            );
         }
         if (params?.featured) searchParams.append("featured", "true");
         if (params?.search) searchParams.append("search", params.search);
@@ -469,6 +484,18 @@ export const apiSlice = createApi({
         body: data,
       }),
     }),
+
+    getProductSuggestions: builder.query<
+      { suggestions: ProductSuggestion[] },
+      { q: string; categoryId?: string }
+    >({
+      query: ({ q, categoryId }) => {
+        const params = new URLSearchParams({ q });
+        if (categoryId) params.append("category", categoryId);
+        return `/products/suggestions?${params.toString()}`;
+      },
+      providesTags: ["Product"],
+    }),
   }),
 });
 
@@ -499,6 +526,7 @@ export const {
   useSetDefaultAddressMutation,
   useGetSalesAnalyticsQuery,
   useGetTopProductsQuery,
+  useGetProductSuggestionsQuery,
   useGetCustomerCountQuery,
   useGetOrderCustomerCountQuery,
   useGetUsersQuery,

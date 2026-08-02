@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from "mongoose";
 
 // ─── Variant sub‑schema ────────────────────────────────────────
 export interface IVariant {
@@ -12,43 +12,49 @@ export interface IVariant {
   isActive?: boolean;
 }
 
-const VariantSchema = new Schema<IVariant>({
-  sku:     { type: String },
-  color:   { type: String },
-  size:    { type: String },
-  price:   { type: Number },
-  compareAtPrice: { type: Number, min: 0 },
-  stock:   { type: Number },
-  images:  { type: [String] },
-  isActive:{ type: Boolean, default: true },
-}, { _id: true });
+const VariantSchema = new Schema<IVariant>(
+  {
+    sku: { type: String },
+    color: { type: String },
+    size: { type: String },
+    price: { type: Number },
+    compareAtPrice: { type: Number, min: 0 },
+    stock: { type: Number },
+    images: { type: [String] },
+    isActive: { type: Boolean, default: true },
+  },
+  { _id: true },
+);
 
 // ─── Shipping info ─────────────────────────────────────────────
 export interface IShippingInfo {
   weight?: number;
-  weightUnit?: 'kg' | 'g' | 'lb' | 'oz';
+  weightUnit?: "kg" | "g" | "lb" | "oz";
   dimensions?: {
     length: number;
     width: number;
     height: number;
-    unit: 'cm' | 'in';
+    unit: "cm" | "in";
   };
   shippingClass?: string;
   freeShipping?: boolean;
 }
 
-const ShippingInfoSchema = new Schema<IShippingInfo>({
-  weight:       { type: Number },
-  weightUnit:   { type: String, enum: ['kg', 'g', 'lb', 'oz'] },
-  dimensions: {
-    length:     { type: Number },
-    width:      { type: Number },
-    height:     { type: Number },
-    unit:       { type: String, enum: ['cm', 'in'] },
+const ShippingInfoSchema = new Schema<IShippingInfo>(
+  {
+    weight: { type: Number },
+    weightUnit: { type: String, enum: ["kg", "g", "lb", "oz"] },
+    dimensions: {
+      length: { type: Number },
+      width: { type: Number },
+      height: { type: Number },
+      unit: { type: String, enum: ["cm", "in"] },
+    },
+    shippingClass: { type: String },
+    freeShipping: { type: Boolean, default: false },
   },
-  shippingClass:{ type: String },
-  freeShipping: { type: Boolean, default: false },
-}, { _id: false });
+  { _id: false },
+);
 
 // ─── SEO info ──────────────────────────────────────────────────
 export interface ISEO {
@@ -58,12 +64,15 @@ export interface ISEO {
   ogImage?: string;
 }
 
-const SEOSchema = new Schema<ISEO>({
-  metaTitle:       { type: String },
-  metaDescription: { type: String },
-  metaKeywords:    { type: String },
-  ogImage:         { type: String },
-}, { _id: false });
+const SEOSchema = new Schema<ISEO>(
+  {
+    metaTitle: { type: String },
+    metaDescription: { type: String },
+    metaKeywords: { type: String },
+    ogImage: { type: String },
+  },
+  { _id: false },
+);
 
 // ─── Main Product interface ────────────────────────────────────
 export interface IProduct extends Document {
@@ -77,7 +86,6 @@ export interface IProduct extends Document {
   stock: number;
   isFeatured: boolean;
 
-  // identity / inventory
   sku?: string;
   barcode?: string;
   brand?: string;
@@ -98,7 +106,7 @@ export interface IProduct extends Document {
   preOrder?: boolean;
 
   // inventory policies
-  inventoryPolicy?: 'deny' | 'continue';
+  inventoryPolicy?: "deny" | "continue";
   minOrderQuantity?: number;
   maxOrderQuantity?: number;
 
@@ -132,65 +140,77 @@ export interface IProduct extends Document {
 // ─── Product schema ────────────────────────────────────────────
 const ProductSchema = new Schema<IProduct>(
   {
-    name:            { type: String, required: true, trim: true },
-    slug:            { type: String, required: true, unique: true, lowercase: true },
-    description:     { type: String, required: true },
-    price:           { type: Number, required: true, min: 0 },
-    compareAtPrice:  { type: Number, min: 0 },
-    category:        { type: Schema.Types.ObjectId, ref: 'Category', required: true }, // ✅ Removed index: true
-    images:          { type: [String], default: [] },
-    stock:           { type: Number, required: true, default: 0 },
-    isFeatured:      { type: Boolean, default: false },
+    name: { type: String, required: true, trim: true },
+    slug: { type: String, required: true, unique: true, lowercase: true },
+    description: { type: String, required: true },
+    price: { type: Number, required: true, min: 0 },
+    compareAtPrice: { type: Number, min: 0 },
+    category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
+    images: { type: [String], default: [] },
+    stock: { type: Number, required: true, default: 0 },
+    isFeatured: { type: Boolean, default: false },
 
-    sku:            { type: String, unique: true, sparse: true }, // ✅ Removed index: true
-    barcode:        { type: String },
-    brand:          { type: String },
-    tags:           { type: [String] }, // ✅ Removed index: true
+    sku: { type: String, unique: true, sparse: true },
+    barcode: { type: String },
+    brand: { type: String },
+    tags: { type: [String] },
     discount: {
-      percentage:   { type: Number, min: 0, max: 100 },
-      validUntil:   { type: Date },
+      percentage: { type: Number, min: 0, max: 100 },
+      validUntil: { type: Date },
     },
-    attributes:     { type: Map, of: Schema.Types.Mixed },
-    variants:       { type: [VariantSchema], default: [] },
+    attributes: { type: Map, of: Schema.Types.Mixed },
+    variants: { type: [VariantSchema], default: [] },
 
-    isActive:       { type: Boolean, default: true },
-    isDigital:      { type: Boolean, default: false },
-    isGiftCard:     { type: Boolean, default: false },
-    preOrder:       { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
+    isDigital: { type: Boolean, default: false },
+    isGiftCard: { type: Boolean, default: false },
+    preOrder: { type: Boolean, default: false },
 
-    inventoryPolicy: { type: String, enum: ['deny', 'continue'], default: 'deny' },
-    minOrderQuantity:{ type: Number, default: 1 },
-    maxOrderQuantity:{ type: Number },
+    inventoryPolicy: {
+      type: String,
+      enum: ["deny", "continue"],
+      default: "deny",
+    },
+    minOrderQuantity: { type: Number, default: 1 },
+    maxOrderQuantity: { type: Number },
 
-    taxable:        { type: Boolean, default: true },
-    taxClass:       { type: String, default: 'standard' },
+    taxable: { type: Boolean, default: true },
+    taxClass: { type: String, default: "standard" },
 
-    videoUrl:       { type: String },
-    downloadUrl:    { type: String },
+    videoUrl: { type: String },
+    downloadUrl: { type: String },
 
-    shippingInfo:   { type: ShippingInfoSchema, default: () => ({}) },
-    returnPolicy:   { type: String },
+    shippingInfo: { type: ShippingInfoSchema, default: () => ({}) },
+    returnPolicy: { type: String },
 
-    seo:            { type: SEOSchema, default: () => ({}) },
-    relatedProducts: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
-    averageRating:  { type: Number, default: 0 },
-    numberOfReviews:{ type: Number, default: 0 },
+    seo: { type: SEOSchema, default: () => ({}) },
+    relatedProducts: [{ type: Schema.Types.ObjectId, ref: "Product" }],
+    averageRating: { type: Number, default: 0 },
+    numberOfReviews: { type: Number, default: 0 },
 
-    publishedAt:    { type: Date },
+    publishedAt: { type: Date },
 
-    customFields:   { type: [{ key: String, value: String }], default: [] },
+    customFields: { type: [{ key: String, value: String }], default: [] },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // ---------- Indexes ----------
-ProductSchema.index({ name: 'text', description: 'text' });
+ProductSchema.index(
+  { name: "text", tags: "text", brand: "text", description: "text" },
+  {
+    weights: { name: 10, tags: 5, brand: 4, description: 1 },
+    name: "ProductTextIndex",
+  },
+);
+
+ProductSchema.index({ name: 1 });
 ProductSchema.index({ stock: 1 });
 ProductSchema.index({ createdAt: -1 });
-ProductSchema.index({ 'variants.sku': 1 });
-ProductSchema.index({ tags: 1 });     // ✅ Defined here only
-ProductSchema.index({ sku: 1 });      // ✅ Defined here only
+ProductSchema.index({ "variants.sku": 1 });
+ProductSchema.index({ tags: 1 });
+ProductSchema.index({ sku: 1 });
 ProductSchema.index({ isActive: 1 });
-ProductSchema.index({ category: 1 }); // ✅ Defined here only
+ProductSchema.index({ category: 1 });
 
-export const Product = mongoose.model<IProduct>('Product', ProductSchema);
+export const Product = mongoose.model<IProduct>("Product", ProductSchema);
