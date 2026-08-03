@@ -13,6 +13,7 @@ import { motion, MotionConfig } from "framer-motion";
 import Navbar from "./components/Navbar";
 import AdminRoute from "./components/AdminRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./context/ThemeContext";
 
 // --- Lazy Load Pages with prefetch hints ---
@@ -76,35 +77,37 @@ function AppContent() {
       {!hideNavbar && <Navbar />}
 
       <Suspense fallback={<LoadingFallback />}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/account" element={<Account />} />
-          <Route path="/products/:slug" element={<ProductDetail />} />
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/products/:slug" element={<ProductDetail />} />
 
-          <Route element={<ProtectedRoute />}>
-            <Route path="/shop" element={<ShopPage />} />
-          </Route>
+            <Route element={<ProtectedRoute />}>
+              <Route path="/shop" element={<ShopPage />} />
+            </Route>
 
-          <Route element={<AdminRoute />}>
-            <Route path="/admin" element={<Dashboard />} />
-            <Route path="/admin/products" element={<Products />} />
-            <Route path="/admin/settings" element={<Settings />} />
-            <Route path="/admin/orders" element={<Orders />} />
-            <Route path="/admin/hero-slides" element={<HeroSlides />} />
-            <Route path="/admin/categories" element={<Categories />} />
-            <Route path="/admin/coupons" element={<Coupons />} />
-          </Route>
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<Dashboard />} />
+              <Route path="/admin/products" element={<Products />} />
+              <Route path="/admin/settings" element={<Settings />} />
+              <Route path="/admin/orders" element={<Orders />} />
+              <Route path="/admin/hero-slides" element={<HeroSlides />} />
+              <Route path="/admin/categories" element={<Categories />} />
+              <Route path="/admin/coupons" element={<Coupons />} />
+            </Route>
 
-          <Route path="/404" element={<NotFound />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            <Route path="/404" element={<NotFound />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ErrorBoundary>
       </Suspense>
     </>
   );

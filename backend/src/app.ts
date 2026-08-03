@@ -1,77 +1,225 @@
 import express, { Application, Request, Response } from "express";
+
 import cors from "cors";
+
 import helmet from "helmet";
+
 import morgan from "morgan";
+
+import cookieParser from "cookie-parser";
+
 import dotenv from "dotenv";
 
-// Import Routes
+
+
 import authRoutes from "./routes/authRoutes";
+
 import orderRoutes from "./routes/orderRoutes";
+
 import adminOrderRoutes from "./routes/adminOrderRoutes";
+
 import productRoutes from "./routes/productRoutes";
+
 import adminUserRoutes from './routes/adminUserRoutes';
+
 import adminInventoryRoutes from './routes/adminInventoryRoutes';
+
 import adminProductRoutes from './routes/adminProductRoutes';  
+
 import uploadRoutes from './routes/uploadRoutes';
+
 import publicSettingsRoutes from './routes/publicSettingsRoutes';
+
 import adminSettingsRoutes from './routes/adminSettingsRoutes';
+
 import adminHeroSlideRoutes from './routes/adminHeroSlideRoutes'; 
+
 import heroSlideRoutes from './routes/heroSlideRoutes'; 
+
 import categoryRoutes from './routes/categoryRoutes';
+
 import adminCategoryRoutes from './routes/adminCategoryRoutes';
+
 import adminMarketingRoutes from './routes/adminMarketingRoutes';
+
 import couponRoutes from './routes/couponRoutes';
+
 import pushRoutes from './routes/pushRoutes';
+
+import { getSitemap, getRobotsTxt } from './routes/seoRoutes';
+
 import { errorHandler } from './middleware/errorHandler';
+
+import { apiLimiter } from './middleware/rateLimiter';
+import { securityLogger } from './middleware/securityLogger';
+
+
 
 dotenv.config();
 
+
+
 const app: Application = express();
 
-// Security & Middleware
-app.use(helmet());
-// Allow all origins (simple, works for cron jobs)
-app.use(cors());
-app.use(express.json());
-app.use(morgan("dev"));
 
-// Define Routes
+
+// ── Security headers ────────────────────────────────────────────────────────
+
+app.use(helmet({
+
+  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
+
+  crossOriginEmbedderPolicy: false,
+
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+
+}));
+
+
+
+// ── CORS — restrict to known origins in production ──────────────────────────
+
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.CLIENT_URL || 'http://localhost:5173')
+
+  .split(',')
+
+  .map((o) => o.trim())
+
+  .filter(Boolean);
+
+
+
+app.use(cors({
+
+  origin: (origin, callback) => {
+
+    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+
+      callback(null, true);
+
+    } else {
+
+      callback(new Error('Not allowed by CORS'));
+
+    }
+
+  },
+
+  credentials: true,
+
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+
+  allowedHeaders: ['Content-Type', 'Authorization'],
+
+}));
+
+
+
+app.use(cookieParser());
+
+app.use(express.json({ limit: '1mb' }));
+
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+
+
+if (process.env.NODE_ENV !== 'production') {
+
+  app.use(morgan('dev'));
+
+} else {
+
+  app.use(morgan('combined'));
+
+}
+
+
+
+app.use(securityLogger);
+
+app.use('/api', apiLimiter);
+
+
+
+// ── SEO routes (public) ─────────────────────────────────────────────────────
+
+app.get('/sitemap.xml', getSitemap);
+
+app.get('/robots.txt', getRobotsTxt);
+
+
+
+// ── API routes ──────────────────────────────────────────────────────────────
+
 app.use("/api/auth", authRoutes);
+
 app.use("/api/products", productRoutes);
+
 app.use("/api/orders", orderRoutes);
 
+
+
 app.use("/api/admin/orders", adminOrderRoutes);
+
 app.use('/api/admin/users', adminUserRoutes);
+
 app.use('/api/admin/inventory', adminInventoryRoutes);
+
 app.use('/api/admin/products', adminProductRoutes);
+
 app.use('/api/upload', uploadRoutes); 
+
  
+
 app.use('/api/settings/public', publicSettingsRoutes);
+
 app.use('/api/admin/settings', adminSettingsRoutes);
+
 app.use('/api/admin/hero-slides', adminHeroSlideRoutes); 
+
 app.use('/api/hero-slides', heroSlideRoutes); 
+
 app.use('/api/categories', categoryRoutes);
+
 app.use('/api/admin/categories', adminCategoryRoutes);
+
 app.use('/api/admin/marketing', adminMarketingRoutes);
+
 app.use('/api/admin/coupons', couponRoutes);
+
 app.use('/api/coupons', couponRoutes);
+
 app.use('/api/push', pushRoutes);
 
-// Health Check (public)
-app.get("/api/health", (req: Request, res: Response) => {
+
+
+app.get("/api/health", (_req: Request, res: Response) => {
+
   res.status(200).json({ status: "OK", message: "Server is running" });
+
 });
 
-// Ping endpoints for cron jobs to keep Render alive
-app.get("/api/ping", (req: Request, res: Response) => {
+
+
+app.get("/api/ping", (_req: Request, res: Response) => {
+
   res.status(200).json({ status: "pong" });
+
 });
 
-// Extra root-level ping in case cron job omits /api
-app.get("/ping", (req: Request, res: Response) => {
+
+
+app.get("/ping", (_req: Request, res: Response) => {
+
   res.status(200).json({ status: "pong" });
+
 });
+
+
 
 app.use(errorHandler);
 
+
+
 export default app;
+

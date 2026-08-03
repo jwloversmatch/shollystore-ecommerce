@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import { Order, IOrder } from '../models/Order';   // ✅ import IOrder now exported
+import { Order, IOrder } from '../models/Order';   
 import { Product } from '../models/Product';
 import { User } from '../models/User';
 import { Coupon } from '../models/Coupon';
@@ -10,6 +10,8 @@ import {
   sendAdminOrderNotification,
 } from '../services/email.service';
 import { AuthRequest } from '../middleware/auth';
+import { calculateOrderPricing } from '../utils/orderPricing';
+import { sendError } from '../utils/apiResponse';
 
 // @desc    Create Order (supports multiple payment methods)
 // @route   POST /api/orders
@@ -18,91 +20,51 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     const {
       orderItems,
       shippingAddress,
-      totalPrice,
-      subtotal,
-      taxAmount,
       paymentMethod = 'paystack',
       couponCode,
-      discount,
       notes,
       isGift,
       giftMessage,
       shippingInfo,
     } = req.body;
 
-    if (!orderItems || orderItems.length === 0) {
-      res.status(400).json({ success: false, message: 'No order items' });
+    // Server-side price calculation — never trust client totals
+    let pricing;
+    try {
+      pricing = await calculateOrderPricing(orderItems, couponCode);
+    } catch (pricingError) {
+      const msg = pricingError instanceof Error ? pricingError.message : 'Invalid order';
+      res.status(400).json({ success: false, message: msg });
       return;
     }
 
-    // 1. Validate stock (including variants)
-    for (const item of orderItems) {
-      const product = await Product.findById(item._id);
-      if (!product) {
-        res.status(404).json({ success: false, message: `Product ${item._id} not found` });
-        return;
-      }
+    const { subtotal, discount, taxAmount, totalPrice } = pricing;
 
-      if (item.variant && (item.variant.sku || item.variant.color || item.variant.size)) {
-        const variant = product.variants?.find(
-          v => v.sku === item.variant?.sku || (v.color === item.variant?.color && v.size === item.variant?.size)
-        );
-        if (!variant) {
-          res.status(400).json({ success: false, message: `Variant not found for ${product.name}` });
-          return;
-        }
-        const available = variant.stock ?? product.stock;
-        if (available < item.qty) {
-          res.status(400).json({
-            success: false,
-            message: `Insufficient stock for ${product.name} (${variant.color || ''} ${variant.size || ''}). Available: ${available}`,
-          });
-          return;
-        }
-      } else {
-        if (product.stock < item.qty) {
-          res.status(400).json({
-            success: false,
-            message: `Insufficient stock for ${product.name}. Available: ${product.stock}`,
-          });
-          return;
-        }
-      }
-    }
-
-    // 2. Build order document
     const orderData = {
       user: req.user!._id,
       name: req.user!.name || '',
       phone: req.user!.phone || '',
       email: req.user!.email,
-      orderItems: orderItems.map((x: any) => ({
-        name: x.name,
-        qty: x.qty,
-        price: x.price,
-        product: x._id,
-        image: x.image || undefined,
-        variant: x.variant || undefined,
-      })),
+      orderItems: pricing.orderItems,
       shippingAddress,
       totalPrice,
-      subtotal: subtotal || totalPrice - (discount || 0),
-      taxAmount: taxAmount || 0,
+      subtotal,
+      taxAmount,
       status: 'Pending' as const,
       paymentMethod,
       paymentDetails:
         paymentMethod === 'bank_transfer'
           ? {
-              accountNumber: process.env.BANK_ACCOUNT_NUMBER || '0123456789',
-              bankName: process.env.BANK_NAME || 'GTBank',
+              accountNumber: process.env.BANK_ACCOUNT_NUMBER || '',
+              bankName: process.env.BANK_NAME || '',
             }
           : paymentMethod === 'whatsapp'
           ? {
-              whatsappNumber: process.env.WHATSAPP_NUMBER || '+2348000000000',
+              whatsappNumber: process.env.WHATSAPP_NUMBER || '',
             }
           : undefined,
-      couponCode: couponCode || undefined,
-      discount: discount || 0,
+      couponCode: pricing.couponCode || undefined,
+      discount,
       notes: notes || undefined,
       isGift: isGift || false,
       giftMessage: giftMessage || undefined,
@@ -143,17 +105,14 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       }
     } else {
       try {
-        const originalSubtotal = orderItems.reduce(
-          (sum: number, item: any) => sum + item.price * item.qty, 0
-        );
         await sendOrderConfirmation(
           req.user!.email,
           createdOrder._id.toString(),
           totalPrice,
           req.user!.name,
-          discount || 0,
-          couponCode,
-          originalSubtotal
+          discount,
+          pricing.couponCode,
+          subtotal
         );
       } catch (emailError) {
         console.error('Failed to send customer order confirmation email:', emailError);
@@ -176,7 +135,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       res.status(502).json({ success: false, message: 'Payment processing failed. Please try again.' });
       return;
     }
-    res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+    sendError(res, 500, 'Internal server error');
   }
 };
 
@@ -293,6 +252,6 @@ export const getMyOrders = async (req: AuthRequest, res: Response): Promise<void
     const orders = await Order.find({ user: req.user!._id }).sort({ createdAt: -1 });
     res.json(orders);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    sendError(res, 500, 'Internal server error');
   }
 };

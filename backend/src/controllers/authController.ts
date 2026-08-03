@@ -100,7 +100,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
       message: 'Registration successful. Check your email to verify your account.',
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -130,7 +130,7 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
 
     res.json({ success: true, message: 'Email verified. You can now log in.' });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -157,7 +157,7 @@ export const resendVerificationEmail = async (req: Request, res: Response): Prom
 
     respond();
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -244,7 +244,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       refreshToken: refreshRaw,                          // also in body for mobile clients
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -305,7 +305,7 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<v
       refreshToken: newRaw,
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -322,7 +322,7 @@ export const logoutUser = async (req: AuthRequest, res: Response): Promise<void>
     clearRefreshCookie(res);
     res.json({ success: true, message: 'Logged out.' });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -333,7 +333,7 @@ export const logoutAllDevices = async (req: AuthRequest, res: Response): Promise
     clearRefreshCookie(res);
     res.json({ success: true, message: 'Logged out from all devices.' });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -362,7 +362,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     await sendPasswordResetEmail(user.email, raw);
     respond();
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -398,7 +398,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
 
     res.json({ success: true, message: 'Password reset successfully. Please log in.' });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -431,7 +431,7 @@ export const changePassword = async (req: AuthRequest, res: Response): Promise<v
 
     res.json({ success: true, message: 'Password changed. Please log in again.' });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -449,7 +449,7 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
     }
     res.json({ success: true, user: sanitizeUser(user) });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -468,7 +468,7 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     const updated = await user.save();
     res.json({ success: true, user: sanitizeUser(updated) });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -509,7 +509,7 @@ export const changeEmail = async (req: AuthRequest, res: Response): Promise<void
 
     res.json({ success: true, message: 'Verification sent to your new email address. Check your inbox.' });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -542,7 +542,7 @@ export const verifyEmailChange = async (req: Request, res: Response): Promise<vo
     clearRefreshCookie(res);
     res.json({ success: true, message: 'Email updated. Please log in with your new address.' });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -571,7 +571,7 @@ export const deleteAccount = async (req: AuthRequest, res: Response): Promise<vo
 
     res.json({ success: true, message: 'Account permanently deleted.' });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -585,7 +585,7 @@ export const getAddresses = async (req: AuthRequest, res: Response): Promise<voi
     const user = await User.findById(req.user!._id);
     res.json({ success: true, addresses: user?.addresses || [] });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -607,7 +607,7 @@ export const addAddress = async (req: AuthRequest, res: Response): Promise<void>
 
     res.status(201).json({ success: true, addresses: user.addresses });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -637,7 +637,7 @@ export const updateAddress = async (req: AuthRequest, res: Response): Promise<vo
 
     res.json({ success: true, addresses: user.addresses });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -655,7 +655,7 @@ export const deleteAddress = async (req: AuthRequest, res: Response): Promise<vo
 
     res.json({ success: true, addresses: user.addresses });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -680,6 +680,6 @@ export const setDefaultAddress = async (req: AuthRequest, res: Response): Promis
 
     res.json({ success: true, addresses: user.addresses });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

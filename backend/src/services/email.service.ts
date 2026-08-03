@@ -3,19 +3,13 @@ import path from "path";
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
-console.log("🔑 BREVO_API_KEY loaded:", !!process.env.BREVO_API_KEY);
-console.log(
-  "🔑 Key starts with:",
-  process.env.BREVO_API_KEY?.substring(0, 10) + "...",
-);
-
 const BREVO_API_KEY  = process.env.BREVO_API_KEY;
 const SENDER_EMAIL   = process.env.BREVO_SENDER_EMAIL;
 const SENDER_NAME    = process.env.BREVO_SENDER_NAME;
 const CLIENT_URL     = process.env.CLIENT_URL;
 
-if (!BREVO_API_KEY) {
-  console.warn("⚠️ BREVO_API_KEY is missing. Emails will be logged to console only.");
+if (!BREVO_API_KEY && process.env.NODE_ENV !== 'production') {
+  console.warn("BREVO_API_KEY is missing. Emails will be simulated in development.");
 }
 
 type SendEmailResult = {
@@ -34,10 +28,9 @@ const sendEmail = async (
   textContent?: string,
 ): Promise<SendEmailResult> => {
   if (!BREVO_API_KEY) {
-    console.log("📧 Email (not sent – API key missing):");
-    console.log(`  To: ${to}`);
-    console.log(`  Subject: ${subject}`);
-    console.log(`  HTML preview: ${htmlContent.substring(0, 200)}...`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.info(`Email simulated → ${to}: ${subject}`);
+    }
     return { success: true, simulated: true };
   }
 
@@ -66,11 +59,11 @@ const sendEmail = async (
     }
 
     const data = (await response.json()) as any;
-    console.log(`✅ Email sent to ${to}: ${data.messageId}`);
     return { success: true, messageId: data.messageId };
-  } catch (error: any) {
-    console.error("❌ Brevo email error:", error.message);
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Email send failed';
+    console.error("Brevo email error:", msg);
+    return { success: false, error: msg };
   }
 };
 

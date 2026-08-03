@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async';
+import { SITE_CONFIG, productUrl } from '../config/site';
 
 interface SEOProps {
   title: string;
@@ -9,101 +10,155 @@ interface SEOProps {
   twitterCard?: 'summary_large_image' | 'summary';
   keywords?: string;
   noIndex?: boolean;
+  /** Product-specific Open Graph price (NGN) */
+  productPrice?: number;
+  productAvailability?: 'in stock' | 'out of stock';
 }
 
 const SEO = ({
   title,
   description,
   canonicalUrl,
-  ogImage = '/og-default.jpg',
+  ogImage,
   ogType = 'website',
   twitterCard = 'summary_large_image',
   keywords,
   noIndex = false,
+  productPrice,
+  productAvailability,
 }: SEOProps) => {
-  const siteName = 'ShollyStore';
-  const fullTitle = `${title} | ${siteName}`;
+  const siteName = SITE_CONFIG.name;
+  const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
+  const resolvedOgImage = ogImage || SITE_CONFIG.ogImage;
+  const resolvedCanonical = canonicalUrl || SITE_CONFIG.url;
+
+  const trimmedDescription = description.slice(0, 160);
 
   return (
     <Helmet>
-      {/* Basic */}
       <title>{fullTitle}</title>
-      <meta name="description" content={description} />
+      <meta name="description" content={trimmedDescription} />
       {keywords && <meta name="keywords" content={keywords} />}
-      {noIndex && <meta name="robots" content="noindex, follow" />}
-      {!noIndex && <meta name="robots" content="index, follow" />}
+      <meta name="robots" content={noIndex ? 'noindex, follow' : 'index, follow'} />
 
-      {/* Canonical */}
-      {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+      <link rel="canonical" href={resolvedCanonical} />
 
-      {/* Open Graph */}
       <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={description} />
-      <meta property="og:image" content={ogImage} />
+      <meta property="og:description" content={trimmedDescription} />
+      <meta property="og:image" content={resolvedOgImage} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
       <meta property="og:image:alt" content={title} />
       <meta property="og:type" content={ogType} />
       <meta property="og:site_name" content={siteName} />
-      <meta property="og:locale" content="en_NG" />
-      {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+      <meta property="og:locale" content={SITE_CONFIG.locale} />
+      <meta property="og:url" content={resolvedCanonical} />
 
-      {/* Twitter */}
+      {ogType === 'product' && productPrice != null && (
+        <>
+          <meta property="product:price:amount" content={String(productPrice)} />
+          <meta property="product:price:currency" content="NGN" />
+          {productAvailability && (
+            <meta property="product:availability" content={productAvailability} />
+          )}
+        </>
+      )}
+
       <meta name="twitter:card" content={twitterCard} />
       <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={ogImage} />
+      <meta name="twitter:description" content={trimmedDescription} />
+      <meta name="twitter:image" content={resolvedOgImage} />
       <meta name="twitter:image:alt" content={title} />
-      <meta name="twitter:site" content="@shollystore" />
-      <meta name="twitter:creator" content="@shollystore" />
+      <meta name="twitter:site" content={SITE_CONFIG.twitter} />
 
-      {/* Additional SEO tags */}
       <meta name="author" content={siteName} />
-      <meta name="rating" content="General" />
-      <meta name="coverage" content="Worldwide" />
-      <meta name="format-detection" content="telephone=no" />
       <meta httpEquiv="content-language" content="en-NG" />
-      <meta name="geo.region" content="NG" />
-      <meta name="geo.placename" content="Nigeria" />
-
-      {/* Favicon references */}
-      <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-      <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-      <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-      <link rel="manifest" href="/site.webmanifest" />
-      <meta name="theme-color" content="#ffffff" />
     </Helmet>
   );
 };
 
 export default SEO;
 
-// ── Structured Data component for root layout ────────────────────────────────
-export const StructuredData = () => {
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: 'ShollyStore',
-    url: 'https://yourdomain.com',
-    logo: 'https://yourdomain.com/logo.png',
-    description: 'Your store description here',
-    sameAs: [
-      'https://twitter.com/shollystore',
-      'https://instagram.com/shollystore',
-    ],
-    contactPoint: {
-      '@type': 'ContactPoint',
-      telephone: '+234-000-000-0000',
-      contactType: 'customer service',
-      areaServed: 'NG',
-      availableLanguage: ['English'],
-    },
-  };
+/** Build Product JSON-LD schema */
+export const buildProductSchema = (product: {
+  name: string;
+  description?: string;
+  slug: string;
+  price: number;
+  images?: string[];
+  stock?: number;
+  averageRating?: number;
+  numberOfReviews?: number;
+}) => ({
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: product.name,
+  description: product.description || product.name,
+  image: product.images?.length ? product.images : [SITE_CONFIG.ogImage],
+  url: productUrl(product.slug),
+  offers: {
+    '@type': 'Offer',
+    price: product.price,
+    priceCurrency: 'NGN',
+    availability:
+      (product.stock ?? 0) > 0
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock',
+    url: productUrl(product.slug),
+  },
+  ...(product.averageRating && product.numberOfReviews
+    ? {
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: product.averageRating,
+          reviewCount: product.numberOfReviews,
+        },
+      }
+    : {}),
+});
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-    />
-  );
+/** Build BreadcrumbList JSON-LD */
+export const buildBreadcrumbSchema = (
+  items: { name: string; url: string }[],
+) => ({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: items.map((item, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: item.name,
+    item: item.url,
+  })),
+});
+
+/** Organization + WebSite schemas for root layout */
+export const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: SITE_CONFIG.name,
+  url: SITE_CONFIG.url,
+  logo: `${SITE_CONFIG.url}/logo.png`,
+  description: SITE_CONFIG.description,
+  sameAs: [
+    `https://twitter.com/${SITE_CONFIG.twitter.replace('@', '')}`,
+  ],
+  contactPoint: {
+    '@type': 'ContactPoint',
+    telephone: SITE_CONFIG.phone,
+    contactType: 'customer service',
+    areaServed: 'NG',
+    availableLanguage: ['English'],
+  },
+};
+
+export const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: SITE_CONFIG.name,
+  url: SITE_CONFIG.url,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${SITE_CONFIG.url}/shop?q={search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
 };
