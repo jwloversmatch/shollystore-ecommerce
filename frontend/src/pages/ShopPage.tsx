@@ -63,7 +63,10 @@ const ShopPage = () => {
   const limit = 12;
 
   // Get page from URL, default to 1
-  const page = parseInt(searchParams.get("page") || "1");
+  const page = (() => {
+  const urlPage = parseInt(searchParams.get("page") || "1");
+  return isNaN(urlPage) ? 1 : urlPage;
+})();
 
   // Update page in URL only
   const handlePageChange = useCallback((newPage: number) => {
