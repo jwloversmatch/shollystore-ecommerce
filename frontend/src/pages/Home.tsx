@@ -20,17 +20,10 @@ import HomeLoading from "./home/HomeLoading";
 import HomeHero from "./home/HomeHero";
 import HomeMarquee from "./home/HomeMarquee";
 import HomeFeatures from "./home/HomeFeatures";
-import HomeCategoryBrowser from "./home/HomeCategoryBrowser";
 import HomeSpecialOffer from "./home/HomeSpecialOffer";
 import FeaturedProductsGrid from "../components/FeaturedProductsGrid";
 import { ArrowRight } from "lucide-react";
 
-const getProductCategoryName = (p: ProductItem): string => {
-  if (!p.category) return "General";
-  return typeof p.category === "string"
-    ? p.category
-    : (p.category.name ?? "General");
-};
 
 const Home = () => {
   const { data: productsResp } = useGetProductsQuery({ limit: 9999 });
@@ -94,14 +87,6 @@ const Home = () => {
     setCurrentIndex((p) => (p - 1 + heroSlides.length) % heroSlides.length);
   };
 
-  const categoryData = useMemo(() => {
-    return categories.map((c: CategoryItem) => ({
-      name: c.name,
-      slug: c.slug,
-      count: displayProducts.filter((p) => getProductCategoryName(p) === c.name)
-        .length,
-    }));
-  }, [categories, displayProducts]);
 
   const heroTagline = publicSettings?.heroTagline || "🔥 Your One‑Stop Shop";
   const heroTitle = publicSettings?.heroTitle || "Shop the | Best Deals";
@@ -233,9 +218,6 @@ const Home = () => {
 
       <HomeMarquee categoryNames={categoryNames} />
       <HomeFeatures />
-
-      <HomeCategoryBrowser categories={categoryData} />
-
       {/* Featured Products section */}
       <section
         className="bg-[#FCFAF5] dark:bg-[#111111] py-14 md:py-18"

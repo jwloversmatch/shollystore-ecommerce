@@ -1,41 +1,46 @@
 // src/App.tsx
-import { Suspense, lazy, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import { HelmetProvider } from 'react-helmet-async';
-import { motion, MotionConfig } from 'framer-motion';
+import { Suspense, lazy, useEffect, useRef } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import { HelmetProvider } from "react-helmet-async";
+import { motion, MotionConfig } from "framer-motion";
 
-import Navbar from './components/Navbar';
-import AdminRoute from './components/AdminRoute';
-import ProtectedRoute from './components/ProtectedRoute';
-import { ThemeProvider } from './context/ThemeContext';
+import Navbar from "./components/Navbar";
+import AdminRoute from "./components/AdminRoute";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { ThemeProvider } from "./context/ThemeContext";
 
 // --- Lazy Load Pages with prefetch hints ---
-const Home = lazy(() => import(/* webpackPrefetch: true */ './pages/Home'));
-const Cart = lazy(() => import('./pages/Cart'));
-const Checkout = lazy(() => import('./pages/Checkout'));
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
-const ResetPassword = lazy(() => import('./pages/ResetPassword'));
-const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
-const Products = lazy(() => import('./pages/admin/Products'));
-const Orders = lazy(() => import('./pages/admin/Orders'));
-const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
-const HeroSlides = lazy(() => import('./pages/admin/HeroSlides'));
-const Categories = lazy(() => import('./pages/admin/Categories'));
-const Account = lazy(() => import('./pages/Account'));
-const ProductDetail = lazy(() => import('./pages/ProductDetail'));
-const Coupons = lazy(() => import('./pages/admin/Coupons'));
-const ShopPage = lazy(() => import('./pages/ShopPage'));
-const Settings = lazy(() => import('./pages/admin/Settings'));
-const NotFound = lazy(() => import('./pages/NotFound'));
+const Home = lazy(() => import(/* webpackPrefetch: true */ "./pages/Home"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const Products = lazy(() => import("./pages/admin/Products"));
+const Orders = lazy(() => import("./pages/admin/Orders"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
+const HeroSlides = lazy(() => import("./pages/admin/HeroSlides"));
+const Categories = lazy(() => import("./pages/admin/Categories"));
+const Account = lazy(() => import("./pages/Account"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Coupons = lazy(() => import("./pages/admin/Coupons"));
+const ShopPage = lazy(() => import("./pages/ShopPage"));
+const Settings = lazy(() => import("./pages/admin/Settings"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const ACCENT = "#e8622a";
 
 // Loading fallback – lightweight, no heavy animations
 const LoadingFallback = () => (
-  <div 
+  <div
     className="min-h-screen flex justify-center items-center bg-gray-50 dark:bg-[#0A0A0B]"
     role="status"
     aria-label="Loading"
@@ -54,26 +59,22 @@ function AppContent() {
   const location = useLocation();
   const isFirstRender = useRef(true);
 
-  // Move focus to the page's <main> on every route change AFTER the first,
-  // so keyboard/screen-reader users get re-oriented instead of silently
-  // staying focused on the nav link they clicked. Skipped on first mount
-  // so it doesn't steal the browser's normal initial-load focus.
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
-    const main = document.getElementById('main-content');
+    const main = document.getElementById("main-content");
     main?.focus({ preventScroll: true });
   }, [location.pathname]);
 
   // Hide navbar on specific pages
-  const hideNavbar = ['/cart', '/checkout', '/404'].includes(location.pathname);
+  const hideNavbar = ["/cart", "/checkout", "/404"].includes(location.pathname);
 
   return (
     <>
       {!hideNavbar && <Navbar />}
-      
+
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -115,15 +116,15 @@ function App() {
       <ThemeProvider>
         <MotionConfig reducedMotion="user">
           <Router>
-            <Toaster 
-              position="top-center" 
+            <Toaster
+              position="top-center"
               reverseOrder={false}
               toastOptions={{
                 duration: 3000,
                 style: {
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-primary)',
-                  border: '1px solid var(--border-soft)',
+                  background: "var(--bg-surface)",
+                  color: "var(--text-primary)",
+                  border: "1px solid var(--border-soft)",
                 },
               }}
             />

@@ -1,14 +1,12 @@
-// utils/cloudinary.ts
-
 /**
  * Generate an optimised Cloudinary URL with the given width.
  * Automatically converts to the best format (WebP/AVIF) and
  * uses automatic quality compression.
  *
- * @param baseUrl  The original Cloudinary secure URL
- * @param width    Desired image width in pixels
- * @returns        Transformed URL if the URL is a Cloudinary URL,
- *                 otherwise returns the baseUrl unchanged.
+ * @param baseUrl  
+ * @param width   
+ * @returns        
+ *                 
  */
 export const getCloudinaryUrl = (baseUrl: string, width: number): string => {
   // Only transform Cloudinary URLs

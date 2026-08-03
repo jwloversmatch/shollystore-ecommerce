@@ -1,27 +1,41 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useForgotPasswordMutation } from '../features/api/apiSlice';
-import { Mail, ArrowLeft, Send, CheckCircle, AlertCircle } from 'lucide-react';
-import SEO from '../components/SEO';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useForgotPasswordMutation } from "../features/api/apiSlice";
+import { Mail, ArrowLeft, Send, CheckCircle, AlertCircle } from "lucide-react";
+import SEO from "../components/SEO";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const ACCENT = '#e8622a';
+const ACCENT = "#e8622a";
 
 // ─── Ambient background (light/dark) ──────────────────────────────────────────
 const AmbientBg = () => (
   <div aria-hidden="true">
     <motion.div
-      animate={{ x: ['-12%', '12%', '-12%'], y: ['-8%', '10%', '-8%'] }}
-      transition={{ repeat: Infinity, duration: 30, ease: 'linear' }}
+      animate={{ x: ["-12%", "12%", "-12%"], y: ["-8%", "10%", "-8%"] }}
+      transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
       className="fixed pointer-events-none rounded-full blur-[130px] -z-10"
-      style={{ width: 640, height: 640, top: -200, left: -200, background: ACCENT, opacity: 0.065 }}
+      style={{
+        width: 640,
+        height: 640,
+        top: -200,
+        left: -200,
+        background: ACCENT,
+        opacity: 0.065,
+      }}
     />
     <motion.div
-      animate={{ x: ['12%', '-12%', '12%'], y: ['12%', '-10%', '12%'] }}
-      transition={{ repeat: Infinity, duration: 38, ease: 'linear' }}
+      animate={{ x: ["12%", "-12%", "12%"], y: ["12%", "-10%", "12%"] }}
+      transition={{ repeat: Infinity, duration: 38, ease: "linear" }}
       className="fixed pointer-events-none rounded-full blur-[130px] -z-10"
-      style={{ width: 600, height: 600, bottom: -200, right: -200, background: '#10b981', opacity: 0.04 }}
+      style={{
+        width: 600,
+        height: 600,
+        bottom: -200,
+        right: -200,
+        background: "#10b981",
+        opacity: 0.04,
+      }}
     />
     <div
       className="fixed inset-0 pointer-events-none -z-10
@@ -33,10 +47,11 @@ const AmbientBg = () => (
 );
 
 const ForgotPassword = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [forgotPassword, { isLoading, error }] = useForgotPasswordMutation();
-  const errorMessage = (error as { data?: { message?: string } })?.data?.message;
+  const errorMessage = (error as { data?: { message?: string } })?.data
+    ?.message;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,14 +67,18 @@ const ForgotPassword = () => {
   // ── Success screen ──────────────────────────────────────────────────────────
   if (sent) {
     return (
-      <main id="main-content" tabIndex={-1} className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+      >
         <SEO title="Check Your Email" description="Password reset link sent" />
         <AmbientBg />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.55, ease: 'easeOut' }}
+          transition={{ duration: 0.55, ease: "easeOut" }}
           className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 text-center
             bg-[#FCFAF5] dark:bg-[#141414]
             border border-gray-200 dark:border-white/[0.07]
@@ -68,7 +87,9 @@ const ForgotPassword = () => {
           {/* Accent top line */}
           <div
             className="absolute top-0 inset-x-0 h-px rounded-t-3xl"
-            style={{ background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }}
+            style={{
+              background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)`,
+            }}
           />
 
           {/* Animated check circle */}
@@ -76,7 +97,7 @@ const ForgotPassword = () => {
             <div className="relative">
               <motion.div
                 animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                 className="absolute -inset-4 rounded-full border-2 border-dashed pointer-events-none"
                 style={{ borderColor: `${ACCENT}30` }}
                 aria-hidden="true"
@@ -84,17 +105,31 @@ const ForgotPassword = () => {
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 320, damping: 22, delay: 0.1 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 320,
+                  damping: 22,
+                  delay: 0.1,
+                }}
                 className="w-20 h-20 rounded-full flex items-center justify-center"
-                style={{ background: `${ACCENT}15`, boxShadow: `0 0 0 3px ${ACCENT}` }}
+                style={{
+                  background: `${ACCENT}15`,
+                  boxShadow: `0 0 0 3px ${ACCENT}`,
+                }}
               >
-                <CheckCircle className="w-9 h-9" style={{ color: ACCENT }} aria-hidden="true" />
+                <CheckCircle
+                  className="w-9 h-9"
+                  style={{ color: ACCENT }}
+                  aria-hidden="true"
+                />
               </motion.div>
             </div>
           </div>
 
           <motion.p
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
             className="text-[10px] font-extrabold uppercase tracking-[0.22em] mb-2"
             style={{ color: ACCENT }}
           >
@@ -102,21 +137,27 @@ const ForgotPassword = () => {
           </motion.p>
 
           <motion.h2
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
             className="text-3xl font-black text-gray-900 dark:text-white mb-3 leading-tight"
           >
             Check your inbox
           </motion.h2>
 
           <motion.p
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
             className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-2"
           >
             If an account exists for
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.35 }}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.35 }}
             className="inline-block px-4 py-2 rounded-xl border mb-6 text-sm font-bold
               text-gray-900 dark:text-white
               bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.1]"
@@ -125,11 +166,13 @@ const ForgotPassword = () => {
           </motion.div>
 
           <motion.p
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
             className="text-gray-500 dark:text-gray-400 text-xs mb-8 leading-relaxed"
           >
-            You'll receive a password reset link shortly.
-            Check your spam folder if you don't see it.
+            You'll receive a password reset link shortly. Check your spam folder
+            if you don't see it.
           </motion.p>
 
           <Link
@@ -146,14 +189,21 @@ const ForgotPassword = () => {
 
   // ── Main form ───────────────────────────────────────────────────────────────
   return (
-    <main id="main-content" tabIndex={-1} className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none">
-      <SEO title="Forgot Password" description="Reset your ShollyStore account password" />
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+    >
+      <SEO
+        title="Forgot Password"
+        description="Reset your ShollyStore account password"
+      />
       <AmbientBg />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.92, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.55, ease: 'easeOut' }}
+        transition={{ duration: 0.55, ease: "easeOut" }}
         className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10
           bg-[#FCFAF5] dark:bg-[#141414]
           border border-gray-200 dark:border-white/[0.07]
@@ -162,7 +212,9 @@ const ForgotPassword = () => {
         {/* Accent top line */}
         <div
           className="absolute top-0 inset-x-0 h-px rounded-t-3xl"
-          style={{ background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }}
+          style={{
+            background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)`,
+          }}
         />
 
         <Link
@@ -172,7 +224,10 @@ const ForgotPassword = () => {
           <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Back to Login
         </Link>
 
-        <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] mb-2" style={{ color: ACCENT }}>
+        <p
+          className="text-[10px] font-extrabold uppercase tracking-[0.22em] mb-2"
+          style={{ color: ACCENT }}
+        >
           Account recovery
         </p>
 
@@ -186,11 +241,17 @@ const ForgotPassword = () => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="forgot-email" className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+            <label
+              htmlFor="forgot-email"
+              className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2"
+            >
               Email Address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400 dark:text-gray-600" aria-hidden="true" />
+              <Mail
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400 dark:text-gray-600"
+                aria-hidden="true"
+              />
               <input
                 id="forgot-email"
                 type="email"
@@ -218,12 +279,15 @@ const ForgotPassword = () => {
               role="alert"
               className="flex items-start gap-2.5 p-3.5 rounded-xl border text-sm"
               style={{
-                background: 'rgba(239,68,68,0.07)',
-                borderColor: 'rgba(239,68,68,0.2)',
-                color: '#f87171',
+                background: "rgba(239,68,68,0.07)",
+                borderColor: "rgba(239,68,68,0.2)",
+                color: "#f87171",
               }}
             >
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+              <AlertCircle
+                className="w-4 h-4 shrink-0 mt-0.5"
+                aria-hidden="true"
+              />
               <span>{errorMessage}</span>
             </motion.div>
           )}
@@ -231,7 +295,11 @@ const ForgotPassword = () => {
           <motion.button
             type="submit"
             disabled={isLoading || !email.trim()}
-            whileHover={!isLoading ? { scale: 1.02, boxShadow: `0 18px 44px ${ACCENT}55` } : {}}
+            whileHover={
+              !isLoading
+                ? { scale: 1.02, boxShadow: `0 18px 44px ${ACCENT}55` }
+                : {}
+            }
             whileTap={!isLoading ? { scale: 0.98 } : {}}
             className="w-full py-4 rounded-xl font-black text-white text-[15px] flex items-center justify-center gap-2.5 transition-all disabled:opacity-55 disabled:cursor-not-allowed"
             style={{
@@ -240,7 +308,7 @@ const ForgotPassword = () => {
             }}
           >
             {isLoading ? (
-              'Sending…'
+              "Sending…"
             ) : (
               <>
                 <Send className="w-5 h-5" aria-hidden="true" />
