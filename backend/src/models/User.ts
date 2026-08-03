@@ -21,6 +21,19 @@ const AddressSchema = new Schema({
   isDefault:  { type: Boolean, default: false },
 });
 
+// ---------- Refresh token sub-document ----------
+export interface IRefreshToken {
+  token: string;
+  createdAt: Date;
+  expiresAt: Date;
+}
+
+const RefreshTokenSchema = new Schema({
+  token:     { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+  expiresAt: { type: Date, required: true },
+});
+
 // ---------- User interface ----------
 export interface IUser extends Document {
   // ── Core ────────────────────────────────────────────
@@ -32,28 +45,29 @@ export interface IUser extends Document {
   createdAt: Date;
 
   // ── Email verification ───────────────────────────────
-  isVerified:         boolean;
-  verificationToken?: string | null;
+  isVerified:           boolean;
+  verificationToken?:   string | null;
+  verificationExpires?: Date | null;
 
   // ── Addresses ────────────────────────────────────────
   addresses: IAddress[];
 
   // ── Session management ───────────────────────────────
   lastLogin?:    Date;
-  refreshTokens: string[];   // hashed tokens, one per active device session
+  refreshTokens: IRefreshToken[];   
 
   // ── Login lockout ────────────────────────────────────
   loginAttempts: number;
   lockUntil?:    Date;
 
   // ── Password reset ───────────────────────────────────
-  resetPasswordToken?:   string;   // stored as SHA-256 hash
+  resetPasswordToken?:   string;  
   resetPasswordExpires?: Date;
 
   // ── Email change flow ────────────────────────────────
-  emailChangeToken?:   string;   // stored as SHA-256 hash
+  emailChangeToken?:   string;   
   emailChangeExpires?: Date;
-  emailChangePending?: string;   // new email awaiting verification
+  emailChangePending?: string;   
 
   // ── Methods ──────────────────────────────────────────
   matchPassword(enteredPassword: string): Promise<boolean>;
@@ -70,15 +84,16 @@ const UserSchema: Schema = new Schema({
   createdAt: { type: Date, default: Date.now },
 
   // ── Email verification ───────────────────────────────
-  isVerified:        { type: Boolean, default: false },
-  verificationToken: { type: String, default: null },
+  isVerified:          { type: Boolean, default: false },
+  verificationToken:   { type: String, default: null },
+  verificationExpires: { type: Date, default: null },
 
   // ── Addresses ────────────────────────────────────────
   addresses: { type: [AddressSchema], default: [] },
 
   // ── Session management ───────────────────────────────
   lastLogin:     { type: Date },
-  refreshTokens: { type: [String], default: [] },
+  refreshTokens: { type: [RefreshTokenSchema], default: [] },
 
   // ── Login lockout ────────────────────────────────────
   loginAttempts: { type: Number, default: 0 },
@@ -99,9 +114,11 @@ UserSchema.index({ role: 1 });
 UserSchema.index({ createdAt: -1 });
 
 // Token lookups — used on every auth request, keep them fast
-UserSchema.index({ refreshTokens:      1 });
+UserSchema.index({ 'refreshTokens.token': 1 });
+UserSchema.index({ 'refreshTokens.expiresAt': 1 });
 UserSchema.index({ resetPasswordToken: 1 });
-UserSchema.index({ emailChangeToken:   1 });
+UserSchema.index({ emailChangeToken: 1 });
+UserSchema.index({ verificationToken: 1 });
 
 // ---------- Pre-save: hash password ----------
 UserSchema.pre<IUser>('save', async function (this: IUser) {

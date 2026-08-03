@@ -15,6 +15,8 @@ const MAX_LOGIN_ATTEMPTS   = 5;
 const LOCK_DURATION_MS     = 15 * 60 * 1000;        // 15 minutes
 const RESET_EXPIRY_MS      = 60 * 60 * 1000;         // 1 hour
 const EMAIL_CHANGE_EXPIRY  = 24 * 60 * 60 * 1000;   // 24 hours
+const VERIFICATION_EXPIRY  = 15 * 60 * 1000;         // 15 minutes
+const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days
 const MAX_REFRESH_SESSIONS = 5;                       // concurrent device sessions kept
 
 // ─── Private helpers ───────────────────────────────────────────────────────
@@ -82,12 +84,13 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
     const { raw, hashed } = makeToken();
 
     await User.create({
-      email:             normEmail,
+      email:                normEmail,
       password,
-      name:              name?.trim() || '',
-      phone:             phone?.trim() || '',
-      verificationToken: hashed,   // store hash, send raw in email
-      isVerified:        false,
+      name:                 name?.trim() || '',
+      phone:                phone?.trim() || '',
+      verificationToken:    hashed,
+      verificationExpires:  new Date(Date.now() + VERIFICATION_EXPIRY),
+      isVerified:           false,
     });
 
     await sendVerificationEmail(normEmail, raw);
@@ -110,14 +113,19 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    const user = await User.findOne({ verificationToken: hashToken(raw) });
+    const user = await User.findOne({ 
+      verificationToken: hashToken(raw),
+      verificationExpires: { $gt: new Date() }
+    });
+    
     if (!user) {
       res.status(400).json({ success: false, message: 'Invalid or expired verification link.' });
       return;
     }
 
-    user.isVerified        = true;
-    user.verificationToken = undefined;
+    user.isVerified          = true;
+    user.verificationToken   = undefined;
+    user.verificationExpires = undefined;
     await user.save();
 
     res.json({ success: true, message: 'Email verified. You can now log in.' });
@@ -142,7 +150,8 @@ export const resendVerificationEmail = async (req: Request, res: Response): Prom
     if (!user || user.isVerified) { respond(); return; }
 
     const { raw, hashed } = makeToken();
-    user.verificationToken = hashed;
+    user.verificationToken   = hashed;
+    user.verificationExpires = new Date(Date.now() + VERIFICATION_EXPIRY);
     await user.save();
     await sendVerificationEmail(normEmail, raw);
 
@@ -208,11 +217,21 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
     user.lockUntil     = undefined;
     user.lastLogin     = new Date();
 
+    // ── Clean up expired refresh tokens ───────────────────────────────────
+    const now = new Date();
+    user.refreshTokens = (user.refreshTokens || []).filter(
+      (t) => t.expiresAt && t.expiresAt > now
+    );
+
     // ── Issue refresh token, keep only the last N sessions ────────────────
     const { raw: refreshRaw, hashed: refreshHashed } = makeToken();
     user.refreshTokens = [
-      ...(user.refreshTokens || []).slice(-(MAX_REFRESH_SESSIONS - 1)),
-      refreshHashed,
+      ...user.refreshTokens.slice(-(MAX_REFRESH_SESSIONS - 1)),
+      {
+        token: refreshHashed,
+        createdAt: now,
+        expiresAt: new Date(now.getTime() + REFRESH_TOKEN_EXPIRY)
+      }
     ];
 
     await user.save();
@@ -240,7 +259,16 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<v
     }
 
     const hashed = hashToken(raw);
-    const user   = await User.findOne({ refreshTokens: hashed }).select('+refreshTokens') as IUser | null;
+    
+    // Find user with non-expired token
+    const user = await User.findOne({
+      refreshTokens: {
+        $elemMatch: {
+          token: hashed,
+          expiresAt: { $gt: new Date() }
+        }
+      }
+    }).select('+refreshTokens') as IUser | null;
 
     if (!user) {
       res.status(401).json({ success: false, message: 'Invalid or expired refresh token.' });
@@ -249,10 +277,25 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<v
 
     // ── Token rotation: old token out, new token in ────────────────────────
     const { raw: newRaw, hashed: newHashed } = makeToken();
-    user.refreshTokens = [
-      ...(user.refreshTokens || []).filter((t) => t !== hashed),
-      newHashed,
-    ];
+    const now = new Date();
+    
+    // Remove the used refresh token
+    user.refreshTokens = (user.refreshTokens || []).filter(
+      (t) => t.token !== hashed
+    );
+    
+    // Clean up any other expired tokens
+    user.refreshTokens = user.refreshTokens.filter(
+      (t) => t.expiresAt && t.expiresAt > now
+    );
+    
+    // Add new refresh token with expiration
+    user.refreshTokens.push({
+      token: newHashed,
+      createdAt: now,
+      expiresAt: new Date(now.getTime() + REFRESH_TOKEN_EXPIRY)
+    });
+    
     await user.save();
 
     setRefreshCookie(res, newRaw);
@@ -273,7 +316,7 @@ export const logoutUser = async (req: AuthRequest, res: Response): Promise<void>
     if (raw && req.user) {
       await User.updateOne(
         { _id: req.user._id },
-        { $pull: { refreshTokens: hashToken(raw) } }
+        { $pull: { refreshTokens: { token: hashToken(raw) } } }
       );
     }
     clearRefreshCookie(res);
