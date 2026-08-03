@@ -207,12 +207,12 @@ const ProductDetail = () => {
 
   // Get the page to go back to. If navigated from within app, go back. Otherwise go to shop.
   const handleGoBack = () => {
-    if (location.key !== "default") {
-      navigate(-1);
-    } else {
-      navigate("/shop");
-    }
-  };
+  if (location.key !== "default") {
+    navigate(-1);
+  } else {
+    navigate("/shop");
+  }
+};
 
   // ══════ LOADING ═══════════════════════════════
   if (isLoading) {

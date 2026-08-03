@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -54,21 +54,43 @@ const SORT_OPTIONS = [
 
 const ShopPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: tree = [] } = useGetCategoryTreeQuery(undefined);
   const [selectedPath, setSelectedPath] = useState<string[]>([]);
-  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const limit = 12;
 
+  // Get page from URL, default to 1
+  const page = (() => {
+    const p = searchParams.get("page");
+    return p ? parseInt(p) : 1;
+  })();
+
+  // Update page in both state and URL
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      setSearchParams((prev) => {
+        if (newPage === 1) {
+          prev.delete("page");
+        } else {
+          prev.set("page", newPage.toString());
+        }
+        return prev;
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [setSearchParams],
+  );
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       setDebouncedSearch(search);
-      setPage(1);
+      handlePageChange(1);
     }, 350);
     return () => clearTimeout(timeout);
-  }, [search]);
+  }, [search, handlePageChange]);
 
   const currentNode = useMemo<CategoryNode | null>(() => {
     if (selectedPath.length === 0) return null;
@@ -136,7 +158,7 @@ const ShopPage = () => {
         setSelectedPath([...selectedPath, id]);
       }
     }
-    setPage(1);
+    handlePageChange(1);
     setSearch("");
     setDebouncedSearch("");
   };
@@ -146,7 +168,7 @@ const ShopPage = () => {
     setSearch("");
     setDebouncedSearch("");
     setSortBy("newest");
-    setPage(1);
+    handlePageChange(1);
   };
 
   const hasActiveFilters =
@@ -466,7 +488,7 @@ const ShopPage = () => {
                 aria-label="Pagination"
               >
                 <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  onClick={() => handlePageChange(Math.max(1, page - 1))}
                   disabled={page === 1}
                   className="p-2.5 rounded-xl border border-gray-300 dark:border-white/10 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/5 transition text-gray-700 dark:text-white"
                   aria-label="Previous page"
@@ -477,7 +499,7 @@ const ShopPage = () => {
                   (pageNum) => (
                     <button
                       key={pageNum}
-                      onClick={() => setPage(pageNum)}
+                      onClick={() => handlePageChange(pageNum)}
                       className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${pageNum === page ? "text-white shadow-lg" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"}`}
                       style={
                         pageNum === page
@@ -496,7 +518,7 @@ const ShopPage = () => {
                 )}
                 <button
                   onClick={() =>
-                    setPage((p) => Math.min(pagination.pages, p + 1))
+                    handlePageChange(Math.min(pagination.pages, page + 1))
                   }
                   disabled={page === pagination.pages}
                   className="p-2.5 rounded-xl border border-gray-300 dark:border-white/10 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/5 transition text-gray-700 dark:text-white"
