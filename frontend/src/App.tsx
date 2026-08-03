@@ -89,7 +89,7 @@ function AppContent() {
           <Route path="/products/:slug" element={<ProductDetail />} />
 
           <Route element={<ProtectedRoute />}>
-            <Route path="/shop/*" element={<ShopPage />} />
+            <Route path="/shop" element={<ShopPage />} />
           </Route>
 
           <Route element={<AdminRoute />}>
