@@ -20,6 +20,7 @@ interface HomeHeroProps {
   handleNext: () => void;
   setDirection: (dir: number) => void;
   setCurrentIndex: (idx: number) => void;
+  onShopNow: () => void;
 }
 
 const categories = [
@@ -74,6 +75,7 @@ const HomeHero = ({
   handleNext,
   setDirection,
   setCurrentIndex,
+  onShopNow,
 }: HomeHeroProps) => {
   const animatedProducts = useCountUp(displayProductsCount, 2500);
   const animatedCategories = useCountUp(4, 1500);
@@ -243,9 +245,7 @@ const HomeHero = ({
           <motion.button
             whileHover={{ scale: 1.04, boxShadow: `0 20px 50px ${ACCENT}55` }}
             whileTap={{ scale: 0.96 }}
-            onClick={() =>
-              document.getElementById("products-grid")?.scrollIntoView({ behavior: "smooth" })
-            }
+            onClick={onShopNow}
             className="flex items-center gap-3 px-12 py-4.5 rounded-full font-bold text-white text-lg group shadow-2xl"
             style={{ background: ACCENT }}
           >
@@ -330,7 +330,7 @@ const HomeHero = ({
           <motion.button
             whileHover={{ scale: 1.04, boxShadow: `0 14px 36px ${ACCENT}50` }}
             whileTap={{ scale: 0.96 }}
-            onClick={() => document.getElementById("products-grid")?.scrollIntoView({ behavior: "smooth" })}
+            onClick={onShopNow}
             className="flex items-center gap-2.5 px-9 py-4 rounded-full font-bold text-white group shadow-lg"
             style={{ background: ACCENT }}
           >
@@ -389,7 +389,6 @@ const HomeHero = ({
           transition={{ repeat: Infinity, duration: 5.5, ease: "easeInOut" }}
           className="relative"
         >
-          {/* Outer rotating ring */}
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
@@ -397,7 +396,6 @@ const HomeHero = ({
             style={{ borderColor: `${ACCENT}25` }}
             aria-hidden="true"
           />
-          {/* Middle decorative ring */}
           <motion.div
             animate={{ rotate: -360 }}
             transition={{ duration: 18, repeat: Infinity, ease: "linear" }}

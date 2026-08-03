@@ -175,6 +175,7 @@ const Home = () => {
           handleNext={handleNext}
           setDirection={setDirection}
           setCurrentIndex={setCurrentIndex}
+          onShopNow={() => navigate("/login")}
         />
       </div>
 
@@ -245,6 +246,7 @@ const Home = () => {
       <HomeSpecialOffer
         specialOfferTitle={specialOfferTitle}
         specialOfferText={specialOfferText}
+        onShopNow={() => navigate("/login")}
       />
 
       <ProductQuickViewModal

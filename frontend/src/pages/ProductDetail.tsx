@@ -1,6 +1,6 @@
 // ── Accessible ProductDetail.tsx ───────────────────────────────────────────────
 import { useState, useMemo } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDispatch } from "react-redux";
 import { addToCart } from "../features/cart/cartSlice";
@@ -93,6 +93,7 @@ const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [qty, setQty] = useState(1);
   const [imgError, setImgError] = useState(false);
@@ -202,6 +203,15 @@ const ProductDetail = () => {
     toast.success(`${product.name} added! 🛒`);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
+  };
+
+  // Get the page to go back to. If navigated from within app, go back. Otherwise go to shop.
+  const handleGoBack = () => {
+    if (location.key !== "default") {
+      navigate(-1);
+    } else {
+      navigate("/shop");
+    }
   };
 
   // ══════ LOADING ═══════════════════════════════
@@ -335,7 +345,7 @@ const ProductDetail = () => {
         <motion.button
           whileHover={{ scale: 1.06 }}
           whileTap={{ scale: 0.94 }}
-          onClick={() => navigate(-1)}
+          onClick={handleGoBack}
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold
             text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors shrink-0
             bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.08]"
@@ -425,12 +435,16 @@ const ProductDetail = () => {
 
           {/* Thumbnails */}
           {images.length > 1 && (
-            <div className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar" role="group" aria-label="Product image thumbnails">
-  {images.map((img, idx) => (
-    <motion.button
-      key={idx}
-      aria-pressed={idx === selectedImage}
-      aria-label={`View product image ${idx + 1} of ${images.length}`}
+            <div
+              className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar"
+              role="group"
+              aria-label="Product image thumbnails"
+            >
+              {images.map((img, idx) => (
+                <motion.button
+                  key={idx}
+                  aria-pressed={idx === selectedImage}
+                  aria-label={`View product image ${idx + 1} of ${images.length}`}
                   whileHover={{ scale: 1.06 }}
                   whileTap={{ scale: 0.94 }}
                   onClick={() => setSelectedImage(idx)}
@@ -486,37 +500,49 @@ const ProductDetail = () => {
             <div className="space-y-4">
               {variantSizes.length > 0 && (
                 <fieldset className="border-0 m-0 p-0">
-  <legend className="text-xs font-bold text-gray-500 mb-2">Size</legend>
-  <div className="flex gap-2 flex-wrap">
-    {variantSizes.map(size => (
-      <button
-        key={size}
-        onClick={() => {
-          setSelectedSize(size === selectedSize ? null : size);
-          setSelectedColor(prev => {
-            if (size !== selectedSize) {
-              return prev && variants.some(v => v.size?.trim() === size && v.color?.trim().toLowerCase() === prev.toLowerCase()) ? prev : null;
-            }
-            return prev;
-          });
-        }}
-        aria-pressed={selectedSize === size}
-        className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${
-          selectedSize === size
-            ? 'bg-[#e8622a] text-white border-[#e8622a]'
-            : 'bg-gray-100 dark:bg-[#1c1c1c] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/[0.08]'
-        }`}
-      >
-        {size}
-      </button>
-    ))}
-  </div>
-</fieldset>
+                  <legend className="text-xs font-bold text-gray-500 mb-2">
+                    Size
+                  </legend>
+                  <div className="flex gap-2 flex-wrap">
+                    {variantSizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => {
+                          setSelectedSize(size === selectedSize ? null : size);
+                          setSelectedColor((prev) => {
+                            if (size !== selectedSize) {
+                              return prev &&
+                                variants.some(
+                                  (v) =>
+                                    v.size?.trim() === size &&
+                                    v.color?.trim().toLowerCase() ===
+                                      prev.toLowerCase(),
+                                )
+                                ? prev
+                                : null;
+                            }
+                            return prev;
+                          });
+                        }}
+                        aria-pressed={selectedSize === size}
+                        className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${
+                          selectedSize === size
+                            ? "bg-[#e8622a] text-white border-[#e8622a]"
+                            : "bg-gray-100 dark:bg-[#1c1c1c] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/[0.08]"
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
               )}
 
               {colorsToShow.length > 0 && (
                 <fieldset className="border-0 m-0 p-0">
-  <legend className="text-xs font-bold text-gray-500 mb-2">Color: {selectedColor || 'None selected'}</legend>
+                  <legend className="text-xs font-bold text-gray-500 mb-2">
+                    Color: {selectedColor || "None selected"}
+                  </legend>
                   <div className="flex gap-3 flex-wrap">
                     {colorsToShow.map((color) => {
                       const hex = getColorHex(color);

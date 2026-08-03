@@ -5,11 +5,13 @@ import { ACCENT } from "../../types/home";
 interface HomeSpecialOfferProps {
   specialOfferTitle: string;
   specialOfferText: string;
+  onShopNow: () => void;
 }
 
 const HomeSpecialOffer = ({
   specialOfferTitle,
   specialOfferText,
+  onShopNow,
 }: HomeSpecialOfferProps) => (
   <section className="bg-[#FCFAF5] dark:bg-[#0A0A0B] py-14 md:py-20 px-4 md:px-6" aria-labelledby="special-offer-heading">
     <div className="max-w-7xl mx-auto">
@@ -96,11 +98,7 @@ const HomeSpecialOffer = ({
           transition={{ delay: 0.28 }}
           whileHover={{ scale: 1.05, boxShadow: `0 18px 45px ${ACCENT}55` }}
           whileTap={{ scale: 0.96 }}
-          onClick={() =>
-            document
-              .getElementById("products-grid")
-              ?.scrollIntoView({ behavior: "smooth" })
-          }
+          onClick={onShopNow}
           className="inline-flex items-center gap-2.5 px-10 py-4 rounded-full font-bold text-lg text-white group"
           style={{ background: ACCENT, boxShadow: `0 10px 28px ${ACCENT}44` }}
         >
