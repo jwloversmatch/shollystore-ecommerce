@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -61,12 +61,12 @@ const ShopPage = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const limit = 12;
+  
+  // Track if this is the initial mount to prevent resetting page on back navigation
+  const isInitialMount = useRef(true);
 
   // Get page from URL, default to 1
-  const page = (() => {
-  const urlPage = parseInt(searchParams.get("page") || "1");
-  return isNaN(urlPage) ? 1 : urlPage;
-})();
+  const page = parseInt(searchParams.get("page") || "1") || 1;
 
   // Update page in URL only
   const handlePageChange = useCallback((newPage: number) => {
@@ -80,14 +80,16 @@ const ShopPage = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [searchParams, setSearchParams]);
 
+  // Search effect - skip on initial mount
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    
     const timeout = setTimeout(() => {
       setDebouncedSearch(search);
-      // Reset to page 1 when search changes
-      const params = new URLSearchParams(searchParams);
-      params.delete("page");
-      setSearchParams(params, { replace: true });
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      handlePageChange(1);
     }, 350);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -159,10 +161,7 @@ const ShopPage = () => {
         setSelectedPath([...selectedPath, id]);
       }
     }
-    // Reset to page 1
-    const params = new URLSearchParams(searchParams);
-    params.delete("page");
-    setSearchParams(params, { replace: true });
+    handlePageChange(1);
     setSearch("");
     setDebouncedSearch("");
   };
@@ -172,9 +171,7 @@ const ShopPage = () => {
     setSearch("");
     setDebouncedSearch("");
     setSortBy("newest");
-    const params = new URLSearchParams(searchParams);
-    params.delete("page");
-    setSearchParams(params, { replace: true });
+    handlePageChange(1);
   };
 
   const hasActiveFilters =
