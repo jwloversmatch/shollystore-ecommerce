@@ -1,5 +1,5 @@
 // src/App.tsx
-import { Suspense, lazy, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -16,26 +16,12 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./context/ThemeContext";
 
-// --- Lazy Load Pages with prefetch hints ---
-const Home = lazy(() => import(/* webpackPrefetch: true */ "./pages/Home"));
-const Cart = lazy(() => import("./pages/Cart"));
-const Checkout = lazy(() => import("./pages/Checkout"));
-const Login = lazy(() => import("./pages/Login"));
-const Register = lazy(() => import("./pages/Register"));
-const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
-const Products = lazy(() => import("./pages/admin/Products"));
-const Orders = lazy(() => import("./pages/admin/Orders"));
-const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
-const HeroSlides = lazy(() => import("./pages/admin/HeroSlides"));
-const Categories = lazy(() => import("./pages/admin/Categories"));
-const Account = lazy(() => import("./pages/Account"));
-const ProductDetail = lazy(() => import("./pages/ProductDetail"));
-const Coupons = lazy(() => import("./pages/admin/Coupons"));
-const ShopPage = lazy(() => import("./pages/ShopPage"));
-const Settings = lazy(() => import("./pages/admin/Settings"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+import {
+  Home, Cart, Checkout, Login, Register, ForgotPassword, ResetPassword,
+  VerifyEmail, Account, ProductDetail, ShopPage,
+  Dashboard, Products, Orders, HeroSlides, Categories, Coupons, Settings,
+  NotFound,
+} from "./routes/lazyPages";
 
 const ACCENT = "#e8622a";
 
