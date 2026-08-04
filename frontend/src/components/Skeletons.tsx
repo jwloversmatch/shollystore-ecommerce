@@ -23,9 +23,6 @@ const SkeletonBox = ({
 };
 
 // ── Product Card Skeleton ──────────────────────────────────────────────────────
-// `dark` is optional on every component below. Pass it explicitly to force
-// an appearance regardless of the toggle (what every admin page does, since
-// that section is dark-only by design); omit it to follow the real theme.
 export const ProductCardSkeleton = ({ dark }: { dark?: boolean }) => {
   const { theme } = useTheme();
   const isDark = dark ?? theme === 'dark';
@@ -109,9 +106,6 @@ export const StatsCardSkeleton = ({ dark }: { dark?: boolean }) => {
 };
 
 // ── Chart Skeleton (rectangular area) ──────────────────────────────────────────
-// This one previously had no `dark` prop at all — it was unconditionally the
-// dark gradient. Given a real light variant now, for the same reason as
-// everything else here.
 export const ChartSkeleton = ({ height = 230, dark }: { height?: number; dark?: boolean }) => {
   const { theme } = useTheme();
   const isDark = dark ?? theme === 'dark';
@@ -218,25 +212,26 @@ export const TableRowSkeleton = ({
   );
 };
 
-// ── Optional: full dark card wrapper (used for consistency) ────────────────────
-// Left as always-dark on purpose — every current call site uses it inside
-// the admin section specifically. Pass a background/border override via
-// `className` if you ever need one to appear in a light context.
+// ── Card wrapper skeleton (theme-aware) ────────────────────────────────────────
 export const DarkCardSkeleton = ({
   children,
   className = '',
 }: {
   children: React.ReactNode;
   className?: string;
-}) => (
-  <div
-    className={`rounded-2xl overflow-hidden ${className}`}
-    style={{
-      background: '#141414',
-      border: '1px solid rgba(255,255,255,0.07)',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
-    }}
-  >
-    {children}
-  </div>
-);
+}) => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  return (
+    <div
+      className={`rounded-2xl overflow-hidden ${className}`}
+      style={{
+        background: isDark ? '#141414' : '#fff',
+        border: isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(0,0,0,0.08)',
+        boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.35)' : '0 4px 16px rgba(0,0,0,0.06)',
+      }}
+    >
+      {children}
+    </div>
+  );
+};
