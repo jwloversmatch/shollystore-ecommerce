@@ -96,7 +96,10 @@ const Dashboard = () => {
   const [updateStock] = useUpdateStockMutation();
 
   const stats = statsData || { orders:[], totalRevenue:0 };
-  const products = useMemo<ProductItem[]>(() => productsResponse?.products || [], [productsResponse]);
+  const products = useMemo<ProductItem[]>(() => {
+  const data = productsResponse as { products?: ProductItem[] } | undefined;
+  return data?.products ?? [];
+}, [productsResponse]);
   const analytics = analyticsData || { totalRevenue:0, totalOrders:0, categorySales:[] };
   const topProducts: TopProduct[] = topProductsData || [];
   const users: UserData[] = usersData || [];
