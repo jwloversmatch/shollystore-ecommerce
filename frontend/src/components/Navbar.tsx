@@ -24,7 +24,7 @@ import { useFocusTrap } from "../hooks/useFocusTrap";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
-const BRAND_NAME = "SHOLEX ENTERPRISES";
+const BRAND_NAME = "SHOLEX STORE";
 
 
 const ADMIN_LINKS = [
