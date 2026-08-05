@@ -10,7 +10,7 @@ const NotFound: React.FC = () => {
     <>
       <SEO 
         title="Page Not Found" 
-        description="The page you're looking for doesn't exist. Return to SholexStore to continue shopping."
+        description="The page you're looking for doesn't exist. Return to Sholex to continue shopping."
         noIndex={true}
       />
 

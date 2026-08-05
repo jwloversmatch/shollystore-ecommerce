@@ -24,7 +24,7 @@ import {
 import SEO from "../components/SEO";
 
 // ─── Brand constants ──────────────────────────────────────────────────────────
-const BRAND_NAME = "ShollyStore";
+const BRAND_NAME = "Sholex";
 const BRAND_TAGLINE = "Join Our Community";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -145,6 +145,7 @@ const Register = () => {
         id="main-content"
         tabIndex={-1}
         className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+        style={{ paddingTop: "calc(56px + env(safe-area-inset-top, 0px))" }}
       >
         <SEO
           title="Check Your Email"
@@ -231,6 +232,7 @@ const Register = () => {
       id="main-content"
       tabIndex={-1}
       className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+      style={{ paddingTop: "calc(56px + env(safe-area-inset-top, 0px))" }}
     >
       <SEO
         title="Create an Account"

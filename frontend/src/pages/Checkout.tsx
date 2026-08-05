@@ -248,7 +248,7 @@ const Checkout = () => {
 
   if (orderSuccess) {
     const d = publicSettings || {
-      bankAccountName: "ShollyStore",
+      bankAccountName: "Sholex",
       bankAccountNumber: "0123456789",
       bankName: "GTBank",
       whatsappNumber: "+2348000000000",

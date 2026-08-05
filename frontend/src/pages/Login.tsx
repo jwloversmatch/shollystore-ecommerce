@@ -1,4 +1,4 @@
-import { useState,  } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,7 +24,7 @@ import toast from "react-hot-toast";
 import SEO from "../components/SEO";
 
 // ─── Brand constants ──────────────────────────────────────────────────────────
-const BRAND_NAME = "SholexStore";
+const BRAND_NAME = "Sholex";
 const BRAND_TAGLINE = "Your One‑Stop Shop";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -80,7 +80,8 @@ const Login = () => {
       toast.success("Welcome back! 🎉");
 
       // Admin always goes to /admin, users go to their intended page or /shop
-      const destination = res.user.role === "admin" ? "/admin" : from || "/shop";
+      const destination =
+        res.user.role === "admin" ? "/admin" : from || "/shop";
 
       // Use navigate instead of window.location for SPA navigation
       navigate(destination, { replace: true });
@@ -97,6 +98,7 @@ const Login = () => {
       id="main-content"
       tabIndex={-1}
       className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-16 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+      style={{ paddingTop: "calc(56px + env(safe-area-inset-top, 0px))" }}
     >
       <SEO
         title="Sign In"

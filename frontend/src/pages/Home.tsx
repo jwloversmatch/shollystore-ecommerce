@@ -106,14 +106,14 @@ const Home = () => {
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "ShollyStore",
-    url: "https://shollystore-ecommerce.vercel.app",
-    logo: "https://shollystore-ecommerce.vercel.app/logo.png",
+    name: "Sholex",
+    url: "https://Sholex.vercel.app",
+    logo: "https://Sholex.vercel.app/logo.png",
   };
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    url: "https://shollystore-ecommerce.vercel.app",
+    url: "https://Sholex.vercel.app",
   };
 
   if (user) return <HomeLoading />;
@@ -130,7 +130,7 @@ const Home = () => {
       <SEO
         title={heroTitle.replace("|", "").trim()}
         description={heroDescription}
-        canonicalUrl="https://shollystore-ecommerce.vercel.app"
+        canonicalUrl="https://Sholex.vercel.app"
       />
       <StructuredData data={organizationSchema} />
       <StructuredData data={websiteSchema} />

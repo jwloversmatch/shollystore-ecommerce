@@ -207,12 +207,12 @@ const ProductDetail = () => {
 
   // Get the page to go back to. If navigated from within app, go back. Otherwise go to shop.
   const handleGoBack = () => {
-  if (location.key !== "default") {
-    navigate(-1);
-  } else {
-    navigate("/shop");
-  }
-};
+    if (location.key !== "default") {
+      navigate(-1);
+    } else {
+      navigate("/shop");
+    }
+  };
 
   // ══════ LOADING ═══════════════════════════════
   if (isLoading) {
@@ -222,7 +222,7 @@ const ProductDetail = () => {
         role="status"
         aria-label="Loading product details"
         style={{
-          paddingTop: "calc(56px + env(safe-area-inset-top, 0px))",
+          paddingTop: "calc(64px + env(safe-area-inset-top, 0px))",
           paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
         }}
       >
@@ -332,7 +332,7 @@ const ProductDetail = () => {
     >
       <SEO
         title={product.name}
-        description={`Buy ${product.name} from ShollyStore. ${product.description || ""}`}
+        description={`Buy ${product.name} from Sholex. ${product.description || ""}`}
         ogImage={product.images?.[0]}
         ogType="product"
       />

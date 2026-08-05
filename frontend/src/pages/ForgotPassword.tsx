@@ -196,7 +196,7 @@ const ForgotPassword = () => {
     >
       <SEO
         title="Forgot Password"
-        description="Reset your ShollyStore account password"
+        description="Reset your Sholex account password"
       />
       <AmbientBg />
 

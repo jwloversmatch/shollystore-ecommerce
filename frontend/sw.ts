@@ -118,7 +118,7 @@ self.addEventListener('push', (event: Event) => {
   } catch (error) {
     console.error('[SW] Push notification error:', error);
     pushEvent.waitUntil(
-      self.registration.showNotification('ShollyStore', {
+      self.registration.showNotification('Sholex', {
         body: 'You have a new notification',
         icon: '/icons/icon-192x192.png',
       })

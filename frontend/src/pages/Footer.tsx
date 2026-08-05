@@ -46,34 +46,34 @@ const socialIconSpring = {
 };
 
 // ── Config — move to env vars or a CMS/settings endpoint when ready ─────────
-const BRAND_NAME = "SholexStore";
+const BRAND_NAME = "Sholex";
 
 const contactInfo = {
   address: "Lagos, Nigeria",
   phone: "+2349012345678",
   phoneDisplay: "+234 901 234 5678",
-  email: "hello@Sholexstore.com",
+  email: "hello@Sholex.com",
 };
 
 const socialLinks = [
   {
     platform: "Facebook",
-    url: "https://facebook.com/Sholexstore",
+    url: "https://facebook.com/Sholex",
     icon: FaFacebook,
   },
   {
     platform: "Instagram",
-    url: "https://instagram.com/Sholexstore",
+    url: "https://instagram.com/Sholex",
     icon: FaInstagram,
   },
   {
     platform: "Twitter",
-    url: "https://twitter.com/Sholexstore",
+    url: "https://twitter.com/Sholex",
     icon: FaTwitter,
   },
   {
     platform: "YouTube",
-    url: "https://youtube.com/@Sholexstore",
+    url: "https://youtube.com/@Sholex",
     icon: FaYoutube,
   },
 ];
@@ -153,7 +153,7 @@ const Footer = () => {
               className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
               aria-label={`${BRAND_NAME} - Home`}
             >
-              Sholex<span className="text-[#e8622a]">Store</span>
+              Sholex
             </Link>
             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
               Your one‑stop destination for quality products – from fashion to
