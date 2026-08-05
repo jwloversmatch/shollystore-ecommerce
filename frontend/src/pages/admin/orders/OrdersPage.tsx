@@ -21,9 +21,6 @@ export interface OrderItem {
   couponCode?: string; discount?: number;
 }
 
-// const STATUS_OPTIONS = ["All", "Pending", "Paid", "Shipped", "Delivered", "Cancelled"];
-// const PAYMENT_OPTIONS = ["All", "paystack", "bank_transfer", "whatsapp"];
-
 const OrdersPage = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
@@ -50,11 +47,6 @@ const OrdersPage = () => {
   const textMuted = isDark ? "#6b7280" : "#9ca3af";
   const inputBg = isDark ? "#1c1c1c" : "#fff";
   const inputBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)";
-//   const tableBorder = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
-//   const theadBg = isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)";
-//   const modalBg = isDark ? "#141414" : "#fff";
-//   const modalOverlay = isDark ? "rgba(0,0,0,0.72)" : "rgba(0,0,0,0.4)";
-//   const filterBg = isDark ? "#141414" : "rgba(255,255,255,0.8)";
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try { await updateStatus({ id: orderId, status: newStatus }).unwrap(); refetch(); }
@@ -66,7 +58,33 @@ const OrdersPage = () => {
   const orders = useMemo(() => data?.orders || [], [data?.orders]);
   const totalPages = data?.totalPages || 1;
 
-  const csvExportUrl = `${import.meta.env.VITE_API_URL}/admin/orders/export?status=${statusFilter}&paymentMethod=${paymentFilter}&search=${searchTerm}&startDate=${startDate}&endDate=${endDate}`;
+  // CSV Export with auth token
+  const handleExportCSV = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const url = `${import.meta.env.VITE_API_URL}/admin/orders/export?status=${statusFilter}&paymentMethod=${paymentFilter}&search=${searchTerm}&startDate=${startDate}&endDate=${endDate}`;
+
+    try {
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error("Export failed");
+
+      const blob = await res.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = `orders-export-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error("CSV export failed:", err);
+    }
+  };
 
   useFocusTrap(orderModalRef, !!selectedOrder, () => setSelectedOrder(null));
 
@@ -92,10 +110,14 @@ const OrdersPage = () => {
         </div>
         <div className="flex items-center gap-2">
           {/* CSV Export Button */}
-          <a href={csvExportUrl} download className="flex items-center gap-2 px-4 py-2 rounded-xl shadow-sm border transition text-sm font-medium" style={{ background: inputBg, borderColor: inputBorder, color: "#10b981" }}>
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl shadow-sm border transition text-sm font-medium"
+            style={{ background: inputBg, borderColor: inputBorder, color: "#10b981" }}
+          >
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline">Export CSV</span>
-          </a>
+          </button>
           <button onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2 px-4 py-2 rounded-xl shadow-sm border transition text-sm font-medium" style={{ background: inputBg, borderColor: inputBorder, color: textSecondary }} aria-expanded={showFilters} aria-controls="filters-panel">
             <Filter className="w-4 h-4" />
             <span className="hidden sm:inline">Filters</span>
