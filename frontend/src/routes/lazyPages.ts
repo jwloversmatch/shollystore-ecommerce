@@ -15,7 +15,7 @@ export const ShopPage = lazy(() => import("../pages/ShopPage"));
 
 export const Dashboard = lazy(() => import("../pages/admin/dashboard/"));
 export const Products = lazy(() => import("../pages/admin/products/"));
-export const Orders = lazy(() => import("../pages/admin/Orders"));
+export const Orders = lazy(() => import("../pages/admin/orders/"));
 export const HeroSlides = lazy(() => import("../pages/admin/HeroSlides"));
 export const Categories = lazy(() => import("../pages/admin/Categories"));
 export const Coupons = lazy(() => import("../pages/admin/Coupons"));
