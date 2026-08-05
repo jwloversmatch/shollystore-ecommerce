@@ -7,6 +7,8 @@ import {
   getCustomerCount,
   getUniqueOrderCustomers,
   getAdminStats,
+  getRevenueTrend,
+  exportOrdersCSV,
 } from '../controllers/adminOrderController';
 import { protect } from '../middleware/auth';
 import { isAdmin } from '../middleware/isAdmin';
@@ -18,6 +20,12 @@ router.route('/').get(protect, isAdmin, getAdminStats);
 
 // ✅ Paginated orders list – returns { orders, total, page, totalPages, totalRevenue }
 router.route('/all').get(protect, isAdmin, getAllOrders);
+
+// ✅ Revenue trend for charts – GET /api/admin/orders/analytics/revenue-trend?days=30
+router.route('/analytics/revenue-trend').get(protect, isAdmin, getRevenueTrend);
+
+// ✅ Export orders CSV – GET /api/admin/orders/export?status=Paid
+router.route('/export').get(protect, isAdmin, exportOrdersCSV);
 
 // Other routes
 router.route('/:id/status').put(protect, isAdmin, updateOrderStatus);

@@ -1,9 +1,4 @@
 // src/routes/lazyPages.ts
-//
-// Every route-level page, lazy-loaded in one place. App.tsx imports from
-// here instead of declaring each `lazy(() => import(...))` inline — keeps
-// the router focused on how routes are wired, not on where each page's
-// code lives.
 import { lazy } from "react";
 
 export const Home = lazy(() => import(/* webpackPrefetch: true */ "../pages/Home"));
@@ -18,7 +13,7 @@ export const Account = lazy(() => import("../pages/Account"));
 export const ProductDetail = lazy(() => import("../pages/ProductDetail"));
 export const ShopPage = lazy(() => import("../pages/ShopPage"));
 
-export const Dashboard = lazy(() => import("../pages/admin/Dashboard"));
+export const Dashboard = lazy(() => import("../pages/admin/dashboard/"));
 export const Products = lazy(() => import("../pages/admin/products/"));
 export const Orders = lazy(() => import("../pages/admin/Orders"));
 export const HeroSlides = lazy(() => import("../pages/admin/HeroSlides"));

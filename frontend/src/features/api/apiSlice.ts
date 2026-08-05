@@ -35,6 +35,12 @@ export interface ProductSuggestion {
   category?: { name: string; slug: string } | string;
 }
 
+export interface RevenueTrendItem {
+  date: string;
+  revenue: number;
+  orders: number;
+}
+
 // ─── Base query with token from localStorage ──────────────────────────────────
 const baseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
@@ -155,6 +161,12 @@ export const apiSlice = createApi({
         body: { status },
       }),
       invalidatesTags: ["Order", "Product"],
+    }),
+
+    // ─── Revenue Trend (NEW) ────────────────────────────────────────────────
+    getRevenueTrend: builder.query<{ success: boolean; data: RevenueTrendItem[] }, number>({
+      query: (days = 30) => `/admin/orders/analytics/revenue-trend?days=${days}`,
+      providesTags: ["Order"],
     }),
 
     // ─── Admin Products ─────────────────────────────────────────────────────
@@ -513,6 +525,7 @@ export const {
   useGetAllOrdersQuery,
   useGetAdminStatsQuery,
   useUpdateOrderStatusMutation,
+  useGetRevenueTrendQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
