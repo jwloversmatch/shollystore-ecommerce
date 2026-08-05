@@ -77,9 +77,9 @@ const Footer = () => {
             <Link 
               to="/" 
               className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
-              aria-label="ShollyStore - Home"
+              aria-label="Shollex - Home"
             >
-              Sholly<span className="text-[#e8622a]">Store</span>
+              Sholex<span className="text-[#e8622a]">Store</span>
             </Link>
             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
               Your one‑stop destination for quality products – from fashion to beverages, delivered fast and reliably.
@@ -135,11 +135,11 @@ const Footer = () => {
               <li className="flex items-center gap-3">
                 <Mail size={18} className="text-[#e8622a]" aria-hidden="true" />
                 <a 
-                  href="mailto:hello@shollystore.com" 
+                  href="mailto:hello@sholexstore.com" 
                   className="hover:text-[#e8622a] transition-colors"
-                  aria-label="Email us at hello@shollystore.com"
+                  aria-label="Email us at hello@sholexstore.com"
                 >
-                  hello@shollystore.com
+                  hello@sholexstore.com
                 </a>
               </li>
             </ul>
@@ -178,7 +178,7 @@ const Footer = () => {
           variants={columnVariants}
           className="mt-12 pt-6 border-t border-gray-200 dark:border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500 dark:text-gray-400"
         >
-          <span>&copy; {currentYear} ShollyStore. All rights reserved.</span>
+          <span>&copy; {currentYear} SholexStore. All rights reserved.</span>
           <div className="flex gap-6">
             <Link to="/privacy" className="hover:text-[#e8622a] transition-colors">
               Privacy Policy

@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { logout } from "../auth/authSlice";
 import type { Order } from "../../types/account";
-import type { ProductItem } from "../../types/home"; // ✅ imported
+import type { ProductItem } from "../../types/home";
 
 // ─── Response types ───────────────────────────────────────────────────────────
 interface VerifyPaymentResponse {
@@ -16,7 +17,7 @@ interface VerifyPaymentResponse {
 }
 
 export interface ProductsResponse {
-  products: ProductItem[]; 
+  products: ProductItem[];
   pagination: {
     page: number;
     limit: number;
@@ -34,17 +35,32 @@ export interface ProductSuggestion {
   category?: { name: string; slug: string } | string;
 }
 
+// ─── Base query with token from localStorage ──────────────────────────────────
+const baseQuery = fetchBaseQuery({
+  baseUrl: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  prepareHeaders: (headers) => {
+    const token = localStorage.getItem("token");
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    return headers;
+  },
+});
+
+// ─── Wrapper: auto-logout on 401 ──────────────────────────────────────────────
+const baseQueryWithReauth: typeof baseQuery = async (args, api, extraOptions) => {
+  const result = await baseQuery(args, api, extraOptions);
+
+  if (result.error && result.error.status === 401) {
+    // Token expired or invalid — log the user out
+    api.dispatch(logout());
+  }
+
+  return result;
+};
+
 // ─── API Slice ────────────────────────────────────────────────────────────────
 export const apiSlice = createApi({
   reducerPath: "api",
-  baseQuery: fetchBaseQuery({
-    baseUrl: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) headers.set("Authorization", `Bearer ${token}`);
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithReauth, 
   tagTypes: [
     "Product",
     "Order",
@@ -74,16 +90,13 @@ export const apiSlice = createApi({
         if (params?.category) {
           searchParams.append("category", params.category);
           if (params.includeSubcategories !== undefined)
-            searchParams.append(
-              "includeSubcategories",
-              String(params.includeSubcategories),
-            );
+            searchParams.append("includeSubcategories", String(params.includeSubcategories));
         }
         if (params?.featured) searchParams.append("featured", "true");
         if (params?.search) searchParams.append("search", params.search);
         if (params?.page) searchParams.append("page", String(params.page));
         if (params?.limit) searchParams.append("limit", String(params.limit));
-        else searchParams.append("limit", "12"); // default page size
+        else searchParams.append("limit", "12");
         const qs = searchParams.toString();
         return `/products${qs ? `?${qs}` : ""}`;
       },
@@ -116,21 +129,12 @@ export const apiSlice = createApi({
 
     // ─── Admin Orders ───────────────────────────────────────────────────────
     getAllOrders: builder.query({
-      query: ({
-        page = 1,
-        limit = 10,
-        status,
-        paymentMethod,
-        search,
-        startDate,
-        endDate,
-      }) => {
+      query: ({ page = 1, limit = 10, status, paymentMethod, search, startDate, endDate }) => {
         const params = new URLSearchParams();
         params.append("page", page.toString());
         params.append("limit", limit.toString());
         if (status && status !== "All") params.append("status", status);
-        if (paymentMethod && paymentMethod !== "All")
-          params.append("paymentMethod", paymentMethod);
+        if (paymentMethod && paymentMethod !== "All") params.append("paymentMethod", paymentMethod);
         if (search) params.append("search", search);
         if (startDate) params.append("startDate", startDate);
         if (endDate) params.append("endDate", endDate);
