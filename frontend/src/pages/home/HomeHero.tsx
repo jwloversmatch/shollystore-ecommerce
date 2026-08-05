@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Sparkles, ArrowRight, Shirt, Zap, Truck, ShieldCheck, Star, TrendingUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, ArrowRight, Shirt, Zap, Wine, Truck, ShieldCheck, Star, TrendingUp } from "lucide-react";
 import { ACCENT, PLACEHOLDER, fadeUp, stagger } from "../../types/home";
 import type { HeroSlide } from "../../types/home";
 import { getCloudinaryUrl } from "../../utils/cloudinary";
@@ -25,6 +25,7 @@ interface HomeHeroProps {
 
 const categories = [
   { icon: <Shirt className="w-4 h-4" />, name: "Fashion", color: "#ec4899" },
+  { icon: <Wine className="w-4 h-4" />, name: "Beverages", color: "#8b5cf6" },
   { icon: <Zap className="w-4 h-4" />, name: "Essentials", color: "#f59e0b" },
 ];
 
@@ -342,7 +343,7 @@ const HomeHero = ({
           </motion.button>
           <div className="flex items-center gap-3">
             <div className="flex -space-x-2">
-              {["👕", "⚡"].map((emoji, i) => (
+              {["👕", "🥤", "⚡"].map((emoji, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, x: -10 }}
