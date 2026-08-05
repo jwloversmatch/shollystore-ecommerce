@@ -36,11 +36,13 @@ export const sendMarketingEmail = async (req: AuthRequest, res: Response): Promi
     const productImage = product.images?.[0] || '';
     const productUrl = `${process.env.CLIENT_URL || 'https://lotcewieth.com'}/products/${product.slug || product._id}`;
 
-    // Send the appropriate email (this is non‑blocking)
+    // Send the appropriate email (fire-and-forget — do not block response)
     if (type === 'new_arrival') {
-      await sendNewArrivalEmail(recipients, product.name, productImage, productUrl, customMessage || product.description);
+      sendNewArrivalEmail(recipients, product.name, productImage, productUrl, customMessage || product.description)
+        .catch((err) => console.error('Failed to send new arrival emails:', err));
     } else if (type === 'back_in_stock') {
-      await sendBackInStockEmail(recipients, product.name, productImage, productUrl);
+      sendBackInStockEmail(recipients, product.name, productImage, productUrl)
+        .catch((err) => console.error('Failed to send back-in-stock emails:', err));
     }
 
     res.json({ success: true, message: `Emails are being sent to ${recipients.length} customers.` });

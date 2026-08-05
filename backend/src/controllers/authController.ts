@@ -93,7 +93,9 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
       isVerified:           false,
     });
 
-    await sendVerificationEmail(normEmail, raw);
+    sendVerificationEmail(normEmail, raw).catch((err) =>
+      console.error('Failed to send verification email:', err),
+    );
 
     res.status(201).json({
       success: true,
@@ -153,7 +155,9 @@ export const resendVerificationEmail = async (req: Request, res: Response): Prom
     user.verificationToken   = hashed;
     user.verificationExpires = new Date(Date.now() + VERIFICATION_EXPIRY);
     await user.save();
-    await sendVerificationEmail(normEmail, raw);
+    sendVerificationEmail(normEmail, raw).catch((err) =>
+      console.error('Failed to send verification email:', err),
+    );
 
     respond();
   } catch (error: any) {
@@ -359,7 +363,9 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     user.resetPasswordExpires = new Date(Date.now() + RESET_EXPIRY_MS);
     await user.save();
 
-    await sendPasswordResetEmail(user.email, raw);
+    sendPasswordResetEmail(user.email, raw).catch((err) =>
+      console.error('Failed to send password reset email:', err),
+    );
     respond();
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Internal server error' });
@@ -393,7 +399,9 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     user.refreshTokens        = [];          // force re-login on all devices for security
 
     await user.save();
-    await sendPasswordChangedEmail(user.email, user.name);
+    sendPasswordChangedEmail(user.email, user.name).catch((err) =>
+      console.error('Failed to send password changed email:', err),
+    );
     clearRefreshCookie(res);
 
     res.json({ success: true, message: 'Password reset successfully. Please log in.' });
@@ -426,7 +434,9 @@ export const changePassword = async (req: AuthRequest, res: Response): Promise<v
     user.refreshTokens = [];   // revoke all other sessions — they must re-login
     await user.save();
 
-    await sendPasswordChangedEmail(user.email, user.name);
+    sendPasswordChangedEmail(user.email, user.name).catch((err) =>
+      console.error('Failed to send password changed email:', err),
+    );
     clearRefreshCookie(res);
 
     res.json({ success: true, message: 'Password changed. Please log in again.' });
@@ -505,7 +515,9 @@ export const changeEmail = async (req: AuthRequest, res: Response): Promise<void
     user.emailChangePending = normNew;
     await user.save();
 
-    await sendEmailChangeVerification(normNew, raw);
+    sendEmailChangeVerification(normNew, raw).catch((err) =>
+      console.error('Failed to send email change verification:', err),
+    );
 
     res.json({ success: true, message: 'Verification sent to your new email address. Check your inbox.' });
   } catch (error: any) {

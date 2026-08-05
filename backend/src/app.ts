@@ -53,6 +53,8 @@ import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
 import { securityLogger } from './middleware/securityLogger';
 
+import mongoSanitize from 'express-mongo-sanitize';
+
 
 
 dotenv.config();
@@ -79,13 +81,17 @@ app.use(helmet({
 
 // ── CORS — restrict to known origins in production ──────────────────────────
 
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.CLIENT_URL || 'http://localhost:5173')
-
-  .split(',')
-
-  .map((o) => o.trim())
-
-  .filter(Boolean);
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.CLIENT_URL,
+  ...(process.env.ALLOWED_ORIGINS || '').split(','),
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+]
+  .map((o) => o?.trim())
+  .filter(Boolean)
+  .filter((o, i, arr) => arr.indexOf(o) === i);
 
 
 
@@ -120,6 +126,8 @@ app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
 
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+app.use(mongoSanitize());
 
 
 

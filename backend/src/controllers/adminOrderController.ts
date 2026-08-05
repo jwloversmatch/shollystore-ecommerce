@@ -140,7 +140,9 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
 
     order.status = status;
 
-    await sendAdminOrderNotification(order, 'updated', status);
+    sendAdminOrderNotification(order, 'updated', status).catch((err) =>
+      console.error('Failed to send admin order notification:', err),
+    );
 
     if (['Shipped', 'Delivered'].includes(status)) {
       const populatedUser = order.user as unknown as { email?: string; name?: string; phone?: string } | null;
@@ -149,7 +151,7 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
           (sum, item) => sum + item.price * item.qty,
           0
         );
-        await sendOrderStatusUpdateEmail(
+        sendOrderStatusUpdateEmail(
           populatedUser.email,
           (order._id as mongoose.Types.ObjectId).toString(),
           status,
@@ -157,7 +159,9 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
           populatedUser.name,
           order.discount || 0,
           order.couponCode,
-          originalSubtotal
+          originalSubtotal,
+        ).catch((err) =>
+          console.error('Failed to send order status update email:', err),
         );
       }
     }

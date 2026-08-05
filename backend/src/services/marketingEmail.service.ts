@@ -5,7 +5,7 @@ import { Settings } from '../models/Settings';
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const SENDER_EMAIL = process.env.MARKETING_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'store@shollystore.com';
 const SENDER_NAME = process.env.MARKETING_SENDER_NAME || process.env.BREVO_SENDER_NAME || 'ShollyStore';
-const CLIENT_URL = process.env.CLIENT_URL || 'https://shollystore-ecommerce.vercel.app';
+const CLIENT_URL = process.env.CLIENT_URL || 'https://sholex.vercel.app';
 
 // ---------- Helper: get store name from settings (cached in memory for performance) ----------
 let cachedStoreName: string | null = null;
@@ -15,9 +15,9 @@ const getStoreName = async (): Promise<string> => {
   try {
     const settings = await Settings.findOne();
     const rawTitle = settings?.heroTitle || '';
-    cachedStoreName = rawTitle.replace(/\|/g, '').trim() || 'ShollyStore';
+    cachedStoreName = rawTitle.replace(/\|/g, '').trim() || 'SholexStore';
   } catch {
-    cachedStoreName = 'ShollyStore';
+    cachedStoreName = 'SholexStore';
   }
   return cachedStoreName;
 };

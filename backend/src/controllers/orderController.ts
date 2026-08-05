@@ -91,7 +91,9 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
           return;
         }
 
-        await sendAdminOrderNotification(createdOrder, 'created');
+        sendAdminOrderNotification(createdOrder, 'created').catch((err) =>
+          console.error('Failed to send admin order notification:', err),
+        );
 
         res.status(201).json({
           success: true,
@@ -104,21 +106,21 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
         throw paystackError;
       }
     } else {
-      try {
-        await sendOrderConfirmation(
-          req.user!.email,
-          createdOrder._id.toString(),
-          totalPrice,
-          req.user!.name,
-          discount,
-          pricing.couponCode,
-          subtotal
-        );
-      } catch (emailError) {
+      sendOrderConfirmation(
+        req.user!.email,
+        createdOrder._id.toString(),
+        totalPrice,
+        req.user!.name,
+        discount,
+        pricing.couponCode,
+        subtotal,
+      ).catch((emailError) => {
         console.error('Failed to send customer order confirmation email:', emailError);
-      }
+      });
 
-      await sendAdminOrderNotification(createdOrder, 'created');
+      sendAdminOrderNotification(createdOrder, 'created').catch((err) =>
+        console.error('Failed to send admin order notification:', err),
+      );
 
       res.status(201).json({
         success: true,
@@ -204,26 +206,26 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
         );
       }
 
-      await sendAdminOrderNotification(order, 'updated', 'Paid');
+      sendAdminOrderNotification(order, 'updated', 'Paid').catch((err) =>
+        console.error('Failed to send admin order notification:', err),
+      );
 
-      try {
-        const user = await User.findById(order.user);
-        if (user) {
-          const originalSubtotal = order.orderItems.reduce(
-            (sum: number, item) => sum + item.price * item.qty, 0  // ✅ item is now properly typed
-          );
-          await sendOrderConfirmation(
-            user.email,
-            order._id.toString(),
-            order.totalPrice,
-            user.name,
-            order.discount || 0,
-            (order.couponCode as string),
-            originalSubtotal
-          );
-        }
-      } catch (emailError) {
-        console.error('Failed to send order confirmation email:', emailError);
+      const user = await User.findById(order.user);
+      if (user) {
+        const originalSubtotal = order.orderItems.reduce(
+          (sum: number, item) => sum + item.price * item.qty, 0
+        );
+        sendOrderConfirmation(
+          user.email,
+          order._id.toString(),
+          order.totalPrice,
+          user.name,
+          order.discount || 0,
+          (order.couponCode as string),
+          originalSubtotal,
+        ).catch((emailError) => {
+          console.error('Failed to send order confirmation email:', emailError);
+        });
       }
     }
 
