@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useState,  } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
@@ -24,7 +24,7 @@ import toast from "react-hot-toast";
 import SEO from "../components/SEO";
 
 // ─── Brand constants ──────────────────────────────────────────────────────────
-const BRAND_NAME = "ShollyStore";
+const BRAND_NAME = "SholexStore";
 const BRAND_TAGLINE = "Your One‑Stop Shop";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -55,11 +55,9 @@ const buildInputCls = (hasError: boolean, extraPr = "pr-4") =>
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const [login, { isLoading, error }] = useLoginMutation();
-
-  // ✅ State to hold the redirect destination safely
-  const [redirectTo, setRedirectTo] = useState<string | null>(null);
 
   const from = (location.state as { from?: string })?.from;
 
@@ -71,33 +69,23 @@ const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  // ✅ FIX: Move the redirect into a useEffect so React Compiler is happy
-  useEffect(() => {
-    if (redirectTo) {
-      window.location.href = redirectTo;
-    }
-  }, [redirectTo]);
-
   const onSubmit = async (data: LoginFormData) => {
     try {
       const res = await login({
         email: data.email,
         password: data.password,
       }).unwrap();
-      
-      // ✅ Dispatch first so Redux/Persist has time to write to localStorage
+
       dispatch(setCredentials({ user: res.user, token: res.token }));
-      
       toast.success("Welcome back! 🎉");
 
-      // ✅ Admin always goes to /admin, ignoring the 'from' parameter
-      const destination =
-        res.user.role === "admin" ? "/admin" : from || "/shop";
+      // Admin always goes to /admin, users go to their intended page or /shop
+      const destination = res.user.role === "admin" ? "/admin" : from || "/shop";
 
-      // ✅ Trigger the useEffect redirect safely
-      setRedirectTo(destination);
-    } catch (err) {
-      console.error(err);
+      // Use navigate instead of window.location for SPA navigation
+      navigate(destination, { replace: true });
+    } catch {
+      // Error is already handled by RTK Query, just show toast
       toast.error("Login failed. Please check your credentials.");
     }
   };
