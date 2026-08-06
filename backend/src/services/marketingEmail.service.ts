@@ -83,7 +83,190 @@ export const getAllUserEmails = async (): Promise<{ email: string; name?: string
   return users as { email: string; name?: string }[];
 };
 
-// ---------- New Arrival Announcement ----------
+// ─── Welcome Email (for new registrations) ──────────────────────────────────
+export const sendWelcomeEmail = async (
+  recipient: { email: string; name?: string },
+  couponCode?: string,
+) => {
+  const storeName = await getStoreName();
+  const firstName = recipient.name?.split(' ')[0] || 'there';
+  const code = couponCode || 'WELCOME10';
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        .header { background: linear-gradient(135deg, #e8622a, #f59e0b); padding: 40px 20px; text-align: center; }
+        .header h1 { margin: 0; color: #ffffff; font-size: 28px; }
+        .content { padding: 40px 30px; text-align: center; }
+        .content h2 { color: #2d3748; font-size: 22px; }
+        .content p { color: #4a5568; line-height: 1.6; font-size: 16px; }
+        .code { background: #fff5f0; border: 2px dashed #e8622a; padding: 12px 24px; font-size: 20px; font-weight: 700; color: #e8622a; letter-spacing: 2px; display: inline-block; border-radius: 12px; margin: 10px 0; }
+        .btn { display: inline-block; background-color: #e8622a; color: #ffffff; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 16px; margin: 8px; box-shadow: 0 4px 12px rgba(232, 98, 42, 0.3); }
+        .footer { background: #f9fafb; padding: 20px; text-align: center; color: #a0aec0; font-size: 13px; border-top: 1px solid #e2e8f0; }
+        .footer a { color: #e8622a; text-decoration: none; }
+      </style>
+    </head>
+    <body>
+      <div style="padding: 20px; background-color: #f4f7f6;">
+        <div class="container">
+          <div class="header">
+            <h1>🎉 Welcome to ${storeName}!</h1>
+          </div>
+          <div class="content">
+            <h2>Hey ${firstName}!</h2>
+            <p>Thanks for joining ${storeName}. We're excited to have you! Explore our collection of quality products with fast delivery across Nigeria.</p>
+            <p>Use code:</p>
+            <div class="code">${code}</div>
+            <p>for 10% off your first order!</p>
+            <a href="${CLIENT_URL}/shop" class="btn">Start Shopping</a>
+            <a href="${CLIENT_URL}/account" class="btn" style="background:#ffffff; color:#e8622a; border:2px solid #e8622a;">My Account</a>
+          </div>
+          <div class="footer">
+            &copy; ${new Date().getFullYear()} ${storeName}. All rights reserved.<br>
+            <a href="${CLIENT_URL}">Visit our store</a>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  await sendBrevoEmail([recipient.email], `Welcome to ${storeName}, ${firstName}! 🎉`, html);
+};
+
+// ─── Abandoned Cart Recovery ────────────────────────────────────────────────
+export const sendAbandonedCartEmail = async (
+  recipient: { email: string; name?: string },
+  cartItems: Array<{ name: string; price: number; qty: number; image: string }>,
+  cartTotal: number,
+) => {
+  const storeName = await getStoreName();
+  const firstName = recipient.name?.split(' ')[0] || 'there';
+
+  const itemsHtml = cartItems.map(item => `
+    <tr>
+      <td style="padding:10px; border-bottom:1px solid #e2e8f0;">
+        <img src="${item.image}" alt="${item.name}" style="width:50px; height:50px; border-radius:8px; object-fit:cover;" />
+      </td>
+      <td style="padding:10px; border-bottom:1px solid #e2e8f0; color:#2d3748;">${item.name}</td>
+      <td style="padding:10px; border-bottom:1px solid #e2e8f0; color:#4a5568;">${item.qty}x</td>
+      <td style="padding:10px; border-bottom:1px solid #e2e8f0; color:#2d3748; font-weight:600;">₦${(item.price * item.qty).toLocaleString()}</td>
+    </tr>
+  `).join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        .header { background: #fff5f0; padding: 30px 20px; text-align: center; border-bottom: 3px solid #e8622a; }
+        .header h1 { margin: 0; color: #2d3748; font-size: 24px; }
+        .content { padding: 30px 20px; }
+        .content p { color: #4a5568; line-height: 1.6; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .total { font-size: 20px; font-weight: 700; color: #e8622a; text-align: right; padding: 15px; }
+        .btn { display: block; background-color: #e8622a; color: #ffffff; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 16px; text-align: center; margin: 20px 0; box-shadow: 0 4px 12px rgba(232, 98, 42, 0.3); }
+        .footer { background: #f9fafb; padding: 20px; text-align: center; color: #a0aec0; font-size: 13px; border-top: 1px solid #e2e8f0; }
+        .footer a { color: #e8622a; text-decoration: none; }
+      </style>
+    </head>
+    <body>
+      <div style="padding: 20px; background-color: #f4f7f6;">
+        <div class="container">
+          <div class="header">
+            <h1>🛒 You left something behind!</h1>
+          </div>
+          <div class="content">
+            <p>Hey ${firstName}, your cart is waiting for you at ${storeName}.</p>
+            <table>${itemsHtml}</table>
+            <div class="total">Total: ₦${cartTotal.toLocaleString()}</div>
+            <a href="${CLIENT_URL}/cart" class="btn">Complete Your Order</a>
+            <p style="text-align:center; color:#a0aec0; font-size:13px;">Items in your cart are reserved for a limited time.</p>
+          </div>
+          <div class="footer">
+            &copy; ${new Date().getFullYear()} ${storeName}.<br>
+            <a href="${CLIENT_URL}">Visit our store</a>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  await sendBrevoEmail([recipient.email], `🛒 Don't forget your items, ${firstName}!`, html);
+};
+
+// ─── Promotional Campaign ────────────────────────────────────────────────────
+export const sendPromoEmail = async (
+  recipients: { email: string; name?: string }[],
+  promoCode: string,
+  discountPercent: number,
+  minOrder: number,
+  expiryDate: string,
+) => {
+  const emails = recipients.map(r => r.email);
+  const storeName = await getStoreName();
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        .header { background: linear-gradient(135deg, #e8622a, #f59e0b); padding: 40px 20px; text-align: center; }
+        .header h1 { margin: 0; color: #ffffff; font-size: 32px; }
+        .content { padding: 40px 30px; text-align: center; }
+        .discount { font-size: 48px; font-weight: 800; color: #e8622a; margin: 10px 0; }
+        .code { background: #fff5f0; border: 2px dashed #e8622a; padding: 15px 30px; font-size: 24px; font-weight: 700; color: #e8622a; letter-spacing: 3px; display: inline-block; border-radius: 12px; margin: 15px 0; }
+        .btn { display: inline-block; background-color: #e8622a; color: #ffffff; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(232, 98, 42, 0.3); }
+        .expiry { color: #e53e3e; font-size: 13px; margin-top: 15px; }
+        .footer { background: #f9fafb; padding: 20px; text-align: center; color: #a0aec0; font-size: 13px; border-top: 1px solid #e2e8f0; }
+        .footer a { color: #e8622a; text-decoration: none; }
+      </style>
+    </head>
+    <body>
+      <div style="padding: 20px; background-color: #f4f7f6;">
+        <div class="container">
+          <div class="header">
+            <h1>🎁 Special Offer!</h1>
+          </div>
+          <div class="content">
+            <div class="discount">${discountPercent}% OFF</div>
+            <p style="color:#4a5568;">On orders over ₦${minOrder.toLocaleString()}</p>
+            <div class="code">${promoCode}</div>
+            <p style="color:#4a5568; margin-top:15px;">Use this code at checkout</p>
+            <a href="${CLIENT_URL}/shop" class="btn">Shop Now</a>
+            <p class="expiry">⏰ Expires ${expiryDate}</p>
+          </div>
+          <div class="footer">
+            &copy; ${new Date().getFullYear()} ${storeName}. All rights reserved.<br>
+            <a href="${CLIENT_URL}">Visit our store</a>
+            <p style="font-size:12px; margin-top:8px;"><a href="${CLIENT_URL}/unsubscribe">Unsubscribe</a></p>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const subject = `🎁 ${discountPercent}% Off – Use code ${promoCode}`;
+  await sendBrevoEmail(emails, subject, html);
+};
+
+// ─── New Arrival Announcement ────────────────────────────────────────────────
 export const sendNewArrivalEmail = async (
   recipients: { email: string; name?: string }[],
   productName: string,
@@ -145,7 +328,7 @@ export const sendNewArrivalEmail = async (
   await sendBrevoEmail(emails, subject, html, text);
 };
 
-// ---------- Back‑in‑Stock Notification ----------
+// ─── Back‑in‑Stock Notification ──────────────────────────────────────────────
 export const sendBackInStockEmail = async (
   recipients: { email: string; name?: string }[],
   productName: string,

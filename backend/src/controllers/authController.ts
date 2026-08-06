@@ -8,6 +8,7 @@ import {
   sendPasswordChangedEmail,
   sendEmailChangeVerification,
 } from '../services/email.service';
+import { sendWelcomeEmail } from '../services/marketingEmail.service';
 import { AuthRequest } from '../middleware/auth';
 
 // ─── Security constants ────────────────────────────────────────────────────
@@ -83,7 +84,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
 
     const { raw, hashed } = makeToken();
 
-    await User.create({
+    const user = await User.create({
       email:                normEmail,
       password,
       name:                 name?.trim() || '',
@@ -93,8 +94,17 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
       isVerified:           false,
     });
 
+    // Send verification email
     sendVerificationEmail(normEmail, raw).catch((err) =>
       console.error('Failed to send verification email:', err),
+    );
+
+    // Send welcome email with discount code
+    sendWelcomeEmail(
+      { email: user.email, name: user.name },
+      'WELCOME10'
+    ).catch((err) =>
+      console.error('Failed to send welcome email:', err),
     );
 
     res.status(201).json({
