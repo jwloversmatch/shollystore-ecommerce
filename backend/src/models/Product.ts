@@ -209,7 +209,6 @@ ProductSchema.index({ stock: 1 });
 ProductSchema.index({ createdAt: -1 });
 ProductSchema.index({ "variants.sku": 1 });
 ProductSchema.index({ tags: 1 });
-ProductSchema.index({ sku: 1 });
 ProductSchema.index({ isActive: 1 });
 ProductSchema.index({ category: 1 });
 

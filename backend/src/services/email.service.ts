@@ -43,8 +43,8 @@ const sendEmail = async (
       },
       body: JSON.stringify({
         sender: {
-          name:  SENDER_NAME  || "ShollyStore",
-          email: SENDER_EMAIL || "noreply@shollystore.com",
+          name:  SENDER_NAME  || "Sholex",
+          email: SENDER_EMAIL || "noreply@sholex.com",
         },
         to: [{ email: to }],
         subject,
@@ -89,8 +89,11 @@ const layout = ({ headerBg, headerText = '#2d3748', body }: LayoutOptions) => `
     .wrap { padding:20px; background:#f4f7f6; }
     .card { max-width:600px; margin:0 auto; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,.05); }
     .hdr  { background:${headerBg}; padding:30px 20px; text-align:center; }
-    .hdr h1 { margin:0; color:${headerText}; font-size:28px; letter-spacing:-.5px; }
-    .hdr .accent { color:#e8622a; }
+    .hdr h1 { margin:0; color:${headerText}; font-size:28px; letter-spacing:-.5px; display:flex; align-items:center; justify-content:center; gap:10px; }
+    .hdr .logo { display:inline-block; vertical-align:middle; }
+    .hdr .logo svg { width:32px; height:32px; }
+    .hdr .brand-name { color:${headerText}; }
+    .hdr .brand-accent { color:#e8622a; }
     .body { padding:40px 30px; }
     .body h2 { color:#2d3748; font-size:22px; margin-top:0; }
     .body p  { color:#4a5568; line-height:1.6; }
@@ -106,11 +109,19 @@ const layout = ({ headerBg, headerText = '#2d3748', body }: LayoutOptions) => `
   <div class="wrap">
     <div class="card">
       <div class="hdr">
-        <h1>Sholly<span class="accent">Store</span></h1>
+        <h1>
+          <span class="logo">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#e8622a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </span>
+          <span class="brand-name">Sholex<span class="brand-accent">Store</span></span>
+        </h1>
       </div>
       ${body}
       <div class="ftr">
-        &copy; ${new Date().getFullYear()} ShollyStore. All rights reserved.<br>
+        &copy; ${new Date().getFullYear()} Sholex. All rights reserved.<br>
         <a href="${CLIENT_URL}">Visit our store</a>
       </div>
     </div>
@@ -128,7 +139,7 @@ export const sendVerificationEmail = async (
   name?: string,
 ) => {
   const url = `${CLIENT_URL}/verify-email?token=${token}`;
-  const greeting = name ? `Hi <strong>${name}</strong>, welcome to ShollyStore! 🛍️` : `Welcome to ShollyStore! 🛍️`;
+  const greeting = name ? `Hi <strong>${name}</strong>, welcome to Sholex! 🛍️` : `Welcome to Sholex! 🛍️`;
 
   const html = layout({
     headerBg: '#ffd6d6',
@@ -145,9 +156,9 @@ export const sendVerificationEmail = async (
 
   return sendEmail(
     email,
-    "Welcome to ShollyStore – Verify Your Email",
+    "Welcome to Sholex – Verify Your Email",
     html,
-    `Welcome to ShollyStore! Verify your email: ${url}`,
+    `Welcome to Sholex! Verify your email: ${url}`,
   );
 };
 
@@ -159,7 +170,7 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
     body: `
       <div class="body" style="text-align:center;">
         <h2>Reset Your Password 🔐</h2>
-        <p>We received a request to reset the password for your ShollyStore account. Click the button below to choose a new password.</p>
+        <p>We received a request to reset the password for your Sholex account. Click the button below to choose a new password.</p>
         <a href="${url}" class="btn" style="background:#d97706;color:#fff;box-shadow:0 4px 12px rgba(217,119,6,.3);">Reset My Password</a>
         <div style="margin-top:30px; padding:16px; background:#fef9c3; border-radius:10px; border-left:4px solid #d97706;">
           <p style="margin:0; font-size:14px; color:#92400e;">
@@ -172,9 +183,9 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
 
   return sendEmail(
     email,
-    "Password Reset Request – ShollyStore",
+    "Password Reset Request – Sholex",
     html,
-    `Reset your ShollyStore password (expires in 1 hour): ${url}`,
+    `Reset your Sholex password (expires in 1 hour): ${url}`,
   );
 };
 
@@ -186,7 +197,7 @@ export const sendPasswordChangedEmail = async (email: string, name?: string) => 
     body: `
       <div class="body" style="text-align:center;">
         <h2>Your Password Was Changed ✅</h2>
-        <p>${greeting} your ShollyStore account password was recently updated.</p>
+        <p>${greeting} your Sholex account password was recently updated.</p>
         <div style="padding:16px; background:#fef2f2; border-radius:10px; border-left:4px solid #ef4444; text-align:left;">
           <p style="margin:0; font-size:14px; color:#991b1b;">
             🚨 <strong>If you didn't make this change</strong>, your account may be compromised.<br>
@@ -201,9 +212,9 @@ export const sendPasswordChangedEmail = async (email: string, name?: string) => 
 
   return sendEmail(
     email,
-    "Your Password Has Been Changed – ShollyStore",
+    "Your Password Has Been Changed – Sholex",
     html,
-    `Your ShollyStore password was changed. If you didn't do this, reset your password immediately at ${CLIENT_URL}/forgot-password`,
+    `Your Sholex password was changed. If you didn't do this, reset your password immediately at ${CLIENT_URL}/forgot-password`,
   );
 };
 
@@ -218,7 +229,7 @@ export const sendEmailChangeVerification = async (
     body: `
       <div class="body" style="text-align:center;">
         <h2>Confirm Your New Email Address ✉️</h2>
-        <p>A request was made to change the email address on a ShollyStore account to <strong>${newEmail}</strong>.</p>
+        <p>A request was made to change the email address on a Sholex account to <strong>${newEmail}</strong>.</p>
         <p>Click the button below to confirm and activate your new email address.</p>
         <a href="${url}" class="btn" style="background:#3b82f6;color:#fff;box-shadow:0 4px 12px rgba(59,130,246,.3);">Confirm New Email</a>
         <div style="margin-top:30px; padding:16px; background:#eff6ff; border-radius:10px; border-left:4px solid #3b82f6;">
@@ -232,9 +243,9 @@ export const sendEmailChangeVerification = async (
 
   return sendEmail(
     newEmail,
-    "Confirm Your New Email Address – ShollyStore",
+    "Confirm Your New Email Address – Sholex",
     html,
-    `Confirm your new ShollyStore email address (expires in 24 hours): ${url}`,
+    `Confirm your new Sholex email address (expires in 24 hours): ${url}`,
   );
 };
 
@@ -278,7 +289,7 @@ export const sendOrderConfirmation = async (
 
   return sendEmail(
     email,
-    "Order Confirmation – ShollyStore",
+    "Order Confirmation – Sholex",
     html,
     `Order #${orderId} confirmed. Total: ₦${total.toLocaleString()}. Thank you!`,
   );
@@ -318,9 +329,9 @@ export const sendOrderShippedEmail = async (
 
   return sendEmail(
     email,
-    "Your Order Has Been Shipped – ShollyStore",
+    "Your Order Has Been Shipped – Sholex",
     html,
-    `Your ShollyStore order #${orderId} has shipped!`,
+    `Your Sholex order #${orderId} has shipped!`,
   );
 };
 
@@ -358,9 +369,9 @@ export const sendOrderDeliveredEmail = async (
 
   return sendEmail(
     email,
-    "Order Delivered – ShollyStore",
+    "Order Delivered – Sholex",
     html,
-    `Your ShollyStore order #${orderId} has been delivered. Enjoy! 🛍️`,
+    `Your Sholex order #${orderId} has been delivered. Enjoy! 🛍️`,
   );
 };
 
@@ -413,7 +424,7 @@ export const sendOrderStatusUpdateEmail = async (
     email,
     `Order #${orderId} – Status Updated to ${status}`,
     html,
-    `Your ShollyStore order #${orderId} is now ${status}. Total: ₦${total.toLocaleString()}.`,
+    `Your Sholex order #${orderId} is now ${status}. Total: ₦${total.toLocaleString()}.`,
   );
 };
 

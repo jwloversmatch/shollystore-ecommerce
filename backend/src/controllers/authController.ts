@@ -13,12 +13,12 @@ import { AuthRequest } from '../middleware/auth';
 
 // ─── Security constants ────────────────────────────────────────────────────
 const MAX_LOGIN_ATTEMPTS   = 5;
-const LOCK_DURATION_MS     = 15 * 60 * 1000;        // 15 minutes
-const RESET_EXPIRY_MS      = 60 * 60 * 1000;         // 1 hour
-const EMAIL_CHANGE_EXPIRY  = 24 * 60 * 60 * 1000;   // 24 hours
-const VERIFICATION_EXPIRY  = 15 * 60 * 1000;         // 15 minutes
-const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days
-const MAX_REFRESH_SESSIONS = 5;                       // concurrent device sessions kept
+const LOCK_DURATION_MS     = 15 * 60 * 1000;        
+const RESET_EXPIRY_MS      = 60 * 60 * 1000;        
+const EMAIL_CHANGE_EXPIRY  = 24 * 60 * 60 * 1000;  
+const VERIFICATION_EXPIRY  = 15 * 60 * 1000;         
+const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000; 
+const MAX_REFRESH_SESSIONS = 5;                      
 
 // ─── Private helpers ───────────────────────────────────────────────────────
 
@@ -254,8 +254,8 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
     res.json({
       success:      true,
       user:         sanitizeUser(user),
-      token:        generateToken(user._id.toString()),  // short-lived access token
-      refreshToken: refreshRaw,                          // also in body for mobile clients
+      token:        generateToken(user._id.toString()),  
+      refreshToken: refreshRaw,                          
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Internal server error' });
@@ -401,12 +401,12 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    user.password             = password;    // hashed by pre-save hook
+    user.password             = password;     
     user.resetPasswordToken   = undefined;
     user.resetPasswordExpires = undefined;
-    user.loginAttempts        = 0;           // clear any lockout state
+    user.loginAttempts        = 0;          
     user.lockUntil            = undefined;
-    user.refreshTokens        = [];          // force re-login on all devices for security
+    user.refreshTokens        = [];         
 
     await user.save();
     sendPasswordChangedEmail(user.email, user.name).catch((err) =>
@@ -441,7 +441,7 @@ export const changePassword = async (req: AuthRequest, res: Response): Promise<v
     }
 
     user.password      = newPassword;
-    user.refreshTokens = [];   // revoke all other sessions — they must re-login
+    user.refreshTokens = [];   
     await user.save();
 
     sendPasswordChangedEmail(user.email, user.name).catch((err) =>
@@ -558,7 +558,7 @@ export const verifyEmailChange = async (req: Request, res: Response): Promise<vo
     user.emailChangeToken   = undefined;
     user.emailChangeExpires = undefined;
     user.emailChangePending = undefined;
-    user.refreshTokens      = [];   // force re-login — email (identity) changed
+    user.refreshTokens      = [];   
     await user.save();
 
     clearRefreshCookie(res);
