@@ -4,9 +4,9 @@ import { createHmac, timingSafeEqual } from 'crypto';
 
 export interface PaystackConfig {
   secretKey: string;
-  baseUrl?: string;          // default: https://api.paystack.co
-  clientUrl?: string;        // required for initializePayment
-  timeoutMs?: number;        // default: 15000
+  baseUrl?: string;          
+  clientUrl?: string;        
+  timeoutMs?: number;        
 }
 
 export interface PaystackResponse<T> {

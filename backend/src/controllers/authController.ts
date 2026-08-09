@@ -1,3 +1,4 @@
+// backend/src/controllers/auth.controller.ts
 import { Request, Response } from 'express';
 import crypto from 'crypto';
 import { User, IUser } from '../models/User';
@@ -94,17 +95,11 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
       isVerified:           false,
     });
 
-    // Send verification email
+    // Send verification email only — welcome email now fires from verifyEmail,
+    // once the address is actually confirmed. Sending both here caused them
+    // to arrive at the same time.
     sendVerificationEmail(normEmail, raw).catch((err) =>
       console.error('Failed to send verification email:', err),
-    );
-
-    // Send welcome email with discount code
-    sendWelcomeEmail(
-      { email: user.email, name: user.name },
-      'WELCOME10'
-    ).catch((err) =>
-      console.error('Failed to send welcome email:', err),
     );
 
     res.status(201).json({
@@ -139,6 +134,15 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
     user.verificationToken   = undefined;
     user.verificationExpires = undefined;
     await user.save();
+
+    // Send the welcome email now that the address is confirmed — kept separate
+    // in time from the verification email on purpose.
+    sendWelcomeEmail(
+      { email: user.email, name: user.name },
+      'WELCOME10'
+    ).catch((err) =>
+      console.error('Failed to send welcome email:', err),
+    );
 
     res.json({ success: true, message: 'Email verified. You can now log in.' });
   } catch (error: any) {

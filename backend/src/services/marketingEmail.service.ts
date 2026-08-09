@@ -3,8 +3,11 @@ import { User } from '../models/User';
 import { Settings } from '../models/Settings';
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
-const SENDER_EMAIL = process.env.MARKETING_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'store@sholex.com';
-const SENDER_NAME = process.env.MARKETING_SENDER_NAME || process.env.BREVO_SENDER_NAME || 'Sholex';
+// NOTE: fallbacks below only apply if the env vars are unset — set MARKETING_SENDER_EMAIL /
+// MARKETING_SENDER_NAME (or BREVO_SENDER_EMAIL / BREVO_SENDER_NAME) to your actual
+// SPF/DKIM-verified sending domain in Brevo. This fallback is a placeholder, not a fix.
+const SENDER_EMAIL = process.env.MARKETING_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'store@sholexstore.com';
+const SENDER_NAME = process.env.MARKETING_SENDER_NAME || process.env.BREVO_SENDER_NAME || 'sholexStore';
 const CLIENT_URL = process.env.CLIENT_URL || 'https://sholex.vercel.app';
 
 // ---------- Shared SVG logo for all marketing emails ----------
@@ -29,9 +32,9 @@ const getStoreName = async (): Promise<string> => {
   try {
     const settings = await Settings.findOne();
     const rawTitle = settings?.heroTitle || '';
-    cachedStoreName = rawTitle.replace(/\|/g, '').trim() || 'Sholex';
+    cachedStoreName = rawTitle.replace(/\|/g, '').trim() || 'sholexStore';
   } catch {
-    cachedStoreName = 'Sholex';
+    cachedStoreName = 'sholexStore';
   }
   return cachedStoreName;
 };
@@ -103,7 +106,7 @@ export const sendWelcomeEmail = async (recipient: { email: string; name?: string
         <a href="${CLIENT_URL}/shop" class="btn">Start Shopping</a>
         <a href="${CLIENT_URL}/account" class="btn" style="background:#fff;color:#e8622a;border:2px solid #e8622a;">My Account</a>
       </div>
-      <div class="ftr">&copy; ${new Date().getFullYear()} ${storeName}.<br><a href="${CLIENT_URL}">Visit our store</a></div>
+      <div class="ftr">&copy; ${new Date().getFullYear()} ${storeName}.<br><a href="${CLIENT_URL}">Visit our store</a><p style="font-size:12px;margin-top:8px;"><a href="${CLIENT_URL}/unsubscribe">Unsubscribe</a></p></div>
     </div></div></body></html>`;
 
   await sendBrevoEmail([recipient.email], `Welcome to ${storeName}, ${firstName}! 🎉`, html);
@@ -133,7 +136,7 @@ export const sendAbandonedCartEmail = async (
         <table>${itemsHtml}</table><div class="total">Total: ₦${cartTotal.toLocaleString()}</div>
         <a href="${CLIENT_URL}/cart" class="btn">Complete Your Order</a>
       </div>
-      <div class="ftr">&copy; ${new Date().getFullYear()} ${storeName}.<br><a href="${CLIENT_URL}">Visit our store</a></div>
+      <div class="ftr">&copy; ${new Date().getFullYear()} ${storeName}.<br><a href="${CLIENT_URL}">Visit our store</a><p style="font-size:12px;margin-top:8px;"><a href="${CLIENT_URL}/unsubscribe">Unsubscribe</a></p></div>
     </div></div></body></html>`;
 
   await sendBrevoEmail([recipient.email], `🛒 Don't forget your items, ${firstName}!`, html);

@@ -1,3 +1,4 @@
+// backend/src/services/email.service.ts
 import dotenv from "dotenv";
 import path from "path";
 
@@ -42,9 +43,12 @@ const sendEmail = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        // NOTE: these fallbacks only kick in if BREVO_SENDER_EMAIL/BREVO_SENDER_NAME
+        // are missing from .env. Set those to a domain you've verified (SPF+DKIM)
+        // in Brevo — the fallback below is a placeholder, not a real fix for deliverability.
         sender: {
-          name:  SENDER_NAME  || "Sholex",
-          email: SENDER_EMAIL || "noreply@sholex.com",
+          name:  SENDER_NAME  || "sholexStore",
+          email: SENDER_EMAIL || "noreply@sholexstore.com",
         },
         to: [{ email: to }],
         subject,
