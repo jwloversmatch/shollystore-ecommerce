@@ -1,5 +1,17 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Sparkles, ArrowRight, Shirt, Zap, Wine, Truck, ShieldCheck, Star, TrendingUp } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  ArrowRight,
+  Shirt,
+  Zap,
+  Wine,
+  Truck,
+  ShieldCheck,
+  Star,
+  TrendingUp,
+} from "lucide-react";
 import { ACCENT, PLACEHOLDER, fadeUp, stagger } from "../../types/home";
 import type { HeroSlide } from "../../types/home";
 import { getCloudinaryUrl } from "../../utils/cloudinary";
@@ -261,32 +273,12 @@ const HomeHero = ({
     );
   }
 
-  // Build a sliding window of up to 4 products from heroSlides for the plain grid display.
-  // currentIndex still addresses individual slides (unchanged contract with the parent),
-  // so prev/next simply shift which consecutive run of products is visible.
+  // --- Non‑landing mode: single‑slide carousel (professional) ---
   const slides = heroSlides ?? [];
-  const maxVisible = 4;
-  const visibleCount = Math.min(slides.length, maxVisible);
-  const canCycle = slides.length > maxVisible;
-  const visibleSlides =
-    slides.length > 0
-      ? Array.from({ length: visibleCount }, (_, i) => {
-          const idx = (((currentIndex + i) % slides.length) + slides.length) % slides.length;
-          return slides[idx];
-        })
-      : [];
-  const gridLayoutClass =
-    visibleCount === 1
-      ? "grid-cols-1 grid-rows-1"
-      : visibleCount === 2
-      ? "grid-cols-2 grid-rows-1"
-      : visibleCount === 3
-      ? "grid-cols-2 grid-rows-2"
-      : "grid-cols-2 grid-rows-3";
 
   return (
     <section className="relative max-w-7xl mx-auto px-6 pt-20 md:pt-32 pb-20 grid md:grid-cols-2 items-center gap-16">
-      {/* Left column */}
+      {/* Left column – unchanged */}
       <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
         <motion.span
           variants={fadeUp(0)}
@@ -399,96 +391,87 @@ const HomeHero = ({
         </motion.div>
       </motion.div>
 
-      {/* Right column: product showcase */}
+      {/* Right column: product showcase (NEW) */}
       <motion.div
         initial={{ opacity: 0, x: 60 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.9, delay: 0.2 }}
         className="flex justify-center items-center"
       >
-        <div className="relative w-full max-w-[360px] md:max-w-[440px] lg:max-w-[500px]">
+        <div className="relative w-full max-w-[440px] md:max-w-[500px]">
           {slides.length > 0 ? (
             <>
-              <div
-                className={`grid gap-3 md:gap-3.5 h-[300px] md:h-[400px] lg:h-[460px] ${gridLayoutClass}`}
-                role="group"
-                aria-roledescription="carousel"
-                aria-label="Featured products"
-              >
+              {/* Main carousel container */}
+              <div className="relative overflow-hidden rounded-3xl shadow-2xl aspect-[4/5] md:aspect-square">
                 <AnimatePresence custom={direction} initial={false}>
-                  {visibleSlides.map((slide, i) => {
-                    const isBigTile = visibleCount === 1 || (visibleCount >= 3 && i === 0);
-                    const spanClass =
-                      visibleCount === 3 && i === 0
-                        ? "row-span-2"
-                        : visibleCount === 4 && i === 0
-                        ? "row-span-3"
-                        : "";
-                    return (
-                      <motion.div
-                        key={`${currentIndex}-${i}`}
-                        custom={direction}
-                        initial={{ opacity: 0, x: direction > 0 ? 30 : -30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.35, delay: i * 0.05 }}
-                        whileHover={{ scale: 1.02 }}
-                        className={`relative overflow-hidden bg-gray-100 dark:bg-[#1c1c1c] ${
-                          isBigTile ? "rounded-3xl shadow-lg" : "rounded-2xl shadow-md"
-                        } ${spanClass}`}
-                      >
-                        <img
-                          src={getCloudinaryUrl(slide.imageUrl, isBigTile ? 700 : 400)}
-                          alt={slide.title || "Product photo"}
-                          onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
-                          className="w-full h-full object-cover"
-                        />
-                      </motion.div>
-                    );
-                  })}
+                  <motion.div
+                    key={currentIndex}
+                    custom={direction}
+                    initial={{ opacity: 0, x: direction > 0 ? 80 : -80 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: direction > 0 ? -80 : 80 }}
+                    transition={{ duration: 0.5, ease: "easeInOut" }}
+                    className="absolute inset-0"
+                  >
+                    <img
+                      src={getCloudinaryUrl(slides[currentIndex].imageUrl, 800)}
+                      alt={slides[currentIndex].title || "Featured product"}
+                      onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Dark gradient overlay for better text readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                    {/* Product title (if available) */}
+                    {slides[currentIndex].title && (
+                      <div className="absolute bottom-0 left-0 right-0 p-6">
+                        <h3 className="text-white text-2xl font-bold drop-shadow-lg">
+                          {slides[currentIndex].title}
+                        </h3>
+                      </div>
+                    )}
+                  </motion.div>
                 </AnimatePresence>
               </div>
 
-              {canCycle && (
-                <>
-                  <button
-                    onClick={handlePrev}
-                    aria-label="Show previous products"
-                    className="absolute -left-3 md:-left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 shadow-md flex items-center justify-center hover:scale-105 transition-transform z-10"
-                  >
-                    <ChevronLeft className="w-4 h-4 text-gray-700 dark:text-gray-300" aria-hidden="true" />
-                  </button>
-                  <button
-                    onClick={handleNext}
-                    aria-label="Show next products"
-                    className="absolute -right-3 md:-right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 shadow-md flex items-center justify-center hover:scale-105 transition-transform z-10"
-                  >
-                    <ChevronRight className="w-4 h-4 text-gray-700 dark:text-gray-300" aria-hidden="true" />
-                  </button>
-                </>
-              )}
+              {/* Navigation arrows */}
+              <button
+                onClick={handlePrev}
+                aria-label="Previous product"
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center hover:bg-white/40 transition-all z-10"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleNext}
+                aria-label="Next product"
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center hover:bg-white/40 transition-all z-10"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
 
-              {canCycle && slides.length <= 10 && (
-                <div className="flex justify-center gap-2 mt-4" role="group" aria-label="Product page navigation">
-                  {slides.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => { setDirection(i > currentIndex ? 1 : -1); setCurrentIndex(i); }}
-                      aria-label={`Show products starting at item ${i + 1}`}
-                      aria-current={i === currentIndex ? "true" : undefined}
-                      className="h-1.5 rounded-full transition-all duration-300"
-                      style={{
-                        width: i === currentIndex ? "20px" : "6px",
-                        background: i === currentIndex ? ACCENT : "rgba(120,120,120,0.25)",
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
+              {/* Dot indicators */}
+              <div className="flex justify-center gap-2 mt-4">
+                {slides.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setDirection(i > currentIndex ? 1 : -1);
+                      setCurrentIndex(i);
+                    }}
+                    aria-label={`Go to slide ${i + 1}`}
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      i === currentIndex
+                        ? "w-8 bg-[#e8622a]"
+                        : "w-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
+                    }`}
+                  />
+                ))}
+              </div>
             </>
           ) : (
-            <div className="w-full h-[300px] md:h-[400px] lg:h-[460px] rounded-3xl bg-gray-100 dark:bg-[#1c1c1c] flex items-center justify-center text-gray-500 dark:text-gray-600">
-              <TrendingUp className="w-12 h-12 opacity-30" aria-hidden="true" />
+            /* Fallback when no slides */
+            <div className="w-full aspect-[4/5] md:aspect-square rounded-3xl bg-gray-100 dark:bg-[#1c1c1c] flex items-center justify-center text-gray-500 dark:text-gray-600">
+              <TrendingUp className="w-12 h-12 opacity-30" />
             </div>
           )}
         </div>
