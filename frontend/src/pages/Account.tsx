@@ -197,9 +197,8 @@ const Account = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen p-4 md:p-6 max-w-6xl mx-auto space-y-8 focus:outline-none"
+      className="min-h-screen p-4 md:p-6 max-w-6xl mx-auto space-y-8 focus:outline-none bg-[#FCFAF5] dark:bg-[#0A0A0B]"
       style={{
-        background: "#0A0A0B",
         paddingTop: "calc(56px + env(safe-area-inset-top, 0px))",
         paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
       }}
@@ -213,8 +212,7 @@ const Account = () => {
 
       {/* Tabs */}
       <nav
-        className="flex gap-4 border-b"
-        style={{ borderColor: "rgba(255,255,255,0.08)" }}
+        className="flex gap-4 border-b border-gray-200 dark:border-white/[0.08]"
         role="tablist"
         aria-label="Account sections"
       >
@@ -230,7 +228,7 @@ const Account = () => {
           className={`pb-3 px-1 text-sm font-semibold transition-colors border-b-2 ${
             activeTab === "orders"
               ? "border-[#e8622a] text-[#e8622a]"
-              : "border-transparent text-gray-500 hover:text-gray-300"
+              : "border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-gray-300"
           }`}
         >
           🧾 My Orders
@@ -247,7 +245,7 @@ const Account = () => {
           className={`pb-3 px-1 text-sm font-semibold transition-colors border-b-2 ${
             activeTab === "profile"
               ? "border-[#e8622a] text-[#e8622a]"
-              : "border-transparent text-gray-500 hover:text-gray-300"
+              : "border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-gray-300"
           }`}
         >
           👤 Profile Settings

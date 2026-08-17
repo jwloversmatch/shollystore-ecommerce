@@ -261,6 +261,29 @@ const HomeHero = ({
     );
   }
 
+  // Build a sliding window of up to 4 products from heroSlides for the plain grid display.
+  // currentIndex still addresses individual slides (unchanged contract with the parent),
+  // so prev/next simply shift which consecutive run of products is visible.
+  const slides = heroSlides ?? [];
+  const maxVisible = 4;
+  const visibleCount = Math.min(slides.length, maxVisible);
+  const canCycle = slides.length > maxVisible;
+  const visibleSlides =
+    slides.length > 0
+      ? Array.from({ length: visibleCount }, (_, i) => {
+          const idx = (((currentIndex + i) % slides.length) + slides.length) % slides.length;
+          return slides[idx];
+        })
+      : [];
+  const gridLayoutClass =
+    visibleCount === 1
+      ? "grid-cols-1 grid-rows-1"
+      : visibleCount === 2
+      ? "grid-cols-2 grid-rows-1"
+      : visibleCount === 3
+      ? "grid-cols-2 grid-rows-2"
+      : "grid-cols-2 grid-rows-3";
+
   return (
     <section className="relative max-w-7xl mx-auto px-6 pt-20 md:pt-32 pb-20 grid md:grid-cols-2 items-center gap-16">
       {/* Left column */}
@@ -376,135 +399,99 @@ const HomeHero = ({
         </motion.div>
       </motion.div>
 
-      {/* Right column: carousel */}
+      {/* Right column: product showcase */}
       <motion.div
         initial={{ opacity: 0, x: 60 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.9, delay: 0.2 }}
         className="flex justify-center items-center"
       >
-        <motion.div
-          animate={{ y: [0, -14, 0] }}
-          transition={{ repeat: Infinity, duration: 5.5, ease: "easeInOut" }}
-          className="relative"
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
-            className="absolute -inset-8 rounded-full border-2 border-dashed pointer-events-none"
-            style={{ borderColor: `${ACCENT}25` }}
-            aria-hidden="true"
-          />
-          <motion.div
-            animate={{ rotate: -360 }}
-            transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-            className="absolute -inset-4 rounded-full border pointer-events-none"
-            style={{ borderColor: `${ACCENT}15` }}
-            aria-hidden="true"
-          />
-          <div
-            className="absolute -inset-1 rounded-full pointer-events-none"
-            style={{ boxShadow: `0 0 0 2px ${ACCENT}30, inset 0 0 0 2px ${ACCENT}15` }}
-            aria-hidden="true"
-          />
-
-          <div
-            className="relative w-64 h-64 md:w-[380px] md:h-[380px] lg:w-[440px] lg:h-[440px] rounded-full overflow-hidden group shadow-2xl"
-            style={{ boxShadow: `0 0 0 5px ${ACCENT}, 0 30px 80px rgba(0,0,0,0.5), 0 0 80px ${ACCENT}25` }}
-            role="group"
-            aria-roledescription="carousel"
-            aria-label="Featured products"
-          >
-            {heroSlides && heroSlides.length > 0 ? (
-              <AnimatePresence initial={false} custom={direction} mode="wait">
-                <motion.img
-                  key={currentIndex}
-                  custom={direction}
-                  variants={{
-                    enter: (d: number) => ({ x: d > 0 ? 200 : -200, opacity: 0, scale: 0.9, rotate: d > 0 ? 5 : -5 }),
-                    center: { x: 0, opacity: 1, scale: 1, rotate: 0 },
-                    exit: (d: number) => ({ x: d > 0 ? -200 : 200, opacity: 0, scale: 0.9, rotate: d > 0 ? -5 : 5 }),
-                  }}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{ type: "spring", stiffness: 250, damping: 26 }}
-                  src={getCloudinaryUrl(heroSlides[currentIndex].imageUrl, 800)}
-                  srcSet={`${getCloudinaryUrl(heroSlides[currentIndex].imageUrl, 400)} 400w, ${getCloudinaryUrl(heroSlides[currentIndex].imageUrl, 800)} 800w, ${getCloudinaryUrl(heroSlides[currentIndex].imageUrl, 1200)} 1200w`}
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  alt={heroSlides[currentIndex].title || ""}
-                  onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
-                  className="w-full h-full object-cover absolute inset-0"
-                />
-              </AnimatePresence>
-            ) : (
-              <div className="w-full h-full bg-gray-100 dark:bg-[#1c1c1c] flex items-center justify-center text-gray-500 dark:text-gray-600">
-                <TrendingUp className="w-12 h-12 opacity-30" aria-hidden="true" />
+        <div className="relative w-full max-w-[360px] md:max-w-[440px] lg:max-w-[500px]">
+          {slides.length > 0 ? (
+            <>
+              <div
+                className={`grid gap-3 md:gap-3.5 h-[300px] md:h-[400px] lg:h-[460px] ${gridLayoutClass}`}
+                role="group"
+                aria-roledescription="carousel"
+                aria-label="Featured products"
+              >
+                <AnimatePresence custom={direction} initial={false}>
+                  {visibleSlides.map((slide, i) => {
+                    const isBigTile = visibleCount === 1 || (visibleCount >= 3 && i === 0);
+                    const spanClass =
+                      visibleCount === 3 && i === 0
+                        ? "row-span-2"
+                        : visibleCount === 4 && i === 0
+                        ? "row-span-3"
+                        : "";
+                    return (
+                      <motion.div
+                        key={`${currentIndex}-${i}`}
+                        custom={direction}
+                        initial={{ opacity: 0, x: direction > 0 ? 30 : -30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.35, delay: i * 0.05 }}
+                        whileHover={{ scale: 1.02 }}
+                        className={`relative overflow-hidden bg-gray-100 dark:bg-[#1c1c1c] ${
+                          isBigTile ? "rounded-3xl shadow-lg" : "rounded-2xl shadow-md"
+                        } ${spanClass}`}
+                      >
+                        <img
+                          src={getCloudinaryUrl(slide.imageUrl, isBigTile ? 700 : 400)}
+                          alt={slide.title || "Product photo"}
+                          onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
+                          className="w-full h-full object-cover"
+                        />
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
-            )}
 
-            <button
-              onClick={handlePrev}
-              aria-label="Previous slide"
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 transition-all duration-200 hover:bg-black/70 z-10"
-            >
-              <ChevronLeft className="w-5 h-5 text-white" aria-hidden="true" />
-            </button>
-            <button
-              onClick={handleNext}
-              aria-label="Next slide"
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 transition-all duration-200 hover:bg-black/70 z-10"
-            >
-              <ChevronRight className="w-5 h-5 text-white" aria-hidden="true" />
-            </button>
-          </div>
+              {canCycle && (
+                <>
+                  <button
+                    onClick={handlePrev}
+                    aria-label="Show previous products"
+                    className="absolute -left-3 md:-left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 shadow-md flex items-center justify-center hover:scale-105 transition-transform z-10"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-gray-700 dark:text-gray-300" aria-hidden="true" />
+                  </button>
+                  <button
+                    onClick={handleNext}
+                    aria-label="Show next products"
+                    className="absolute -right-3 md:-right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 shadow-md flex items-center justify-center hover:scale-105 transition-transform z-10"
+                  >
+                    <ChevronRight className="w-4 h-4 text-gray-700 dark:text-gray-300" aria-hidden="true" />
+                  </button>
+                </>
+              )}
 
-          {/* Dot indicators */}
-          {heroSlides && heroSlides.length > 1 && (
-            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex gap-2.5" role="group" aria-label="Slide navigation">
-              {heroSlides.map((_: HeroSlide, i: number) => (
-                <button
-                  key={i}
-                  onClick={() => { setDirection(i > currentIndex ? 1 : -1); setCurrentIndex(i); }}
-                  aria-label={`Go to slide ${i + 1}`}
-                  aria-current={i === currentIndex ? "true" : undefined}
-                  className="h-2 rounded-full transition-all duration-300"
-                  style={{
-                    width: i === currentIndex ? "28px" : "8px",
-                    background: i === currentIndex ? ACCENT : "rgba(255,255,255,0.2)",
-                  }}
-                />
-              ))}
+              {canCycle && slides.length <= 10 && (
+                <div className="flex justify-center gap-2 mt-4" role="group" aria-label="Product page navigation">
+                  {slides.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setDirection(i > currentIndex ? 1 : -1); setCurrentIndex(i); }}
+                      aria-label={`Show products starting at item ${i + 1}`}
+                      aria-current={i === currentIndex ? "true" : undefined}
+                      className="h-1.5 rounded-full transition-all duration-300"
+                      style={{
+                        width: i === currentIndex ? "20px" : "6px",
+                        background: i === currentIndex ? ACCENT : "rgba(120,120,120,0.25)",
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="w-full h-[300px] md:h-[400px] lg:h-[460px] rounded-3xl bg-gray-100 dark:bg-[#1c1c1c] flex items-center justify-center text-gray-500 dark:text-gray-600">
+              <TrendingUp className="w-12 h-12 opacity-30" aria-hidden="true" />
             </div>
           )}
-
-          {/* Floating stat cards */}
-          <motion.div
-            animate={{ y: [-6, 6, -6] }}
-            transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
-            className="absolute -right-6 top-6 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 rounded-2xl px-4 py-3 shadow-xl backdrop-blur-xl"
-          >
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-emerald-400" aria-hidden="true" />
-              <span className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Trending</span>
-            </div>
-            <div className="text-2xl font-black text-gray-900 dark:text-white mt-1">
-              {displayProductsCount.toLocaleString()}+
-            </div>
-          </motion.div>
-
-          <motion.div
-            animate={{ y: [6, -6, 6] }}
-            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-            className="absolute -left-8 bottom-10 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 rounded-2xl px-4 py-3 shadow-xl backdrop-blur-xl"
-          >
-            <div className="flex items-center gap-2">
-              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" aria-hidden="true" />
-              <span className="text-xs text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">Rating</span>
-            </div>
-            <div className="text-2xl font-black text-yellow-500 mt-1">4.9</div>
-          </motion.div>
-        </motion.div>
+        </div>
       </motion.div>
     </section>
   );
