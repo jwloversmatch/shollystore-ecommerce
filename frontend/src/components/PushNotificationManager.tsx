@@ -106,10 +106,8 @@ const PushNotificationManager = () => {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="rounded-2xl border p-6 md:p-7"
+      className="rounded-2xl border p-6 md:p-7 bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.07]"
       style={{
-        background: '#141414',
-        borderColor: 'rgba(255,255,255,0.07)',
         boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
       }}
     >
@@ -122,7 +120,7 @@ const PushNotificationManager = () => {
           <Bell className="w-5 h-5" style={{ color: ACCENT }} />
         </div>
         <div>
-          <h3 className="text-base font-black text-white">Push Notifications</h3>
+          <h3 className="text-base font-black text-gray-900 dark:text-white">Push Notifications</h3>
           <p className="text-gray-500 text-xs">
             {subscribed
               ? "You're subscribed to instant updates"
@@ -136,7 +134,7 @@ const PushNotificationManager = () => {
         <div className="flex items-center gap-2">
           <span
             className={`w-2 h-2 rounded-full ${
-              subscribed ? 'bg-emerald-500' : 'bg-gray-700'
+              subscribed ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'
             }`}
           />
           <span className="text-sm text-gray-400">
@@ -147,13 +145,14 @@ const PushNotificationManager = () => {
         <button
           onClick={subscribed ? handleUnsubscribe : handleSubscribe}
           disabled={loading}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all"
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${
+            subscribed
+              ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/30'
+              : 'text-white'
+          }`}
           style={{
-            background: subscribed ? 'rgba(239,68,68,0.1)' : ACCENT,
-            color: subscribed ? '#f87171' : 'white',
-            border: subscribed
-              ? '1px solid rgba(239,68,68,0.3)'
-              : `1px solid ${ACCENT}`,
+            background: subscribed ? undefined : ACCENT,
+            borderColor: subscribed ? undefined : ACCENT,
             boxShadow: subscribed ? 'none' : `0 4px 14px ${ACCENT}44`,
             opacity: loading ? 0.6 : 1,
           }}
@@ -171,7 +170,7 @@ const PushNotificationManager = () => {
 
       {/* Extra hint when denied */}
       {permission === 'denied' && (
-        <p className="mt-3 text-xs text-red-400">
+        <p className="mt-3 text-xs text-red-600 dark:text-red-400">
           Notifications are blocked in your browser. Enable them in your device
           settings.
         </p>
