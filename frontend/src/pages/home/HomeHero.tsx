@@ -273,7 +273,7 @@ const HomeHero = ({
     );
   }
 
-  // --- Non‑landing mode: single‑slide carousel (professional) ---
+  // --- Non‑landing mode: image-only carousel ---
   const slides = heroSlides ?? [];
 
   return (
@@ -391,7 +391,7 @@ const HomeHero = ({
         </motion.div>
       </motion.div>
 
-      {/* Right column: product showcase (NEW) */}
+      {/* Right column: raw image carousel */}
       <motion.div
         initial={{ opacity: 0, x: 60 }}
         animate={{ opacity: 1, x: 0 }}
@@ -401,8 +401,8 @@ const HomeHero = ({
         <div className="relative w-full max-w-[440px] md:max-w-[500px]">
           {slides.length > 0 ? (
             <>
-              {/* Main carousel container */}
-              <div className="relative overflow-hidden rounded-3xl shadow-2xl aspect-[4/5] md:aspect-square">
+              {/* Carousel container – no border, no shadow, no background */}
+              <div className="relative overflow-hidden h-[400px] md:h-[500px]">
                 <AnimatePresence custom={direction} initial={false}>
                   <motion.div
                     key={currentIndex}
@@ -419,32 +419,22 @@ const HomeHero = ({
                       onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
                       className="w-full h-full object-cover"
                     />
-                    {/* Dark gradient overlay for better text readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                    {/* Product title (if available) */}
-                    {slides[currentIndex].title && (
-                      <div className="absolute bottom-0 left-0 right-0 p-6">
-                        <h3 className="text-white text-2xl font-bold drop-shadow-lg">
-                          {slides[currentIndex].title}
-                        </h3>
-                      </div>
-                    )}
                   </motion.div>
                 </AnimatePresence>
               </div>
 
-              {/* Navigation arrows */}
+              {/* Navigation arrows – overlaid */}
               <button
                 onClick={handlePrev}
                 aria-label="Previous product"
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center hover:bg-white/40 transition-all z-10"
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/30 backdrop-blur-md border border-white/40 text-white flex items-center justify-center hover:bg-white/50 transition-all z-10"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
                 onClick={handleNext}
                 aria-label="Next product"
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white flex items-center justify-center hover:bg-white/40 transition-all z-10"
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/30 backdrop-blur-md border border-white/40 text-white flex items-center justify-center hover:bg-white/50 transition-all z-10"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -470,7 +460,7 @@ const HomeHero = ({
             </>
           ) : (
             /* Fallback when no slides */
-            <div className="w-full aspect-[4/5] md:aspect-square rounded-3xl bg-gray-100 dark:bg-[#1c1c1c] flex items-center justify-center text-gray-500 dark:text-gray-600">
+            <div className="w-full h-[400px] md:h-[500px] flex items-center justify-center text-gray-500 dark:text-gray-600">
               <TrendingUp className="w-12 h-12 opacity-30" />
             </div>
           )}
