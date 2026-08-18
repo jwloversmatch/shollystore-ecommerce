@@ -95,7 +95,10 @@ const HomeHero = ({
     return (
       <section className="min-h-screen flex flex-col justify-center items-center px-6 text-center pt-20 pb-10 bg-[#FCFAF5] dark:bg-transparent relative overflow-hidden">
         {/* Background gradient orbs */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        <div
+          className="absolute inset-0 pointer-events-none overflow-hidden"
+          aria-hidden="true"
+        >
           <motion.div
             animate={{ x: ["-20%", "20%", "-20%"], y: ["-10%", "10%", "-10%"] }}
             transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
@@ -188,7 +191,10 @@ const HomeHero = ({
             >
               <span style={{ color: cat.color }}>{cat.icon}</span>
               {cat.name}
-              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" aria-hidden="true" />
+              <ArrowRight
+                className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
+                aria-hidden="true"
+              />
             </motion.div>
           ))}
         </motion.div>
@@ -204,22 +210,39 @@ const HomeHero = ({
             <div className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white">
               {animatedProducts.toLocaleString()}+
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-semibold uppercase tracking-wider">Products</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-semibold uppercase tracking-wider">
+              Products
+            </div>
           </div>
-          <div className="w-px h-10 bg-gray-200 dark:bg-white/10" aria-hidden="true" />
+          <div
+            className="w-px h-10 bg-gray-200 dark:bg-white/10"
+            aria-hidden="true"
+          />
           <div className="text-center">
             <div className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white">
               {animatedCategories}+
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-semibold uppercase tracking-wider">Categories</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-semibold uppercase tracking-wider">
+              Categories
+            </div>
           </div>
-          <div className="w-px h-10 bg-gray-200 dark:bg-white/10" aria-hidden="true" />
+          <div
+            className="w-px h-10 bg-gray-200 dark:bg-white/10"
+            aria-hidden="true"
+          />
           <div className="text-center">
             <div className="flex items-center gap-1">
-              <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" aria-hidden="true" />
-              <span className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white">4.9</span>
+              <Star
+                className="w-5 h-5 text-yellow-500 fill-yellow-500"
+                aria-hidden="true"
+              />
+              <span className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white">
+                4.9
+              </span>
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-semibold uppercase tracking-wider">Rating</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-semibold uppercase tracking-wider">
+              Rating
+            </div>
           </div>
         </motion.div>
 
@@ -263,7 +286,11 @@ const HomeHero = ({
             Start Shopping
             <motion.span
               animate={{ x: [0, 6, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+              transition={{
+                repeat: Infinity,
+                duration: 1.5,
+                ease: "easeInOut",
+              }}
             >
               <ArrowRight className="w-5 h-5" aria-hidden="true" />
             </motion.span>
@@ -279,11 +306,20 @@ const HomeHero = ({
   return (
     <section className="relative max-w-7xl mx-auto px-6 pt-20 md:pt-32 pb-20 grid md:grid-cols-2 items-center gap-16">
       {/* Left column – unchanged */}
-      <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-6">
+      <motion.div
+        variants={stagger}
+        initial="hidden"
+        animate="visible"
+        className="space-y-6"
+      >
         <motion.span
           variants={fadeUp(0)}
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold border backdrop-blur-sm"
-          style={{ background: "rgba(232,98,42,0.1)", borderColor: "rgba(232,98,42,0.3)", color: ACCENT }}
+          style={{
+            background: "rgba(232,98,42,0.1)",
+            borderColor: "rgba(232,98,42,0.3)",
+            color: ACCENT,
+          }}
         >
           <Sparkles className="w-3.5 h-3.5" aria-hidden="true" /> {heroTagline}
           <motion.span
@@ -316,7 +352,10 @@ const HomeHero = ({
           )}
         </motion.h1>
 
-        <motion.p variants={fadeUp(0.14)} className="text-gray-500 dark:text-gray-400 text-lg max-w-lg leading-relaxed">
+        <motion.p
+          variants={fadeUp(0.14)}
+          className="text-gray-500 dark:text-gray-400 text-lg max-w-lg leading-relaxed"
+        >
           {heroDescription}
         </motion.p>
 
@@ -340,7 +379,10 @@ const HomeHero = ({
           ))}
         </motion.div>
 
-        <motion.div variants={fadeUp(0.24)} className="flex items-center gap-5 flex-wrap">
+        <motion.div
+          variants={fadeUp(0.24)}
+          className="flex items-center gap-5 flex-wrap"
+        >
           <motion.button
             whileHover={{ scale: 1.04, boxShadow: `0 14px 36px ${ACCENT}50` }}
             whileTap={{ scale: 0.96 }}
@@ -351,7 +393,11 @@ const HomeHero = ({
             Shop Now
             <motion.span
               animate={{ x: [0, 5, 0] }}
-              transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+              transition={{
+                repeat: Infinity,
+                duration: 1.8,
+                ease: "easeInOut",
+              }}
             >
               <ArrowRight className="w-5 h-5" aria-hidden="true" />
             </motion.span>
@@ -381,9 +427,15 @@ const HomeHero = ({
         </motion.div>
 
         {/* Trust badges for non-landing */}
-        <motion.div variants={fadeUp(0.3)} className="flex items-center gap-4 pt-2">
+        <motion.div
+          variants={fadeUp(0.3)}
+          className="flex items-center gap-4 pt-2"
+        >
           {trustBadges.map((badge) => (
-            <div key={badge.text} className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+            <div
+              key={badge.text}
+              className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"
+            >
               <span style={{ color: ACCENT }}>{badge.icon}</span>
               {badge.text}
             </div>
@@ -416,8 +468,10 @@ const HomeHero = ({
                     <img
                       src={getCloudinaryUrl(slides[currentIndex].imageUrl, 800)}
                       alt={slides[currentIndex].title || "Featured product"}
-                      onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
-                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = PLACEHOLDER;
+                      }}
+                      className="w-full h-full object-contain"
                     />
                   </motion.div>
                 </AnimatePresence>
