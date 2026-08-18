@@ -48,20 +48,18 @@ useFocusTrap(dialogRef, !!order, onClose);
       >
         <div
           ref={dialogRef}
-          className="rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto border"
+          className="rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto border bg-white dark:bg-[#141414] border-gray-200 dark:border-white/10"
           style={{
-            background: "#141414",
-            borderColor: "rgba(255,255,255,0.1)",
             boxShadow: "0 24px 80px rgba(0,0,0,0.7)",
           }}
         >
-          <div className="sticky top-0 bg-[#141414]/90 backdrop-blur-md p-4 sm:p-6 border-b border-white/10 flex justify-between items-center z-10">
-            <h2 id="order-detail-modal-title" className="text-xl font-bold text-white">
+          <div className="sticky top-0 backdrop-blur-md p-4 sm:p-6 border-b flex justify-between items-center z-10 bg-[#FCFAF5]/90 dark:bg-[#141414]/90 border-gray-200 dark:border-white/10">
+            <h2 id="order-detail-modal-title" className="text-xl font-bold text-gray-900 dark:text-white">
               Order #{order._id.slice(-8).toUpperCase()}
             </h2>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl hover:bg-white/10 transition"
+              className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition"
               aria-label="Close order details"
             >
               <X className="w-5 h-5 text-gray-400" aria-hidden="true" />
@@ -89,11 +87,11 @@ useFocusTrap(dialogRef, !!order, onClose);
               )}
             </div>
             {order.shippingAddress && (
-              <div className="bg-white/5 rounded-xl p-4 border border-white/5">
+              <div className="rounded-xl p-4 border bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/5">
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
                   Shipping Address
                 </p>
-                <p className="text-sm text-gray-300 flex items-start gap-2">
+                <p className="text-sm text-gray-700 dark:text-gray-300 flex items-start gap-2">
                   <MapPin className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" aria-hidden="true" />
                   {order.shippingAddress.address}, {order.shippingAddress.city}
                   {order.shippingAddress.postalCode
@@ -106,14 +104,14 @@ useFocusTrap(dialogRef, !!order, onClose);
               </div>
             )}
             <div>
-              <h3 className="font-semibold text-white mb-3">Items</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Items</h3>
               <div className="space-y-2">
                 {order.orderItems.map((item, i) => (
                   <div
                     key={i}
-                    className="flex justify-between items-center text-sm bg-white/5 rounded-lg p-3 border border-white/5"
+                    className="flex justify-between items-center text-sm rounded-lg p-3 border bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/5"
                   >
-                    <span className="text-gray-300 font-medium">
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">
                       {item.name}
                     </span>
                     <span className="text-gray-400">
@@ -123,14 +121,14 @@ useFocusTrap(dialogRef, !!order, onClose);
                 ))}
               </div>
             </div>
-            <div className="pt-4 border-t border-white/10 space-y-2">
+            <div className="pt-4 border-t border-gray-200 dark:border-white/10 space-y-2">
               {hasCoupon && (
                 <div>
                   <div className="flex justify-between text-sm text-gray-400">
                     <span>Subtotal</span>
                     <span>₦{subtotal.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-sm text-green-400">
+                  <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
                     <span className="flex items-center gap-1">
                       <Ticket className="w-3.5 h-3.5" aria-hidden="true" />
                       Discount ({order.couponCode})
@@ -140,7 +138,7 @@ useFocusTrap(dialogRef, !!order, onClose);
                 </div>
               )}
               <div className="flex justify-between items-center">
-                <span className="text-gray-300 font-semibold text-lg">
+                <span className="text-gray-700 dark:text-gray-300 font-semibold text-lg">
                   Total
                 </span>
                 <span className="text-2xl font-bold" style={{ color: "#e8622a" }}>

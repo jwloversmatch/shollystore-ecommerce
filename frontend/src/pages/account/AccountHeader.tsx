@@ -6,17 +6,15 @@ interface AccountHeaderProps {
   user: User | null;
 }
 
-const ACCENT = "#e8622a"; // your brand accent
+const ACCENT = "#e8622a";
 
 const AccountHeader = ({ user }: AccountHeaderProps) => (
   <motion.div
     initial={{ opacity: 0, x: -30 }}
     animate={{ opacity: 1, x: 0 }}
     transition={{ duration: 0.5 }}
-    className="flex items-center gap-6 rounded-2xl p-6 shadow-sm border"
+    className="flex items-center gap-6 rounded-2xl p-6 shadow-sm border bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.07]"
     style={{
-      background: "#141414",
-      borderColor: "rgba(255,255,255,0.07)",
       boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
     }}
   >
@@ -31,7 +29,7 @@ const AccountHeader = ({ user }: AccountHeaderProps) => (
         "U"}
     </div>
     <div>
-      <h1 className="text-2xl md:text-3xl font-bold text-white">
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
         {user?.name || "Welcome back!"}
       </h1>
       <p className="text-gray-400 flex items-center gap-1 mt-1">

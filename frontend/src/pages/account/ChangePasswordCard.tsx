@@ -22,9 +22,7 @@ const ChangePasswordCard = ({ onSubmit, changingPassword }: ChangePasswordCardPr
   };
 
   return (
-    <div className="rounded-2xl shadow-sm border p-6 sm:p-8 space-y-4"
-      style={{ background: "#141414", borderColor: "rgba(255,255,255,0.07)" }}
-    >
+    <div className="rounded-2xl shadow-sm border p-6 sm:p-8 space-y-4 bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.07]">
       <button
         onClick={() => setShowForm(!showForm)}
         className="text-sm font-medium hover:underline flex items-center gap-2"
@@ -43,8 +41,7 @@ const ChangePasswordCard = ({ onSubmit, changingPassword }: ChangePasswordCardPr
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full rounded-xl px-4 py-2.5 outline-none text-white placeholder-gray-500"
-              style={{ background: "#1c1c1c", border: "1px solid rgba(255,255,255,0.1)" }}
+              className="w-full rounded-xl px-4 py-2.5 outline-none placeholder-gray-500 bg-gray-50 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
               placeholder="Current password"
             />
           </div>
@@ -56,8 +53,7 @@ const ChangePasswordCard = ({ onSubmit, changingPassword }: ChangePasswordCardPr
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full rounded-xl px-4 py-2.5 outline-none text-white placeholder-gray-500"
-              style={{ background: "#1c1c1c", border: "1px solid rgba(255,255,255,0.1)" }}
+              className="w-full rounded-xl px-4 py-2.5 outline-none placeholder-gray-500 bg-gray-50 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
               placeholder="New password (min. 6 characters)"
             />
           </div>

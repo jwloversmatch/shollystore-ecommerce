@@ -15,10 +15,8 @@ const OrderCard = ({ order, onViewDetails }: OrderCardProps) => {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="rounded-xl shadow-sm border transition-all overflow-hidden"
+      className="rounded-xl shadow-sm border transition-all overflow-hidden bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.06]"
       style={{
-        background: "#141414",
-        borderColor: "rgba(255,255,255,0.06)",
         boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
       }}
     >
@@ -26,13 +24,13 @@ const OrderCard = ({ order, onViewDetails }: OrderCardProps) => {
         <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wider">Order #</p>
-            <p className="font-medium text-gray-300 text-sm mt-0.5">
+            <p className="font-medium text-gray-700 dark:text-gray-300 text-sm mt-0.5">
               {order._id.slice(-8).toUpperCase()}
             </p>
           </div>
           <div className="hidden sm:block">
             <p className="text-xs text-gray-500 uppercase tracking-wider">Date</p>
-            <p className="font-medium text-gray-300 text-sm mt-0.5 flex items-center gap-1">
+            <p className="font-medium text-gray-700 dark:text-gray-300 text-sm mt-0.5 flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-gray-500" />
               {new Date(order.createdAt).toLocaleDateString("en-NG", {
                 year: "numeric",
@@ -50,10 +48,10 @@ const OrderCard = ({ order, onViewDetails }: OrderCardProps) => {
           </div>
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wider">Total</p>
-            <p className="font-bold text-white text-sm mt-0.5">
+            <p className="font-bold text-gray-900 dark:text-white text-sm mt-0.5">
               ₦{order.totalPrice.toLocaleString()}
               {order.couponCode && (
-                <span className="ml-1 inline-flex items-center gap-0.5 bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
+                <span className="ml-1 inline-flex items-center gap-0.5 bg-green-500/20 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
                   <Ticket className="w-3 h-3" />
                   {order.couponCode}
                 </span>

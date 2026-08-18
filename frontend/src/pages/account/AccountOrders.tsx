@@ -30,19 +30,17 @@ const AccountOrders = ({ orders, loading, error, onViewOrder }: AccountOrdersPro
       <div className="rounded-xl p-4 flex items-center gap-3"
         style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)" }}
       >
-        <AlertCircle className="w-5 h-5 text-red-400" />
-        <span className="text-red-300">{error}</span>
+        <AlertCircle className="w-5 h-5 text-red-500 dark:text-red-400" />
+        <span className="text-red-600 dark:text-red-300">{error}</span>
       </div>
     );
   }
 
   if (orders.length === 0) {
     return (
-      <div className="rounded-2xl shadow-sm border p-10 text-center"
-        style={{ background: "#141414", borderColor: "rgba(255,255,255,0.07)" }}
-      >
-        <ShoppingBag className="w-16 h-16 mx-auto text-gray-600 mb-4" />
-        <h3 className="text-xl font-semibold text-white mb-2">No orders yet</h3>
+      <div className="rounded-2xl shadow-sm border p-10 text-center bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.07]">
+        <ShoppingBag className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No orders yet</h3>
         <p className="text-gray-400 mb-6">
           Looks like you haven't placed any orders. Start shopping!
         </p>

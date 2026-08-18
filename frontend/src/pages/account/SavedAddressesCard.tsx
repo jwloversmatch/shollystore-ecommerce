@@ -18,11 +18,9 @@ const SavedAddressesCard = ({
   onDelete,
   onSetDefault,
 }: SavedAddressesCardProps) => (
-  <div className="rounded-2xl shadow-sm border p-6 sm:p-8"
-    style={{ background: "#141414", borderColor: "rgba(255,255,255,0.07)" }}
-  >
+  <div className="rounded-2xl shadow-sm border p-6 sm:p-8 bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.07]">
     <div className="flex justify-between items-center mb-6">
-      <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
         <MapPin className="w-5 h-5" style={{ color: ACCENT }} />
         Saved Addresses
       </h3>
@@ -43,8 +41,7 @@ const SavedAddressesCard = ({
         {addresses.map((addr) => (
           <div
             key={addr._id}
-            className="flex items-center justify-between p-4 rounded-xl border"
-            style={{ background: "#1c1c1c", borderColor: "rgba(255,255,255,0.06)" }}
+            className="flex items-center justify-between p-4 rounded-xl border bg-gray-50 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.06]"
           >
             <div className="flex items-start gap-3">
               <div className="mt-0.5">
@@ -56,7 +53,7 @@ const SavedAddressesCard = ({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="font-medium text-sm text-gray-300">
+                  <p className="font-medium text-sm text-gray-700 dark:text-gray-300">
                     {addr.label}
                   </p>
                   {addr.isDefault && (
@@ -85,13 +82,13 @@ const SavedAddressesCard = ({
               )}
               <button
                 onClick={() => onEdit(addr)}
-                className="p-1.5 text-gray-500 hover:text-blue-400 transition rounded-lg hover:bg-white/5"
+                className="p-1.5 text-gray-500 hover:text-blue-400 transition rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
               >
                 <Edit3 className="w-4 h-4" />
               </button>
               <button
                 onClick={() => onDelete(addr._id)}
-                className="p-1.5 text-gray-500 hover:text-red-400 transition rounded-lg hover:bg-white/5"
+                className="p-1.5 text-gray-500 hover:text-red-400 transition rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
               >
                 <Trash2 className="w-4 h-4" />
               </button>

@@ -47,17 +47,16 @@ const AddressModal = ({
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
       >
         <div
-          className="rounded-2xl shadow-2xl p-6 max-w-md w-full border"
-          style={{ background: "#141414", borderColor: "rgba(255,255,255,0.1)" }}
+          className="rounded-2xl shadow-2xl p-6 max-w-md w-full border bg-white dark:bg-[#141414] border-gray-200 dark:border-white/10"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               {editingAddressId ? "Edit Address" : "New Address"}
             </h2>
             <button
               onClick={onClose}
-              className="p-1 rounded-lg hover:bg-white/10"
+              className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
             >
               <X className="w-5 h-5 text-gray-400" />
             </button>
@@ -68,8 +67,7 @@ const AddressModal = ({
               <select
                 value={addressForm.label}
                 onChange={(e) => onChange({ ...addressForm, label: e.target.value })}
-                className="w-full rounded-xl px-4 py-2.5 outline-none text-white text-sm"
-                style={{ background: "#1c1c1c", border: "1px solid rgba(255,255,255,0.1)" }}
+                className="w-full rounded-xl px-4 py-2.5 outline-none text-sm bg-gray-50 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
               >
                 <option value="Home">Home</option>
                 <option value="Office">Office</option>
@@ -82,8 +80,7 @@ const AddressModal = ({
                 type="text"
                 value={addressForm.address}
                 onChange={(e) => onChange({ ...addressForm, address: e.target.value })}
-                className="w-full rounded-xl px-4 py-2.5 outline-none text-white placeholder-gray-500 text-sm"
-                style={{ background: "#1c1c1c", border: "1px solid rgba(255,255,255,0.1)" }}
+                className="w-full rounded-xl px-4 py-2.5 outline-none placeholder-gray-500 text-sm bg-gray-50 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
                 placeholder="Street address"
               />
             </div>
@@ -93,8 +90,7 @@ const AddressModal = ({
                 type="text"
                 value={addressForm.city}
                 onChange={(e) => onChange({ ...addressForm, city: e.target.value })}
-                className="w-full rounded-xl px-4 py-2.5 outline-none text-white placeholder-gray-500 text-sm"
-                style={{ background: "#1c1c1c", border: "1px solid rgba(255,255,255,0.1)" }}
+                className="w-full rounded-xl px-4 py-2.5 outline-none placeholder-gray-500 text-sm bg-gray-50 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
                 placeholder="City"
               />
             </div>
@@ -110,11 +106,11 @@ const AddressModal = ({
                 Set as default address
               </label>
             </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-white/10">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-gray-400 rounded-xl transition text-sm font-medium hover:bg-white/5"
+                className="px-4 py-2 text-gray-400 rounded-xl transition text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5"
               >
                 Cancel
               </button>
