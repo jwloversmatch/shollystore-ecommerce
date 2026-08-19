@@ -20,7 +20,7 @@ import {
   Home, Cart, Checkout, Login, Register, ForgotPassword, ResetPassword,
   VerifyEmail, Account, ProductDetail, ShopPage,
   Dashboard, Products, Orders, HeroSlides, Categories, Coupons, Settings,
-  NotFound,
+  NotFound,Footer,
 } from "./routes/lazyPages";
 
 const ACCENT = "#e8622a";
@@ -57,6 +57,9 @@ function AppContent() {
 
   // Hide navbar on specific pages
   const hideNavbar = ["/cart", "/checkout", "/404"].includes(location.pathname);
+
+  // 👇 Added: Show footer ONLY on the Home page and Shop page
+  const showFooter = ["/", "/shop"].includes(location.pathname);
 
   return (
     <>
@@ -95,6 +98,9 @@ function AppContent() {
           </Routes>
         </ErrorBoundary>
       </Suspense>
+
+      {/* 👇 Added: Render the footer only if showFooter is true */}
+      {showFooter && <Footer />}
     </>
   );
 }

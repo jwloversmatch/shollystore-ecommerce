@@ -1,24 +1,24 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useSelector } from 'react-redux';
-import { motion } from 'framer-motion';
-import { Bell, BellOff, Loader2 } from 'lucide-react';
-import { RootState } from '../store';
+import { useState, useEffect, useCallback } from "react";
+import { useSelector } from "react-redux";
+import { motion } from "framer-motion";
+import { Bell, BellOff, Loader2 } from "lucide-react";
+import { RootState } from "../store";
 
-const ACCENT = '#e8622a';
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';   // ✅ added
+const ACCENT = "#e8622a";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api"; // ✅ added
 
 const urlBase64ToUint8Array = (base64String: string) => {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
 };
 
 const PushNotificationManager = () => {
   const { user } = useSelector((s: RootState) => s.auth);
 
   const [permission, setPermission] = useState<NotificationPermission>(() =>
-    'Notification' in window ? Notification.permission : 'default'
+    "Notification" in window ? Notification.permission : "default",
   );
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,7 +26,7 @@ const PushNotificationManager = () => {
   const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string;
 
   const checkSubscription = useCallback(async () => {
-    if ('serviceWorker' in navigator) {
+    if ("serviceWorker" in navigator) {
       const reg = await navigator.serviceWorker.getRegistration();
       const subscription = await reg?.pushManager.getSubscription();
       setSubscribed(!!subscription);
@@ -40,7 +40,7 @@ const PushNotificationManager = () => {
 
   const handleSubscribe = async () => {
     if (!VAPID_PUBLIC_KEY) {
-      console.error('VAPID public key missing');
+      console.error("VAPID public key missing");
       return;
     }
 
@@ -49,7 +49,7 @@ const PushNotificationManager = () => {
       const perm = await Notification.requestPermission();
       setPermission(perm);
 
-      if (perm !== 'granted') {
+      if (perm !== "granted") {
         setLoading(false);
         return;
       }
@@ -64,14 +64,14 @@ const PushNotificationManager = () => {
 
       // ✅ Correct URL
       await fetch(`${API_BASE}/push/subscribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(subscription.toJSON()),
       });
 
       setSubscribed(true);
     } catch (error) {
-      console.error('Failed to subscribe:', error);
+      console.error("Failed to subscribe:", error);
     } finally {
       setLoading(false);
     }
@@ -86,14 +86,14 @@ const PushNotificationManager = () => {
         await subscription.unsubscribe();
         // ✅ Correct URL
         await fetch(`${API_BASE}/push/unsubscribe`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ endpoint: subscription.endpoint }),
         });
         setSubscribed(false);
       }
     } catch (error) {
-      console.error('Failed to unsubscribe:', error);
+      console.error("Failed to unsubscribe:", error);
     } finally {
       setLoading(false);
     }
@@ -108,7 +108,7 @@ const PushNotificationManager = () => {
       transition={{ duration: 0.35 }}
       className="rounded-2xl border p-6 md:p-7 bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.07]"
       style={{
-        boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+        boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
       }}
     >
       {/* Header */}
@@ -120,11 +120,13 @@ const PushNotificationManager = () => {
           <Bell className="w-5 h-5" style={{ color: ACCENT }} />
         </div>
         <div>
-          <h3 className="text-base font-black text-gray-900 dark:text-white">Push Notifications</h3>
+          <h3 className="text-base font-black text-gray-900 dark:text-white">
+            Push Notifications
+          </h3>
           <p className="text-gray-500 text-xs">
             {subscribed
               ? "You're subscribed to instant updates"
-              : 'Get notified about new products and offers'}
+              : "Get notified about new products and offers"}
           </p>
         </div>
       </div>
@@ -134,11 +136,11 @@ const PushNotificationManager = () => {
         <div className="flex items-center gap-2">
           <span
             className={`w-2 h-2 rounded-full ${
-              subscribed ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'
+              subscribed ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-700"
             }`}
           />
           <span className="text-sm text-gray-400">
-            {subscribed ? 'Active' : 'Inactive'}
+            {subscribed ? "Active" : "Inactive"}
           </span>
         </div>
 
@@ -147,13 +149,13 @@ const PushNotificationManager = () => {
           disabled={loading}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${
             subscribed
-              ? 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/30'
-              : 'text-white'
+              ? "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/30"
+              : "text-white"
           }`}
           style={{
             background: subscribed ? undefined : ACCENT,
             borderColor: subscribed ? undefined : ACCENT,
-            boxShadow: subscribed ? 'none' : `0 4px 14px ${ACCENT}44`,
+            boxShadow: subscribed ? "none" : `0 4px 14px ${ACCENT}44`,
             opacity: loading ? 0.6 : 1,
           }}
         >
@@ -164,12 +166,12 @@ const PushNotificationManager = () => {
           ) : (
             <Bell className="w-4 h-4" />
           )}
-          {subscribed ? 'Unsubscribe' : 'Enable Notifications'}
+          {subscribed ? "Unsubscribe" : "Enable Notifications"}
         </button>
       </div>
 
       {/* Extra hint when denied */}
-      {permission === 'denied' && (
+      {permission === "denied" && (
         <p className="mt-3 text-xs text-red-600 dark:text-red-400">
           Notifications are blocked in your browser. Enable them in your device
           settings.

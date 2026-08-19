@@ -9,7 +9,6 @@ import {
   useGetCategoriesQuery,
   useGetPublicSettingsQuery,
 } from "../features/api/apiSlice";
-import Footer from "./Footer";
 import SEO from "../components/SEO";
 import StructuredData from "../components/StructuredData";
 import ProductQuickViewModal from "../components/ProductQuickViewModal";
@@ -254,7 +253,6 @@ const Home = () => {
         isOpen={!!modalProduct}
         onClose={() => setModalProduct(null)}
       />
-      <Footer />
     </main>
   );
 };

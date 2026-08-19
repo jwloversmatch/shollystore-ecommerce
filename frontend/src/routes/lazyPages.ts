@@ -22,3 +22,4 @@ export const Coupons = lazy(() => import("../pages/admin/Coupons"));
 export const Settings = lazy(() => import("../pages/admin/settings/"));
 
 export const NotFound = lazy(() => import("../pages/NotFound"));
+export const Footer = lazy(() => import("../pages/Footer"));
