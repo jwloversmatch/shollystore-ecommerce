@@ -6,20 +6,17 @@ const BREVO_API_KEY = process.env.BREVO_API_KEY;
 // NOTE: fallbacks below only apply if the env vars are unset — set MARKETING_SENDER_EMAIL /
 // MARKETING_SENDER_NAME (or BREVO_SENDER_EMAIL / BREVO_SENDER_NAME) to your actual
 // SPF/DKIM-verified sending domain in Brevo. This fallback is a placeholder, not a fix.
-const SENDER_EMAIL = process.env.MARKETING_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'store@sholexstore.com';
-const SENDER_NAME = process.env.MARKETING_SENDER_NAME || process.env.BREVO_SENDER_NAME || 'sholexStore';
+const SENDER_EMAIL = process.env.MARKETING_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'store@sholex.com';
+const SENDER_NAME = process.env.MARKETING_SENDER_NAME || process.env.BREVO_SENDER_NAME || 'sholex';
 const CLIENT_URL = process.env.CLIENT_URL || 'https://sholex.vercel.app';
+const STORE_LOGO_URL = process.env.STORE_LOGO_URL || `${CLIENT_URL}/icon/sholex-180.png`;
 
-// ---------- Shared SVG logo for all marketing emails ----------
-const LOGO_SVG = `
-<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#e8622a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:8px;">
-  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-  <polyline points="9 22 9 12 15 12 15 22"></polyline>
-</svg>`;
+// ---------- Shared logo image for all marketing emails ----------
+const LOGO_IMG = `<img src="${STORE_LOGO_URL}" alt="sholex" style="width:28px; height:28px; object-fit:contain; vertical-align:middle; margin-right:8px;" />`;
 
 const LOGO_HEADER = (storeName: string, extraStyle = '') => `
 <div style="text-align:center;padding:30px 20px;${extraStyle}">
-  ${LOGO_SVG}
+  ${LOGO_IMG}
   <h1 style="margin:10px 0 0;font-size:24px;letter-spacing:-0.5px;display:inline-block;vertical-align:middle;">
     Sholex<span style="color:#e8622a;">Store</span>
   </h1>
@@ -32,9 +29,9 @@ const getStoreName = async (): Promise<string> => {
   try {
     const settings = await Settings.findOne();
     const rawTitle = settings?.heroTitle || '';
-    cachedStoreName = rawTitle.replace(/\|/g, '').trim() || 'sholexStore';
+    cachedStoreName = rawTitle.replace(/\|/g, '').trim() || 'sholex';
   } catch {
-    cachedStoreName = 'sholexStore';
+    cachedStoreName = 'sholex';
   }
   return cachedStoreName;
 };
@@ -96,7 +93,7 @@ export const sendWelcomeEmail = async (recipient: { email: string; name?: string
     <style>body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f4f7f6}.wrap{padding:20px;background:#f4f7f6}.card{max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.05)}.content{padding:40px 30px;text-align:center}.content h2{color:#2d3748;font-size:22px}.content p{color:#4a5568;line-height:1.6;font-size:16px}.code{background:#fff5f0;border:2px dashed #e8622a;padding:12px 24px;font-size:20px;font-weight:700;color:#e8622a;letter-spacing:2px;display:inline-block;border-radius:12px;margin:10px 0}.btn{display:inline-block;background:#e8622a;color:#fff;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:600;font-size:16px;margin:8px;box-shadow:0 4px 12px rgba(232,98,42,.3)}.ftr{background:#f9fafb;padding:20px;text-align:center;color:#a0aec0;font-size:13px;border-top:1px solid #e2e8f0}.ftr a{color:#e8622a;text-decoration:none}</style></head>
     <body><div class="wrap"><div class="card">
       <div style="background:linear-gradient(135deg,#e8622a,#f59e0b);text-align:center;padding:35px 20px;">
-        ${LOGO_SVG}
+        ${LOGO_IMG}
         <h1 style="margin:8px 0 0;color:#fff;font-size:26px;display:inline-block;vertical-align:middle;">Welcome!</h1>
       </div>
       <div class="content">
@@ -154,7 +151,7 @@ export const sendPromoEmail = async (
     <style>body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f4f7f6}.wrap{padding:20px;background:#f4f7f6}.card{max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.05)}.content{padding:40px 30px;text-align:center}.discount{font-size:48px;font-weight:800;color:#e8622a;margin:10px 0}.code{background:#fff5f0;border:2px dashed #e8622a;padding:15px 30px;font-size:24px;font-weight:700;color:#e8622a;letter-spacing:3px;display:inline-block;border-radius:12px;margin:15px 0}.btn{display:inline-block;background:#e8622a;color:#fff;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:600;font-size:16px;box-shadow:0 4px 12px rgba(232,98,42,.3)}.expiry{color:#e53e3e;font-size:13px;margin-top:15px}.ftr{background:#f9fafb;padding:20px;text-align:center;color:#a0aec0;font-size:13px;border-top:1px solid #e2e8f0}.ftr a{color:#e8622a;text-decoration:none}</style></head>
     <body><div class="wrap"><div class="card">
       <div style="background:linear-gradient(135deg,#e8622a,#f59e0b);text-align:center;padding:35px 20px;">
-        ${LOGO_SVG}
+        ${LOGO_IMG}
         <h1 style="margin:8px 0 0;color:#fff;font-size:26px;display:inline-block;vertical-align:middle;">Special Offer!</h1>
       </div>
       <div class="content">

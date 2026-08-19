@@ -8,6 +8,7 @@ const BREVO_API_KEY  = process.env.BREVO_API_KEY;
 const SENDER_EMAIL   = process.env.BREVO_SENDER_EMAIL;
 const SENDER_NAME    = process.env.BREVO_SENDER_NAME;
 const CLIENT_URL     = process.env.CLIENT_URL;
+const STORE_LOGO_URL = process.env.STORE_LOGO_URL || `${CLIENT_URL}/icon/sholex-180.png`;
 
 if (!BREVO_API_KEY && process.env.NODE_ENV !== 'production') {
   console.warn("BREVO_API_KEY is missing. Emails will be simulated in development.");
@@ -47,8 +48,8 @@ const sendEmail = async (
         // are missing from .env. Set those to a domain you've verified (SPF+DKIM)
         // in Brevo — the fallback below is a placeholder, not a real fix for deliverability.
         sender: {
-          name:  SENDER_NAME  || "sholexStore",
-          email: SENDER_EMAIL || "noreply@sholexstore.com",
+          name:  SENDER_NAME  || "sholex",
+          email: SENDER_EMAIL || "noreply@sholex.com",
         },
         to: [{ email: to }],
         subject,
@@ -80,9 +81,10 @@ interface LayoutOptions {
   headerBg:  string;
   headerText?: string;
   body:      string;
+  logoUrl?:  string;
 }
 
-const layout = ({ headerBg, headerText = '#2d3748', body }: LayoutOptions) => `
+const layout = ({ headerBg, headerText = '#2d3748', body, logoUrl = STORE_LOGO_URL }: LayoutOptions) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -95,7 +97,6 @@ const layout = ({ headerBg, headerText = '#2d3748', body }: LayoutOptions) => `
     .hdr  { background:${headerBg}; padding:30px 20px; text-align:center; }
     .hdr h1 { margin:0; color:${headerText}; font-size:28px; letter-spacing:-.5px; display:flex; align-items:center; justify-content:center; gap:10px; }
     .hdr .logo { display:inline-block; vertical-align:middle; }
-    .hdr .logo svg { width:32px; height:32px; }
     .hdr .brand-name { color:${headerText}; }
     .hdr .brand-accent { color:#e8622a; }
     .body { padding:40px 30px; }
@@ -115,10 +116,7 @@ const layout = ({ headerBg, headerText = '#2d3748', body }: LayoutOptions) => `
       <div class="hdr">
         <h1>
           <span class="logo">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#e8622a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-              <polyline points="9 22 9 12 15 12 15 22"></polyline>
-            </svg>
+            <img src="${logoUrl}" alt="sholex" style="width:32px; height:32px; object-fit:contain; vertical-align:middle;" />
           </span>
           <span class="brand-name">Sholex<span class="brand-accent">Store</span></span>
         </h1>
@@ -134,7 +132,7 @@ const layout = ({ headerBg, headerText = '#2d3748', body }: LayoutOptions) => `
 </html>`;
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// AUTH EMAILS
+// AUTH EMAILS (All unchanged)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const sendVerificationEmail = async (
@@ -254,7 +252,7 @@ export const sendEmailChangeVerification = async (
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ORDER EMAILS
+// ORDER EMAILS (All unchanged)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const sendOrderConfirmation = async (
@@ -433,7 +431,7 @@ export const sendOrderStatusUpdateEmail = async (
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ADMIN NOTIFICATION
+// ADMIN NOTIFICATION (Unchanged)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const sendAdminOrderNotification = async (
