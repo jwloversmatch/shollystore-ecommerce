@@ -9,7 +9,7 @@ const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const SENDER_EMAIL = process.env.MARKETING_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'store@sholex.com';
 const SENDER_NAME = process.env.MARKETING_SENDER_NAME || process.env.BREVO_SENDER_NAME || 'sholex';
 const CLIENT_URL = process.env.CLIENT_URL || 'https://sholex.vercel.app';
-const STORE_LOGO_URL = process.env.STORE_LOGO_URL || `${CLIENT_URL}/icon/sholex-180.png`;
+const STORE_LOGO_URL = process.env.STORE_LOGO_URL || `${CLIENT_URL}/icons/sholex-180.png`;
 
 // ---------- Shared logo image for all marketing emails ----------
 const LOGO_IMG = `<img src="${STORE_LOGO_URL}" alt="sholex" style="width:28px; height:28px; object-fit:contain; vertical-align:middle; margin-right:8px;" />`;

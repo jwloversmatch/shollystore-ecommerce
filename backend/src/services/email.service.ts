@@ -8,7 +8,7 @@ const BREVO_API_KEY  = process.env.BREVO_API_KEY;
 const SENDER_EMAIL   = process.env.BREVO_SENDER_EMAIL;
 const SENDER_NAME    = process.env.BREVO_SENDER_NAME;
 const CLIENT_URL     = process.env.CLIENT_URL;
-const STORE_LOGO_URL = process.env.STORE_LOGO_URL || `${CLIENT_URL}/icon/sholex-180.png`;
+const STORE_LOGO_URL = process.env.STORE_LOGO_URL || `${CLIENT_URL}/icons/sholex-180.png`;
 
 if (!BREVO_API_KEY && process.env.NODE_ENV !== 'production') {
   console.warn("BREVO_API_KEY is missing. Emails will be simulated in development.");
