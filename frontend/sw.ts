@@ -1,8 +1,8 @@
 /// <reference lib="WebWorker" />
 
 import { clientsClaim } from 'workbox-core';
-import { precacheAndRoute } from 'workbox-precaching';
-import { registerRoute } from 'workbox-routing';
+import { precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching';
+import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { CacheFirst, StaleWhileRevalidate, NetworkFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
@@ -24,13 +24,18 @@ interface SyncEventLike {
 // Precache assets injected by vite-plugin-pwa
 precacheAndRoute(self.__WB_MANIFEST);
 
-// Clear old caches on activate
+// Clear old caches on activate (but keep our runtime caches and the precache)
+const RUNTIME_CACHE_NAMES = ['images', 'fonts', 'static-resources', 'api-cache'];
+
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== 'images' && name !== 'fonts' && name !== 'static-resources' && name !== 'api-cache')
+          .filter((name) => {
+            // Keep our runtime caches and any Workbox precache cache
+            return !RUNTIME_CACHE_NAMES.includes(name) && !name.startsWith('workbox-precache');
+          })
           .map((name) => caches.delete(name))
       );
     }).then(() => {
@@ -41,6 +46,16 @@ self.addEventListener('activate', (event) => {
 
 self.skipWaiting();
 clientsClaim();
+
+// ── Navigation fallback for SPA (offline support) ─────────────────────────
+const navigationHandler = createHandlerBoundToURL('/index.html');
+const navigationRoute = new NavigationRoute(navigationHandler, {
+  denylist: [
+    /^\/api\//,      // Don't fallback for API requests
+    /^\/oauth\//,    // Add other exclusions if needed
+  ],
+});
+registerRoute(navigationRoute);
 
 // ── Image Caching ──────────────────────────────────────────────────────────
 registerRoute(

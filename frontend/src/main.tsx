@@ -1,4 +1,3 @@
-// src/main.tsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
@@ -15,6 +14,14 @@ if ('serviceWorker' in navigator) {
         scope: '/',
       });
       console.log('SW registered:', registration.scope);
+
+      // 🔄 Automatically reload the page when a new service worker takes control
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
     } catch (error) {
       console.error('SW registration failed:', error);
     }
