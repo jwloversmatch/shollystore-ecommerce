@@ -28,6 +28,8 @@ const FeaturedProductsGrid = () => {
                     : product.category?.name ?? "General"
                 }
                 stock={product.stock}
+                compareAtPrice={product.compareAtPrice}
+                discountPercent={product.discount?.percentage}
                 onClick={() => navigate(`/products/${product.slug || product._id}`)}
               />
             </motion.div>
