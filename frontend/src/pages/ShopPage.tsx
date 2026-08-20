@@ -183,7 +183,6 @@ const ShopPage = () => {
     sortBy !== "newest";
 
   return (
-    // ShopPage - change the main element
     <main
       id="main-content"
       tabIndex={-1}
@@ -481,6 +480,9 @@ const ShopPage = () => {
                       image={product.images?.[0] || PLACEHOLDER}
                       category={getCategoryName(product)}
                       stock={product.stock}
+                      // 👇 Added missing sale props
+                      compareAtPrice={product.compareAtPrice}
+                      discountPercent={product.discount?.percentage}
                       onClick={() =>
                         navigate(`/products/${product.slug || product._id}`)
                       }
