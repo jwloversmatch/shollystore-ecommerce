@@ -164,16 +164,28 @@ const ProductCard = ({
             )}
 
             <div className="mt-auto space-y-1.5">
-              {/* Sale price + discount badge */}
+              {/* Sale price + discount badge. flex-nowrap on purpose — this
+                  row must never wrap to a second line, or cards with a sale
+                  would jump taller than their neighbors in the grid. If the
+                  original price is ever too wide for a narrow card, it
+                  truncates (min-w-0 + truncate); the discount badge is
+                  shrink-0 so it always stays fully readable since it's the
+                  part that actually drives the "buy now" impulse. */}
               {hasSale && (
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-nowrap">
                   {compareAtPrice && compareAtPrice > price && (
-                    <span className="text-xs text-gray-500 line-through" aria-label={`Original price: ₦${compareAtPrice.toLocaleString()}`}>
+                    <span
+                      className="text-xs text-gray-500 line-through truncate min-w-0"
+                      aria-label={`Original price: ₦${compareAtPrice.toLocaleString()}`}
+                    >
                       ₦{compareAtPrice.toLocaleString()}
                     </span>
                   )}
                   {discountPercent && discountPercent > 0 && (
-                    <span className="px-1.5 py-0.5 text-[10px] font-extrabold rounded-full bg-red-500/20 text-red-500 border border-red-500/30" aria-label={`${discountPercent}% discount`}>
+                    <span
+                      className="shrink-0 px-1.5 py-0.5 text-[10px] font-extrabold rounded-full bg-red-500/20 text-red-500 border border-red-500/30"
+                      aria-label={`${discountPercent}% discount`}
+                    >
                       -{discountPercent}%
                     </span>
                   )}
