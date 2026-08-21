@@ -18,6 +18,7 @@ interface ProductProps {
   compareAtPrice?: number;
   discountPercent?: number;
   variants?: IVariant[];
+  index?: number; // ✅ new optional prop for stagger
 }
 
 const FALLBACK = "https://via.placeholder.com/300x300?text=No+Image";
@@ -33,6 +34,7 @@ const ProductCard = ({
   compareAtPrice,
   discountPercent,
   variants,
+  index, // ✅ destructure
 }: ProductProps) => {
   const dispatch = useDispatch();
   const [imgError, setImgError] = useState(false);
@@ -66,19 +68,15 @@ const ProductCard = ({
   const sizes = "(max-width: 640px) 100vw, 50vw";
 
   return (
-    // Owns ONLY the scroll-triggered entrance (fade + slide up). Kept
-    // separate from the card below so Framer's leftover inline `transform`
-    // from this animation can never collide with the CSS-driven hover/focus
-    // lift on the element underneath — see note down there.
-    // h-full: lets this wrapper (and the article inside it) fill whatever
-    // height the parent grid cell stretches it to, so every card in a row
-    // ends up the same height regardless of how much optional content
-    // (sale badge, variants) any single product has.
     <motion.div
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-20px" }}
-      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      transition={{
+        duration: 0.5,
+        delay: index !== undefined ? (index % 4) * 0.06 : 0,
+        ease: [0.16, 1, 0.3, 1],
+      }}
       className="h-full"
     >
       <article
