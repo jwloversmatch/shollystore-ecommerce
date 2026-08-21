@@ -517,6 +517,7 @@ export const apiSlice = createApi({
 
 export const {
   useGetProductsQuery,
+  useLazyGetProductsQuery,   // ✅ add this line
   useGetProductBySlugQuery,
   useCreateOrderMutation,
   useVerifyPaymentQuery,

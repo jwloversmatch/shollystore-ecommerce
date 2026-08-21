@@ -13,6 +13,7 @@ import {
 import {
   useGetProductsQuery,
   useGetCategoryTreeQuery,
+  useLazyGetProductsQuery,
 } from "../features/api/apiSlice";
 import ProductCard from "../components/ProductCard";
 import ProductSearchBox from "../components/ProductSearchBox";
@@ -62,13 +63,13 @@ const ShopPage = () => {
   const [sortBy, setSortBy] = useState("newest");
   const limit = 12;
 
-  // Track if this is the initial mount to prevent resetting page on back navigation
+  // Lazy query for fallback suggestions when no exact matches
+  const [getFallbackProducts, fallbackResult] = useLazyGetProductsQuery();
+
   const isInitialMount = useRef(true);
 
-  // Get page from URL, default to 1
   const page = parseInt(searchParams.get("page") || "1") || 1;
 
-  // Update page in URL only
   const handlePageChange = useCallback(
     (newPage: number) => {
       const params = new URLSearchParams(searchParams);
@@ -83,7 +84,6 @@ const ShopPage = () => {
     [searchParams, setSearchParams],
   );
 
-  // Search effect - skip on initial mount
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -95,7 +95,7 @@ const ShopPage = () => {
       handlePageChange(1);
     }, 350);
     return () => clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   const currentNode = useMemo<CategoryNode | null>(() => {
@@ -152,6 +152,15 @@ const ShopPage = () => {
   }, [data?.products, sortBy]);
 
   const pagination = data?.pagination ?? { page: 1, pages: 1, total: 0 };
+
+  // When main products are empty and loading finished, fetch fallback suggestions
+  useEffect(() => {
+    if (!isLoading && products.length === 0 && fallbackResult.isUninitialized) {
+      getFallbackProducts({ limit: 8, featured: true });
+    }
+  }, [isLoading, products.length, fallbackResult.isUninitialized, getFallbackProducts]);
+
+  const fallbackProducts: ProductItem[] = fallbackResult.data?.products ?? [];
 
   const handleChipClick = (id: string | null) => {
     if (id === null) {
@@ -427,7 +436,7 @@ const ShopPage = () => {
             ))}
           </div>
         ) : products.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="flex flex-col items-center justify-center py-16 text-center">
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
               style={{ background: `${ACCENT}10` }}
@@ -442,8 +451,8 @@ const ShopPage = () => {
               No products found
             </h2>
             <p className="text-gray-500 dark:text-gray-400 max-w-md mb-6">
-              We couldn't find any products matching your criteria. Try
-              adjusting your search or filters.
+              We couldn't find any products matching your criteria. But here
+              are some popular items you might like.
             </p>
             <button
               onClick={clearAllFilters}
@@ -455,10 +464,51 @@ const ShopPage = () => {
             >
               Clear all filters
             </button>
+
+            {/* Fallback suggestions */}
+            {fallbackResult.isLoading ? (
+              <div className="mt-12 w-full grid grid-cols-2 md:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-48 rounded-2xl bg-gray-200 dark:bg-[#1c1c1c] animate-pulse"
+                  />
+                ))}
+              </div>
+            ) : fallbackProducts.length > 0 ? (
+              <div className="mt-12 w-full">
+                <h3 className="text-lg font-black text-gray-900 dark:text-white mb-4">
+                  You might like
+                </h3>
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  className="grid grid-cols-2 md:grid-cols-4 gap-4"
+                >
+                  {fallbackProducts.map((product, i) => (
+                    <ProductCard
+                      key={product._id}
+                      index={i}
+                      _id={product._id}
+                      name={product.name}
+                      price={product.price}
+                      image={product.images?.[0] || PLACEHOLDER}
+                      category={getCategoryName(product)}
+                      stock={product.stock}
+                      compareAtPrice={product.compareAtPrice}
+                      discountPercent={product.discount?.percentage}
+                      onClick={() =>
+                        navigate(`/products/${product.slug || product._id}`)
+                      }
+                    />
+                  ))}
+                </motion.div>
+              </div>
+            ) : null}
           </div>
         ) : (
           <>
-            {/* Animate product grid on page / filter change */}
             <motion.div
               key={`${page}-${categoryId || "all"}-${debouncedSearch}-${sortBy}`}
               initial={{ opacity: 0, y: 12 }}
