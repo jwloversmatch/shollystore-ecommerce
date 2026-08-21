@@ -233,7 +233,7 @@ export const getSalesAnalytics = async (
 ): Promise<void> => {
   try {
     const totalStats = await Order.aggregate([
-      { $match: { status: "Paid" } },
+      { $match: { status: { $nin: ["Pending", "Cancelled"] } } },
       {
         $group: {
           _id: null,
@@ -244,7 +244,8 @@ export const getSalesAnalytics = async (
     ]);
 
     const categorySales = await Order.aggregate([
-      { $match: { status: "Paid" } },
+      // Same filter here
+      { $match: { status: { $nin: ["Pending", "Cancelled"] } } },
       { $unwind: "$orderItems" },
       {
         $lookup: {
