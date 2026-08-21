@@ -38,6 +38,33 @@ const reduceStockForOrder = async (order: IOrder) => {
   }
 };
 
+// ─── Formatting helpers for CSV export ───────────────────────────────────────
+const formatAmount = (value: number): string => {
+  return Number(value).toLocaleString("en-NG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+const formatPaymentMethod = (method?: string): string => {
+  if (!method) return "N/A";
+
+  const map: Record<string, string> = {
+    bank_transfer: "Bank Transfer",
+    paystack: "Paystack",
+    card: "Card",
+    cash_on_delivery: "Cash on Delivery",
+    ussd: "USSD",
+    // add more as needed
+  };
+
+  return (
+    map[method] ||
+    method.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 // @desc    Get admin dashboard stats
 // @route   GET /api/admin/orders
 export const getAdminStats = async (
@@ -444,14 +471,14 @@ export const exportOrdersCSV = async (
           `"${order.user?.name || "N/A"}"`,
           `"${order.user?.email || "N/A"}"`,
           `"${order.user?.phone || "N/A"}"`,
-          order.totalPrice,
-          order.status,
-          order.paymentMethod || "N/A",
-          new Date(order.createdAt).toLocaleDateString("en-NG"),
+          `"${formatAmount(order.totalPrice)}"`,
+          `"${order.status}"`,                  
+          `"${formatPaymentMethod(order.paymentMethod)}"`, 
+          `"${new Date(order.createdAt).toLocaleDateString("en-NG")}"`,
           `"${items}"`,
           `"${shipping}"`,
-          order.couponCode || "N/A",
-          order.discount || 0,
+          `"${order.couponCode || "N/A"}"`,
+          `"${formatAmount(order.discount || 0)}"`, 
         ].join(",");
       })
       .join("\n");
