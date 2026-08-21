@@ -500,3 +500,42 @@ export const sendAdminOrderNotification = async (
 
   return sendEmail(adminEmail, subject, html);
 };
+
+// ─── LOW STOCK ADMIN NOTIFICATION (NEW) ───────────────────────────────────────
+
+export const sendLowStockAdminEmail = async (product: {
+  name: string;
+  sku?: string;
+  stock: number;
+  lowStockThreshold: number;
+}) => {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
+    console.warn("⚠️ ADMIN_EMAIL not set. Low stock notification skipped.");
+    return;
+  }
+
+  const html = layout({
+    headerBg: "#fee2e2",
+    headerText: "#991b1b",
+    body: `
+      <div class="body">
+        <h2>Low Stock Alert 🔻</h2>
+        <p>The following product is running low on stock:</p>
+        <div class="box">
+          <p><strong>Product:</strong> ${product.name}</p>
+          ${product.sku ? `<p><strong>SKU:</strong> ${product.sku}</p>` : ""}
+          <p><strong>Current Stock:</strong> ${product.stock}</p>
+          <p><strong>Threshold:</strong> ${product.lowStockThreshold}</p>
+        </div>
+        <p>Please restock this product soon.</p>
+      </div>`,
+  });
+
+  return sendEmail(
+    adminEmail,
+    `🔻 Low Stock Alert: ${product.name}`,
+    html,
+    `Low stock alert for ${product.name}. Current stock: ${product.stock}. Threshold: ${product.lowStockThreshold}.`,
+  );
+};

@@ -30,10 +30,12 @@ const reduceStockForOrder = async (order: IOrder) => {
         }
         product.stock = Math.max(0, product.stock - item.qty);
         await product.save();
+        await product.checkLowStockAndNotify(); // ✅ low stock check
       }
     } else {
       product.stock = Math.max(0, product.stock - item.qty);
       await product.save();
+      await product.checkLowStockAndNotify(); // ✅ low stock check
     }
   }
 };
@@ -55,7 +57,6 @@ const formatPaymentMethod = (method?: string): string => {
     card: "Card",
     cash_on_delivery: "Cash on Delivery",
     ussd: "USSD",
-    // add more as needed
   };
 
   return (

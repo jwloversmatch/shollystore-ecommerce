@@ -6,7 +6,7 @@ export interface IPushSubscription extends Document {
     p256dh: string;
     auth: string;
   };
-  userId?: mongoose.Types.ObjectId;   // optional: link to a user
+  userId?: mongoose.Types.ObjectId;   
   createdAt: Date;
 }
 

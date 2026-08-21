@@ -64,6 +64,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
 
     Object.assign(product, req.body);
     const updatedProduct = await product.save();
+    await product.checkLowStockAndNotify(); 
     res.json(updatedProduct);
   } catch (error: any) {
     res.status(500).json({ message: error.message });

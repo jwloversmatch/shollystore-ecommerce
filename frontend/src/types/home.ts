@@ -16,6 +16,8 @@ export interface ProductItem {
   images?: string[];
   category?: string | { _id: string; name: string; slug?: string; parent?: string | null };
   stock?: number;
+  lowStockThreshold?: number;
+  lowStockNotified?: boolean;
   slug?: string;
   description?: string;
   brand?: string;

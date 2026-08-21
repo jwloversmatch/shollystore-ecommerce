@@ -16,7 +16,7 @@ interface NotificationPayload {
   icon?: string;
   image?: string;
   data?: {
-    url?: string;   // destination when user clicks the notification
+    url?: string;   
   };
 }
 

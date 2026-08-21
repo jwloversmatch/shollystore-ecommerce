@@ -53,55 +53,69 @@ const ProductTable = ({ products, onEdit, onDelete, onMarketing, onStockUpdate, 
                 </td>
               </tr>
             ) : (
-              products.map((product) => (
-                <tr
-                  key={product._id}
-                  style={{ borderColor: tableBorder }}
+              products.map((product) => {
+                const threshold = product.lowStockThreshold ?? 5;
+                return (
+                  <tr
+                    key={product._id}
+                    style={{ borderColor: tableBorder }}
                     className="border-t transition-colors group hover:bg-white/[0.015]"
-                >
-                  <td className="px-4 sm:px-5 py-3">
-                    <div className="w-11 h-11 rounded-xl overflow-hidden border shrink-0" style={{ borderColor: inputBorder }}>
-                      <img
-                        src={getCloudinaryUrl(product.images?.[0] || PLACEHOLDER, 100)}
-                        alt={product.name}
-                        loading="lazy"
-                        onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </td>
-                  <td className="px-4 sm:px-5 py-3">
-                    <p className="font-bold text-sm max-w-[180px] truncate" style={{ color: textPrimary }}>{product.name}</p>
-                  </td>
-                  <td className="px-4 sm:px-5 py-3">
-                    <span className="font-black text-sm" style={{ color: ACCENT }}>₦{product.price.toLocaleString()}</span>
-                  </td>
-                  <td className="px-4 sm:px-5 py-3">
-                    <div className="flex items-center gap-1.5">
-                      <div className="flex items-center rounded-xl overflow-hidden" style={{ background: inputBg, border: `1px solid ${inputBorder}` }} role="group" aria-label={`Stock for ${product.name}: ${product.stock ?? 0}`}>
-                        <button onClick={() => onStockUpdate(product._id, product.stock ?? 0, -1)} className="w-7 h-7 flex items-center justify-center text-red-400 hover:bg-red-500/10 transition-colors" aria-label={`Decrease stock of ${product.name}`}><Minus className="w-3 h-3" aria-hidden="true" /></button>
-                        <span className={`w-8 text-center text-sm font-black ${(product.stock ?? 0) < 5 ? "text-red-400" : ""}`} style={{ color: (product.stock ?? 0) < 5 ? "#f87171" : textPrimary }} aria-live="polite">{product.stock ?? 0}</span>
-                        <button onClick={() => onStockUpdate(product._id, product.stock ?? 0, 1)} className="w-7 h-7 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/10 transition-colors" aria-label={`Increase stock of ${product.name}`}><Plus className="w-3 h-3" aria-hidden="true" /></button>
+                  >
+                    <td className="px-4 sm:px-5 py-3">
+                      <div className="w-11 h-11 rounded-xl overflow-hidden border shrink-0" style={{ borderColor: inputBorder }}>
+                        <img
+                          src={getCloudinaryUrl(product.images?.[0] || PLACEHOLDER, 100)}
+                          alt={product.name}
+                          loading="lazy"
+                          onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                      {(product.stock ?? 0) < 5 && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full font-extrabold" style={{ background: "rgba(239,68,68,0.12)", color: "#f87171" }}>Low</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 sm:px-5 py-3">
-                    <span className="text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full" style={{ background: `${ACCENT}14`, color: ACCENT, border: `1px solid ${ACCENT}25` }}>
-                      {getCategoryName(product.category)}
-                    </span>
-                  </td>
-                  <td className="px-4 sm:px-5 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => onEdit(product)} className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors" style={{ background: "rgba(59,130,246,0.1)", color: "#60a5fa", border: "1px solid rgba(59,130,246,0.2)" }} aria-label={`Edit ${product.name}`}><Edit2 className="w-3.5 h-3.5" aria-hidden="true" /></button>
-                      <button onClick={() => onDelete(product._id)} className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors" style={{ background: "rgba(239,68,68,0.08)", color: "#f87171", border: "1px solid rgba(239,68,68,0.18)" }} aria-label={`Delete ${product.name}`}><Trash2 className="w-3.5 h-3.5" aria-hidden="true" /></button>
-                      <button onClick={() => onMarketing(product)} className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors" style={{ background: "rgba(16,185,129,0.1)", color: "#34d399", border: "1px solid rgba(16,185,129,0.2)" }} aria-label={`Notify customers about ${product.name}`}><Mail className="w-3.5 h-3.5" aria-hidden="true" /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                    <td className="px-4 sm:px-5 py-3">
+                      <p className="font-bold text-sm max-w-[180px] truncate" style={{ color: textPrimary }}>{product.name}</p>
+                    </td>
+                    <td className="px-4 sm:px-5 py-3">
+                      <span className="font-black text-sm" style={{ color: ACCENT }}>₦{product.price.toLocaleString()}</span>
+                    </td>
+                    <td className="px-4 sm:px-5 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <div
+                          className="flex items-center rounded-xl overflow-hidden"
+                          style={{ background: inputBg, border: `1px solid ${inputBorder}` }}
+                          role="group"
+                          aria-label={`Stock for ${product.name}: ${product.stock ?? 0}. Low stock threshold is ${threshold}`}
+                        >
+                          <button onClick={() => onStockUpdate(product._id, product.stock ?? 0, -1)} className="w-7 h-7 flex items-center justify-center text-red-400 hover:bg-red-500/10 transition-colors" aria-label={`Decrease stock of ${product.name}`}><Minus className="w-3 h-3" aria-hidden="true" /></button>
+                          <span
+                            className={`w-8 text-center text-sm font-black ${(product.stock ?? 0) < threshold ? "text-red-400" : ""}`}
+                            style={{ color: (product.stock ?? 0) < threshold ? "#f87171" : textPrimary }}
+                            aria-live="polite"
+                          >
+                            {product.stock ?? 0}
+                          </span>
+                          <button onClick={() => onStockUpdate(product._id, product.stock ?? 0, 1)} className="w-7 h-7 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/10 transition-colors" aria-label={`Increase stock of ${product.name}`}><Plus className="w-3 h-3" aria-hidden="true" /></button>
+                        </div>
+                        {(product.stock ?? 0) < threshold && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-extrabold" style={{ background: "rgba(239,68,68,0.12)", color: "#f87171" }}>Low</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 sm:px-5 py-3">
+                      <span className="text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full" style={{ background: `${ACCENT}14`, color: ACCENT, border: `1px solid ${ACCENT}25` }}>
+                        {getCategoryName(product.category)}
+                      </span>
+                    </td>
+                    <td className="px-4 sm:px-5 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => onEdit(product)} className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors" style={{ background: "rgba(59,130,246,0.1)", color: "#60a5fa", border: "1px solid rgba(59,130,246,0.2)" }} aria-label={`Edit ${product.name}`}><Edit2 className="w-3.5 h-3.5" aria-hidden="true" /></button>
+                        <button onClick={() => onDelete(product._id)} className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors" style={{ background: "rgba(239,68,68,0.08)", color: "#f87171", border: "1px solid rgba(239,68,68,0.18)" }} aria-label={`Delete ${product.name}`}><Trash2 className="w-3.5 h-3.5" aria-hidden="true" /></button>
+                        <button onClick={() => onMarketing(product)} className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors" style={{ background: "rgba(16,185,129,0.1)", color: "#34d399", border: "1px solid rgba(16,185,129,0.2)" }} aria-label={`Notify customers about ${product.name}`}><Mail className="w-3.5 h-3.5" aria-hidden="true" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

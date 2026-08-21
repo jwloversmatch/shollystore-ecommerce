@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
+import { sendLowStockAdminEmail } from "../services/email.service";
 
 // ─── Variant sub‑schema ────────────────────────────────────────
 export interface IVariant {
@@ -84,6 +85,8 @@ export interface IProduct extends Document {
   category: mongoose.Types.ObjectId;
   images: string[];
   stock: number;
+  lowStockThreshold: number;
+  lowStockNotified: boolean;
   isFeatured: boolean;
 
   sku?: string;
@@ -135,6 +138,8 @@ export interface IProduct extends Document {
   customFields?: { key: string; value: string }[];
   createdAt: Date;
   updatedAt: Date;
+
+  checkLowStockAndNotify(): Promise<void>;
 }
 
 // ─── Product schema ────────────────────────────────────────────
@@ -148,6 +153,8 @@ const ProductSchema = new Schema<IProduct>(
     category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
     images: { type: [String], default: [] },
     stock: { type: Number, required: true, default: 0 },
+    lowStockThreshold: { type: Number, default: 5 },
+    lowStockNotified: { type: Boolean, default: false },
     isFeatured: { type: Boolean, default: false },
 
     sku: { type: String, unique: true, sparse: true },
@@ -211,5 +218,28 @@ ProductSchema.index({ "variants.sku": 1 });
 ProductSchema.index({ tags: 1 });
 ProductSchema.index({ isActive: 1 });
 ProductSchema.index({ category: 1 });
+
+// ─── Low stock notification helper ─────────────────────────────
+ProductSchema.methods.checkLowStockAndNotify = async function (): Promise<void> {
+  const threshold = this.lowStockThreshold ?? 5;
+
+  // Send alert only once when stock drops below threshold
+  if (this.stock < threshold && !this.lowStockNotified) {
+    await sendLowStockAdminEmail({
+      name: this.name,
+      sku: this.sku,
+      stock: this.stock,
+      lowStockThreshold: threshold,
+    });
+    this.lowStockNotified = true;
+    await this.save();
+  }
+
+  // Reset flag once stock is replenished above threshold
+  if (this.stock >= threshold && this.lowStockNotified) {
+    this.lowStockNotified = false;
+    await this.save();
+  }
+};
 
 export const Product = mongoose.model<IProduct>("Product", ProductSchema);
