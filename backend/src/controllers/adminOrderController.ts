@@ -283,7 +283,8 @@ export const getTopProducts = async (
 ): Promise<void> => {
   try {
     const topProducts = await Order.aggregate([
-      { $match: { status: "Paid" } },
+      // Include all sales that are not pending or cancelled
+      { $match: { status: { $nin: ["Pending", "Cancelled"] } } },
       { $unwind: "$orderItems" },
       {
         $group: {
