@@ -95,7 +95,7 @@ const ShopPage = () => {
       handlePageChange(1);
     }, 350);
     return () => clearTimeout(timeout);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   const currentNode = useMemo<CategoryNode | null>(() => {
@@ -120,6 +120,12 @@ const ShopPage = () => {
   }, [selectedPath, tree]);
 
   const categoryId = currentNode?._id || undefined;
+
+  // Fallback category: top-level parent of the current selection (or undefined if none)
+  const fallbackCategoryId = selectedPath.length > 0 ? selectedPath[0] : undefined;
+  const fallbackCategoryName = fallbackCategoryId
+    ? findNodeById(tree, fallbackCategoryId)?.name
+    : undefined;
 
   const { data, isLoading } = useGetProductsQuery({
     ...(categoryId ? { category: categoryId, includeSubcategories: true } : {}),
@@ -153,12 +159,16 @@ const ShopPage = () => {
 
   const pagination = data?.pagination ?? { page: 1, pages: 1, total: 0 };
 
-  // When main products are empty and loading finished, fetch fallback suggestions
+  // Trigger fallback query when main results are empty
   useEffect(() => {
-    if (!isLoading && products.length === 0 && fallbackResult.isUninitialized) {
-      getFallbackProducts({ limit: 8, featured: true });
+    if (!isLoading && products.length === 0) {
+      getFallbackProducts({
+        category: fallbackCategoryId,
+        includeSubcategories: true,
+        limit: 8,
+      });
     }
-  }, [isLoading, products.length, fallbackResult.isUninitialized, getFallbackProducts]);
+  }, [isLoading, products.length, fallbackCategoryId, getFallbackProducts]);
 
   const fallbackProducts: ProductItem[] = fallbackResult.data?.products ?? [];
 
@@ -451,8 +461,8 @@ const ShopPage = () => {
               No products found
             </h2>
             <p className="text-gray-500 dark:text-gray-400 max-w-md mb-6">
-              We couldn't find any products matching your criteria. But here
-              are some popular items you might like.
+              We couldn't find any products in this category. But here are
+              some other items you might like.
             </p>
             <button
               onClick={clearAllFilters}
@@ -478,7 +488,9 @@ const ShopPage = () => {
             ) : fallbackProducts.length > 0 ? (
               <div className="mt-12 w-full">
                 <h3 className="text-lg font-black text-gray-900 dark:text-white mb-4">
-                  You might like
+                  {fallbackCategoryName
+                    ? `More in ${fallbackCategoryName}`
+                    : "You might like"}
                 </h3>
                 <motion.div
                   initial={{ opacity: 0, y: 12 }}
