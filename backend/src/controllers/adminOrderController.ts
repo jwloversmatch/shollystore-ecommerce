@@ -244,7 +244,6 @@ export const getSalesAnalytics = async (
     ]);
 
     const categorySales = await Order.aggregate([
-      // Same filter here
       { $match: { status: { $nin: ["Pending", "Cancelled"] } } },
       { $unwind: "$orderItems" },
       {
@@ -266,6 +265,22 @@ export const getSalesAnalytics = async (
         },
       },
       { $sort: { revenue: -1 } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "_id",
+          foreignField: "_id",
+          as: "categoryInfo",
+        },
+      },
+      { $unwind: "$categoryInfo" },
+      {
+        $project: {
+          _id: "$categoryInfo.name", 
+          totalSales: 1,
+          revenue: 1,
+        },
+      },
     ]);
 
     res.json({
