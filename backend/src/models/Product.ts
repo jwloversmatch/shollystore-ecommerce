@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { sendLowStockAdminEmail } from "../services/email.service";
+import { sendLowStockAdminEmail, sendOutOfStockAdminEmail } from "../services/email.service";
 
 // ─── Variant sub‑schema ────────────────────────────────────────
 export interface IVariant {
@@ -87,6 +87,7 @@ export interface IProduct extends Document {
   stock: number;
   lowStockThreshold: number;
   lowStockNotified: boolean;
+  outOfStockNotified: boolean;
   isFeatured: boolean;
 
   sku?: string;
@@ -155,6 +156,7 @@ const ProductSchema = new Schema<IProduct>(
     stock: { type: Number, required: true, default: 0 },
     lowStockThreshold: { type: Number, default: 5 },
     lowStockNotified: { type: Boolean, default: false },
+    outOfStockNotified: { type: Boolean, default: false },
     isFeatured: { type: Boolean, default: false },
 
     sku: { type: String, unique: true, sparse: true },
@@ -219,12 +221,31 @@ ProductSchema.index({ tags: 1 });
 ProductSchema.index({ isActive: 1 });
 ProductSchema.index({ category: 1 });
 
-// ─── Low stock notification helper ─────────────────────────────
+// ─── Low stock & out-of-stock notification helper ──────────────
 ProductSchema.methods.checkLowStockAndNotify = async function (): Promise<void> {
   const threshold = this.lowStockThreshold ?? 5;
 
-  // Send alert only once when stock drops below threshold
-  if (this.stock < threshold && !this.lowStockNotified) {
+  // 1. Out-of-stock (stock === 0)
+  if (this.stock === 0 && !this.outOfStockNotified) {
+    await sendOutOfStockAdminEmail({
+      name: this.name,
+      sku: this.sku,
+      stock: this.stock,
+    });
+    this.outOfStockNotified = true;
+    this.lowStockNotified = true; 
+    await this.save();
+    return;
+  }
+
+  // 2. Reset out-of-stock flag when stock is replenished
+  if (this.stock > 0 && this.outOfStockNotified) {
+    this.outOfStockNotified = false;
+    await this.save();
+  }
+
+  // 3. Low stock (stock > 0 but below threshold)
+  if (this.stock > 0 && this.stock < threshold && !this.lowStockNotified) {
     await sendLowStockAdminEmail({
       name: this.name,
       sku: this.sku,
@@ -235,7 +256,7 @@ ProductSchema.methods.checkLowStockAndNotify = async function (): Promise<void> 
     await this.save();
   }
 
-  // Reset flag once stock is replenished above threshold
+  // 4. Reset low-stock flag when stock is above threshold
   if (this.stock >= threshold && this.lowStockNotified) {
     this.lowStockNotified = false;
     await this.save();

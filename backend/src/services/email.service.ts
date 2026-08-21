@@ -539,3 +539,40 @@ export const sendLowStockAdminEmail = async (product: {
     `Low stock alert for ${product.name}. Current stock: ${product.stock}. Threshold: ${product.lowStockThreshold}.`,
   );
 };
+
+// ─── OUT OF STOCK ADMIN NOTIFICATION (NEW) ────────────────────────────────────
+
+export const sendOutOfStockAdminEmail = async (product: {
+  name: string;
+  sku?: string;
+  stock: number;
+}) => {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
+    console.warn("⚠️ ADMIN_EMAIL not set. Out of stock notification skipped.");
+    return;
+  }
+
+  const html = layout({
+    headerBg: "#ef4444",
+    headerText: "#ffffff",
+    body: `
+      <div class="body">
+        <h2>Out of Stock Alert 🚫</h2>
+        <p>The following product is completely out of stock:</p>
+        <div class="box">
+          <p><strong>Product:</strong> ${product.name}</p>
+          ${product.sku ? `<p><strong>SKU:</strong> ${product.sku}</p>` : ""}
+          <p><strong>Current Stock:</strong> 0</p>
+        </div>
+        <p>This product is no longer available for purchase. Please restock urgently.</p>
+      </div>`,
+  });
+
+  return sendEmail(
+    adminEmail,
+    `🚫 Out of Stock: ${product.name}`,
+    html,
+    `Out of stock alert for ${product.name}. Current stock: 0.`,
+  );
+};
