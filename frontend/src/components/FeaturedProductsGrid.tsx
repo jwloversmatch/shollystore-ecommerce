@@ -13,7 +13,7 @@ const FeaturedProductsGrid = () => {
     <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
       {isLoading
         ? Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-64 rounded-2xl animate-pulse bg-[#141414]" />
+            <div key={i} className="h-64 rounded-2xl animate-pulse bg-gray-100 dark:bg-[#141414]" />
           ))
         : products.map((product) => (
             <motion.div key={product._id} layout>

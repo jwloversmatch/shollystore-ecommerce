@@ -290,8 +290,6 @@ const OrderSummary = ({ totalPrice, totalItems, onCheckout }: { totalPrice: numb
 const ClearCartModal = ({ isOpen, onClose, onConfirm, totalItems }: { isOpen: boolean; onClose: () => void; onConfirm: () => void; totalItems: number }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  // Focus trap: moves focus into the dialog on open, cycles Tab within it,
-  // closes on Escape, restores focus to the "Clear All" trigger on close.
 useFocusTrap(dialogRef, isOpen, onClose);
 
   return (

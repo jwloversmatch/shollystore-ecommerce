@@ -72,9 +72,6 @@ const Account = () => {
   const [changePassword, { isLoading: changingPassword }] =
     useChangePasswordMutation();
 
-  // Side effects (like navigation) belong in an effect, not directly in the
-  // render body — calling navigate() during render can misbehave under
-  // React Strict Mode's double-invocation.
   useEffect(() => {
     if (!user) {
       navigate("/login", { replace: true });
@@ -85,8 +82,6 @@ const Account = () => {
     return null;
   }
 
-  // Arrow-key navigation between tabs, per the standard ARIA tabs pattern
-  // implied by role="tablist" — Left/Right toggles, Home/End jump to ends.
   const handleTabKeyDown = (e: React.KeyboardEvent, current: "orders" | "profile") => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
     e.preventDefault();

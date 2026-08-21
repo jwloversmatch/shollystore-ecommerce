@@ -79,14 +79,11 @@ const Login = () => {
       dispatch(setCredentials({ user: res.user, token: res.token }));
       toast.success("Welcome back! 🎉");
 
-      // Admin always goes to /admin, users go to their intended page or /shop
       const destination =
         res.user.role === "admin" ? "/admin" : from || "/shop";
 
-      // Use navigate instead of window.location for SPA navigation
       navigate(destination, { replace: true });
     } catch {
-      // Error is already handled by RTK Query, just show toast
       toast.error("Login failed. Please check your credentials.");
     }
   };

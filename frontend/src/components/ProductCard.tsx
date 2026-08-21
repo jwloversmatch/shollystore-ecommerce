@@ -70,14 +70,19 @@ const ProductCard = ({
     // separate from the card below so Framer's leftover inline `transform`
     // from this animation can never collide with the CSS-driven hover/focus
     // lift on the element underneath — see note down there.
+    // h-full: lets this wrapper (and the article inside it) fill whatever
+    // height the parent grid cell stretches it to, so every card in a row
+    // ends up the same height regardless of how much optional content
+    // (sale badge, variants) any single product has.
     <motion.div
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-20px" }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      className="h-full"
     >
       <article
-        className="group relative flex flex-col rounded-2xl overflow-hidden border
+        className="group relative flex flex-col h-full rounded-2xl overflow-hidden border
           bg-white dark:bg-[#141414]
           border-gray-200 dark:border-white/[0.06]
           shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.3)]
@@ -138,7 +143,7 @@ const ProductCard = ({
           {/* Info section */}
           <div className="flex flex-col flex-1 p-4">
             <span
-              className="text-[10px] font-extrabold uppercase tracking-[0.2em] mb-1.5"
+              className="text-[10px] font-extrabold uppercase tracking-[0.2em] mb-1.5 truncate"
               style={{ color: accent }}
             >
               {category}
@@ -148,29 +153,44 @@ const ProductCard = ({
               {name}
             </h3>
 
-            {/* Variant pills */}
+            {/* Variant pills — capped to 3 (+N more) and never wrapping, so a
+                product with a long variant list can't stretch a whole grid
+                row taller than it needs to be. Individual pills truncate
+                too, as a second line of defense against long labels. */}
             {variants && variants.length > 0 && (
-              <div className="flex gap-1 mb-2 flex-wrap" aria-label="Available variants">
-                {variants.map((v, idx) => {
+              <div className="flex items-center gap-1 mb-2 flex-nowrap overflow-hidden" aria-label="Available variants">
+                {variants.slice(0, 3).map((v, idx) => {
                   const label = v.size || v.color || v.sku;
                   if (!label) return null;
                   return (
-                    <span key={idx} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                    <span
+                      key={idx}
+                      className="shrink-0 max-w-[56px] truncate text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                    >
                       {label}
                     </span>
                   );
                 })}
+                {variants.length > 3 && (
+                  <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                    +{variants.length - 3}
+                  </span>
+                )}
               </div>
             )}
 
+            {/* mt-auto pins this whole block to the bottom of the info
+                section. Combined with h-full on the article above, every
+                card's price/cart row lands on the same bottom line no
+                matter how much (or how little) content sits above it. */}
             <div className="mt-auto space-y-1.5">
               {/* Sale price + discount badge. flex-nowrap on purpose — this
                   row must never wrap to a second line, or cards with a sale
-                  would jump taller than their neighbors in the grid. If the
-                  original price is ever too wide for a narrow card, it
-                  truncates (min-w-0 + truncate); the discount badge is
-                  shrink-0 so it always stays fully readable since it's the
-                  part that actually drives the "buy now" impulse. */}
+                  would grow taller than they need to. If the original price
+                  is ever too wide for a narrow card, it truncates (min-w-0 +
+                  truncate); the discount badge is shrink-0 so it always
+                  stays fully readable since it's the part that actually
+                  drives the "buy now" impulse. */}
               {hasSale && (
                 <div className="flex items-center gap-1.5 flex-nowrap">
                   {compareAtPrice && compareAtPrice > price && (

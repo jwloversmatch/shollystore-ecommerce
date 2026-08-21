@@ -45,7 +45,6 @@ const socialIconSpring = {
   },
 };
 
-// ── Config — move to env vars or a CMS/settings endpoint when ready ─────────
 const BRAND_NAME = "Sholex";
 
 const contactInfo = {
@@ -108,7 +107,6 @@ const Footer = () => {
 
       setStatus("success");
       setEmail("");
-      // Reset to idle after a few seconds so the form is usable again
       setTimeout(() => setStatus("idle"), 4000);
     } catch {
       setStatus("error");
