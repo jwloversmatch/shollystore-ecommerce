@@ -63,8 +63,9 @@ const ShopPage = () => {
   const [sortBy, setSortBy] = useState("newest");
   const limit = 12;
 
-  // Lazy query for fallback suggestions when no exact matches
-  const [getFallbackProducts, fallbackResult] = useLazyGetProductsQuery();
+  // Lazy queries for fallback suggestions
+  const [getParentFallback, parentResult] = useLazyGetProductsQuery();
+  const [getGlobalFallback, globalResult] = useLazyGetProductsQuery();
 
   const isInitialMount = useRef(true);
 
@@ -121,11 +122,15 @@ const ShopPage = () => {
 
   const categoryId = currentNode?._id || undefined;
 
-  // Fallback category: top-level parent of the current selection (or undefined if none)
+  // Fallback parent category (top-level) info
   const fallbackCategoryId = selectedPath.length > 0 ? selectedPath[0] : undefined;
   const fallbackCategoryName = fallbackCategoryId
     ? findNodeById(tree, fallbackCategoryId)?.name
     : undefined;
+
+  // Safe arrays for fallback products
+  const parentFallbackProducts = parentResult.data?.products ?? [];
+  const globalFallbackProducts = globalResult.data?.products ?? [];
 
   const { data, isLoading } = useGetProductsQuery({
     ...(categoryId ? { category: categoryId, includeSubcategories: true } : {}),
@@ -159,18 +164,26 @@ const ShopPage = () => {
 
   const pagination = data?.pagination ?? { page: 1, pages: 1, total: 0 };
 
-  // Trigger fallback query when main results are empty
+  // Trigger fallback queries when main results are empty
   useEffect(() => {
     if (!isLoading && products.length === 0) {
-      getFallbackProducts({
-        category: fallbackCategoryId,
-        includeSubcategories: true,
-        limit: 8,
-      });
+      if (selectedPath.length > 0) {
+        getParentFallback({
+          category: fallbackCategoryId,
+          includeSubcategories: true,
+          limit: 8,
+        });
+      }
+      getGlobalFallback({ featured: true, limit: 8 });
     }
-  }, [isLoading, products.length, fallbackCategoryId, getFallbackProducts]);
-
-  const fallbackProducts: ProductItem[] = fallbackResult.data?.products ?? [];
+  }, [
+    isLoading,
+    products.length,
+    selectedPath,
+    fallbackCategoryId,
+    getParentFallback,
+    getGlobalFallback,
+  ]);
 
   const handleChipClick = (id: string | null) => {
     if (id === null) {
@@ -476,7 +489,7 @@ const ShopPage = () => {
             </button>
 
             {/* Fallback suggestions */}
-            {fallbackResult.isLoading ? (
+            {parentResult.isLoading || globalResult.isLoading ? (
               <div className="mt-12 w-full grid grid-cols-2 md:grid-cols-4 gap-4">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div
@@ -485,39 +498,67 @@ const ShopPage = () => {
                   />
                 ))}
               </div>
-            ) : fallbackProducts.length > 0 ? (
-              <div className="mt-12 w-full">
-                <h3 className="text-lg font-black text-gray-900 dark:text-white mb-4">
-                  {fallbackCategoryName
-                    ? `More in ${fallbackCategoryName}`
-                    : "You might like"}
-                </h3>
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  className="grid grid-cols-2 md:grid-cols-4 gap-4"
-                >
-                  {fallbackProducts.map((product, i) => (
-                    <ProductCard
-                      key={product._id}
-                      index={i}
-                      _id={product._id}
-                      name={product.name}
-                      price={product.price}
-                      image={product.images?.[0] || PLACEHOLDER}
-                      category={getCategoryName(product)}
-                      stock={product.stock}
-                      compareAtPrice={product.compareAtPrice}
-                      discountPercent={product.discount?.percentage}
-                      onClick={() =>
-                        navigate(`/products/${product.slug || product._id}`)
-                      }
-                    />
-                  ))}
-                </motion.div>
-              </div>
-            ) : null}
+            ) : (
+              <>
+                {parentFallbackProducts.length > 0 ? (
+                  <div className="mt-12 w-full">
+                    <h3 className="text-lg font-black text-gray-900 dark:text-white mb-4">
+                      More in {fallbackCategoryName}
+                    </h3>
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                      className="grid grid-cols-2 md:grid-cols-4 gap-4"
+                    >
+                      {parentFallbackProducts.map((product, i) => (
+                        <ProductCard
+                          key={product._id}
+                          index={i}
+                          _id={product._id}
+                          name={product.name}
+                          price={product.price}
+                          image={product.images?.[0] || PLACEHOLDER}
+                          category={getCategoryName(product)}
+                          stock={product.stock}
+                          compareAtPrice={product.compareAtPrice}
+                          discountPercent={product.discount?.percentage}
+                          onClick={() => navigate(`/products/${product.slug || product._id}`)}
+                        />
+                      ))}
+                    </motion.div>
+                  </div>
+                ) : globalFallbackProducts.length > 0 ? (
+                  <div className="mt-12 w-full">
+                    <h3 className="text-lg font-black text-gray-900 dark:text-white mb-4">
+                      Popular Products
+                    </h3>
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                      className="grid grid-cols-2 md:grid-cols-4 gap-4"
+                    >
+                      {globalFallbackProducts.map((product, i) => (
+                        <ProductCard
+                          key={product._id}
+                          index={i}
+                          _id={product._id}
+                          name={product.name}
+                          price={product.price}
+                          image={product.images?.[0] || PLACEHOLDER}
+                          category={getCategoryName(product)}
+                          stock={product.stock}
+                          compareAtPrice={product.compareAtPrice}
+                          discountPercent={product.discount?.percentage}
+                          onClick={() => navigate(`/products/${product.slug || product._id}`)}
+                        />
+                      ))}
+                    </motion.div>
+                  </div>
+                ) : null}
+              </>
+            )}
           </div>
         ) : (
           <>
