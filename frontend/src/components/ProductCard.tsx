@@ -134,7 +134,7 @@ const ProductCard = ({
             {isOutOfStock && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center" aria-hidden="true">
                 <span className="text-white font-bold text-sm bg-black/60 px-4 py-2 rounded-full">
-                  Unavailable
+                  Out of Stock
                 </span>
               </div>
             )}
