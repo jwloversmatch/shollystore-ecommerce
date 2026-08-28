@@ -57,9 +57,11 @@ const ShopPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: tree = [] } = useGetCategoryTreeQuery(undefined);
+  // Initialize search state from URL parameter
+  const initialSearch = searchParams.get("search") || "";
   const [selectedPath, setSelectedPath] = useState<string[]>([]);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [sortBy, setSortBy] = useState("newest");
   const limit = 12;
 
@@ -85,6 +87,7 @@ const ShopPage = () => {
     [searchParams, setSearchParams],
   );
 
+  // Debounce search input
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -98,6 +101,20 @@ const ShopPage = () => {
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
+
+  // Sync debounced search to URL
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (debouncedSearch) {
+      params.set("search", debouncedSearch);
+    } else {
+      params.delete("search");
+    }
+    // Only update if the URL actually changes
+    if (params.toString() !== searchParams.toString()) {
+      setSearchParams(params, { replace: true });
+    }
+  }, [debouncedSearch, searchParams, setSearchParams]);
 
   const currentNode = useMemo<CategoryNode | null>(() => {
     if (selectedPath.length === 0) return null;
