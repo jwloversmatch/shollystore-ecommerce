@@ -56,13 +56,19 @@ const SORT_OPTIONS = [
 const ShopPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data: tree = [] } = useGetCategoryTreeQuery(undefined);
+  // Explicitly type tree as CategoryNode[]
+  const { data: treeData } = useGetCategoryTreeQuery(undefined);
+  const tree: CategoryNode[] = useMemo(
+    () => (treeData as CategoryNode[]) || [],
+    [treeData],
+  );
 
-  // ─── Read initial state from URL ───────────────────────────────────────
+  // ─── Safe initial state from URL ────────────────────────────────────────
   const initialSearch = searchParams.get("search") || "";
   const categoryParam = searchParams.get("category") || "";
+  // Filter to only valid ObjectId strings (24 hex chars)
   const initialSelectedPath = categoryParam
-    ? categoryParam.split(",").filter(Boolean)
+    ? categoryParam.split(",").filter((id) => /^[0-9a-fA-F]{24}$/.test(id))
     : [];
   const sortParam = searchParams.get("sort") || "newest";
 
@@ -77,7 +83,6 @@ const ShopPage = () => {
   const [getGlobalFallback, globalResult] = useLazyGetProductsQuery();
 
   const isInitialMount = useRef(true);
-
   const page = parseInt(searchParams.get("page") || "1") || 1;
 
   const handlePageChange = useCallback(
@@ -94,13 +99,12 @@ const ShopPage = () => {
     [searchParams, setSearchParams],
   );
 
-  // ─── Debounce search input ─────────────────────────────────────────────
+  // Debounce search input
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
-
     const timeout = setTimeout(() => {
       setDebouncedSearch(search);
       handlePageChange(1);
@@ -109,44 +113,23 @@ const ShopPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  // ─── Sync debounced search to URL ──────────────────────────────────────
+  // ─── Single effect to synchronise search, category, and sort to URL ────
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
-    if (debouncedSearch) {
-      params.set("search", debouncedSearch);
-    } else {
-      params.delete("search");
-    }
-    if (params.toString() !== searchParams.toString()) {
-      setSearchParams(params, { replace: true });
-    }
-  }, [debouncedSearch, searchParams, setSearchParams]);
+    // Remove the keys we manage
+    params.delete("search");
+    params.delete("category");
+    params.delete("sort");
 
-  // ─── Sync selected category path to URL ────────────────────────────────
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams);
-    if (selectedPath.length > 0) {
-      params.set("category", selectedPath.join(","));
-    } else {
-      params.delete("category");
-    }
-    if (params.toString() !== searchParams.toString()) {
-      setSearchParams(params, { replace: true });
-    }
-  }, [selectedPath, searchParams, setSearchParams]);
+    if (debouncedSearch) params.set("search", debouncedSearch);
+    if (selectedPath.length > 0) params.set("category", selectedPath.join(","));
+    if (sortBy !== "newest") params.set("sort", sortBy);
 
-  // ─── Sync sort option to URL ───────────────────────────────────────────
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams);
-    if (sortBy !== "newest") {
-      params.set("sort", sortBy);
-    } else {
-      params.delete("sort");
-    }
+    // Only update if the URL actually changes
     if (params.toString() !== searchParams.toString()) {
       setSearchParams(params, { replace: true });
     }
-  }, [sortBy, searchParams, setSearchParams]);
+  }, [debouncedSearch, selectedPath, sortBy, searchParams, setSearchParams]);
 
   // ─── Derived state and queries ─────────────────────────────────────────
   const currentNode = useMemo<CategoryNode | null>(() => {
@@ -154,7 +137,7 @@ const ShopPage = () => {
     return findNodeById(tree, selectedPath[selectedPath.length - 1]);
   }, [selectedPath, tree]);
 
-  const childCategories = useMemo<CategoryNode[]>(() => {
+  const childCategories: CategoryNode[] = useMemo(() => {
     if (selectedPath.length === 0) return tree;
     return currentNode?.children || [];
   }, [currentNode, tree, selectedPath]);
@@ -171,14 +154,11 @@ const ShopPage = () => {
   }, [selectedPath, tree]);
 
   const categoryId = currentNode?._id || undefined;
-
-  // Fallback parent category (top-level) info
   const fallbackCategoryId = selectedPath.length > 0 ? selectedPath[0] : undefined;
   const fallbackCategoryName = fallbackCategoryId
     ? findNodeById(tree, fallbackCategoryId)?.name
     : undefined;
 
-  // Safe arrays for fallback products
   const parentFallbackProducts = parentResult.data?.products ?? [];
   const globalFallbackProducts = globalResult.data?.products ?? [];
 
@@ -205,7 +185,6 @@ const ShopPage = () => {
       case "name_desc":
         sorted.sort((a, b) => b.name.localeCompare(a.name));
         break;
-      case "newest":
       default:
         break;
     }
@@ -261,9 +240,7 @@ const ShopPage = () => {
   };
 
   const hasActiveFilters =
-    selectedPath.length > 0 ||
-    debouncedSearch.length > 0 ||
-    sortBy !== "newest";
+    selectedPath.length > 0 || debouncedSearch.length > 0 || sortBy !== "newest";
 
   // ─── Render ────────────────────────────────────────────────────────────
   return (
@@ -276,7 +253,7 @@ const ShopPage = () => {
         paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
       }}
     >
-      {/* ── Search + sort bar ──────────────────────────────────── */}
+      {/* Search + sort bar */}
       <div className="px-4 md:px-6 py-3 mb-6 bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
@@ -327,7 +304,7 @@ const ShopPage = () => {
         </div>
       </div>
 
-      {/* ── Page content ───────────────────────────────────────────────── */}
+      {/* Page content */}
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
           <div>
@@ -426,7 +403,7 @@ const ShopPage = () => {
               >
                 All
               </button>
-              {childCategories.map((child) => {
+              {childCategories.map((child: CategoryNode) => {
                 const isActive =
                   selectedPath[selectedPath.length - 1] === child._id;
                 return (
