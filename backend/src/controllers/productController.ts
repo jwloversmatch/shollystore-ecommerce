@@ -113,12 +113,6 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
           // Combine with any existing category filter (if provided) using $and
           const combinedFilter: any = { ...filter };
           if (combinedFilter.category) {
-            // If there was already a category filter, we need to intersect:
-            // For simplicity, we'll replace the category filter with this new one,
-            // but if the user is already inside a category and searches "men",
-            // they likely want "men" within that category. However, the current
-            // `filter.category` might be a single ObjectId or $in array. To be safe,
-            // we'll use $and with both conditions.
             const existingCategoryCondition = combinedFilter.category;
             delete combinedFilter.category;
             combinedFilter.$and = [
@@ -147,7 +141,32 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
       }
     }
 
-    // ── Multi‑word or no category match: text search ─────────────────────────
+    // ── Exact name match (case‑insensitive) ─────────────────────────────
+    const exactNameRegex = new RegExp(`^${escapeRegex(searchParam)}$`, "i");
+
+    const [exactProducts, exactTotal] = await Promise.all([
+      Product.find({ ...filter, name: exactNameRegex })
+        .populate("category", "name slug parent")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Product.countDocuments({ ...filter, name: exactNameRegex }),
+    ]);
+
+    if (exactTotal > 0) {
+      res.json({
+        products: exactProducts,
+        pagination: {
+          page,
+          limit,
+          total: exactTotal,
+          pages: Math.ceil(exactTotal / limit),
+        },
+      });
+      return;
+    }
+
+    // ── Multi‑word or no exact name match: text search ─────────────────────
     const searchFilters: any[] = [];
     if (filter.category) {
       if (filter.category.$in) {
@@ -254,7 +273,7 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
 };
 
 export const getProductSuggestions = async (req: Request, res: Response): Promise<void> => {
-  setNoCacheHeaders(res); // prevent caching (same as main search)
+  setNoCacheHeaders(res); 
 
   try {
     const raw = Array.isArray(req.query.q) ? req.query.q[0] : req.query.q;
@@ -304,11 +323,9 @@ export const getProductSuggestions = async (req: Request, res: Response): Promis
     }
 
     // ── Text‑based suggestions (fallback) ─────────────────────────────
-    // Build a regex that matches any of the search words as a prefix
-    // in any of the indexed fields.
     const prefixRegexes = words.map((word) => {
       const escaped = escapeRegex(word);
-      return new RegExp(`\\b${escaped}`, "i"); // word‑start match
+      return new RegExp(`\\b${escaped}`, "i"); 
     });
 
     const matchFilter: any = {
