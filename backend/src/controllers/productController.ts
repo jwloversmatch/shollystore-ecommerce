@@ -18,7 +18,6 @@ const escapeRegex = (str: string): string =>
 const toSearchWords = (query: string): string[] =>
   query.trim().split(/\s+/).filter(Boolean);
 
-// Helper to set aggressive no-cache headers
 const setNoCacheHeaders = (res: Response) => {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.set("Pragma", "no-cache");
@@ -28,13 +27,12 @@ const setNoCacheHeaders = (res: Response) => {
 };
 
 export const getProducts = async (req: Request, res: Response): Promise<void> => {
-  // Always disable caching for product endpoints (including no-search)
   setNoCacheHeaders(res);
 
   try {
     const filter: any = {};
 
-    // Category filtering (unchanged)
+    // Category filtering (if category query param is present)
     if (req.query.category) {
       const includeSubcategories = req.query.includeSubcategories !== "false";
       const categoryParam = Array.isArray(req.query.category)
@@ -75,7 +73,7 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
       ? (Array.isArray(req.query.search) ? String(req.query.search[0]) : String(req.query.search)).trim()
       : "";
 
-    // No search: simply return filtered products
+    // No search: standard category/filter browsing
     if (!searchParam) {
       const [products, total] = await Promise.all([
         Product.find(filter)
@@ -92,24 +90,44 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    // ── Special case: single-word search that exactly matches a category ──
+    // ── Single‑word search: try to match categories first ───────────────────
     const words = toSearchWords(searchParam);
     if (words.length === 1) {
       const term = words[0];
-      const categoryRegex = new RegExp(`^${escapeRegex(term)}$`, "i");
-      const matchedCategory = await Category.findOne({
+      // Match categories whose name or slug starts with the term (e.g., "men" -> "men's")
+      const categoryRegex = new RegExp(`^${escapeRegex(term)}`, "i");
+      const matchedCategories = await Category.find({
         $or: [{ name: categoryRegex }, { slug: categoryRegex }],
       });
 
-      if (matchedCategory) {
-        // Get all descendant category IDs
-        const categoryIds = await resolveCategoryWithDescendants(matchedCategory._id.toString());
-        if (categoryIds) {
-          // Replace or combine with existing category filter?
-          // For simplicity, we will AND with existing category filter if present,
-          // but typically user expects products in that category only.
-          const categoryFilter = { $in: categoryIds };
-          const combinedFilter = { ...filter, category: categoryFilter };
+      if (matchedCategories.length > 0) {
+        // Collect all descendant IDs from every matched category
+        const allCategoryIds = new Set<string>();
+        for (const cat of matchedCategories) {
+          const ids = await resolveCategoryWithDescendants(cat._id.toString());
+          if (ids) ids.forEach((id) => allCategoryIds.add(id.toString()));
+        }
+
+        if (allCategoryIds.size > 0) {
+          const categoryFilter = { $in: Array.from(allCategoryIds) };
+          // Combine with any existing category filter (if provided) using $and
+          const combinedFilter: any = { ...filter };
+          if (combinedFilter.category) {
+            // If there was already a category filter, we need to intersect:
+            // For simplicity, we'll replace the category filter with this new one,
+            // but if the user is already inside a category and searches "men",
+            // they likely want "men" within that category. However, the current
+            // `filter.category` might be a single ObjectId or $in array. To be safe,
+            // we'll use $and with both conditions.
+            const existingCategoryCondition = combinedFilter.category;
+            delete combinedFilter.category;
+            combinedFilter.$and = [
+              { category: categoryFilter },
+              { category: existingCategoryCondition },
+            ];
+          } else {
+            combinedFilter.category = categoryFilter;
+          }
 
           const [products, total] = await Promise.all([
             Product.find(combinedFilter)
@@ -129,8 +147,7 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
       }
     }
 
-    // ── Multi-word or non-category search: text search ──────────────────────
-    // Build Atlas Search filter array
+    // ── Multi‑word or no category match: text search ─────────────────────────
     const searchFilters: any[] = [];
     if (filter.category) {
       if (filter.category.$in) {
@@ -143,7 +160,6 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
       searchFilters.push({ equals: { path: "isFeatured", value: true } });
     }
 
-    // For text search, we require ALL words to match (AND)
     const mustClauses = words.map((word) => ({
       text: {
         query: word,
@@ -152,12 +168,11 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
       },
     }));
 
-    // Try Atlas Search first
     try {
       const pipeline: any[] = [
         {
           $search: {
-            index: "default", // ensure this matches your index name
+            index: "default",
             compound: {
               must: mustClauses,
               filter: searchFilters,
@@ -197,12 +212,11 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
         });
         return;
       }
-      // If zero results, fall through to regex fallback
     } catch (err) {
       console.warn("Atlas Search failed, using regex fallback:", err);
     }
 
-    // ── Regex fallback (AND semantics) ──────────────────────────────────────
+    // Regex fallback (AND semantics)
     const andConditions = words.map((word) => {
       const re = new RegExp(escapeRegex(word), "i");
       return {
@@ -240,7 +254,6 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
 };
 
 export const getProductSuggestions = async (req: Request, res: Response): Promise<void> => {
-  // Disable caching for suggestions
   setNoCacheHeaders(res);
 
   try {
@@ -260,7 +273,6 @@ export const getProductSuggestions = async (req: Request, res: Response): Promis
       isActive: { $ne: false },
     };
 
-    // Optional category scoping
     if (req.query.category) {
       const includeSubcategories = req.query.includeSubcategories !== "false";
       const categoryParam = Array.isArray(req.query.category)
@@ -303,7 +315,6 @@ export const getProductSuggestions = async (req: Request, res: Response): Promis
 };
 
 export const getProductBySlug = async (req: Request, res: Response): Promise<void> => {
-  // Disable caching for single product? Optional, but safe.
   setNoCacheHeaders(res);
 
   try {
