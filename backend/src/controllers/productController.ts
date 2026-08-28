@@ -12,17 +12,25 @@ const resolveCategoryWithDescendants = async (identifier: string) => {
   return [category._id, ...childIds];
 };
 
-// Escapes regex special characters so user input can't break the pattern
 const escapeRegex = (str: string): string =>
   str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-// Splits a query into individual words for the regex fallback path
 const toSearchWords = (query: string): string[] =>
   query.trim().split(/\s+/).filter(Boolean);
 
-// @desc    Fetch products (with optional filters, pagination)
-// @route   GET /api/products
+// Helper to set aggressive no-cache headers
+const setNoCacheHeaders = (res: Response) => {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+  res.removeHeader("ETag");
+  res.removeHeader("Last-Modified");
+};
+
 export const getProducts = async (req: Request, res: Response): Promise<void> => {
+  // Always disable caching for product endpoints (including no-search)
+  setNoCacheHeaders(res);
+
   try {
     const filter: any = {};
 
@@ -67,15 +75,8 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
       ? (Array.isArray(req.query.search) ? String(req.query.search[0]) : String(req.query.search)).trim()
       : "";
 
-    // Helper to set no-cache headers
-    const setNoCache = () => {
-      res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-      res.set("Pragma", "no-cache");
-      res.set("Expires", "0");
-    };
-
+    // No search: simply return filtered products
     if (!searchParam) {
-      // No search – do not set no-cache (can be cached)
       const [products, total] = await Promise.all([
         Product.find(filter)
           .populate("category", "name slug parent")
@@ -91,46 +92,74 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    // For any search, prevent caching
-    setNoCache();
-
-    // Split search into individual words for AND matching
+    // ── Special case: single-word search that exactly matches a category ──
     const words = toSearchWords(searchParam);
-    if (words.length === 0) {
-      // Should never happen because searchParam is non-empty after trim
-      words.push(searchParam);
-    }
+    if (words.length === 1) {
+      const term = words[0];
+      const categoryRegex = new RegExp(`^${escapeRegex(term)}$`, "i");
+      const matchedCategory = await Category.findOne({
+        $or: [{ name: categoryRegex }, { slug: categoryRegex }],
+      });
 
-    // ── Attempt Atlas Search with AND semantics ────────────────
-    try {
-      // Build Atlas Search filter array
-      const searchFilters: any[] = [];
-      if (filter.category) {
-        if (filter.category.$in) {
-          searchFilters.push({ in: { path: "category", value: filter.category.$in } });
-        } else {
-          searchFilters.push({ equals: { path: "category", value: filter.category } });
+      if (matchedCategory) {
+        // Get all descendant category IDs
+        const categoryIds = await resolveCategoryWithDescendants(matchedCategory._id.toString());
+        if (categoryIds) {
+          // Replace or combine with existing category filter?
+          // For simplicity, we will AND with existing category filter if present,
+          // but typically user expects products in that category only.
+          const categoryFilter = { $in: categoryIds };
+          const combinedFilter = { ...filter, category: categoryFilter };
+
+          const [products, total] = await Promise.all([
+            Product.find(combinedFilter)
+              .populate("category", "name slug parent")
+              .sort({ createdAt: -1 })
+              .skip(skip)
+              .limit(limit),
+            Product.countDocuments(combinedFilter),
+          ]);
+
+          res.json({
+            products,
+            pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+          });
+          return;
         }
       }
-      if (filter.isFeatured === true) {
-        searchFilters.push({ equals: { path: "isFeatured", value: true } });
+    }
+
+    // ── Multi-word or non-category search: text search ──────────────────────
+    // Build Atlas Search filter array
+    const searchFilters: any[] = [];
+    if (filter.category) {
+      if (filter.category.$in) {
+        searchFilters.push({ in: { path: "category", value: filter.category.$in } });
+      } else {
+        searchFilters.push({ equals: { path: "category", value: filter.category } });
       }
+    }
+    if (filter.isFeatured === true) {
+      searchFilters.push({ equals: { path: "isFeatured", value: true } });
+    }
 
-      // Create a must clause that requires each word to appear in at least one field
-      const mustClauses = words.map((word) => ({
-        text: {
-          query: word,
-          path: ["name", "description", "brand", "tags", "sku"],
-          fuzzy: { maxEdits: 2 },
-        },
-      }));
+    // For text search, we require ALL words to match (AND)
+    const mustClauses = words.map((word) => ({
+      text: {
+        query: word,
+        path: ["name", "description", "brand", "tags", "sku"],
+        fuzzy: { maxEdits: 2 },
+      },
+    }));
 
+    // Try Atlas Search first
+    try {
       const pipeline: any[] = [
         {
           $search: {
-            index: "default", // confirm this matches your index name
+            index: "default", // ensure this matches your index name
             compound: {
-              must: mustClauses,  // ALL words must match
+              must: mustClauses,
               filter: searchFilters,
             },
           },
@@ -168,13 +197,12 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
         });
         return;
       }
-      // If zero results, fall back to regex
+      // If zero results, fall through to regex fallback
     } catch (err) {
       console.warn("Atlas Search failed, using regex fallback:", err);
     }
 
-    // ── Regex fallback with AND semantics ─────────────────────
-    // Create an $and array: for each word, we require it to appear in at least one field
+    // ── Regex fallback (AND semantics) ──────────────────────────────────────
     const andConditions = words.map((word) => {
       const re = new RegExp(escapeRegex(word), "i");
       return {
@@ -211,15 +239,11 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-// @desc    Lightweight autocomplete suggestions as the user types
-// @route   GET /api/products/suggestions?q=...&category=...
 export const getProductSuggestions = async (req: Request, res: Response): Promise<void> => {
-  try {
-    // Prevent caching for suggestions
-    res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-    res.set("Pragma", "no-cache");
-    res.set("Expires", "0");
+  // Disable caching for suggestions
+  setNoCacheHeaders(res);
 
+  try {
     const raw = Array.isArray(req.query.q) ? req.query.q[0] : req.query.q;
     const query = String(raw || "").trim();
 
@@ -236,7 +260,7 @@ export const getProductSuggestions = async (req: Request, res: Response): Promis
       isActive: { $ne: false },
     };
 
-    // Category scoping (same as before)
+    // Optional category scoping
     if (req.query.category) {
       const includeSubcategories = req.query.includeSubcategories !== "false";
       const categoryParam = Array.isArray(req.query.category)
@@ -278,9 +302,10 @@ export const getProductSuggestions = async (req: Request, res: Response): Promis
   }
 };
 
-// @desc    Get a single product by slug
-// @route   GET /api/products/:slug
 export const getProductBySlug = async (req: Request, res: Response): Promise<void> => {
+  // Disable caching for single product? Optional, but safe.
+  setNoCacheHeaders(res);
+
   try {
     const product = await Product.findOne({ slug: req.params.slug })
       .populate("category", "name slug parent")
