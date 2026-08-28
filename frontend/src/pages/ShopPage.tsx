@@ -57,12 +57,19 @@ const ShopPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: tree = [] } = useGetCategoryTreeQuery(undefined);
-  // Initialize search state from URL parameter
+
+  // ─── Read initial state from URL ───────────────────────────────────────
   const initialSearch = searchParams.get("search") || "";
-  const [selectedPath, setSelectedPath] = useState<string[]>([]);
+  const categoryParam = searchParams.get("category") || "";
+  const initialSelectedPath = categoryParam
+    ? categoryParam.split(",").filter(Boolean)
+    : [];
+  const sortParam = searchParams.get("sort") || "newest";
+
+  const [selectedPath, setSelectedPath] = useState<string[]>(initialSelectedPath);
   const [search, setSearch] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
-  const [sortBy, setSortBy] = useState("newest");
+  const [sortBy, setSortBy] = useState(sortParam);
   const limit = 12;
 
   // Lazy queries for fallback suggestions
@@ -87,7 +94,7 @@ const ShopPage = () => {
     [searchParams, setSearchParams],
   );
 
-  // Debounce search input
+  // ─── Debounce search input ─────────────────────────────────────────────
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -102,7 +109,7 @@ const ShopPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  // Sync debounced search to URL
+  // ─── Sync debounced search to URL ──────────────────────────────────────
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
     if (debouncedSearch) {
@@ -110,12 +117,38 @@ const ShopPage = () => {
     } else {
       params.delete("search");
     }
-    // Only update if the URL actually changes
     if (params.toString() !== searchParams.toString()) {
       setSearchParams(params, { replace: true });
     }
   }, [debouncedSearch, searchParams, setSearchParams]);
 
+  // ─── Sync selected category path to URL ────────────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (selectedPath.length > 0) {
+      params.set("category", selectedPath.join(","));
+    } else {
+      params.delete("category");
+    }
+    if (params.toString() !== searchParams.toString()) {
+      setSearchParams(params, { replace: true });
+    }
+  }, [selectedPath, searchParams, setSearchParams]);
+
+  // ─── Sync sort option to URL ───────────────────────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (sortBy !== "newest") {
+      params.set("sort", sortBy);
+    } else {
+      params.delete("sort");
+    }
+    if (params.toString() !== searchParams.toString()) {
+      setSearchParams(params, { replace: true });
+    }
+  }, [sortBy, searchParams, setSearchParams]);
+
+  // ─── Derived state and queries ─────────────────────────────────────────
   const currentNode = useMemo<CategoryNode | null>(() => {
     if (selectedPath.length === 0) return null;
     return findNodeById(tree, selectedPath[selectedPath.length - 1]);
@@ -202,6 +235,7 @@ const ShopPage = () => {
     getGlobalFallback,
   ]);
 
+  // ─── Event handlers ─────────────────────────────────────────────────────
   const handleChipClick = (id: string | null) => {
     if (id === null) {
       setSelectedPath([]);
@@ -231,6 +265,7 @@ const ShopPage = () => {
     debouncedSearch.length > 0 ||
     sortBy !== "newest";
 
+  // ─── Render ────────────────────────────────────────────────────────────
   return (
     <main
       id="main-content"
