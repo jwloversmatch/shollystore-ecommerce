@@ -175,8 +175,17 @@ export const getProductSuggestions = async (req: Request, res: Response): Promis
       return;
     }
 
-    // Build category filter if present (same as main search)
-    const filter: any = {};
+    // Escape regex special characters
+    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // Match words that start with the query, case‑insensitive
+    const prefixRegex = new RegExp(`\\b${escaped}`, "i");
+
+    const matchFilter: any = {
+      name: prefixRegex,
+      isActive: { $ne: false },
+    };
+
+    // Optional category scoping (same as before)
     if (req.query.category) {
       const includeSubcategories = req.query.includeSubcategories !== "false";
       const categoryParam = Array.isArray(req.query.category)
@@ -186,55 +195,32 @@ export const getProductSuggestions = async (req: Request, res: Response): Promis
       if (includeSubcategories) {
         const categoryIds = await resolveCategoryWithDescendants(categoryParam);
         if (categoryIds) {
-          filter.category = { $in: categoryIds };
+          matchFilter.category = { $in: categoryIds };
         }
       } else {
         const isObjectId = /^[0-9a-fA-F]{24}$/.test(categoryParam);
         if (isObjectId) {
-          filter.category = categoryParam;
+          matchFilter.category = categoryParam;
         } else {
           const category = await Category.findOne({ slug: categoryParam });
           if (category) {
-            filter.category = category._id;
+            matchFilter.category = category._id;
           }
         }
       }
     }
 
-    const searchFilters = buildSearchFilterArray(filter);
+    const results = await Product.find(matchFilter, {
+      name: 1,
+      slug: 1,
+      price: 1,
+      images: 1,
+      category: 1,
+    })
+      .limit(8)
+      .populate("category", "name slug")
+      .lean();
 
-    const pipeline: any[] = [
-      {
-        $search: {
-          index: "default",
-          compound: {
-            must: [
-              {
-                autocomplete: {
-                  query,
-                  path: "name",
-                  fuzzy: { maxEdits: 1 },
-                },
-              },
-            ],
-            filter: searchFilters,
-          },
-        },
-      },
-      { $limit: 8 },
-      {
-        $lookup: {
-          from: "categories",
-          localField: "category",
-          foreignField: "_id",
-          as: "category",
-        },
-      },
-      { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
-      { $project: { name: 1, slug: 1, price: 1, images: 1, category: 1 } },
-    ];
-
-    const results = await Product.aggregate(pipeline);
     res.json({ suggestions: results });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
