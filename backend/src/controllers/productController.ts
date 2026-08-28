@@ -254,7 +254,7 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
 };
 
 export const getProductSuggestions = async (req: Request, res: Response): Promise<void> => {
-  setNoCacheHeaders(res);
+  setNoCacheHeaders(res); // prevent caching (same as main search)
 
   try {
     const raw = Array.isArray(req.query.q) ? req.query.q[0] : req.query.q;
@@ -265,14 +265,63 @@ export const getProductSuggestions = async (req: Request, res: Response): Promis
       return;
     }
 
-    const escaped = escapeRegex(query);
-    const prefixRegex = new RegExp(`\\b${escaped}`, "i");
+    const words = toSearchWords(query);
+
+    // ── Single‑word search: try to match a category first ─────────────
+    if (words.length === 1) {
+      const term = words[0];
+      const categoryRegex = new RegExp(`^${escapeRegex(term)}`, "i");
+      const matchedCategories = await Category.find({
+        $or: [{ name: categoryRegex }, { slug: categoryRegex }],
+      }).limit(5); // limit to 5 categories max
+
+      if (matchedCategories.length > 0) {
+        // Collect all descendant category IDs
+        const allCategoryIds = new Set<string>();
+        for (const cat of matchedCategories) {
+          const ids = await resolveCategoryWithDescendants(cat._id.toString());
+          if (ids) ids.forEach((id) => allCategoryIds.add(id.toString()));
+        }
+
+        if (allCategoryIds.size > 0) {
+          // Find products in those categories (limited to 8)
+          const products = await Product.find({
+            category: { $in: Array.from(allCategoryIds) },
+            isActive: { $ne: false },
+          })
+            .select("name slug price images category")
+            .limit(8)
+            .populate("category", "name slug")
+            .lean();
+
+          if (products.length > 0) {
+            res.json({ suggestions: products });
+            return;
+          }
+          // If no products in those categories, fall through to text search
+        }
+      }
+    }
+
+    // ── Text‑based suggestions (fallback) ─────────────────────────────
+    // Build a regex that matches any of the search words as a prefix
+    // in any of the indexed fields.
+    const prefixRegexes = words.map((word) => {
+      const escaped = escapeRegex(word);
+      return new RegExp(`\\b${escaped}`, "i"); // word‑start match
+    });
 
     const matchFilter: any = {
-      name: prefixRegex,
       isActive: { $ne: false },
+      $or: prefixRegexes.flatMap((re) => [
+        { name: re },
+        { brand: re },
+        { tags: re },
+        { sku: re },
+      ]),
     };
 
+    // Optional category scoping (if category query param is present)
     if (req.query.category) {
       const includeSubcategories = req.query.includeSubcategories !== "false";
       const categoryParam = Array.isArray(req.query.category)
