@@ -39,7 +39,7 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
   try {
     const filter: any = {};
 
-    // Category filtering (same as original)
+    // Category filtering (unchanged from your original)
     if (req.query.category) {
       const includeSubcategories = req.query.includeSubcategories !== "false";
       const categoryParam = Array.isArray(req.query.category)
@@ -68,12 +68,10 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
       }
     }
 
-    // Featured filter
     if (req.query.featured === "true") {
       filter.isFeatured = true;
     }
 
-    // Pagination
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 12;
     const skip = (page - 1) * limit;
@@ -83,7 +81,6 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
       : "";
 
     if (!searchParam) {
-      // No search term — use simple find
       const [products, total] = await Promise.all([
         Product.find(filter)
           .populate("category", "name slug parent")
@@ -92,7 +89,6 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
           .limit(limit),
         Product.countDocuments(filter),
       ]);
-
       res.json({
         products,
         pagination: { page, limit, total, pages: Math.ceil(total / limit) },
@@ -100,21 +96,30 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
       return;
     }
 
-    // Build Atlas Search filter array from our filter object
-    const searchFilters = buildSearchFilterArray(filter);
+    // Build Atlas Search filter array
+    const searchFilters: any[] = [];
+    if (filter.category) {
+      if (filter.category.$in) {
+        searchFilters.push({ in: { path: "category", value: filter.category.$in } });
+      } else {
+        searchFilters.push({ equals: { path: "category", value: filter.category } });
+      }
+    }
+    if (filter.isFeatured === true) {
+      searchFilters.push({ equals: { path: "isFeatured", value: true } });
+    }
 
-    // ── Atlas Search pipeline ────────────────────────────────
     const pipeline: any[] = [
       {
         $search: {
-          index: "default", // Ensure this matches your Atlas Search index name
+          index: "default",
           compound: {
             must: [
               {
                 text: {
                   query: searchParam,
                   path: ["name", "description", "brand", "tags", "sku"],
-                  fuzzy: { maxEdits: 2 }, // typo and plural tolerance
+                  fuzzy: { maxEdits: 2 },
                 },
               },
             ],
@@ -125,7 +130,7 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
       {
         $facet: {
           results: [
-            { $sort: { score: -1 } }, // relevance score
+            { $sort: { score: -1 } },
             { $skip: skip },
             { $limit: limit },
             {
@@ -143,9 +148,11 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
       },
     ];
 
-    const [result] = await Product.aggregate(pipeline);
-    const products = result.results;
-    const total = result.totalCount.length > 0 ? result.totalCount[0].count : 0;
+    const aggregationResult = await Product.aggregate(pipeline).exec();
+    const result = aggregationResult[0] || { results: [], totalCount: [] };
+
+    const products = result.results || [];
+    const total = result.totalCount?.length > 0 ? result.totalCount[0].count : 0;
 
     res.json({
       products,
