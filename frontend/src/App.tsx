@@ -99,7 +99,6 @@ function AppContent() {
         </ErrorBoundary>
       </Suspense>
 
-      {/* 👇 Added: Render the footer only if showFooter is true */}
       {showFooter && <Footer />}
     </>
   );

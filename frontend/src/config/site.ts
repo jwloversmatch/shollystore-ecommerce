@@ -1,12 +1,12 @@
 /** Central site configuration — sourced from environment variables */
 export const SITE_CONFIG = {
-  name: import.meta.env.VITE_SITE_NAME || 'SholexStore',
-  url: import.meta.env.VITE_SITE_URL || 'https://iresstore.vercel.app',
+  name: import.meta.env.VITE_SITE_NAME || 'Sholex',
+  url: import.meta.env.VITE_SITE_URL || 'https://sholex.vercel.app',
   description:
     import.meta.env.VITE_SITE_DESCRIPTION ||
     'Shop the best deals on fashion, beverages, electronics and more. Fast delivery across Nigeria.',
-  twitter: import.meta.env.VITE_TWITTER_HANDLE || '@sholexstore',
-  ogImage: `${import.meta.env.VITE_SITE_URL || 'https://iresstore.vercel.app'}/og-default.jpg`,
+  twitter: import.meta.env.VITE_TWITTER_HANDLE || '@sholex',
+  ogImage: `${import.meta.env.VITE_SITE_URL || 'https://sholex.vercel.app'}/og-default.jpg`,
   locale: 'en_NG',
   phone: import.meta.env.VITE_CONTACT_PHONE || '+234-000-000-0000',
 } as const;
