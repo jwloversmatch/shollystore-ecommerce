@@ -592,12 +592,24 @@ export const deleteAccount = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    await User.deleteOne({ _id: user._id });
-    clearRefreshCookie(res);
+    // ── Soft delete + anonymise ───────────────────────────────
+    user.isDeleted = true;
+    user.deletedAt = new Date();
+    user.name = 'Deleted User';
+    user.email = `deleted_${user._id}@deleted.local`;
+    user.phone = '';
+    user.addresses = [];
+    user.refreshTokens = [];
+    user.password = crypto.randomBytes(32).toString('hex');
+    user.isVerified = false;
+    await user.save();
 
+    clearRefreshCookie(res);
     res.json({ success: true, message: 'Account permanently deleted.' });
+    return;
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Internal server error' });
+    return;
   }
 };
 

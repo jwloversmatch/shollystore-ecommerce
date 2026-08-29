@@ -44,6 +44,10 @@ export interface IUser extends Document {
   role:     'user' | 'admin';
   createdAt: Date;
 
+  // ── Soft delete ─────────────────────────────────────
+  isDeleted?: boolean;
+  deletedAt?: Date;
+
   // ── Email verification ───────────────────────────────
   isVerified:           boolean;
   verificationToken?:   string | null;
@@ -83,6 +87,10 @@ const UserSchema: Schema = new Schema({
   role:     { type: String, enum: ['user', 'admin'], default: 'user' },
   createdAt: { type: Date, default: Date.now },
 
+  // ── Soft delete ─────────────────────────────────────
+  isDeleted: { type: Boolean, default: false },
+  deletedAt: { type: Date },
+
   // ── Email verification ───────────────────────────────
   isVerified:          { type: Boolean, default: false },
   verificationToken:   { type: String, default: null },
@@ -119,6 +127,9 @@ UserSchema.index({ 'refreshTokens.expiresAt': 1 });
 UserSchema.index({ resetPasswordToken: 1 });
 UserSchema.index({ emailChangeToken: 1 });
 UserSchema.index({ verificationToken: 1 });
+
+// ── Soft delete index ──────────────────────────────────
+UserSchema.index({ isDeleted: 1 });
 
 // ---------- Pre-save: hash password ----------
 UserSchema.pre<IUser>('save', async function (this: IUser) {

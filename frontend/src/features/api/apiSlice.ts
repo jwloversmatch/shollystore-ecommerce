@@ -52,7 +52,11 @@ const baseQuery = fetchBaseQuery({
 });
 
 // ─── Wrapper: auto-logout on 401 ──────────────────────────────────────────────
-const baseQueryWithReauth: typeof baseQuery = async (args, api, extraOptions) => {
+const baseQueryWithReauth: typeof baseQuery = async (
+  args,
+  api,
+  extraOptions,
+) => {
   const result = await baseQuery(args, api, extraOptions);
 
   if (result.error && result.error.status === 401) {
@@ -66,7 +70,7 @@ const baseQueryWithReauth: typeof baseQuery = async (args, api, extraOptions) =>
 // ─── API Slice ────────────────────────────────────────────────────────────────
 export const apiSlice = createApi({
   reducerPath: "api",
-  baseQuery: baseQueryWithReauth, 
+  baseQuery: baseQueryWithReauth,
   tagTypes: [
     "Product",
     "Order",
@@ -96,7 +100,10 @@ export const apiSlice = createApi({
         if (params?.category) {
           searchParams.append("category", params.category);
           if (params.includeSubcategories !== undefined)
-            searchParams.append("includeSubcategories", String(params.includeSubcategories));
+            searchParams.append(
+              "includeSubcategories",
+              String(params.includeSubcategories),
+            );
         }
         if (params?.featured) searchParams.append("featured", "true");
         if (params?.search) searchParams.append("search", params.search);
@@ -135,12 +142,21 @@ export const apiSlice = createApi({
 
     // ─── Admin Orders ───────────────────────────────────────────────────────
     getAllOrders: builder.query({
-      query: ({ page = 1, limit = 10, status, paymentMethod, search, startDate, endDate }) => {
+      query: ({
+        page = 1,
+        limit = 10,
+        status,
+        paymentMethod,
+        search,
+        startDate,
+        endDate,
+      }) => {
         const params = new URLSearchParams();
         params.append("page", page.toString());
         params.append("limit", limit.toString());
         if (status && status !== "All") params.append("status", status);
-        if (paymentMethod && paymentMethod !== "All") params.append("paymentMethod", paymentMethod);
+        if (paymentMethod && paymentMethod !== "All")
+          params.append("paymentMethod", paymentMethod);
         if (search) params.append("search", search);
         if (startDate) params.append("startDate", startDate);
         if (endDate) params.append("endDate", endDate);
@@ -164,8 +180,12 @@ export const apiSlice = createApi({
     }),
 
     // ─── Revenue Trend (NEW) ────────────────────────────────────────────────
-    getRevenueTrend: builder.query<{ success: boolean; data: RevenueTrendItem[] }, number>({
-      query: (days = 30) => `/admin/orders/analytics/revenue-trend?days=${days}`,
+    getRevenueTrend: builder.query<
+      { success: boolean; data: RevenueTrendItem[] },
+      number
+    >({
+      query: (days = 30) =>
+        `/admin/orders/analytics/revenue-trend?days=${days}`,
       providesTags: ["Order"],
     }),
 
@@ -252,6 +272,19 @@ export const apiSlice = createApi({
         method: "PUT",
         body: data,
       }),
+    }),
+
+    // ─── Delete Account ─────────────────────────────────────────────────────────
+    deleteAccount: builder.mutation<
+      { success: boolean; message: string },
+      string
+    >({
+      query: (password) => ({
+        url: "/auth/account",
+        method: "DELETE",
+        body: { password },
+      }),
+      invalidatesTags: ["User"],
     }),
 
     // ─── Addresses ──────────────────────────────────────────────────────────
@@ -517,7 +550,7 @@ export const apiSlice = createApi({
 
 export const {
   useGetProductsQuery,
-  useLazyGetProductsQuery,   // ✅ add this line
+  useLazyGetProductsQuery, // ✅ add this line
   useGetProductBySlugQuery,
   useCreateOrderMutation,
   useVerifyPaymentQuery,
@@ -537,6 +570,7 @@ export const {
   useForgotPasswordMutation,
   useResetPasswordMutation,
   useChangePasswordMutation,
+  useDeleteAccountMutation,
   useGetAddressesQuery,
   useAddAddressMutation,
   useUpdateAddressMutation,

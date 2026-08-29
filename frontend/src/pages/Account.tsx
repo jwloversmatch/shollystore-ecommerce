@@ -13,6 +13,7 @@ import {
   useSetDefaultAddressMutation,
   useChangePasswordMutation,
   useGetMyOrdersQuery,
+  useDeleteAccountMutation,
 } from "../features/api/apiSlice";
 import toast from "react-hot-toast";
 import SEO from "../components/SEO";
@@ -21,6 +22,7 @@ import AccountHeader from "./account/AccountHeader";
 import AccountOrders from "./account/AccountOrders";
 import AccountProfile from "./account/AccountProfile";
 import OrderDetailModal from "./account/OrderDetailModal";
+import ConfirmationModal from "../components/ConfirmationModal";
 
 import type { Order, IAddress } from "../types/account";
 import PushNotificationManager from "../components/PushNotificationManager";
@@ -71,6 +73,13 @@ const Account = () => {
 
   const [changePassword, { isLoading: changingPassword }] =
     useChangePasswordMutation();
+
+  const [deleteAccount, { isLoading: deletingAccount }] =
+    useDeleteAccountMutation();
+
+  // Address deletion confirmation state
+  const [deleteAddressTarget, setDeleteAddressTarget] = useState<string | null>(null);
+  const [isDeleteAddressModalOpen, setIsDeleteAddressModalOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -131,6 +140,18 @@ const Account = () => {
     }
   };
 
+  const handleDeleteAccount = async (password: string) => {
+    try {
+      await deleteAccount(password).unwrap();
+      toast.success("Account deleted successfully");
+      dispatch(logout());
+      window.location.href = "/";
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      toast.error(error?.data?.message || "Failed to delete account");
+    }
+  };
+
   const openAddAddress = () => {
     setEditingAddressId(null);
     setAddressForm({
@@ -174,11 +195,23 @@ const Account = () => {
     }
   };
 
-  const handleDeleteAddress = async (id: string) => {
-    if (window.confirm("Delete this address?")) {
-      await deleteAddress(id);
-      refetchAddresses();
+  // Address deletion with confirmation modal
+  const requestDeleteAddress = (id: string) => {
+    setDeleteAddressTarget(id);
+    setIsDeleteAddressModalOpen(true);
+  };
+
+  const confirmDeleteAddress = async () => {
+    if (!deleteAddressTarget) return;
+    try {
+      await deleteAddress(deleteAddressTarget).unwrap();
       toast.success("Address removed");
+      refetchAddresses();
+    } catch {
+      toast.error("Failed to delete address");
+    } finally {
+      setIsDeleteAddressModalOpen(false);
+      setDeleteAddressTarget(null);
     }
   };
 
@@ -291,8 +324,10 @@ const Account = () => {
               onOpenEditAddress={openEditAddress}
               onCloseAddressModal={() => setAddressModalOpen(false)}
               onSaveAddress={handleSaveAddress}
-              onDeleteAddress={handleDeleteAddress}
+              onDeleteAddress={requestDeleteAddress}
               onSetDefaultAddress={handleSetDefaultAddress}
+              onDeleteAccount={handleDeleteAccount}
+              deletingAccount={deletingAccount}
             />
             <div className="mt-8">
               <PushNotificationManager />
@@ -304,6 +339,18 @@ const Account = () => {
       <OrderDetailModal
         order={selectedOrder}
         onClose={() => setSelectedOrder(null)}
+      />
+
+      {/* Address deletion confirmation modal */}
+      <ConfirmationModal
+        isOpen={isDeleteAddressModalOpen}
+        onClose={() => setIsDeleteAddressModalOpen(false)}
+        onConfirm={confirmDeleteAddress}
+        title="Delete Address?"
+        message="This address will be permanently removed from your account."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
       />
     </main>
   );
