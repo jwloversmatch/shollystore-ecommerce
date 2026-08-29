@@ -25,7 +25,6 @@ import OrderDetailModal from "./account/OrderDetailModal";
 import ConfirmationModal from "../components/ConfirmationModal";
 
 import type { Order, IAddress } from "../types/account";
-import PushNotificationManager from "../components/PushNotificationManager";
 
 const Account = () => {
   const navigate = useNavigate();
@@ -329,9 +328,6 @@ const Account = () => {
               onDeleteAccount={handleDeleteAccount}
               deletingAccount={deletingAccount}
             />
-            <div className="mt-8">
-              <PushNotificationManager />
-            </div>
           </div>
         )}
       </AnimatePresence>
