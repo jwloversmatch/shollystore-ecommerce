@@ -20,7 +20,7 @@ import {
   Home, Cart, Checkout, Login, Register, ForgotPassword, ResetPassword,
   VerifyEmail, Account, ProductDetail, ShopPage,
   Dashboard, Products, Orders, HeroSlides, Categories, Coupons, Settings,
-  NotFound, Footer, PrivacyPolicy, TermsOfUse, About
+  NotFound, Footer, PrivacyPolicy, TermsOfUse, About, Contact
 } from "./routes/lazyPages";
 
 const ACCENT = "#e8622a";
@@ -59,7 +59,7 @@ function AppContent() {
   const hideNavbar = ["/cart", "/checkout", "/404"].includes(location.pathname);
 
   // Show footer on Home, Shop, and legal pages
-  const showFooter = ["/", "/shop", "/privacy", "/terms", "/about"].includes(location.pathname);
+  const showFooter = ["/", "/shop", "/privacy", "/terms", "/about", "/contact"].includes(location.pathname);
 
   return (
     <>
@@ -97,6 +97,7 @@ function AppContent() {
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfUse />} />
             <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
 
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />

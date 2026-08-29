@@ -576,3 +576,44 @@ export const sendOutOfStockAdminEmail = async (product: {
     `Out of stock alert for ${product.name}. Current stock: 0.`,
   );
 };
+
+// ─── CONTACT FORM NOTIFICATION ───────────────────────────────────────────────
+
+export const sendContactNotification = async (contact: {
+  name: string;
+  email: string;
+  subject?: string;
+  message: string;
+}) => {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
+    console.warn("⚠️ ADMIN_EMAIL not set. Contact notification skipped.");
+    return;
+  }
+
+  const html = layout({
+    headerBg: "#dbeafe",
+    headerText: "#1e40af",
+    body: `
+      <div class="body">
+        <h2>New Contact Message 📩</h2>
+        <div class="box">
+          <p><strong>Name:</strong> ${contact.name}</p>
+          <p><strong>Email:</strong> ${contact.email}</p>
+          ${contact.subject ? `<p><strong>Subject:</strong> ${contact.subject}</p>` : ""}
+        </div>
+        <p><strong>Message:</strong></p>
+        <div style="background:#f9fafb;border-radius:12px;padding:20px;margin:20px 0;">
+          <p style="white-space:pre-wrap;">${contact.message}</p>
+        </div>
+        <p>Reply directly to the sender or manage messages in the admin dashboard.</p>
+      </div>`,
+  });
+
+  return sendEmail(
+    adminEmail,
+    `📩 New Contact: ${contact.subject || "No Subject"} from ${contact.name}`,
+    html,
+    `New contact message from ${contact.name} (${contact.email}): ${contact.message}`
+  );
+};
