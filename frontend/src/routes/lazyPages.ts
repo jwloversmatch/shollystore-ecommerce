@@ -26,3 +26,4 @@ export const Footer = lazy(() => import("../pages/Footer"));
 
 export const PrivacyPolicy = lazy(() => import('../pages/PrivacyPolicy'));
 export const TermsOfUse = lazy(() => import('../pages/TermsOfUse'));
+export const About = lazy(() => import('../pages/About'));
