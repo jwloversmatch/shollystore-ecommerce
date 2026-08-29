@@ -23,3 +23,6 @@ export const Settings = lazy(() => import("../pages/admin/settings/"));
 
 export const NotFound = lazy(() => import("../pages/NotFound"));
 export const Footer = lazy(() => import("../pages/Footer"));
+
+export const PrivacyPolicy = lazy(() => import('../pages/PrivacyPolicy'));
+export const TermsOfUse = lazy(() => import('../pages/TermsOfUse'));
