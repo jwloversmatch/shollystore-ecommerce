@@ -5,6 +5,7 @@ import ChangePasswordCard from "./ChangePasswordCard";
 import SavedAddressesCard from "./SavedAddressesCard";
 import AddressModal from "./AddressModal";
 import ConfirmationModal from "../../components/ConfirmationModal";
+import PushNotificationManager from "../../components/PushNotificationManager";
 import type { User as UserType } from "../../features/auth/authSlice";
 import type { IAddress } from "../../types/account";
 
@@ -80,6 +81,7 @@ const AccountProfile = ({
     transition={{ duration: 0.3 }}
     className="space-y-6"
   >
+    {/* 1. Profile Info */}
     <ProfileInfoCard
       user={user}
       editing={editing}
@@ -93,11 +95,7 @@ const AccountProfile = ({
       isUpdating={isUpdating}
     />
 
-    <ChangePasswordCard
-      onSubmit={onChangePassword}
-      changingPassword={changingPassword}
-    />
-
+    {/* 2. Saved Addresses */}
     <SavedAddressesCard
       addresses={addresses}
       onAdd={onOpenAddAddress}
@@ -106,6 +104,16 @@ const AccountProfile = ({
       onSetDefault={onSetDefaultAddress}
     />
 
+    {/* 3. Change Password */}
+    <ChangePasswordCard
+      onSubmit={onChangePassword}
+      changingPassword={changingPassword}
+    />
+
+    {/* 4. Push Notifications */}
+    <PushNotificationManager />
+
+    {/* 5. Delete Account (last) */}
     <DeleteAccountCard
       onDelete={onDeleteAccount}
       isDeleting={deletingAccount}
@@ -194,7 +202,6 @@ const DeleteAccountCard = ({
         )}
       </div>
 
-      {/* Final confirmation modal */}
       <ConfirmationModal
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
