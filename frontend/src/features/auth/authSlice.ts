@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface IAddress {
   _id: string;
@@ -13,7 +13,7 @@ export interface IAddress {
 export interface User {
   _id: string;
   email: string;
-  role: 'user' | 'admin';
+  role: "user" | "admin";
   name?: string;
   phone?: string;
   addresses?: IAddress[];
@@ -31,19 +31,22 @@ const initialState: AuthState = {
 };
 
 const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState,
   reducers: {
     // Now accepts { user, token } from the new backend
-    setCredentials: (state, action: PayloadAction<{ user: User; token?: string }>) => {
+    setCredentials: (
+      state,
+      action: PayloadAction<{ user: User; token?: string }>,
+    ) => {
       state.user = action.payload.user;
       if (action.payload.token) {
-        localStorage.setItem('token', action.payload.token);
+        localStorage.setItem("token", action.payload.token);
       }
     },
     logout: (state) => {
       state.user = null;
-      localStorage.removeItem('token');
+      localStorage.removeItem("token");
     },
     updateProfile: (state, action: PayloadAction<Partial<User>>) => {
       if (state.user) {

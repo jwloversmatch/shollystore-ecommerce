@@ -205,7 +205,6 @@ const ProductDetail = () => {
     setTimeout(() => setAdded(false), 2000);
   };
 
-  // Get the page to go back to. If navigated from within app, go back. Otherwise go to shop.
   const handleGoBack = () => {
     if (location.key !== "default") {
       navigate(-1);
@@ -340,7 +339,7 @@ const ProductDetail = () => {
       {/* Breadcrumb */}
       <nav
         aria-label="Breadcrumb"
-        className="flex items-center gap-2 mb-5 overflow-x-auto no-scrollbar pb-1"
+        className="flex items-center gap-2 mb-5 overflow-x-auto no-scrollbar pb-1 sm:mt-4 md:mt-6"
       >
         <motion.button
           whileHover={{ scale: 1.06 }}

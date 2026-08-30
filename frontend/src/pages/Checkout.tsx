@@ -10,7 +10,6 @@ import { RootState } from "../store";
 import {
   useCreateOrderMutation,
   useGetPublicSettingsQuery,
-  useValidateCouponMutation,
   useGetAddressesQuery,
 } from "../features/api/apiSlice";
 import { clearCart } from "../features/cart/cartSlice";
@@ -20,12 +19,10 @@ import {
   CreditCard,
   Banknote,
   MessageCircle,
-  X,
   Home,
   Briefcase,
   CheckCircle,
   Flame,
-  Tag,
   ArrowRight,
   Loader2,
   AlertCircle,
@@ -137,8 +134,6 @@ const Checkout = () => {
 
   const [createOrder, { isLoading }] = useCreateOrderMutation();
   const { data: publicSettings } = useGetPublicSettingsQuery({});
-  const [validateCoupon, { isLoading: isApplying }] =
-    useValidateCouponMutation();
   const { data: savedAddresses = [] } = useGetAddressesQuery({});
 
   const {
@@ -169,39 +164,11 @@ const Checkout = () => {
     reset({ address: "", city: "" });
   };
 
-  const [couponCode, setCouponCode] = useState("");
-  const [couponDiscount, setCouponDiscount] = useState(0);
-  const [couponError, setCouponError] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
-
   const totalPrice = cart.cartItems.reduce(
     (a: number, i: CartItem) => a + i.price * i.qty,
     0,
   );
-  const finalTotal = totalPrice - couponDiscount;
-
-  const handleApplyCoupon = async () => {
-    setCouponError("");
-    if (!couponCode.trim()) return;
-    try {
-      const res = await validateCoupon({
-        code: couponCode,
-        orderTotal: totalPrice,
-      }).unwrap();
-      setCouponDiscount(res.coupon.discount);
-      setAppliedCoupon(res.coupon.code);
-      toast.success(`₦${res.coupon.discount.toLocaleString()} off applied!`);
-    } catch (err: unknown) {
-      const e = err as { data?: { message?: string } };
-      setCouponError(e?.data?.message || "Invalid coupon");
-    }
-  };
-  const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponCode("");
-    setCouponDiscount(0);
-    setCouponError("");
-  };
+  const finalTotal = totalPrice - cart.couponDiscount;
 
   const onSubmit = async (data: CheckoutFormData) => {
     if (!user) {
@@ -226,7 +193,7 @@ const Checkout = () => {
           country: "Nigeria",
         },
         paymentMethod,
-        couponCode: appliedCoupon || undefined,
+        couponCode: cart.appliedCoupon || undefined,
       };
 
       const result = await createOrder(orderPayload).unwrap();
@@ -777,74 +744,6 @@ const Checkout = () => {
                 ))}
               </div>
               <div className="h-px mb-5 bg-gray-200 dark:bg-white/[0.06]" />
-              <div className="mb-5">
-                <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2.5 flex items-center gap-1.5">
-                  <Tag className="w-3 h-3" aria-hidden="true" /> Discount Code
-                </p>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <label htmlFor="coupon-code" className="sr-only">
-                      Coupon code
-                    </label>
-                    <input
-                      id="coupon-code"
-                      type="text"
-                      value={couponCode}
-                      onChange={(e) =>
-                        setCouponCode(e.target.value.toUpperCase())
-                      }
-                      disabled={!!appliedCoupon}
-                      placeholder="Enter code"
-                      className="w-full px-4 py-3 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] outline-none placeholder-gray-500 dark:placeholder-gray-600 text-gray-900 dark:text-white focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-mono tracking-widest"
-                    />
-                  </div>
-                  {!appliedCoupon ? (
-                    <button
-                      type="button"
-                      onClick={handleApplyCoupon}
-                      disabled={isApplying || !couponCode.trim()}
-                      className="px-4 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 shrink-0"
-                      style={{ background: ACCENT }}
-                      aria-label="Apply coupon code"
-                    >
-                      {isApplying ? (
-                        <Loader2
-                          className="w-4 h-4 animate-spin"
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        "Apply"
-                      )}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleRemoveCoupon}
-                      className="px-4 py-3 rounded-xl text-sm font-bold transition-all shrink-0 text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20"
-                      aria-label="Remove coupon"
-                    >
-                      <X className="w-4 h-4" aria-hidden="true" />
-                    </button>
-                  )}
-                </div>
-                <AnimatePresence>
-                  {couponError && (
-                    <p
-                      className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"
-                      role="alert"
-                    >
-                      <AlertCircle className="w-3 h-3" aria-hidden="true" />{" "}
-                      {couponError}
-                    </p>
-                  )}
-                  {appliedCoupon && (
-                    <p className="mt-1.5 text-xs font-bold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                      <CheckCircle className="w-3 h-3" aria-hidden="true" />{" "}
-                      {appliedCoupon} applied
-                    </p>
-                  )}
-                </AnimatePresence>
-              </div>
               <div className="space-y-2.5 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500 dark:text-gray-400 font-medium">
@@ -854,13 +753,13 @@ const Checkout = () => {
                     ₦{totalPrice.toLocaleString()}
                   </span>
                 </div>
-                {couponDiscount > 0 && (
+                {cart.couponDiscount > 0 && (
                   <div className="flex justify-between">
                     <span className="font-medium text-emerald-600 dark:text-emerald-400">
                       Discount
                     </span>
                     <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                      - ₦{couponDiscount.toLocaleString()}
+                      - ₦{cart.couponDiscount.toLocaleString()}
                     </span>
                   </div>
                 )}

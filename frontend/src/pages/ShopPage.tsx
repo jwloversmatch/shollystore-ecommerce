@@ -254,7 +254,7 @@ const ShopPage = () => {
       }}
     >
       {/* Search + sort bar */}
-      <div className="px-4 md:px-6 py-3 mb-6 bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]">
+      <div className="px-4 md:px-6 py-3 mb-6 sm:mt-3 md:mt-4 bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
             <ProductSearchBox
