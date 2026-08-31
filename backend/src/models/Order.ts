@@ -51,6 +51,7 @@ export interface IOrder extends Document {
   subtotal?: number;
   taxAmount?: number;
   taxRate?: number;
+  shippingFee?: number;   
   status: 'Pending' | 'Paid' | 'Shipped' | 'Delivered';
   paymentResult?: { id: string; status: string; update_time: string };
   paymentMethod?: 'paystack' | 'bank_transfer' | 'whatsapp';
@@ -126,6 +127,7 @@ const OrderSchema: Schema = new Schema({
   subtotal:     { type: Number },
   taxAmount:    { type: Number, default: 0 },
   taxRate:      { type: Number },
+  shippingFee:  { type: Number, default: 0 },  
 
   status:       { type: String, enum: ['Pending', 'Paid', 'Shipped', 'Delivered'], default: 'Pending' },
   paymentResult: { id: String, status: String, update_time: String },

@@ -265,15 +265,24 @@ export const sendOrderConfirmation = async (
   subtotal?:  number,
   paymentMethod?: string,
   paymentDetails?: any,
+  shippingFee?: number,         
 ) => {
   const greeting = name ? `Thank you, <strong>${name}</strong>! 🎉` : `Order Confirmed! 🎉`;
 
   const discountLine = discount && couponCode
     ? `<p style="margin:4px 0;color:#4a5568;"><strong>Discount (${couponCode})</strong> &minus; ₦${discount.toLocaleString()}</p>`
     : '';
-  const subtotalLine = subtotal && subtotal !== total
+  const subtotalLine = subtotal !== undefined
     ? `<p style="margin:8px 0;color:#4a5568;"><strong>Subtotal</strong> ₦${subtotal.toLocaleString()}</p>`
     : '';
+
+  // Shipping fee line
+  let shippingFeeLine = '';
+  if (shippingFee !== undefined) {
+    shippingFeeLine = shippingFee === 0
+      ? `<p style="margin:8px 0;color:#4a5568;"><strong>Shipping</strong> Free</p>`
+      : `<p style="margin:8px 0;color:#4a5568;"><strong>Shipping</strong> ₦${shippingFee.toLocaleString()}</p>`;
+  }
 
   // Payment instructions for bank transfer / whatsapp
   let paymentSection = '';
@@ -306,6 +315,7 @@ export const sendOrderConfirmation = async (
           <p><strong>Order #</strong> ${orderId}</p>
           ${subtotalLine}
           ${discountLine}
+          ${shippingFeeLine}
           <p><strong>Total</strong> <span style="font-size:24px;font-weight:700;color:#e8622a;">₦${total.toLocaleString()}</span></p>
         </div>
         ${paymentSection}

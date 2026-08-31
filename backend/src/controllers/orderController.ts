@@ -13,6 +13,18 @@ import { AuthRequest } from '../middleware/auth';
 import { calculateOrderPricing } from '../utils/orderPricing';
 import { sendError } from '../utils/apiResponse';
 
+// ─── Helper: calculate shipping fee based on city and country ─────────────
+const calculateShippingFee = (shippingAddress: { city?: string; country?: string }): number => {
+  const city = (shippingAddress.city || '').trim().toLowerCase();
+  const country = (shippingAddress.country || '').trim().toLowerCase();
+
+  if (country === 'nigeria') {
+    if (city === 'lagos') return 2500;
+    return 4000;
+  }
+  return 30000;
+};
+
 // ─── Helper: generate a user-friendly tracking number ─────────────────────────
 const generateTrackingNumber = (): string => {
   const year = new Date().getFullYear();
@@ -47,9 +59,12 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
+    // Calculate shipping fee based on destination
+    const shippingFee = calculateShippingFee(shippingAddress);
+
     let pricing;
     try {
-      pricing = await calculateOrderPricing(orderItems, couponCode);
+      pricing = await calculateOrderPricing(orderItems, couponCode, shippingFee);
     } catch (pricingError) {
       const msg = pricingError instanceof Error ? pricingError.message : 'Invalid order';
       res.status(400).json({ success: false, message: msg });
@@ -72,12 +87,13 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       name: req.user?.name || req.body.name || '',
       phone: req.user?.phone || req.body.phone || '',
       email: customerEmail,
-      trackingNumber,                             
+      trackingNumber,
       orderItems: pricing.orderItems,
       shippingAddress,
       totalPrice,
       subtotal,
       taxAmount,
+      shippingFee,           
       status: 'Pending' as const,
       paymentMethod,
       paymentDetails:
@@ -139,14 +155,15 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     } else {
       sendOrderConfirmation(
         customerEmail,
-        createdOrder.trackingNumber || createdOrder._id.toString(), // ✅ use tracking number
+        createdOrder.trackingNumber || createdOrder._id.toString(),
         totalPrice,
         req.user?.name || req.body.name || '',
         discount,
         pricing.couponCode,
         subtotal,
         paymentMethod,
-        createdOrder.paymentDetails
+        createdOrder.paymentDetails,
+        shippingFee              
       ).catch((emailError) => {
         console.error('Failed to send customer order confirmation email:', emailError);
       });
@@ -256,7 +273,7 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
       if (customerEmail) {
         sendOrderConfirmation(
           customerEmail,
-          order.trackingNumber || order._id.toString(), // ✅ use tracking number
+          order.trackingNumber || order._id.toString(),
           order.totalPrice,
           customerName,
           order.discount || 0,
@@ -264,6 +281,7 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
           originalSubtotal,
           order.paymentMethod,
           order.paymentDetails,
+          order.shippingFee || 0      
         ).catch((emailError) => {
           console.error('Failed to send order confirmation email:', emailError);
         });
@@ -305,7 +323,6 @@ export const getMyOrders = async (req: AuthRequest, res: Response): Promise<void
 // @route   GET /api/orders/track/:orderId?email=...
 export const trackOrder = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Ensure both are strings
     const orderId = String(req.params.orderId);
     const email = String(req.query.email || '').toLowerCase();
 
@@ -316,7 +333,6 @@ export const trackOrder = async (req: Request, res: Response): Promise<void> => 
 
     const isValidObjectId = mongoose.Types.ObjectId.isValid(orderId);
 
-    // Build identifier condition – convert to ObjectId if valid
     const identifierCondition = isValidObjectId
       ? {
           $or: [
@@ -355,6 +371,7 @@ export const trackOrder = async (req: Request, res: Response): Promise<void> => 
         shippingAddress: order.shippingAddress,
         paymentMethod: order.paymentMethod,
         paymentDetails,
+        shippingFee: order.shippingFee,
         createdAt: order.createdAt,
       },
     });

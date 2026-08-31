@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -131,6 +131,18 @@ const PAYMENT_METHODS = [
   },
 ] as const;
 
+// Helper to calculate shipping fee based on city
+const calculateShippingFee = (city: string, country: string = "Nigeria"): number => {
+  const cityLower = city.trim().toLowerCase();
+  const countryLower = country.trim().toLowerCase();
+
+  if (countryLower === "nigeria") {
+    if (cityLower === "lagos") return 2500;
+    return 4000;
+  }
+  return 30000;
+};
+
 const Checkout = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -146,6 +158,7 @@ const Checkout = () => {
     register: registerForm,
     handleSubmit,
     reset,
+    control,          // ✅ add control
     formState: { errors },
   } = useForm<CheckoutFormData>({ resolver: zodResolver(checkoutSchema) });
 
@@ -175,11 +188,15 @@ const Checkout = () => {
     reset({ address: "", city: "" });
   };
 
+  // Watch city value for shipping fee calculation using useWatch
+  const city = useWatch({ control, name: "city" }) || "";
+  const shippingFee = calculateShippingFee(city);
+
   const totalPrice = cart.cartItems.reduce(
     (a: number, i: CartItem) => a + i.price * i.qty,
     0,
   );
-  const finalTotal = totalPrice - cart.couponDiscount;
+  const finalTotal = totalPrice - cart.couponDiscount + shippingFee;
 
   const handleCreateAccount = async (password: string) => {
     try {
@@ -907,7 +924,7 @@ const Checkout = () => {
                     Delivery
                   </span>
                   <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                    Free
+                    {shippingFee === 0 ? "Free" : `₦${shippingFee.toLocaleString()}`}
                   </span>
                 </div>
               </div>

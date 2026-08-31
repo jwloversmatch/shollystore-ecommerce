@@ -22,6 +22,7 @@ export interface Order {
   phone?: string;
   couponCode?: string;
   discount?: number;
+  shippingFee?: number;   
 }
 
 export interface IAddress {

@@ -569,7 +569,7 @@ export const apiSlice = createApi({
         success: boolean;
         order: {
           _id: string;
-          trackingNumber?: string; // ✅ ADDED
+          trackingNumber?: string;
           status: string;
           totalPrice: number;
           orderItems: {
@@ -591,6 +591,7 @@ export const apiSlice = createApi({
             accountNumber?: string;
             whatsappNumber?: string;
           };
+          shippingFee?: number; // ✅ ADDED
           createdAt: string;
         };
       },

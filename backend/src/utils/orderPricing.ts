@@ -25,6 +25,7 @@ export interface OrderPricing {
   subtotal: number;
   discount: number;
   taxAmount: number;
+  shippingFee: number;      
   totalPrice: number;
   couponCode?: string;
 }
@@ -58,6 +59,7 @@ const getAvailableStock = (product: IProduct, variant?: IVariant): number => {
 export const calculateOrderPricing = async (
   items: OrderItemInput[],
   couponCode?: string,
+  shippingFee: number = 0,  
 ): Promise<OrderPricing> => {
   const orderItems: PricedOrderItem[] = [];
   let subtotal = 0;
@@ -112,13 +114,14 @@ export const calculateOrderPricing = async (
   }
 
   const taxAmount = 0; // extend when tax rules are configured in settings
-  const totalPrice = Math.max(0, subtotal - discount + taxAmount);
+  const totalPrice = Math.max(0, subtotal - discount + taxAmount + shippingFee); 
 
   return {
     orderItems,
     subtotal,
     discount,
     taxAmount,
+    shippingFee,     
     totalPrice,
     couponCode: appliedCoupon,
   };

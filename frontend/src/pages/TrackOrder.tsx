@@ -154,6 +154,16 @@ const TrackOrder = () => {
                   ₦{data.order.totalPrice.toLocaleString()}
                 </span>
               </p>
+              {data.order.shippingFee !== undefined && (
+                <p className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">Shipping</span>
+                  <span className="font-bold text-gray-900 dark:text-white">
+                    {data.order.shippingFee === 0
+                      ? "Free"
+                      : `₦${data.order.shippingFee.toLocaleString()}`}
+                  </span>
+                </p>
+              )}
               <p className="flex justify-between">
                 <span className="text-gray-500 dark:text-gray-400">
                   Payment Method

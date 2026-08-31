@@ -14,8 +14,6 @@ import {
   Plus,
   Check,
   Tag,
-  Truck,
-  RefreshCw,
   ChevronRight,
 } from "lucide-react";
 import {
@@ -793,21 +791,6 @@ const ProductDetail = () => {
                 </p>
               </div>
             ))}
-          </div>
-
-          {/* Shipping */}
-          <div
-            className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-500 dark:text-gray-400"
-            aria-label="Shipping information"
-          >
-            <div className="flex items-center gap-1.5">
-              <Truck className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-              <span>Free shipping over ₦50,000</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-              <span>30-day easy returns</span>
-            </div>
           </div>
         </section>
       </div>
