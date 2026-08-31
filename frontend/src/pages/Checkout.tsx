@@ -12,10 +12,9 @@ import {
   useGetPublicSettingsQuery,
   useGetAddressesQuery,
   useRegisterMutation,
-  useLoginMutation,
 } from "../features/api/apiSlice";
 import { clearCart } from "../features/cart/cartSlice";
-import { setCredentials } from "../features/auth/authSlice";
+import CreateAccountModal from "../components/CreateAccountModal";
 import {
   MapPin,
   Building,
@@ -33,8 +32,6 @@ import {
   Mail,
   User,
   Phone,
-  Lock,
-  X,
 } from "lucide-react";
 import SEO from "../components/SEO";
 
@@ -61,7 +58,7 @@ interface CartItem {
 }
 interface OrderResponse {
   _id: string;
-  trackingNumber?: string;   // ✅ ADDED
+  trackingNumber?: string;
 }
 
 const checkoutSchema = z.object({
@@ -144,7 +141,6 @@ const Checkout = () => {
   const { data: publicSettings } = useGetPublicSettingsQuery({});
   const { data: savedAddresses = [] } = useGetAddressesQuery({});
   const [register, { isLoading: isRegistering }] = useRegisterMutation();
-  const [login, { isLoading: isLoggingIn }] = useLoginMutation();
 
   const {
     register: registerForm,
@@ -158,9 +154,7 @@ const Checkout = () => {
   >("paystack");
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderData, setOrderData] = useState<OrderResponse | null>(null);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
-    null,
-  );
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [isNewAddress, setIsNewAddress] = useState(true);
 
   // Guest fields
@@ -168,9 +162,7 @@ const Checkout = () => {
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
 
-  // Guest account creation modal
   const [showCreateAccountModal, setShowCreateAccountModal] = useState(false);
-  const [accountPassword, setAccountPassword] = useState("");
 
   const selectSavedAddress = (addr: IAddress) => {
     setSelectedAddressId(addr._id);
@@ -189,28 +181,15 @@ const Checkout = () => {
   );
   const finalTotal = totalPrice - cart.couponDiscount;
 
-  const handleCreateAccount = async () => {
-    if (!accountPassword || accountPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
+  const handleCreateAccount = async (password: string) => {
     try {
       await register({
         email: guestEmail,
-        password: accountPassword,
+        password,
         name: guestName,
         phone: guestPhone,
       }).unwrap();
-
-      const loginResult = await login({
-        email: guestEmail,
-        password: accountPassword,
-      }).unwrap();
-
-      dispatch(
-        setCredentials({ user: loginResult.user, token: loginResult.token }),
-      );
-      toast.success("Account created successfully!");
+      toast.success("Account created! Please check your email to verify.");
       setShowCreateAccountModal(false);
     } catch (err: unknown) {
       const e = err as { data?: { message?: string } };
@@ -425,94 +404,14 @@ const Checkout = () => {
           </button>
         </div>
 
-        {/* Guest account creation modal */}
-        <AnimatePresence>
-          {showCreateAccountModal && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 z-50"
-                onClick={() => setShowCreateAccountModal(false)}
-                aria-hidden="true"
-              />
-              <motion.div
-                initial={{ scale: 0.9, y: 20, opacity: 0 }}
-                animate={{ scale: 1, y: 0, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="create-account-title"
-              >
-                <div className="relative w-full max-w-md rounded-2xl p-6 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.08] shadow-2xl">
-                  <button
-                    onClick={() => setShowCreateAccountModal(false)}
-                    className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition"
-                    aria-label="Close"
-                  >
-                    <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                  </button>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-[#e8622a]/10 flex items-center justify-center">
-                      <CheckCircle className="w-5 h-5 text-[#e8622a]" />
-                    </div>
-                    <h3
-                      id="create-account-title"
-                      className="text-xl font-black text-gray-900 dark:text-white"
-                    >
-                      Save your info?
-                    </h3>
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
-                    Create an account to track your order, save addresses, and
-                    get faster checkout next time.
-                  </p>
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="email"
-                        value={guestEmail}
-                        disabled
-                        className="w-full pl-11 pr-4 py-3 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.08] text-gray-900 dark:text-white font-medium"
-                        aria-label="Email (already filled)"
-                      />
-                    </div>
-                    <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="password"
-                        value={accountPassword}
-                        onChange={(e) => setAccountPassword(e.target.value)}
-                        placeholder="Create a password"
-                        className="w-full pl-11 pr-4 py-3 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12 outline-none"
-                        aria-label="Password"
-                      />
-                    </div>
-                    <button
-                      onClick={handleCreateAccount}
-                      disabled={isRegistering || isLoggingIn}
-                      className="w-full py-3.5 rounded-xl font-bold text-white text-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-                      style={{
-                        background: ACCENT,
-                        boxShadow: `0 6px 18px ${ACCENT}44`,
-                      }}
-                    >
-                      {isRegistering || isLoggingIn ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        "Create Account"
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+        {/* Use the extracted modal */}
+        <CreateAccountModal
+          isOpen={showCreateAccountModal}
+          guestEmail={guestEmail}
+          onClose={() => setShowCreateAccountModal(false)}
+          onCreateAccount={handleCreateAccount}
+          isCreating={isRegistering}
+        />
       </main>
     );
   }
