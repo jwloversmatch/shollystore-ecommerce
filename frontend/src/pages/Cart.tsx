@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
@@ -670,12 +670,10 @@ const ClearCartModal = ({
 const Cart = () => {
   const [showClearModal, setShowClearModal] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
   const dispatch = useDispatch();
   const { cartItems, appliedCoupon, couponDiscount } = useSelector(
     (s: RootState) => s.cart,
   );
-  const { user } = useSelector((s: RootState) => s.auth);
   const isRehydrated = useSelector(
     (s: RootState & PersistState) => s._persist?.rehydrated,
   );
@@ -715,11 +713,6 @@ const Cart = () => {
   };
 
   const handleCheckout = () => {
-    if (!user) {
-      toast.error("Please login to checkout");
-      navigate("/login", { state: { from: location.pathname } });
-      return;
-    }
     navigate("/checkout");
   };
 

@@ -32,10 +32,11 @@ export interface IShippingInfo {
 
 // ─── Main Order interface ──────────────────────────────────────────────────────
 export interface IOrder extends Document {
-  user: mongoose.Types.ObjectId;
+  user: mongoose.Types.ObjectId | null;         
+  guestEmail?: string;                           
   name?: string;
   phone?: string;
-  email?: string;
+  email?: string;                                
   orderItems: IOrderItem[];
   shippingAddress: {
     address: string;
@@ -101,10 +102,11 @@ const ShippingInfoSchema = new Schema({
 
 // ─── Main Order schema ─────────────────────────────────────────────────────────
 const OrderSchema: Schema = new Schema({
-  user:         { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  user:         { type: Schema.Types.ObjectId, ref: 'User', default: null },
+  guestEmail:   { type: String, required: function(this: any) { return this.user === null; } },
   name:         { type: String },
   phone:        { type: String },
-  email:        { type: String },
+  email:        { type: String },   // populated at creation time
 
   orderItems:   { type: [OrderItemSchema], required: true },
 
@@ -147,6 +149,7 @@ const OrderSchema: Schema = new Schema({
 
 // ---------- Indexes ----------
 OrderSchema.index({ user: 1, createdAt: -1 });
+OrderSchema.index({ guestEmail: 1 });
 OrderSchema.index({ status: 1, createdAt: -1 });
 OrderSchema.index({ createdAt: -1 });
 OrderSchema.index({ 'orderItems.product': 1 });

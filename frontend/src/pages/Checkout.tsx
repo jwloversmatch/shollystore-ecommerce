@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate,  } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,8 +11,11 @@ import {
   useCreateOrderMutation,
   useGetPublicSettingsQuery,
   useGetAddressesQuery,
+  useRegisterMutation,
+  useLoginMutation,
 } from "../features/api/apiSlice";
 import { clearCart } from "../features/cart/cartSlice";
+import { setCredentials } from "../features/auth/authSlice";
 import {
   MapPin,
   Building,
@@ -27,6 +30,11 @@ import {
   Loader2,
   AlertCircle,
   ArrowLeft,
+  Mail,
+  User,
+  Phone,
+  Lock,
+  X,
 } from "lucide-react";
 import SEO from "../components/SEO";
 
@@ -127,7 +135,6 @@ const PAYMENT_METHODS = [
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const dispatch = useDispatch();
   const cart = useSelector((s: RootState) => s.cart);
   const { user } = useSelector((s: RootState) => s.auth);
@@ -135,9 +142,11 @@ const Checkout = () => {
   const [createOrder, { isLoading }] = useCreateOrderMutation();
   const { data: publicSettings } = useGetPublicSettingsQuery({});
   const { data: savedAddresses = [] } = useGetAddressesQuery({});
+  const [register, { isLoading: isRegistering }] = useRegisterMutation();
+  const [login, { isLoading: isLoggingIn }] = useLoginMutation();
 
   const {
-    register,
+    register: registerForm,
     handleSubmit,
     reset,
     formState: { errors },
@@ -152,6 +161,15 @@ const Checkout = () => {
     null,
   );
   const [isNewAddress, setIsNewAddress] = useState(true);
+
+  // Guest fields
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestName, setGuestName] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
+
+  // Guest account creation modal
+  const [showCreateAccountModal, setShowCreateAccountModal] = useState(false);
+  const [accountPassword, setAccountPassword] = useState("");
 
   const selectSavedAddress = (addr: IAddress) => {
     setSelectedAddressId(addr._id);
@@ -170,12 +188,47 @@ const Checkout = () => {
   );
   const finalTotal = totalPrice - cart.couponDiscount;
 
-  const onSubmit = async (data: CheckoutFormData) => {
-    if (!user) {
-      toast.error("Please login to checkout");
-      navigate("/login", { state: { from: location.pathname } });
+  const handleCreateAccount = async () => {
+    if (!accountPassword || accountPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
       return;
     }
+    try {
+      // Register the user
+      await register({
+        email: guestEmail,
+        password: accountPassword,
+        name: guestName,
+        phone: guestPhone,
+      }).unwrap();
+
+      // Automatically log them in
+      const loginResult = await login({
+        email: guestEmail,
+        password: accountPassword,
+      }).unwrap();
+
+      // Dispatch credentials to store
+      dispatch(
+        setCredentials({ user: loginResult.user, token: loginResult.token }),
+      );
+      toast.success("Account created successfully!");
+      setShowCreateAccountModal(false);
+      // Optionally navigate to account page
+      // navigate("/account");
+    } catch (err: unknown) {
+      const e = err as { data?: { message?: string } };
+      toast.error(e?.data?.message || "Failed to create account");
+    }
+  };
+
+  const onSubmit = async (data: CheckoutFormData) => {
+    // Guest validation
+    if (!user && !guestEmail.trim()) {
+      toast.error("Email is required for guest checkout");
+      return;
+    }
+
     try {
       const orderPayload = {
         orderItems: cart.cartItems.map((item) => ({
@@ -194,6 +247,13 @@ const Checkout = () => {
         },
         paymentMethod,
         couponCode: cart.appliedCoupon || undefined,
+        ...(user
+          ? {}
+          : {
+              guestEmail: guestEmail.trim(),
+              name: guestName.trim() || undefined,
+              phone: guestPhone.trim() || undefined,
+            }),
       };
 
       const result = await createOrder(orderPayload).unwrap();
@@ -204,6 +264,10 @@ const Checkout = () => {
       } else {
         setOrderSuccess(true);
         setOrderData(result.order);
+        // If guest and not paystack, show account creation modal
+        if (!user) {
+          setShowCreateAccountModal(true);
+        }
       }
     } catch (err: unknown) {
       const e = err as { data?: { message?: string } };
@@ -349,6 +413,95 @@ const Checkout = () => {
             />
           </button>
         </div>
+
+        {/* Guest account creation modal */}
+        <AnimatePresence>
+          {showCreateAccountModal && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 z-50"
+                onClick={() => setShowCreateAccountModal(false)}
+                aria-hidden="true"
+              />
+              <motion.div
+                initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                animate={{ scale: 1, y: 0, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="create-account-title"
+              >
+                <div className="relative w-full max-w-md rounded-2xl p-6 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.08] shadow-2xl">
+                  <button
+                    onClick={() => setShowCreateAccountModal(false)}
+                    className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  </button>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-[#e8622a]/10 flex items-center justify-center">
+                      <CheckCircle className="w-5 h-5 text-[#e8622a]" />
+                    </div>
+                    <h3
+                      id="create-account-title"
+                      className="text-xl font-black text-gray-900 dark:text-white"
+                    >
+                      Save your info?
+                    </h3>
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+                    Create an account to track your order, save addresses, and
+                    get faster checkout next time.
+                  </p>
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="email"
+                        value={guestEmail}
+                        disabled
+                        className="w-full pl-11 pr-4 py-3 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.08] text-gray-900 dark:text-white font-medium"
+                        aria-label="Email (already filled)"
+                      />
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="password"
+                        value={accountPassword}
+                        onChange={(e) => setAccountPassword(e.target.value)}
+                        placeholder="Create a password"
+                        className="w-full pl-11 pr-4 py-3 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12 outline-none"
+                        aria-label="Password"
+                      />
+                    </div>
+                    <button
+                      onClick={handleCreateAccount}
+                      disabled={isRegistering || isLoggingIn}
+                      className="w-full py-3.5 rounded-xl font-bold text-white text-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                      style={{
+                        background: ACCENT,
+                        boxShadow: `0 6px 18px ${ACCENT}44`,
+                      }}
+                    >
+                      {isRegistering || isLoggingIn ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Create Account"
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </main>
     );
   }
@@ -430,6 +583,82 @@ const Checkout = () => {
               className="space-y-5"
               aria-label="Checkout form"
             >
+              {/* Guest info fields */}
+              {!user && (
+                <fieldset className="rounded-2xl p-5 md:p-6 space-y-4 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]">
+                  <legend className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-4">
+                    Contact Information
+                  </legend>
+                  <div>
+                    <label
+                      htmlFor="guest-email"
+                      className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2"
+                    >
+                      Email Address *
+                    </label>
+                    <div className="relative">
+                      <Mail
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400"
+                        aria-hidden="true"
+                      />
+                      <input
+                        type="email"
+                        id="guest-email"
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        required
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 outline-none"
+                        placeholder="you@example.com"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="guest-name"
+                      className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2"
+                    >
+                      Full Name (optional)
+                    </label>
+                    <div className="relative">
+                      <User
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400"
+                        aria-hidden="true"
+                      />
+                      <input
+                        type="text"
+                        id="guest-name"
+                        value={guestName}
+                        onChange={(e) => setGuestName(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 outline-none"
+                        placeholder="John Doe"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="guest-phone"
+                      className="block text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2"
+                    >
+                      Phone (optional)
+                    </label>
+                    <div className="relative">
+                      <Phone
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-gray-400"
+                        aria-hidden="true"
+                      />
+                      <input
+                        type="tel"
+                        id="guest-phone"
+                        value={guestPhone}
+                        onChange={(e) => setGuestPhone(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 outline-none"
+                        placeholder="+2348012345678"
+                      />
+                    </div>
+                  </div>
+                </fieldset>
+              )}
+
               {savedAddresses.length > 0 && (
                 <fieldset className="rounded-2xl p-5 md:p-6 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]">
                   <legend className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-4">
@@ -550,7 +779,7 @@ const Checkout = () => {
                         />
                         <input
                           id="checkout-address"
-                          {...register("address")}
+                          {...registerForm("address")}
                           placeholder="123 Main Street, Lagos"
                           className={buildInputCls(!!errors.address)}
                           aria-invalid={!!errors.address}
@@ -587,7 +816,7 @@ const Checkout = () => {
                         />
                         <input
                           id="checkout-city"
-                          {...register("city")}
+                          {...registerForm("city")}
                           placeholder="Lagos"
                           className={buildInputCls(!!errors.city)}
                           aria-invalid={!!errors.city}

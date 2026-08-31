@@ -26,9 +26,18 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       isGift,
       giftMessage,
       shippingInfo,
+      guestEmail,
     } = req.body;
 
-    // Server-side price calculation — never trust client totals
+    // Determine email and user based on auth status
+    const isGuest = !req.user;
+    const customerEmail = isGuest ? guestEmail : req.user!.email;
+    if (!customerEmail) {
+      res.status(400).json({ success: false, message: 'Email is required' });
+      return;
+    }
+
+    // Server-side price calculation
     let pricing;
     try {
       pricing = await calculateOrderPricing(orderItems, couponCode);
@@ -41,10 +50,11 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     const { subtotal, discount, taxAmount, totalPrice } = pricing;
 
     const orderData = {
-      user: req.user!._id,
-      name: req.user!.name || '',
-      phone: req.user!.phone || '',
-      email: req.user!.email,
+      user: req.user?._id || null,
+      guestEmail: isGuest ? guestEmail : undefined,
+      name: req.user?.name || req.body.name || '',
+      phone: req.user?.phone || req.body.phone || '',
+      email: customerEmail,
       orderItems: pricing.orderItems,
       shippingAddress,
       totalPrice,
@@ -73,14 +83,14 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 
     const createdOrder = await Order.create(orderData) as IOrder;
 
-    // 3. Payment flow
+    // Payment flow
     if (paymentMethod === 'paystack') {
       try {
         const amountInKobo = Math.round(totalPrice * 100);
         const orderIdString = createdOrder._id.toString();
 
         const paymentData = await paystack.initializePayment(
-          req.user!.email,
+          customerEmail,
           amountInKobo,
           orderIdString,
         );
@@ -107,10 +117,10 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       }
     } else {
       sendOrderConfirmation(
-        req.user!.email,
+        customerEmail,
         createdOrder._id.toString(),
         totalPrice,
-        req.user!.name,
+        req.user?.name || req.body.name || '',
         discount,
         pricing.couponCode,
         subtotal,
@@ -210,22 +220,28 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
         console.error('Failed to send admin order notification:', err),
       );
 
-      const user = await User.findById(order.user);
-      if (user) {
-        const originalSubtotal = order.orderItems.reduce(
-          (sum: number, item) => sum + item.price * item.qty, 0
-        );
+      // Send confirmation to the order's email (works for guest & logged-in)
+      const customerEmail = order.email || order.guestEmail || '';
+      const customerName = order.name || '';
+      const originalSubtotal = order.orderItems.reduce(
+        (sum: number, item) => sum + item.price * item.qty,
+        0
+      );
+
+      if (customerEmail) {
         sendOrderConfirmation(
-          user.email,
+          customerEmail,
           order._id.toString(),
           order.totalPrice,
-          user.name,
+          customerName,
           order.discount || 0,
           (order.couponCode as string),
           originalSubtotal,
         ).catch((emailError) => {
           console.error('Failed to send order confirmation email:', emailError);
         });
+      } else {
+        console.warn('No email found for order', order._id);
       }
     }
 

@@ -77,6 +77,11 @@ export const createOrderSchema = z.object({
   isGift: z.boolean().optional().default(false),
   giftMessage: z.string().max(500).optional(),
   shippingInfo: z.record(z.string(), z.unknown()).optional(),
+
+  // Guest checkout fields (optional)
+  guestEmail: z.string().email('Invalid email').max(254).optional(),
+  name: z.string().max(100).optional(),
+  phone: z.string().max(20).optional(),
 });
 
 export const validateCouponSchema = z.object({

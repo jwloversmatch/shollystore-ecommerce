@@ -445,15 +445,17 @@ export const sendAdminOrderNotification = async (
     return;
   }
 
-  let userEmail = order.user?.email || "N/A";
-  let userName  = order.name || order.user?.name || "";
-  let userPhone = order.phone || order.user?.phone || "";
+  // Use order fields directly for guest orders, fallback to user if available
+  let userEmail = order.email || order.guestEmail || "N/A";
+  let userName  = order.name || "";
+  let userPhone = order.phone || "";
 
-  if (!order.user?.email && order.user) {
+  // If it's a logged-in user and we don't have email/name from order, fetch from User
+  if (order.user && (!userEmail || userEmail === "N/A" || !userName)) {
     try {
-      const { User } = await import("../models/User");
+      const { User } = await import("../models/User.js");
       const user = await User.findById(order.user);
-      userEmail = user?.email  || "N/A";
+      userEmail = user?.email  || userEmail;
       userName  = userName  || user?.name  || "";
       userPhone = userPhone || user?.phone || "";
     } catch (err) {
