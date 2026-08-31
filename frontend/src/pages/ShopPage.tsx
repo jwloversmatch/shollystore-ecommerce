@@ -72,7 +72,8 @@ const ShopPage = () => {
     : [];
   const sortParam = searchParams.get("sort") || "newest";
 
-  const [selectedPath, setSelectedPath] = useState<string[]>(initialSelectedPath);
+  const [selectedPath, setSelectedPath] =
+    useState<string[]>(initialSelectedPath);
   const [search, setSearch] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [sortBy, setSortBy] = useState(sortParam);
@@ -154,7 +155,8 @@ const ShopPage = () => {
   }, [selectedPath, tree]);
 
   const categoryId = currentNode?._id || undefined;
-  const fallbackCategoryId = selectedPath.length > 0 ? selectedPath[0] : undefined;
+  const fallbackCategoryId =
+    selectedPath.length > 0 ? selectedPath[0] : undefined;
   const fallbackCategoryName = fallbackCategoryId
     ? findNodeById(tree, fallbackCategoryId)?.name
     : undefined;
@@ -240,7 +242,9 @@ const ShopPage = () => {
   };
 
   const hasActiveFilters =
-    selectedPath.length > 0 || debouncedSearch.length > 0 || sortBy !== "newest";
+    selectedPath.length > 0 ||
+    debouncedSearch.length > 0 ||
+    sortBy !== "newest";
 
   // ─── Render ────────────────────────────────────────────────────────────
   return (
@@ -467,6 +471,7 @@ const ShopPage = () => {
             className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
             role="status"
             aria-label="Loading products"
+            aria-busy="true"
           >
             <span className="sr-only">Loading products...</span>
             {Array.from({ length: 8 }).map((_, i) => (
@@ -503,8 +508,8 @@ const ShopPage = () => {
               No products found
             </h2>
             <p className="text-gray-500 dark:text-gray-400 max-w-md mb-6">
-              We couldn't find any products in this category. But here are
-              some other items you might like.
+              We couldn't find any products in this category. But here are some
+              other items you might like.
             </p>
             <button
               onClick={clearAllFilters}
@@ -552,7 +557,9 @@ const ShopPage = () => {
                           stock={product.stock}
                           compareAtPrice={product.compareAtPrice}
                           discountPercent={product.discount?.percentage}
-                          onClick={() => navigate(`/products/${product.slug || product._id}`)}
+                          onClick={() =>
+                            navigate(`/products/${product.slug || product._id}`)
+                          }
                         />
                       ))}
                     </motion.div>
@@ -580,7 +587,9 @@ const ShopPage = () => {
                           stock={product.stock}
                           compareAtPrice={product.compareAtPrice}
                           discountPercent={product.discount?.percentage}
-                          onClick={() => navigate(`/products/${product.slug || product._id}`)}
+                          onClick={() =>
+                            navigate(`/products/${product.slug || product._id}`)
+                          }
                         />
                       ))}
                     </motion.div>

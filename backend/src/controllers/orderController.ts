@@ -1,24 +1,24 @@
-import { Request, Response } from 'express';
-import mongoose from 'mongoose';
-import { Order, IOrder } from '../models/Order';   
-import { Product } from '../models/Product';
-import { User } from '../models/User';
-import { Coupon } from '../models/Coupon';
-import { paystack, PaystackError, ValidationError } from '../config/paystack';
+import { Request, Response } from "express";
+import mongoose from "mongoose";
+import { Order, IOrder } from "../models/Order";
+import { Product } from "../models/Product";
+import { User } from "../models/User";
+import { Coupon } from "../models/Coupon";
+import { paystack, PaystackError, ValidationError } from "../config/paystack";
 import {
   sendOrderConfirmation,
   sendAdminOrderNotification,
-} from '../services/email.service';
-import { AuthRequest } from '../middleware/auth';
-import { calculateOrderPricing } from '../utils/orderPricing';
-import { sendError } from '../utils/apiResponse';
-import { calculateShippingFee } from '../utils/shipping'; 
+} from "../services/email.service";
+import { AuthRequest } from "../middleware/auth";
+import { calculateOrderPricing } from "../utils/orderPricing";
+import { sendError } from "../utils/apiResponse";
+import { calculateShippingFee } from "../utils/shipping";
 
 // ─── Helper: generate a user-friendly tracking number ─────────────────────────
 const generateTrackingNumber = (): string => {
   const year = new Date().getFullYear();
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let result = '';
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let result = "";
   for (let i = 0; i < 6; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
@@ -27,12 +27,15 @@ const generateTrackingNumber = (): string => {
 
 // @desc    Create Order (supports multiple payment methods)
 // @route   POST /api/orders
-export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createOrder = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const {
       orderItems,
       shippingAddress,
-      paymentMethod = 'paystack',
+      paymentMethod = "paystack",
       couponCode,
       notes,
       isGift,
@@ -44,7 +47,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     const isGuest = !req.user;
     const customerEmail = isGuest ? guestEmail : req.user!.email;
     if (!customerEmail) {
-      res.status(400).json({ success: false, message: 'Email is required' });
+      res.status(400).json({ success: false, message: "Email is required" });
       return;
     }
 
@@ -53,9 +56,14 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 
     let pricing;
     try {
-      pricing = await calculateOrderPricing(orderItems, couponCode, shippingFee);
+      pricing = await calculateOrderPricing(
+        orderItems,
+        couponCode,
+        shippingFee,
+      );
     } catch (pricingError) {
-      const msg = pricingError instanceof Error ? pricingError.message : 'Invalid order';
+      const msg =
+        pricingError instanceof Error ? pricingError.message : "Invalid order";
       res.status(400).json({ success: false, message: msg });
       return;
     }
@@ -73,8 +81,8 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     const orderData = {
       user: req.user?._id || null,
       guestEmail: isGuest ? guestEmail : undefined,
-      name: req.user?.name || req.body.name || '',
-      phone: req.user?.phone || req.body.phone || '',
+      name: req.user?.name || req.body.name || "",
+      phone: req.user?.phone || req.body.phone || "",
       email: customerEmail,
       trackingNumber,
       orderItems: pricing.orderItems,
@@ -83,20 +91,20 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       subtotal,
       taxAmount,
       shippingFee,
-      status: 'Pending' as const,
+      status: "Pending" as const,
       paymentMethod,
       paymentDetails:
-        paymentMethod === 'bank_transfer'
+        paymentMethod === "bank_transfer"
           ? {
-              bankName: process.env.BANK_NAME || '',
-              accountName: process.env.BANK_ACCOUNT_NAME || '',
-              accountNumber: process.env.BANK_ACCOUNT_NUMBER || '',
+              bankName: process.env.BANK_NAME || "",
+              accountName: process.env.BANK_ACCOUNT_NAME || "",
+              accountNumber: process.env.BANK_ACCOUNT_NUMBER || "",
             }
-          : paymentMethod === 'whatsapp'
-          ? {
-              whatsappNumber: process.env.WHATSAPP_NUMBER || '',
-            }
-          : undefined,
+          : paymentMethod === "whatsapp"
+            ? {
+                whatsappNumber: process.env.WHATSAPP_NUMBER || "",
+              }
+            : undefined,
       couponCode: pricing.couponCode || undefined,
       discount,
       notes: notes || undefined,
@@ -105,9 +113,9 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       shippingInfo: shippingInfo || {},
     };
 
-    const createdOrder = await Order.create(orderData) as IOrder;
+    const createdOrder = (await Order.create(orderData)) as IOrder;
 
-    if (paymentMethod === 'paystack') {
+    if (paymentMethod === "paystack") {
       try {
         const amountInKobo = Math.round(totalPrice * 100);
         const orderIdString = createdOrder._id.toString();
@@ -120,12 +128,12 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 
         if (!paymentData.status) {
           await Order.findByIdAndDelete(createdOrder._id);
-          res.status(400).json({ success: false, message: 'Paystack error' });
+          res.status(400).json({ success: false, message: "Paystack error" });
           return;
         }
 
-        sendAdminOrderNotification(createdOrder, 'created').catch((err) =>
-          console.error('Failed to send admin order notification:', err),
+        sendAdminOrderNotification(createdOrder, "created").catch((err) =>
+          console.error("Failed to send admin order notification:", err),
         );
 
         res.status(201).json({
@@ -146,19 +154,22 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
         customerEmail,
         createdOrder.trackingNumber || createdOrder._id.toString(),
         totalPrice,
-        req.user?.name || req.body.name || '',
+        req.user?.name || req.body.name || "",
         discount,
         pricing.couponCode,
         subtotal,
         paymentMethod,
         createdOrder.paymentDetails,
-        shippingFee
+        shippingFee,
       ).catch((emailError) => {
-        console.error('Failed to send customer order confirmation email:', emailError);
+        console.error(
+          "Failed to send customer order confirmation email:",
+          emailError,
+        );
       });
 
-      sendAdminOrderNotification(createdOrder, 'created').catch((err) =>
-        console.error('Failed to send admin order notification:', err),
+      sendAdminOrderNotification(createdOrder, "created").catch((err) =>
+        console.error("Failed to send admin order notification:", err),
       );
 
       res.status(201).json({
@@ -176,48 +187,95 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
     if (error instanceof PaystackError) {
-      res.status(502).json({ success: false, message: 'Payment processing failed. Please try again.' });
+      res
+        .status(502)
+        .json({
+          success: false,
+          message: "Payment processing failed. Please try again.",
+        });
       return;
     }
-    sendError(res, 500, 'Internal server error');
+    sendError(res, 500, "Internal server error");
   }
 };
 
 // @desc    Paystack Webhook (Server-to-Server verification)
 // @route   POST /api/orders/webhook
-export const paystackWebhook = async (req: Request, res: Response): Promise<void> => {
+export const paystackWebhook = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
-    const signature = req.headers['x-paystack-signature'] as string;
+    const signature = req.headers["x-paystack-signature"] as string;
     const rawBody = req.body;
 
     if (!signature || !rawBody) {
-      res.status(401).send('Unauthorized');
+      res.status(401).send("Unauthorized");
       return;
     }
 
-    const isValid = paystack.verifyWebhookSignature(rawBody.toString(), signature);
+    // Verify signature
+    const isValid = paystack.verifyWebhookSignature(
+      rawBody.toString(),
+      signature,
+    );
     if (!isValid) {
-      res.status(401).send('Unauthorized');
+      res.status(401).send("Unauthorized");
       return;
     }
 
-    const event = JSON.parse(rawBody.toString());
-    if (event.event === 'charge.success') {
-      const orderId = event.data.metadata.order_id;
-      const order = await Order.findById(orderId) as IOrder | null;
-      if (!order) {
-        res.status(404).send('Order not found');
-        return;
-      }
+    let event;
+    try {
+      event = JSON.parse(rawBody.toString());
+    } catch (parseError) {
+      console.error("Invalid JSON in webhook payload:", parseError);
+      res.status(400).send("Invalid JSON");
+      return;
+    }
 
-      if (order.status === 'Pending') {
+    // ── Idempotency check ─────────────────────────────────────────────────
+    const eventId = event.data?.id;
+    if (!eventId) {
+      res.status(400).send("Event ID missing");
+      return;
+    }
+
+    // If this event has already been processed, return success
+    const alreadyProcessed = await Order.findOne({ paymentEventId: eventId });
+    if (alreadyProcessed) {
+      res.status(200).send("Webhook already processed");
+      return;
+    }
+
+    const orderId = event.data?.metadata?.order_id;
+    if (!orderId) {
+      res.status(400).send("Order ID missing");
+      return;
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      res.status(404).send("Order not found");
+      return;
+    }
+
+    // ── Handle charge.success ────────────────────────────────────────────
+    if (event.event === "charge.success") {
+      // Ensure stock is deducted only once
+      if (order.status === "Pending") {
         for (const item of order.orderItems) {
           const product = await Product.findById(item.product);
           if (!product) continue;
 
-          if (item.variant && (item.variant.sku || item.variant.color || item.variant.size)) {
+          if (
+            item.variant &&
+            (item.variant.sku || item.variant.color || item.variant.size)
+          ) {
             const variant = product.variants?.find(
-              v => v.sku === item.variant?.sku || (v.color === item.variant?.color && v.size === item.variant?.size)
+              (v) =>
+                v.sku === item.variant?.sku ||
+                (v.color === item.variant?.color &&
+                  v.size === item.variant?.size),
             );
             if (variant) {
               if (variant.stock !== undefined) {
@@ -233,30 +291,33 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
         }
       }
 
-      order.status = 'Paid';
+      order.status = "Paid";
       order.paymentResult = {
         id: event.data.id,
         status: event.data.status,
         update_time: event.data.paid_at,
       };
+      order.paymentEventId = eventId;
+      order.paymentEventType = event.event;
+
       await order.save();
 
       if (order.couponCode) {
         await Coupon.updateOne(
           { code: (order.couponCode as string).toUpperCase() },
-          { $inc: { usedCount: 1 } }
+          { $inc: { usedCount: 1 } },
         );
       }
 
-      sendAdminOrderNotification(order, 'updated', 'Paid').catch((err) =>
-        console.error('Failed to send admin order notification:', err),
+      sendAdminOrderNotification(order, "updated", "Paid").catch((err) =>
+        console.error("Failed to send admin order notification:", err),
       );
 
-      const customerEmail = order.email || order.guestEmail || '';
-      const customerName = order.name || '';
+      const customerEmail = order.email || order.guestEmail || "";
+      const customerName = order.name || "";
       const originalSubtotal = order.orderItems.reduce(
         (sum: number, item) => sum + item.price * item.qty,
-        0
+        0,
       );
 
       if (customerEmail) {
@@ -266,23 +327,45 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
           order.totalPrice,
           customerName,
           order.discount || 0,
-          (order.couponCode as string),
+          order.couponCode as string,
           originalSubtotal,
           order.paymentMethod,
           order.paymentDetails,
-          order.shippingFee || 0
+          order.shippingFee || 0,
         ).catch((emailError) => {
-          console.error('Failed to send order confirmation email:', emailError);
+          console.error("Failed to send order confirmation email:", emailError);
         });
       } else {
-        console.warn('No email found for order', order._id);
+        console.warn("No email found for order", order._id);
       }
+
+      res.status(200).send("Webhook received");
+      return;
     }
 
-    res.status(200).send('Webhook received');
+    // ── Handle charge.failed ─────────────────────────────────────────────
+    if (event.event === "charge.failed") {
+      order.paymentEventId = eventId;
+      order.paymentEventType = event.event;
+      order.paymentFailReason = event.data.gateway_response || "Payment failed";
+      await order.save();
+
+      sendAdminOrderNotification(order, "updated", "Failed").catch((err) =>
+        console.error("Failed to send admin order notification:", err),
+      );
+
+      res.status(200).send("Webhook received");
+      return;
+    }
+
+    // Unknown event: just record it
+    order.paymentEventId = eventId;
+    order.paymentEventType = event.event;
+    await order.save();
+    res.status(200).send("Webhook received");
   } catch (error) {
-    console.error('Webhook Error:', error);
-    res.status(500).send('Webhook processing failed');
+    console.error("Webhook Error:", error);
+    res.status(500).send("Webhook processing failed");
   }
 };
 
@@ -293,30 +376,42 @@ export const verifyPayment = async (req: Request, res: Response) => {
     res.json(result);
   } catch (error) {
     if (error instanceof PaystackError) {
-      return res.status(502).json({ success: false, message: 'Payment verification failed.' });
+      return res
+        .status(502)
+        .json({ success: false, message: "Payment verification failed." });
     }
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
-export const getMyOrders = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getMyOrders = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
-    const orders = await Order.find({ user: req.user!._id }).sort({ createdAt: -1 });
+    const orders = await Order.find({ user: req.user!._id }).sort({
+      createdAt: -1,
+    });
     res.json(orders);
   } catch (error: any) {
-    sendError(res, 500, 'Internal server error');
+    sendError(res, 500, "Internal server error");
   }
 };
 
 // @desc    Track guest/order by ID or tracking number + email
 // @route   GET /api/orders/track/:orderId?email=...
-export const trackOrder = async (req: Request, res: Response): Promise<void> => {
+export const trackOrder = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const orderId = String(req.params.orderId);
-    const email = String(req.query.email || '').toLowerCase();
+    const email = String(req.query.email || "").toLowerCase();
 
     if (!orderId || !email) {
-      res.status(400).json({ success: false, message: 'Order ID and email are required' });
+      res
+        .status(400)
+        .json({ success: false, message: "Order ID and email are required" });
       return;
     }
 
@@ -332,20 +427,27 @@ export const trackOrder = async (req: Request, res: Response): Promise<void> => 
       : { trackingNumber: orderId };
 
     const emailCondition = {
-      $or: [{ email: email.toLowerCase() }, { guestEmail: email.toLowerCase() }],
+      $or: [
+        { email: email.toLowerCase() },
+        { guestEmail: email.toLowerCase() },
+      ],
     };
 
     const order = await Order.findOne({
       $and: [identifierCondition, emailCondition],
-    }).select('-__v');
+    }).select("-__v");
 
     if (!order) {
-      res.status(404).json({ success: false, message: 'Order not found or email mismatch' });
+      res
+        .status(404)
+        .json({ success: false, message: "Order not found or email mismatch" });
       return;
     }
 
     const paymentDetails =
-      order.status === 'Pending' && (order.paymentMethod === 'bank_transfer' || order.paymentMethod === 'whatsapp')
+      order.status === "Pending" &&
+      (order.paymentMethod === "bank_transfer" ||
+        order.paymentMethod === "whatsapp")
         ? order.paymentDetails
         : undefined;
 
@@ -365,6 +467,6 @@ export const trackOrder = async (req: Request, res: Response): Promise<void> => 
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

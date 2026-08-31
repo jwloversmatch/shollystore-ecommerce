@@ -200,9 +200,25 @@ const Navbar = () => {
 
   const [adminDrawer, setAdminDrawer] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const liveRegionRef = useRef<HTMLSpanElement>(null);
+  const prevTotalQtyRef = useRef<number | null>(null);
 
   const totalQty = cartItems.reduce((acc, i) => acc + i.qty, 0);
   const showCart = !user || user.role === "user";
+
+  // Announce cart changes to screen readers
+  useEffect(() => {
+    if (
+      prevTotalQtyRef.current !== null &&
+      prevTotalQtyRef.current !== totalQty &&
+      liveRegionRef.current
+    ) {
+      liveRegionRef.current.textContent = `Cart updated: ${totalQty} ${
+        totalQty === 1 ? "item" : "items"
+      }`;
+    }
+    prevTotalQtyRef.current = totalQty;
+  }, [totalQty]);
 
   const isActive = (path: string) => {
     if (path === "/") return pathname === "/";
@@ -227,6 +243,14 @@ const Navbar = () => {
 
   return (
     <>
+      {/* Live region for cart updates */}
+      <span
+        ref={liveRegionRef}
+        className="sr-only"
+        aria-live="polite"
+        aria-atomic="true"
+      />
+
       {/* Skip to content */}
       <a
         href="#main-content"
