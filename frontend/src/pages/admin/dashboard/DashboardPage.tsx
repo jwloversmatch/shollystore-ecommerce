@@ -104,7 +104,7 @@ const DashboardPage = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto space-y-5 md:space-y-6 pb-28 md:pb-10 focus:outline-none pt-[calc(56px+env(safe-area-inset-top,0px))] md:pt-[calc(80px+env(safe-area-inset-top,0px))] lg:pt-[calc(88px+env(safe-area-inset-top,0px))]"
+        className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto space-y-5 md:space-y-6 pb-28 md:pb-10 focus:outline-none pt-[calc(56px_+_env(safe-area-inset-top,0px))] md:pt-[calc(80px_+_env(safe-area-inset-top,0px))] lg:pt-[calc(88px_+_env(safe-area-inset-top,0px))]"
         style={{ background: bg }}
       >
         <SEO title="Admin Dashboard" description="Manage your store." />
@@ -117,7 +117,7 @@ const DashboardPage = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto space-y-5 md:space-y-6 pb-28 md:pb-10 focus:outline-none pt-[calc(56px+env(safe-area-inset-top,0px))] md:pt-[calc(80px+env(safe-area-inset-top,0px))] lg:pt-[calc(88px+env(safe-area-inset-top,0px))]"
+      className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto space-y-5 md:space-y-6 pb-28 md:pb-10 focus:outline-none pt-[calc(56px_+_env(safe-area-inset-top,0px))] md:pt-[calc(80px_+_env(safe-area-inset-top,0px))] lg:pt-[calc(88px_+_env(safe-area-inset-top,0px))]"
       style={{ background: bg }}
     >
       <SEO title="Admin Dashboard" description="Manage your store, track sales, oversee orders & users." />

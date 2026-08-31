@@ -88,7 +88,7 @@ const SettingsPage = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto space-y-5 pb-28 md:pb-10 focus:outline-none pt-[calc(56px+env(safe-area-inset-top,0px))] md:pt-[calc(80px+env(safe-area-inset-top,0px))] lg:pt-[calc(88px+env(safe-area-inset-top,0px))]"
+        className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto space-y-5 pb-28 md:pb-10 focus:outline-none pt-[calc(56px_+_env(safe-area-inset-top,0px))] md:pt-[calc(80px_+_env(safe-area-inset-top,0px))] lg:pt-[calc(88px_+_env(safe-area-inset-top,0px))]"
         style={{ background: bg }}
       >
         <div className="space-y-5">
@@ -109,7 +109,7 @@ const SettingsPage = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto space-y-5 pb-28 md:pb-10 focus:outline-none pt-[calc(56px+env(safe-area-inset-top,0px))] md:pt-[calc(80px+env(safe-area-inset-top,0px))] lg:pt-[calc(88px+env(safe-area-inset-top,0px))]"
+      className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto space-y-5 pb-28 md:pb-10 focus:outline-none pt-[calc(56px_+_env(safe-area-inset-top,0px))] md:pt-[calc(80px_+_env(safe-area-inset-top,0px))] lg:pt-[calc(88px_+_env(safe-area-inset-top,0px))]"
       style={{ background: bg }}
     >
       <ConfirmationModal isOpen={clearModal} onClose={() => setClearModal(false)} onConfirm={handleClearAll} title="Clear All Settings?" message="This will remove all payment details and homepage content. This cannot be undone." confirmText="Clear All" cancelText="Cancel" type="danger" />

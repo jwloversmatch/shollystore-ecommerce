@@ -144,7 +144,7 @@ const CategoriesPage = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto pb-28 md:pb-10 space-y-5 focus:outline-none pt-[calc(56px+env(safe-area-inset-top,0px))] md:pt-[calc(80px+env(safe-area-inset-top,0px))] lg:pt-[calc(88px+env(safe-area-inset-top,0px))]"
+        className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto pb-28 md:pb-10 space-y-5 focus:outline-none pt-[calc(56px_+_env(safe-area-inset-top,0px))] md:pt-[calc(80px_+_env(safe-area-inset-top,0px))] lg:pt-[calc(88px_+_env(safe-area-inset-top,0px))]"
         style={{ background: bg }}
       >
         <div className="flex items-center justify-between">
@@ -168,7 +168,7 @@ const CategoriesPage = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto pb-28 md:pb-10 space-y-5 focus:outline-none pt-[calc(56px+env(safe-area-inset-top,0px))] md:pt-[calc(80px+env(safe-area-inset-top,0px))] lg:pt-[calc(88px+env(safe-area-inset-top,0px))]"
+      className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto pb-28 md:pb-10 space-y-5 focus:outline-none pt-[calc(56px_+_env(safe-area-inset-top,0px))] md:pt-[calc(80px_+_env(safe-area-inset-top,0px))] lg:pt-[calc(88px_+_env(safe-area-inset-top,0px))]"
       style={{ background: bg }}
     >
       <ConfirmationModal isOpen={deleteModal} onClose={() => setDeleteModal(false)} onConfirm={confirmDelete} title="Delete Category" message="Are you sure you want to delete this category? This action cannot be undone." confirmText="Delete" cancelText="Cancel" type="danger" />
