@@ -490,8 +490,8 @@ const OrderSummary = ({
           <dt className="text-gray-500 dark:text-gray-400 font-medium">
             Delivery
           </dt>
-          <dd className="font-bold text-emerald-600 dark:text-emerald-400">
-            Free
+          <dd className="font-bold text-gray-900 dark:text-white">
+            Calculated at checkout
           </dd>
         </div>
       </dl>
