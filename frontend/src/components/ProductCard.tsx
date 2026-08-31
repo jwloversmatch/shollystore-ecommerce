@@ -201,7 +201,14 @@ const ProductCard = ({
                       className="text-xs text-gray-500 line-through truncate min-w-0"
                       aria-label={`Original price: ${compareAtPriceDisplay?.full ?? ''}`}
                     >
-                      {compareAtPriceDisplay?.short}
+                      {/* Mobile: compact */}
+                      <span className="sm:hidden">
+                        {compareAtPriceDisplay?.short}
+                      </span>
+                      {/* Desktop: full */}
+                      <span className="hidden sm:inline">
+                        {compareAtPriceDisplay?.full}
+                      </span>
                     </span>
                   )}
                   {discountPercent && discountPercent > 0 && (
@@ -222,7 +229,14 @@ const ProductCard = ({
                 >
                   <span className="text-gray-500 dark:text-gray-400 text-xs pb-0.5">₦</span>
                   <span className="font-black text-xl leading-none text-gray-900 dark:text-white">
-                    {priceDisplay.short.replace('₦', '')}
+                    {/* Mobile: compact */}
+                    <span className="sm:hidden">
+                      {priceDisplay.short.replace('₦', '')}
+                    </span>
+                    {/* Desktop: full */}
+                    <span className="hidden sm:inline">
+                      {price.toLocaleString()}
+                    </span>
                   </span>
                 </div>
 
