@@ -17,7 +17,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import {
-  useGetProductsQuery,
+  useGetProductBySlugQuery,
   useGetCategoryTreeQuery,
 } from "../features/api/apiSlice";
 import type { ProductItem } from "../types/home";
@@ -100,11 +100,8 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
-  const { data: productsData, isLoading } = useGetProductsQuery({
-    limit: 9999,
-  });
-  const products: ProductItem[] = productsData?.products ?? [];
-  const product = products.find((p) => p.slug === slug);
+  // ✅ Use direct slug lookup instead of fetching all products
+  const { data: product, isLoading, isError } = useGetProductBySlugQuery(slug || "");
 
   const { data: categoryTree = [] } = useGetCategoryTreeQuery(undefined);
   const categoryId = product ? getCategoryId(product.category) : undefined;
@@ -247,7 +244,7 @@ const ProductDetail = () => {
   }
 
   // ══════ NOT FOUND ═══════════════════════════════
-  if (!product) {
+  if (!product || isError) {
     return (
       <main className="min-h-screen flex items-center justify-center px-4 bg-[#FCFAF5] dark:bg-[#0A0A0B]">
         <motion.div
@@ -437,7 +434,7 @@ const ProductDetail = () => {
               role="group"
               aria-label="Product image thumbnails"
             >
-              {images.map((img, idx) => (
+              {images.map((img: string, idx: number) => (
                 <motion.button
                   key={idx}
                   aria-pressed={idx === selectedImage}
@@ -649,7 +646,7 @@ const ProductDetail = () => {
           {/* Tags */}
           {product.tags && product.tags.length > 0 && (
             <div className="flex flex-wrap gap-2" aria-label="Product tags">
-              {product.tags.map((tag, idx) => (
+              {product.tags.map((tag: string, idx: number) => (
                 <span
                   key={idx}
                   className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-gray-300 dark:border-white/10"

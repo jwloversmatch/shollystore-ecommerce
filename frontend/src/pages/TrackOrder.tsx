@@ -3,22 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useTrackOrderQuery } from "../features/api/apiSlice";
 import { AlertCircle, Loader2, Search, ArrowLeft } from "lucide-react";
 import SEO from "../components/SEO";
+import { formatPaymentMethod } from "../utils/format"; 
 
 const ACCENT = "#e8622a";
-
-// Helper to format raw payment method to friendly name
-const formatPaymentMethod = (method?: string) => {
-  switch (method) {
-    case 'bank_transfer':
-      return 'Bank Transfer';
-    case 'whatsapp':
-      return 'WhatsApp Pay';
-    case 'paystack':
-      return 'Paystack';
-    default:
-      return method || 'N/A';
-  }
-};
 
 const TrackOrder = () => {
   const [orderId, setOrderId] = useState("");

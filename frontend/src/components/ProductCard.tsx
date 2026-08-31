@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import { addToCart } from "../features/cart/cartSlice";
 import { getCloudinaryUrl } from "../utils/cloudinary";
+import { formatPrice } from "../utils/format";
 import type { IVariant } from "../types/home";
 
 interface ProductProps {
@@ -22,17 +23,6 @@ interface ProductProps {
 }
 
 const FALLBACK = "https://via.placeholder.com/300x300?text=No+Image";
-
-// ─── Helper: compact price for large values ────────────────────────────────
-const formatCompactPrice = (value: number): { short: string; full: string } => {
-  const full = `₦${value.toLocaleString()}`;
-  if (value >= 1_000_000) {
-    const millions = value / 1_000_000;
-    const short = `₦${millions % 1 === 0 ? millions.toFixed(0) : millions.toFixed(1)}M`;
-    return { short, full };
-  }
-  return { short: full, full };
-};
 
 const ProductCard = ({
   _id,
@@ -57,9 +47,10 @@ const ProductCard = ({
     (compareAtPrice && compareAtPrice > price) ||
     (discountPercent && discountPercent > 0);
 
-  const priceDisplay = formatCompactPrice(price);
+  // Use centralized formatter
+  const priceDisplay = formatPrice(price, { compact: true });
   const compareAtPriceDisplay = compareAtPrice
-    ? formatCompactPrice(compareAtPrice)
+    ? formatPrice(compareAtPrice, { compact: true })
     : null;
 
   const handleAddToCart = useCallback(

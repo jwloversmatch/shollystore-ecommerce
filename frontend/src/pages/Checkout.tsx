@@ -34,6 +34,7 @@ import {
   Phone,
 } from "lucide-react";
 import SEO from "../components/SEO";
+import { calculateShippingFee } from "../utils/format"; // ✅ centralized utility
 
 const ACCENT = "#e8622a";
 const FOCUS_RING =
@@ -130,24 +131,6 @@ const PAYMENT_METHODS = [
     color: "#25D366",
   },
 ] as const;
-
-// Improved shipping fee helpers
-const normalize = (value: string) =>
-  value.trim().toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
-
-const isLagos = (city: string) => /\blagos\b/.test(normalize(city));
-
-const isNigeria = (country: string) => {
-  const n = normalize(country);
-  return ['nigeria', 'ng', 'nga', 'nigerian'].includes(n);
-};
-
-const calculateShippingFee = (city: string, country: string = "Nigeria"): number => {
-  if (isNigeria(country)) {
-    return isLagos(city) ? 2500 : 4000;
-  }
-  return 30000;
-};
 
 const Checkout = () => {
   const navigate = useNavigate();
