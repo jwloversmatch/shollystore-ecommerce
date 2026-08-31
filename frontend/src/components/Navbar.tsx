@@ -19,13 +19,12 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
 const BRAND_NAME = "SHOLEX";
-
 
 const ADMIN_LINKS = [
   {
@@ -109,6 +108,88 @@ const NavBtn: React.FC<NavBtnProps> = ({ to, icon, label, active, badge }) => {
   );
 };
 
+// ─── User dropdown menu (account + logout) ───────────────────────────────────
+const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/");
+    setOpen(false);
+  };
+
+  return (
+    <div ref={menuRef} className="relative">
+      <motion.button
+        onClick={() => setOpen(!open)}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        aria-label="User menu"
+        aria-haspopup="true"
+        aria-expanded={open}
+        className={`flex items-center justify-center rounded-full border transition-colors ${
+          mobile
+            ? "w-10 h-10 bg-transparent border-transparent"
+            : "w-10 h-10 bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/10 hover:border-[#e8622a]/50"
+        }`}
+      >
+        <User
+          className={mobile ? "w-5 h-5 text-gray-600 dark:text-gray-400" : "w-5 h-5 text-gray-600 dark:text-gray-400"}
+          aria-hidden="true"
+        />
+      </motion.button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: mobile ? 10 : -5, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: mobile ? 10 : -5, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className={`absolute z-50 w-44 rounded-xl shadow-xl border overflow-hidden bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.08] ${
+              mobile ? "bottom-full mb-2 right-0" : "top-full mt-2 right-0"
+            }`}
+            role="menu"
+            aria-label="User menu"
+          >
+            <Link
+              to="/account"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+              role="menuitem"
+            >
+              <User className="w-4 h-4" aria-hidden="true" />
+              Account
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+              role="menuitem"
+            >
+              <LogOut className="w-4 h-4" aria-hidden="true" />
+              Logout
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 // ─── Main component ───────────────────────────────────────────────────────────
 const Navbar = () => {
   const { user } = useSelector((s: RootState) => s.auth);
@@ -118,7 +199,7 @@ const Navbar = () => {
   const { pathname } = useLocation();
 
   const [adminDrawer, setAdminDrawer] = useState(false);
- const drawerRef = useRef<HTMLDivElement>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
 
   const totalQty = cartItems.reduce((acc, i) => acc + i.qty, 0);
   const showCart = !user || user.role === "user";
@@ -142,14 +223,11 @@ const Navbar = () => {
         : "text-gray-600 dark:text-gray-500 hover:text-black dark:hover:text-white"
     }`;
 
-  // Focus trap for the admin bottom sheet: moves focus in on open, cycles
-  // Tab within it, closes on Escape, restores focus to the trigger on close.
-useFocusTrap(drawerRef, adminDrawer, () => setAdminDrawer(false));
+  useFocusTrap(drawerRef, adminDrawer, () => setAdminDrawer(false));
 
-  // ═══════════════════════════════════════════════════════════════════════════
   return (
     <>
-            {/* Skip to content */}
+      {/* Skip to content */}
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-[#e8622a] focus:text-white focus:rounded-xl focus:font-bold"
@@ -157,7 +235,7 @@ useFocusTrap(drawerRef, adminDrawer, () => setAdminDrawer(false));
         Skip to main content
       </a>
 
-      {/* ══════ DESKTOP — fixed top bar (left exactly where it was) ═══════ */}
+      {/* ══════ DESKTOP — fixed top bar ═══════ */}
       <nav
         className="hidden md:block fixed top-0 left-0 right-0 z-50"
         aria-label="Main navigation"
@@ -196,18 +274,7 @@ useFocusTrap(drawerRef, adminDrawer, () => setAdminDrawer(false));
             </div>
           )}
 
-          {/* User links */}
-          {user?.role === "user" && (
-            <Link
-              to="/account"
-              className={desktopLinkCls("/account")}
-              aria-current={isActive("/account") ? "page" : undefined}
-            >
-              <User className="w-4 h-4" aria-hidden="true" /> Account
-            </Link>
-          )}
-
-          {/* Right: cart + auth + theme toggle */}
+          {/* Right: cart + theme toggle + user menu or login */}
           <div className="flex items-center gap-4 shrink-0">
             <ThemeToggle />
 
@@ -244,14 +311,7 @@ useFocusTrap(drawerRef, adminDrawer, () => setAdminDrawer(false));
             )}
 
             {user ? (
-              <motion.button
-                onClick={handleLogout}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-1.5 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-red-500 transition-colors"
-              >
-                <LogOut className="w-4 h-4" aria-hidden="true" /> Logout
-              </motion.button>
+              <UserMenu />
             ) : (
               <motion.div
                 whileHover={{ scale: 1.04 }}
@@ -273,10 +333,10 @@ useFocusTrap(drawerRef, adminDrawer, () => setAdminDrawer(false));
         </div>
       </nav>
 
-      {/* ══════ Everything mobile-fixed is portaled straight to <body> ══════ */}
+      {/* ══════ MOBILE — all fixed elements portaled to body ══════ */}
       {createPortal(
         <>
-          {/* ══════ MOBILE — FIXED top bar ═══════════════════════════════ */}
+          {/* Mobile top bar */}
           <nav
             className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center px-5
               bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]"
@@ -322,7 +382,7 @@ useFocusTrap(drawerRef, adminDrawer, () => setAdminDrawer(false));
             </div>
           </nav>
 
-          {/* ══════ MOBILE — fixed bottom nav ══════════════════════════════ */}
+          {/* Mobile bottom nav */}
           <nav
             className="md:hidden fixed bottom-0 left-0 right-0 z-40
         bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
@@ -361,12 +421,9 @@ useFocusTrap(drawerRef, adminDrawer, () => setAdminDrawer(false));
               )}
 
               {user?.role === "user" && (
-                <NavBtn
-                  to="/account"
-                  icon={<User className="w-5 h-5" />}
-                  label="Account"
-                  active={isActive("/account")}
-                />
+                <div className="flex flex-col items-center justify-center">
+                  <UserMenu mobile />
+                </div>
               )}
 
               {!user && (
@@ -380,7 +437,7 @@ useFocusTrap(drawerRef, adminDrawer, () => setAdminDrawer(false));
 
               {user?.role === "admin" && (
                 <button
-  onClick={() => setAdminDrawer(true)}
+                  onClick={() => setAdminDrawer(true)}
                   className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-colors duration-150"
                   style={{ color: adminDrawer ? ACCENT : "#6b7280" }}
                   aria-label="More admin options"
@@ -394,22 +451,10 @@ useFocusTrap(drawerRef, adminDrawer, () => setAdminDrawer(false));
                   </span>
                 </button>
               )}
-
-              {user?.role === "user" && (
-                <button
-                  onClick={handleLogout}
-                  className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] text-gray-600 hover:text-red-400 transition-colors"
-                >
-                  <LogOut className="w-5 h-5" aria-hidden="true" />
-                  <span className="text-[9px] font-extrabold uppercase tracking-wide">
-                    Logout
-                  </span>
-                </button>
-              )}
             </div>
           </nav>
 
-          {/* ══════ ADMIN BOTTOM SHEET (mobile) ═══════════════════════════ */}
+          {/* Admin bottom sheet (mobile) */}
           <AnimatePresence>
             {adminDrawer && (
               <>
