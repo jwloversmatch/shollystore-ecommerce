@@ -61,6 +61,7 @@ interface CartItem {
 }
 interface OrderResponse {
   _id: string;
+  trackingNumber?: string;   // ✅ ADDED
 }
 
 const checkoutSchema = z.object({
@@ -280,6 +281,7 @@ const Checkout = () => {
     const waLink = `https://wa.me/${d.whatsappNumber?.replace(/\D/g, "")}`;
     const orderEmail = user?.email || guestEmail;
     const orderId = orderData?._id;
+    const trackingNumber = orderData?.trackingNumber || orderId;
 
     return (
       <main
@@ -320,7 +322,7 @@ const Checkout = () => {
           <p className="text-gray-500 dark:text-gray-400 text-sm text-center mb-6">
             Reference:{" "}
             <span className="font-bold text-gray-900 dark:text-white font-mono text-xs px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-[#1c1c1c]">
-              #{orderId}
+              #{trackingNumber}
             </span>
           </p>
           {paymentMethod === "bank_transfer" && (
@@ -413,7 +415,7 @@ const Checkout = () => {
           <button
             onClick={() =>
               navigate(
-                `/track-order?orderId=${orderId}&email=${encodeURIComponent(orderEmail || "")}`,
+                `/track-order?orderId=${trackingNumber}&email=${encodeURIComponent(orderEmail || "")}`,
               )
             }
             className="mt-3 w-full py-3 rounded-xl font-bold text-sm border border-gray-300 dark:border-white/20 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition"

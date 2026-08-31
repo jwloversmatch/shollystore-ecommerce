@@ -13,6 +13,17 @@ import { AuthRequest } from '../middleware/auth';
 import { calculateOrderPricing } from '../utils/orderPricing';
 import { sendError } from '../utils/apiResponse';
 
+// ─── Helper: generate a user-friendly tracking number ─────────────────────────
+const generateTrackingNumber = (): string => {
+  const year = new Date().getFullYear();
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `SHO-${year}-${result}`;
+};
+
 // @desc    Create Order (supports multiple payment methods)
 // @route   POST /api/orders
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -29,7 +40,6 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       guestEmail,
     } = req.body;
 
-    // Determine email and user based on auth status
     const isGuest = !req.user;
     const customerEmail = isGuest ? guestEmail : req.user!.email;
     if (!customerEmail) {
@@ -37,7 +47,6 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
-    // Server-side price calculation
     let pricing;
     try {
       pricing = await calculateOrderPricing(orderItems, couponCode);
@@ -49,12 +58,21 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 
     const { subtotal, discount, taxAmount, totalPrice } = pricing;
 
+    // Generate unique tracking number
+    let trackingNumber = generateTrackingNumber();
+    let existingOrder = await Order.findOne({ trackingNumber });
+    while (existingOrder) {
+      trackingNumber = generateTrackingNumber();
+      existingOrder = await Order.findOne({ trackingNumber });
+    }
+
     const orderData = {
       user: req.user?._id || null,
       guestEmail: isGuest ? guestEmail : undefined,
       name: req.user?.name || req.body.name || '',
       phone: req.user?.phone || req.body.phone || '',
       email: customerEmail,
+      trackingNumber,                             
       orderItems: pricing.orderItems,
       shippingAddress,
       totalPrice,
@@ -65,8 +83,9 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       paymentDetails:
         paymentMethod === 'bank_transfer'
           ? {
-              accountNumber: process.env.BANK_ACCOUNT_NUMBER || '',
               bankName: process.env.BANK_NAME || '',
+              accountName: process.env.BANK_ACCOUNT_NAME || '',
+              accountNumber: process.env.BANK_ACCOUNT_NUMBER || '',
             }
           : paymentMethod === 'whatsapp'
           ? {
@@ -83,7 +102,6 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 
     const createdOrder = await Order.create(orderData) as IOrder;
 
-    // Payment flow
     if (paymentMethod === 'paystack') {
       try {
         const amountInKobo = Math.round(totalPrice * 100);
@@ -107,7 +125,10 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 
         res.status(201).json({
           success: true,
-          order: createdOrder,
+          order: {
+            ...createdOrder.toObject(),
+            trackingNumber: createdOrder.trackingNumber,
+          },
           paymentUrl: paymentData.data.authorization_url,
           reference: paymentData.data.reference,
         });
@@ -118,14 +139,14 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     } else {
       sendOrderConfirmation(
         customerEmail,
-        createdOrder._id.toString(),
+        createdOrder.trackingNumber || createdOrder._id.toString(), // ✅ use tracking number
         totalPrice,
         req.user?.name || req.body.name || '',
         discount,
         pricing.couponCode,
         subtotal,
-        paymentMethod, 
-        createdOrder.paymentDetails 
+        paymentMethod,
+        createdOrder.paymentDetails
       ).catch((emailError) => {
         console.error('Failed to send customer order confirmation email:', emailError);
       });
@@ -136,7 +157,10 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 
       res.status(201).json({
         success: true,
-        order: createdOrder,
+        order: {
+          ...createdOrder.toObject(),
+          trackingNumber: createdOrder.trackingNumber,
+        },
         paymentMethod,
       });
     }
@@ -222,7 +246,6 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
         console.error('Failed to send admin order notification:', err),
       );
 
-      // Send confirmation to the order's email (works for guest & logged-in)
       const customerEmail = order.email || order.guestEmail || '';
       const customerName = order.name || '';
       const originalSubtotal = order.orderItems.reduce(
@@ -233,14 +256,14 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
       if (customerEmail) {
         sendOrderConfirmation(
           customerEmail,
-          order._id.toString(),
+          order.trackingNumber || order._id.toString(), // ✅ use tracking number
           order.totalPrice,
           customerName,
           order.discount || 0,
           (order.couponCode as string),
           originalSubtotal,
-          order.paymentMethod, 
-          order.paymentDetails
+          order.paymentMethod,
+          order.paymentDetails,
         ).catch((emailError) => {
           console.error('Failed to send order confirmation email:', emailError);
         });
@@ -278,21 +301,37 @@ export const getMyOrders = async (req: AuthRequest, res: Response): Promise<void
   }
 };
 
-// @desc    Track guest/order by ID + email
+// @desc    Track guest/order by ID or tracking number + email
 // @route   GET /api/orders/track/:orderId?email=...
 export const trackOrder = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { orderId } = req.params;
-    const email = req.query.email as string;
+    // Ensure both are strings
+    const orderId = String(req.params.orderId);
+    const email = String(req.query.email || '').toLowerCase();
 
-    if (!email) {
-      res.status(400).json({ success: false, message: 'Email is required' });
+    if (!orderId || !email) {
+      res.status(400).json({ success: false, message: 'Order ID and email are required' });
       return;
     }
 
-    const order = await Order.findOne({
-      _id: orderId,
+    const isValidObjectId = mongoose.Types.ObjectId.isValid(orderId);
+
+    // Build identifier condition – convert to ObjectId if valid
+    const identifierCondition = isValidObjectId
+      ? {
+          $or: [
+            { _id: new mongoose.Types.ObjectId(orderId) },
+            { trackingNumber: orderId },
+          ],
+        }
+      : { trackingNumber: orderId };
+
+    const emailCondition = {
       $or: [{ email: email.toLowerCase() }, { guestEmail: email.toLowerCase() }],
+    };
+
+    const order = await Order.findOne({
+      $and: [identifierCondition, emailCondition],
     }).select('-__v');
 
     if (!order) {
@@ -309,6 +348,7 @@ export const trackOrder = async (req: Request, res: Response): Promise<void> => 
       success: true,
       order: {
         _id: order._id,
+        trackingNumber: order.trackingNumber,
         status: order.status,
         totalPrice: order.totalPrice,
         orderItems: order.orderItems,

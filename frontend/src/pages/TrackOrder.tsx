@@ -61,7 +61,7 @@ const TrackOrder = () => {
               htmlFor="track-order-id"
               className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1"
             >
-              Order ID
+              Order ID or Tracking Number
             </label>
             <input
               id="track-order-id"
@@ -70,7 +70,7 @@ const TrackOrder = () => {
               onChange={(e) => setOrderId(e.target.value)}
               required
               className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white outline-none focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12"
-              placeholder="e.g., 60f7c1e5b9d1e9001c9e1234"
+              placeholder="e.g., SHO-2026-AB12CD"
             />
           </div>
           <div>
@@ -118,6 +118,16 @@ const TrackOrder = () => {
               Order Details
             </h2>
             <div className="space-y-3 text-sm">
+              {data.order.trackingNumber && (
+                <p className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Tracking Number
+                  </span>
+                  <span className="font-mono font-bold text-gray-900 dark:text-white">
+                    {data.order.trackingNumber}
+                  </span>
+                </p>
+              )}
               <p className="flex justify-between">
                 <span className="text-gray-500 dark:text-gray-400">Status</span>
                 <span className="font-bold text-gray-900 dark:text-white">

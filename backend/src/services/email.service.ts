@@ -289,6 +289,13 @@ export const sendOrderConfirmation = async (
       <p style="margin:16px 0;"><strong>Please complete payment via WhatsApp:</strong> ${paymentDetails.whatsappNumber || 'N/A'}</p>`;
   }
 
+  // Track order button
+  const trackUrl = `${CLIENT_URL}/track-order?orderId=${orderId}&email=${encodeURIComponent(email)}`;
+  const trackButton = `
+    <p style="margin-top:24px;text-align:center;">
+      <a href="${trackUrl}" class="btn" style="background:#e8622a;color:#fff;box-shadow:0 4px 12px rgba(232,98,42,.3);">Track Your Order</a>
+    </p>`;
+
   const html = layout({
     headerBg: '#dff2e6',
     body: `
@@ -302,6 +309,7 @@ export const sendOrderConfirmation = async (
           <p><strong>Total</strong> <span style="font-size:24px;font-weight:700;color:#e8622a;">₦${total.toLocaleString()}</span></p>
         </div>
         ${paymentSection}
+        ${trackButton}
         <p>You'll receive a shipping notification once your order is on its way.</p>
       </div>`,
   });

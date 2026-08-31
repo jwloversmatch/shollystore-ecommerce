@@ -6,6 +6,7 @@ export interface OrderItemDetail {
 
 export interface Order {
   _id: string;
+  trackingNumber?: string;
   totalPrice: number;
   status: string;
   createdAt: string;

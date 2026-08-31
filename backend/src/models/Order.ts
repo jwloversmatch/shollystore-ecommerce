@@ -37,6 +37,7 @@ export interface IOrder extends Document {
   name?: string;
   phone?: string;
   email?: string;                                
+  trackingNumber?: string;                       
   orderItems: IOrderItem[];
   shippingAddress: {
     address: string;
@@ -56,6 +57,7 @@ export interface IOrder extends Document {
   paymentDetails?: {
     accountNumber?: string;
     bankName?: string;
+    accountName?: string;                         
     whatsappNumber?: string;
   };
   couponCode?: string;
@@ -106,7 +108,8 @@ const OrderSchema: Schema = new Schema({
   guestEmail:   { type: String, required: function(this: any) { return this.user === null; } },
   name:         { type: String },
   phone:        { type: String },
-  email:        { type: String },   // populated at creation time
+  email:        { type: String },   
+  trackingNumber: { type: String, unique: true, sparse: true }, 
 
   orderItems:   { type: [OrderItemSchema], required: true },
 
@@ -130,6 +133,7 @@ const OrderSchema: Schema = new Schema({
   paymentDetails: {
     accountNumber: String,
     bankName:      String,
+    accountName:   String,          
     whatsappNumber: String,
   },
 
@@ -154,5 +158,6 @@ OrderSchema.index({ status: 1, createdAt: -1 });
 OrderSchema.index({ createdAt: -1 });
 OrderSchema.index({ 'orderItems.product': 1 });
 OrderSchema.index({ paymentMethod: 1 });
+OrderSchema.index({ trackingNumber: 1 });   
 
 export const Order = mongoose.model<IOrder>('Order', OrderSchema);

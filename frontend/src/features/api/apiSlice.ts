@@ -548,39 +548,40 @@ export const apiSlice = createApi({
 
     // Inside endpoints
     trackOrder: builder.query<
-      {
-        success: boolean;
-        order: {
-          _id: string;
-          status: string;
-          totalPrice: number;
-          orderItems: {
-            name: string;
-            qty: number;
-            price: number;
-            image?: string;
-          }[];
-          shippingAddress: {
-            address: string;
-            city: string;
-            postalCode?: string;
-            country?: string;
-          };
-          paymentMethod?: string;
-          paymentDetails?: {
-            bankName?: string;
-            accountName?: string;
-            accountNumber?: string;
-            whatsappNumber?: string;
-          };
-          createdAt: string;
-        };
-      },
-      { orderId: string; email: string }
-    >({
-      query: ({ orderId, email }) =>
-        `/orders/track/${orderId}?email=${encodeURIComponent(email)}`,
-    }),
+  {
+    success: boolean;
+    order: {
+      _id: string;
+      trackingNumber?: string; // ✅ ADDED
+      status: string;
+      totalPrice: number;
+      orderItems: {
+        name: string;
+        qty: number;
+        price: number;
+        image?: string;
+      }[];
+      shippingAddress: {
+        address: string;
+        city: string;
+        postalCode?: string;
+        country?: string;
+      };
+      paymentMethod?: string;
+      paymentDetails?: {
+        bankName?: string;
+        accountName?: string;
+        accountNumber?: string;
+        whatsappNumber?: string;
+      };
+      createdAt: string;
+    };
+  },
+  { orderId: string; email: string }
+>({
+  query: ({ orderId, email }) =>
+    `/orders/track/${orderId}?email=${encodeURIComponent(email)}`,
+}),
   }),
 });
 
