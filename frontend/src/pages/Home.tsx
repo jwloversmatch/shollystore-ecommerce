@@ -23,7 +23,6 @@ import HomeSpecialOffer from "./home/HomeSpecialOffer";
 import FeaturedProductsGrid from "../components/FeaturedProductsGrid";
 import { ArrowRight } from "lucide-react";
 
-
 const Home = () => {
   const { data: productsResp } = useGetProductsQuery({ limit: 9999 });
   const { data: heroSlides, isLoading: sLoad } = useGetHeroSlidesQuery({});
@@ -85,7 +84,6 @@ const Home = () => {
     setDirection(-1);
     setCurrentIndex((p) => (p - 1 + heroSlides.length) % heroSlides.length);
   };
-
 
   const heroTagline = publicSettings?.heroTagline || "🔥 Your One‑Stop Shop";
   const heroTitle = publicSettings?.heroTitle || "Shop the | Best Deals";
@@ -174,7 +172,7 @@ const Home = () => {
           handleNext={handleNext}
           setDirection={setDirection}
           setCurrentIndex={setCurrentIndex}
-          onShopNow={() => navigate("/login")}
+          onShopNow={() => navigate("/shop")} 
         />
       </div>
 
@@ -245,7 +243,7 @@ const Home = () => {
       <HomeSpecialOffer
         specialOfferTitle={specialOfferTitle}
         specialOfferText={specialOfferText}
-        onShopNow={() => navigate("/login")}
+        onShopNow={() => navigate("/shop")}
       />
 
       <ProductQuickViewModal
