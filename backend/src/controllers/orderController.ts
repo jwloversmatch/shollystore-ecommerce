@@ -13,14 +13,30 @@ import { AuthRequest } from '../middleware/auth';
 import { calculateOrderPricing } from '../utils/orderPricing';
 import { sendError } from '../utils/apiResponse';
 
+// ─── Helper: normalize text for matching ──────────────────────────────────
+const normalize = (value: string): string =>
+  value.trim().toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+
+// ─── Helper: check if city is Lagos (robust) ──────────────────────────────
+const isLagos = (city: string): boolean => {
+  const normalized = normalize(city);
+  // Matches "lagos", "lagos state", "lagos nigeria", "lekki lagos", etc.
+  return /\blagos\b/.test(normalized);
+};
+
+// ─── Helper: check if country is Nigeria ──────────────────────────────────
+const isNigeria = (country: string): boolean => {
+  const normalized = normalize(country);
+  return ['nigeria', 'ng', 'nga', 'nigerian'].includes(normalized);
+};
+
 // ─── Helper: calculate shipping fee based on city and country ─────────────
 const calculateShippingFee = (shippingAddress: { city?: string; country?: string }): number => {
-  const city = (shippingAddress.city || '').trim().toLowerCase();
-  const country = (shippingAddress.country || '').trim().toLowerCase();
+  const country = shippingAddress.country || '';
+  const city = shippingAddress.city || '';
 
-  if (country === 'nigeria') {
-    if (city === 'lagos') return 2500;
-    return 4000;
+  if (isNigeria(country)) {
+    return isLagos(city) ? 2500 : 4000;
   }
   return 30000;
 };
@@ -59,7 +75,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
-    // Calculate shipping fee based on destination
+    // Calculate shipping fee based on destination (robust)
     const shippingFee = calculateShippingFee(shippingAddress);
 
     let pricing;
@@ -93,7 +109,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       totalPrice,
       subtotal,
       taxAmount,
-      shippingFee,           
+      shippingFee,
       status: 'Pending' as const,
       paymentMethod,
       paymentDetails:
@@ -163,7 +179,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
         subtotal,
         paymentMethod,
         createdOrder.paymentDetails,
-        shippingFee              
+        shippingFee
       ).catch((emailError) => {
         console.error('Failed to send customer order confirmation email:', emailError);
       });
@@ -281,7 +297,7 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
           originalSubtotal,
           order.paymentMethod,
           order.paymentDetails,
-          order.shippingFee || 0      
+          order.shippingFee || 0
         ).catch((emailError) => {
           console.error('Failed to send order confirmation email:', emailError);
         });

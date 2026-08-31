@@ -131,14 +131,20 @@ const PAYMENT_METHODS = [
   },
 ] as const;
 
-// Helper to calculate shipping fee based on city
-const calculateShippingFee = (city: string, country: string = "Nigeria"): number => {
-  const cityLower = city.trim().toLowerCase();
-  const countryLower = country.trim().toLowerCase();
+// Improved shipping fee helpers
+const normalize = (value: string) =>
+  value.trim().toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
 
-  if (countryLower === "nigeria") {
-    if (cityLower === "lagos") return 2500;
-    return 4000;
+const isLagos = (city: string) => /\blagos\b/.test(normalize(city));
+
+const isNigeria = (country: string) => {
+  const n = normalize(country);
+  return ['nigeria', 'ng', 'nga', 'nigerian'].includes(n);
+};
+
+const calculateShippingFee = (city: string, country: string = "Nigeria"): number => {
+  if (isNigeria(country)) {
+    return isLagos(city) ? 2500 : 4000;
   }
   return 30000;
 };
@@ -158,7 +164,7 @@ const Checkout = () => {
     register: registerForm,
     handleSubmit,
     reset,
-    control,          // ✅ add control
+    control,
     formState: { errors },
   } = useForm<CheckoutFormData>({ resolver: zodResolver(checkoutSchema) });
 
