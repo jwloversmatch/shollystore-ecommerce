@@ -18,10 +18,21 @@ interface ProductProps {
   compareAtPrice?: number;
   discountPercent?: number;
   variants?: IVariant[];
-  index?: number; // ✅ new optional prop for stagger
+  index?: number;
 }
 
 const FALLBACK = "https://via.placeholder.com/300x300?text=No+Image";
+
+// ─── Helper: compact price for large values ────────────────────────────────
+const formatCompactPrice = (value: number): { short: string; full: string } => {
+  const full = `₦${value.toLocaleString()}`;
+  if (value >= 1_000_000) {
+    const millions = value / 1_000_000;
+    const short = `₦${millions % 1 === 0 ? millions.toFixed(0) : millions.toFixed(1)}M`;
+    return { short, full };
+  }
+  return { short: full, full };
+};
 
 const ProductCard = ({
   _id,
@@ -34,7 +45,7 @@ const ProductCard = ({
   compareAtPrice,
   discountPercent,
   variants,
-  index, // ✅ destructure
+  index,
 }: ProductProps) => {
   const dispatch = useDispatch();
   const [imgError, setImgError] = useState(false);
@@ -42,7 +53,14 @@ const ProductCard = ({
 
   const isOutOfStock = stock !== undefined && stock === 0;
   const accent = isOutOfStock ? "#ef4444" : "#e8622a";
-  const hasSale = (compareAtPrice && compareAtPrice > price) || (discountPercent && discountPercent > 0);
+  const hasSale =
+    (compareAtPrice && compareAtPrice > price) ||
+    (discountPercent && discountPercent > 0);
+
+  const priceDisplay = formatCompactPrice(price);
+  const compareAtPriceDisplay = compareAtPrice
+    ? formatCompactPrice(compareAtPrice)
+    : null;
 
   const handleAddToCart = useCallback(
     (e: React.MouseEvent) => {
@@ -91,15 +109,15 @@ const ProductCard = ({
           dark:hover:shadow-[0_0_0_1.5px_rgba(232,98,42,0.5),0_24px_50px_-15px_rgba(232,98,42,0.5)]
           dark:focus-within:shadow-[0_0_0_1.5px_rgba(232,98,42,0.5),0_24px_50px_-15px_rgba(232,98,42,0.5)]"
       >
-        {/* Full-card control for navigating to the product. */}
+        {/* Full-card button for navigation */}
         <button
           type="button"
           onClick={onClick}
-          aria-label={`View ${name} — ₦${price.toLocaleString()}${isOutOfStock ? ' (Out of stock)' : ''}`}
+          aria-label={`View ${name} — ${priceDisplay.full}${isOutOfStock ? ' (Out of stock)' : ''}`}
           className="absolute inset-0 z-0 rounded-2xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e8622a] focus-visible:ring-offset-2"
         />
 
-        {/* Visual content ignores pointer events itself, so clicks fall through to the button above */}
+        {/* Visual content */}
         <div className="relative z-[1] flex flex-col flex-1 pointer-events-none">
           {/* Image area */}
           <div className="relative w-full h-48 bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center p-4 overflow-hidden">
@@ -151,10 +169,7 @@ const ProductCard = ({
               {name}
             </h3>
 
-            {/* Variant pills — capped to 3 (+N more) and never wrapping, so a
-                product with a long variant list can't stretch a whole grid
-                row taller than it needs to be. Individual pills truncate
-                too, as a second line of defense against long labels. */}
+            {/* Variant pills */}
             {variants && variants.length > 0 && (
               <div className="flex items-center gap-1 mb-2 flex-nowrap overflow-hidden" aria-label="Available variants">
                 {variants.slice(0, 3).map((v, idx) => {
@@ -177,26 +192,16 @@ const ProductCard = ({
               </div>
             )}
 
-            {/* mt-auto pins this whole block to the bottom of the info
-                section. Combined with h-full on the article above, every
-                card's price/cart row lands on the same bottom line no
-                matter how much (or how little) content sits above it. */}
+            {/* Bottom aligned price row */}
             <div className="mt-auto space-y-1.5">
-              {/* Sale price + discount badge. flex-nowrap on purpose — this
-                  row must never wrap to a second line, or cards with a sale
-                  would grow taller than they need to. If the original price
-                  is ever too wide for a narrow card, it truncates (min-w-0 +
-                  truncate); the discount badge is shrink-0 so it always
-                  stays fully readable since it's the part that actually
-                  drives the "buy now" impulse. */}
               {hasSale && (
                 <div className="flex items-center gap-1.5 flex-nowrap">
                   {compareAtPrice && compareAtPrice > price && (
                     <span
                       className="text-xs text-gray-500 line-through truncate min-w-0"
-                      aria-label={`Original price: ₦${compareAtPrice.toLocaleString()}`}
+                      aria-label={`Original price: ${compareAtPriceDisplay?.full ?? ''}`}
                     >
-                      ₦{compareAtPrice.toLocaleString()}
+                      {compareAtPriceDisplay?.short}
                     </span>
                   )}
                   {discountPercent && discountPercent > 0 && (
@@ -211,10 +216,13 @@ const ProductCard = ({
               )}
 
               <div className="flex items-end justify-between gap-2">
-                <div className="flex items-baseline gap-0.5" aria-label={`Price: ₦${price.toLocaleString()}`}>
+                <div
+                  className="flex items-baseline gap-0.5"
+                  aria-label={`Price: ${priceDisplay.full}`}
+                >
                   <span className="text-gray-500 dark:text-gray-400 text-xs pb-0.5">₦</span>
                   <span className="font-black text-xl leading-none text-gray-900 dark:text-white">
-                    {price.toLocaleString()}
+                    {priceDisplay.short.replace('₦', '')}
                   </span>
                 </div>
 
@@ -234,11 +242,9 @@ const ProductCard = ({
                       ? `${name} is out of stock`
                       : added
                         ? `${name} added to cart`
-                        : `Add ${name} to cart`
+                        : `Add ${name} to cart for ${priceDisplay.full}`
                   }
                 >
-                  {/* One-shot ping on a successful add — reuses the existing
-                      `added` state/timer, no new state introduced. */}
                   <AnimatePresence>
                     {added && (
                       <motion.span
@@ -253,10 +259,6 @@ const ProductCard = ({
                     )}
                   </AnimatePresence>
 
-                  {/* Icon swap. Deliberately no mode="wait" — for a 16px icon,
-                      sequential exit-then-enter reads as sluggish; letting
-                      them cross-fade feels instant, matching what a click
-                      should feel like. */}
                   <AnimatePresence initial={false}>
                     {isOutOfStock ? (
                       <motion.span
