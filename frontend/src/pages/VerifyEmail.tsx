@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle,
@@ -11,10 +11,15 @@ import {
   Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import api from "../services/axios";
 import SEO from "../components/SEO";
+import {
+  useVerifyEmailQuery,
+  useResendVerificationMutation,
+} from "../features/api/apiSlice";
 
-// ---------- Animation variants (with literal types) ----------
+const ACCENT = "#e8622a";
+
+// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -42,65 +47,39 @@ const successIcon = {
 };
 
 const VerifyEmail = () => {
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading",
-  );
-  const [message, setMessage] = useState("");
-  const [resendEmail, setResendEmail] = useState("");
-  const [isResending, setIsResending] = useState(false);
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const isMounted = useRef(true);
+  const token = searchParams.get("token") || "";
 
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
+  const [resendEmail, setResendEmail] = useState("");
+  const [resendVerification, { isLoading: isResending }] =
+    useResendVerificationMutation();
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const token = params.get("token");
+  // If no token, show error immediately
+  const { data, isError, isLoading: isVerifying } = useVerifyEmailQuery(token, {
+    skip: !token,
+  });
 
-    if (!token) {
-      if (isMounted.current) {
-        setStatus("error");
-        setMessage(
-          "Invalid or missing verification link. Please request a new one.",
-        );
-      }
-      return;
-    }
+  // Determine status based on query states
+  let status: "loading" | "success" | "error" = "loading";
+  let message = "";
 
-    const verify = async () => {
-      try {
-        const res = await api.get(`/auth/verify-email?token=${token}`);
-        const data = res.data;
-        if (isMounted.current) {
-          if (data.success) {
-            setStatus("success");
-            setMessage(
-              data.message || "Your email has been successfully verified!",
-            );
-          } else {
-            setStatus("error");
-            setMessage(
-              data.message ||
-                "Verification failed. The token may have expired or been invalid.",
-            );
-          }
-        }
-      } catch {
-        if (isMounted.current) {
-          setStatus("error");
-          setMessage("An error occurred. Please try again later.");
-        }
-      }
-    };
-
-    verify();
-  }, [location]);
+  if (!token) {
+    status = "error";
+    message = "Invalid or missing verification link. Please request a new one.";
+  } else if (isVerifying) {
+    status = "loading";
+  } else if (isError) {
+    status = "error";
+    message = "An error occurred. Please try again later.";
+  } else if (data) {
+    status = data.success ? "success" : "error";
+    message =
+      data.message ||
+      (data.success
+        ? "Your email has been successfully verified!"
+        : "Verification failed. The token may have expired or been invalid.");
+  }
 
   const handleResend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,22 +87,13 @@ const VerifyEmail = () => {
       toast.error("Please enter your email address.");
       return;
     }
-    setIsResending(true);
     try {
-      const res = await api.post("/auth/resend-verification", {
-        email: resendEmail,
-      });
-      const data = res.data;
-      if (data.success) {
-        toast.success(data.message);
-        navigate("/");
-      } else {
-        toast.error(data.message || "Failed to resend verification email.");
-      }
-    } catch {
-      toast.error("An error occurred. Please try again.");
-    } finally {
-      setIsResending(false);
+      const result = await resendVerification(resendEmail).unwrap();
+      toast.success(result.message || "Verification email sent!");
+      navigate("/");
+    } catch (err: unknown) {
+      const e = err as { data?: { message?: string } };
+      toast.error(e?.data?.message || "Failed to resend verification email.");
     }
   };
 
@@ -131,39 +101,29 @@ const VerifyEmail = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen flex items-center justify-center p-4 relative bg-gradient-to-br from-leaf-green/5 via-pastel-pink/30 to-blob-orange/10 overflow-hidden focus:outline-none"
+      className="min-h-screen flex items-center justify-center p-4 relative bg-[#FCFAF5] dark:bg-[#0A0A0B] overflow-hidden focus:outline-none"
     >
       <SEO
         title="Verify Your Email"
-        description="Verify your email address to activate your LotceWieth account."
+        description="Verify your email address to activate your Sholex account."
       />
-      {/* Animated background blobs */}
+
+      {/* Ambient background */}
       <div
         className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
         aria-hidden="true"
       >
         <motion.div
-          animate={{
-            x: ["-10%", "10%", "-10%"],
-            y: ["-5%", "15%", "-5%"],
-          }}
+          animate={{ x: ["-10%", "10%", "-10%"], y: ["-5%", "15%", "-5%"] }}
           transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
-          className="absolute top-10 -left-20 w-72 h-72 bg-leaf-green/20 rounded-full blur-3xl"
+          className="absolute top-10 -left-20 w-72 h-72 rounded-full blur-3xl opacity-[0.08]"
+          style={{ background: ACCENT }}
         />
         <motion.div
-          animate={{
-            x: ["10%", "-10%", "10%"],
-            y: ["15%", "-10%", "15%"],
-          }}
+          animate={{ x: ["10%", "-10%", "10%"], y: ["15%", "-10%", "15%"] }}
           transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
-          className="absolute bottom-10 -right-20 w-96 h-96 bg-blob-orange/20 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-          }}
-          transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-pastel-pink/10 rounded-full blur-3xl"
+          className="absolute bottom-10 -right-20 w-96 h-96 rounded-full blur-3xl opacity-[0.06]"
+          style={{ background: ACCENT }}
         />
       </div>
 
@@ -171,13 +131,14 @@ const VerifyEmail = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 max-w-md w-full text-center border border-white/50 overflow-hidden"
+        className="relative z-10 bg-white/90 dark:bg-[#141414] backdrop-blur-2xl rounded-3xl shadow-2xl p-8 max-w-md w-full text-center border border-gray-200 dark:border-white/[0.07] overflow-hidden"
       >
         {/* Floating sparkles */}
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-          className="absolute top-4 right-4 text-leaf-green/30"
+          className="absolute top-4 right-4 opacity-20"
+          style={{ color: ACCENT }}
           aria-hidden="true"
         >
           <Sparkles className="w-6 h-6" />
@@ -185,15 +146,16 @@ const VerifyEmail = () => {
         <motion.div
           animate={{ rotate: -360 }}
           transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
-          className="absolute bottom-4 left-4 text-blob-orange/30"
+          className="absolute bottom-4 left-4 opacity-10"
+          style={{ color: ACCENT }}
           aria-hidden="true"
         >
           <Sparkles className="w-5 h-5" />
         </motion.div>
 
-        {/* Announces the loading→success/error transition to screen reader users */}
         <div aria-live="polite" aria-atomic="true">
           <AnimatePresence mode="wait">
+            {/* Loading */}
             {status === "loading" && (
               <motion.div
                 key="loading"
@@ -205,22 +167,25 @@ const VerifyEmail = () => {
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                  className="rounded-full h-16 w-16 border-4 border-leaf-green/30 border-t-leaf-green mb-6"
+                  className="rounded-full h-16 w-16 border-4 border-gray-200 dark:border-white/10 border-t-[#e8622a] mb-6"
                   aria-hidden="true"
                 />
                 <motion.h2
                   variants={itemFadeUp}
-                  className="text-2xl font-bold text-gray-800 mb-2"
+                  className="text-2xl font-black text-gray-900 dark:text-white mb-2"
                 >
                   Verifying…
                 </motion.h2>
-                <motion.p variants={itemFadeUp} className="text-gray-500">
+                <motion.p
+                  variants={itemFadeUp}
+                  className="text-gray-500 dark:text-gray-400"
+                >
                   Please wait while we verify your email.
                 </motion.p>
               </motion.div>
             )}
 
-            {/* ---- Success State ---- */}
+            {/* Success */}
             {status === "success" && (
               <motion.div
                 key="success"
@@ -233,7 +198,7 @@ const VerifyEmail = () => {
                   variants={successIcon}
                   initial="hidden"
                   animate="visible"
-                  className="mx-auto mb-6 bg-green-50/50 p-4 rounded-full w-fit"
+                  className="mx-auto mb-6 bg-green-50 dark:bg-green-500/10 p-4 rounded-full w-fit"
                 >
                   <CheckCircle
                     className="w-16 h-16 text-green-500"
@@ -242,11 +207,14 @@ const VerifyEmail = () => {
                 </motion.div>
                 <motion.h2
                   variants={itemFadeUp}
-                  className="text-2xl font-bold text-gray-800 mb-2"
+                  className="text-2xl font-black text-gray-900 dark:text-white mb-2"
                 >
                   Email Verified! ✅
                 </motion.h2>
-                <motion.p variants={itemFadeUp} className="text-gray-600 mb-6">
+                <motion.p
+                  variants={itemFadeUp}
+                  className="text-gray-600 dark:text-gray-400 mb-6"
+                >
                   {message}
                 </motion.p>
                 <motion.button
@@ -254,7 +222,7 @@ const VerifyEmail = () => {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => navigate("/")}
-                  className="w-full bg-leaf-green text-white py-3.5 rounded-xl font-bold shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2 group"
+                  className="w-full bg-[#e8622a] text-white py-3.5 rounded-xl font-bold shadow-lg hover:bg-[#c9511f] transition-all flex items-center justify-center gap-2 group"
                 >
                   Go to Home
                   <ArrowRight
@@ -265,7 +233,7 @@ const VerifyEmail = () => {
               </motion.div>
             )}
 
-            {/* ---- Error State ---- */}
+            {/* Error */}
             {status === "error" && (
               <motion.div
                 key="error"
@@ -278,7 +246,7 @@ const VerifyEmail = () => {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  className="mx-auto mb-6 bg-red-50/50 p-4 rounded-full w-fit"
+                  className="mx-auto mb-6 bg-red-50 dark:bg-red-500/10 p-4 rounded-full w-fit"
                 >
                   <XCircle
                     className="w-16 h-16 text-red-500"
@@ -287,11 +255,14 @@ const VerifyEmail = () => {
                 </motion.div>
                 <motion.h2
                   variants={itemFadeUp}
-                  className="text-2xl font-bold text-gray-800 mb-2"
+                  className="text-2xl font-black text-gray-900 dark:text-white mb-2"
                 >
                   Verification Failed
                 </motion.h2>
-                <motion.p variants={itemFadeUp} className="text-gray-600 mb-6">
+                <motion.p
+                  variants={itemFadeUp}
+                  className="text-gray-600 dark:text-gray-400 mb-6"
+                >
                   {message}
                 </motion.p>
 
@@ -315,7 +286,7 @@ const VerifyEmail = () => {
                       value={resendEmail}
                       onChange={(e) => setResendEmail(e.target.value)}
                       autoComplete="email"
-                      className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-leaf-green focus:border-transparent placeholder:text-gray-400 bg-white/70 backdrop-blur-sm"
+                      className="w-full border border-gray-300 dark:border-white/[0.08] rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-[#e8622a] focus:border-transparent placeholder:text-gray-400 bg-white/70 dark:bg-[#1c1c1c] dark:text-white"
                       required
                     />
                   </div>
@@ -324,7 +295,7 @@ const VerifyEmail = () => {
                     disabled={isResending}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="w-full bg-blob-orange text-white py-3.5 rounded-xl font-bold shadow-lg shadow-blob-orange/30 hover:shadow-blob-orange/50 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full bg-[#e8622a] text-white py-3.5 rounded-xl font-bold shadow-lg shadow-[#e8622a]/30 hover:shadow-[#e8622a]/50 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {isResending ? (
                       <>
@@ -348,7 +319,7 @@ const VerifyEmail = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => navigate("/")}
-                  className="w-full mt-3 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all"
+                  className="w-full mt-3 bg-gray-100 dark:bg-[#1c1c1c] text-gray-700 dark:text-gray-300 py-3 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-[#2a2a2a] transition-all"
                 >
                   Go to Home
                 </motion.button>

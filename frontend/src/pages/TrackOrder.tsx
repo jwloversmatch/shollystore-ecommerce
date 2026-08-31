@@ -6,6 +6,20 @@ import SEO from "../components/SEO";
 
 const ACCENT = "#e8622a";
 
+// Helper to format raw payment method to friendly name
+const formatPaymentMethod = (method?: string) => {
+  switch (method) {
+    case 'bank_transfer':
+      return 'Bank Transfer';
+    case 'whatsapp':
+      return 'WhatsApp Pay';
+    case 'paystack':
+      return 'Paystack';
+    default:
+      return method || 'N/A';
+  }
+};
+
 const TrackOrder = () => {
   const [orderId, setOrderId] = useState("");
   const [email, setEmail] = useState("");
@@ -145,7 +159,7 @@ const TrackOrder = () => {
                   Payment Method
                 </span>
                 <span className="font-bold text-gray-900 dark:text-white">
-                  {data.order.paymentMethod}
+                  {formatPaymentMethod(data.order.paymentMethod)}
                 </span>
               </p>
               {data.order.paymentDetails && (
