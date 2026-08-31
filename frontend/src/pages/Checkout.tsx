@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate,  } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -194,7 +194,6 @@ const Checkout = () => {
       return;
     }
     try {
-      // Register the user
       await register({
         email: guestEmail,
         password: accountPassword,
@@ -202,20 +201,16 @@ const Checkout = () => {
         phone: guestPhone,
       }).unwrap();
 
-      // Automatically log them in
       const loginResult = await login({
         email: guestEmail,
         password: accountPassword,
       }).unwrap();
 
-      // Dispatch credentials to store
       dispatch(
         setCredentials({ user: loginResult.user, token: loginResult.token }),
       );
       toast.success("Account created successfully!");
       setShowCreateAccountModal(false);
-      // Optionally navigate to account page
-      // navigate("/account");
     } catch (err: unknown) {
       const e = err as { data?: { message?: string } };
       toast.error(e?.data?.message || "Failed to create account");
@@ -223,7 +218,6 @@ const Checkout = () => {
   };
 
   const onSubmit = async (data: CheckoutFormData) => {
-    // Guest validation
     if (!user && !guestEmail.trim()) {
       toast.error("Email is required for guest checkout");
       return;
@@ -264,7 +258,6 @@ const Checkout = () => {
       } else {
         setOrderSuccess(true);
         setOrderData(result.order);
-        // If guest and not paystack, show account creation modal
         if (!user) {
           setShowCreateAccountModal(true);
         }
@@ -285,6 +278,9 @@ const Checkout = () => {
       whatsappNumber: "+2348000000000",
     };
     const waLink = `https://wa.me/${d.whatsappNumber?.replace(/\D/g, "")}`;
+    const orderEmail = user?.email || guestEmail;
+    const orderId = orderData?._id;
+
     return (
       <main
         id="main-content"
@@ -324,7 +320,7 @@ const Checkout = () => {
           <p className="text-gray-500 dark:text-gray-400 text-sm text-center mb-6">
             Reference:{" "}
             <span className="font-bold text-gray-900 dark:text-white font-mono text-xs px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-[#1c1c1c]">
-              #{orderData?._id}
+              #{orderId}
             </span>
           </p>
           {paymentMethod === "bank_transfer" && (
@@ -411,6 +407,19 @@ const Checkout = () => {
               className="w-5 h-5 group-hover:translate-x-1 transition-transform"
               aria-hidden="true"
             />
+          </button>
+
+          {/* Track Order button */}
+          <button
+            onClick={() =>
+              navigate(
+                `/track-order?orderId=${orderId}&email=${encodeURIComponent(orderEmail || "")}`,
+              )
+            }
+            className="mt-3 w-full py-3 rounded-xl font-bold text-sm border border-gray-300 dark:border-white/20 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition"
+            aria-label="Track your order"
+          >
+            Track Order
           </button>
         </div>
 

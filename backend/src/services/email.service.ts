@@ -263,6 +263,8 @@ export const sendOrderConfirmation = async (
   discount?:  number,
   couponCode?: string,
   subtotal?:  number,
+  paymentMethod?: string,
+  paymentDetails?: any,
 ) => {
   const greeting = name ? `Thank you, <strong>${name}</strong>! 🎉` : `Order Confirmed! 🎉`;
 
@@ -272,6 +274,20 @@ export const sendOrderConfirmation = async (
   const subtotalLine = subtotal && subtotal !== total
     ? `<p style="margin:8px 0;color:#4a5568;"><strong>Subtotal</strong> ₦${subtotal.toLocaleString()}</p>`
     : '';
+
+  // Payment instructions for bank transfer / whatsapp
+  let paymentSection = '';
+  if (paymentMethod === 'bank_transfer' && paymentDetails) {
+    paymentSection = `
+      <div style="margin:20px 0;padding:16px;background:#f9fafb;border-radius:12px;">
+        <p><strong>Bank Name:</strong> ${paymentDetails.bankName || 'N/A'}</p>
+        <p><strong>Account Name:</strong> ${paymentDetails.accountName || 'N/A'}</p>
+        <p><strong>Account Number:</strong> <span style="font-family:monospace;">${paymentDetails.accountNumber || 'N/A'}</span></p>
+      </div>`;
+  } else if (paymentMethod === 'whatsapp' && paymentDetails) {
+    paymentSection = `
+      <p style="margin:16px 0;"><strong>Please complete payment via WhatsApp:</strong> ${paymentDetails.whatsappNumber || 'N/A'}</p>`;
+  }
 
   const html = layout({
     headerBg: '#dff2e6',
@@ -285,6 +301,7 @@ export const sendOrderConfirmation = async (
           ${discountLine}
           <p><strong>Total</strong> <span style="font-size:24px;font-weight:700;color:#e8622a;">₦${total.toLocaleString()}</span></p>
         </div>
+        ${paymentSection}
         <p>You'll receive a shipping notification once your order is on its way.</p>
       </div>`,
   });

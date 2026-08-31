@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
-import { useNavigate, } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
@@ -674,6 +674,7 @@ const Cart = () => {
   const { cartItems, appliedCoupon, couponDiscount } = useSelector(
     (s: RootState) => s.cart,
   );
+  const { user } = useSelector((s: RootState) => s.auth);
   const isRehydrated = useSelector(
     (s: RootState & PersistState) => s._persist?.rehydrated,
   );
@@ -760,6 +761,23 @@ const Cart = () => {
           onClearAll={() => setShowClearModal(true)}
           isClearModalOpen={showClearModal}
         />
+
+        {/* Guest account prompt */}
+        {!user && (
+          <div className="mb-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-sm text-blue-800 dark:text-blue-200 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span>
+              Have an account?{" "}
+              <Link
+                to="/login"
+                className="font-bold underline hover:opacity-80 transition-opacity"
+              >
+                Sign in
+              </Link>{" "}
+              for faster checkout and order history.
+            </span>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-8">
           <div className="lg:col-span-2 space-y-3" aria-label="Cart items">

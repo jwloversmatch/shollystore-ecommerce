@@ -124,6 +124,8 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
         discount,
         pricing.couponCode,
         subtotal,
+        paymentMethod, 
+        createdOrder.paymentDetails 
       ).catch((emailError) => {
         console.error('Failed to send customer order confirmation email:', emailError);
       });
@@ -237,6 +239,8 @@ export const paystackWebhook = async (req: Request, res: Response): Promise<void
           order.discount || 0,
           (order.couponCode as string),
           originalSubtotal,
+          order.paymentMethod, 
+          order.paymentDetails
         ).catch((emailError) => {
           console.error('Failed to send order confirmation email:', emailError);
         });
@@ -271,5 +275,50 @@ export const getMyOrders = async (req: AuthRequest, res: Response): Promise<void
     res.json(orders);
   } catch (error: any) {
     sendError(res, 500, 'Internal server error');
+  }
+};
+
+// @desc    Track guest/order by ID + email
+// @route   GET /api/orders/track/:orderId?email=...
+export const trackOrder = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { orderId } = req.params;
+    const email = req.query.email as string;
+
+    if (!email) {
+      res.status(400).json({ success: false, message: 'Email is required' });
+      return;
+    }
+
+    const order = await Order.findOne({
+      _id: orderId,
+      $or: [{ email: email.toLowerCase() }, { guestEmail: email.toLowerCase() }],
+    }).select('-__v');
+
+    if (!order) {
+      res.status(404).json({ success: false, message: 'Order not found or email mismatch' });
+      return;
+    }
+
+    const paymentDetails =
+      order.status === 'Pending' && (order.paymentMethod === 'bank_transfer' || order.paymentMethod === 'whatsapp')
+        ? order.paymentDetails
+        : undefined;
+
+    res.json({
+      success: true,
+      order: {
+        _id: order._id,
+        status: order.status,
+        totalPrice: order.totalPrice,
+        orderItems: order.orderItems,
+        shippingAddress: order.shippingAddress,
+        paymentMethod: order.paymentMethod,
+        paymentDetails,
+        createdAt: order.createdAt,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

@@ -4,6 +4,7 @@ import {
   paystackWebhook,
   verifyPayment,
   getMyOrders,
+  trackOrder
 } from '../controllers/orderController';
 import { protect } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -23,5 +24,7 @@ router.route('/').post(checkoutLimiter, validate(createOrderSchema), createOrder
 
 // My orders – still protected
 router.get('/my-orders', protect, getMyOrders);
+
+router.get('/track/:orderId', trackOrder);
 
 export default router;

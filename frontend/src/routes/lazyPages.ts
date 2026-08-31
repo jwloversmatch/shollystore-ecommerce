@@ -12,6 +12,8 @@ export const VerifyEmail = lazy(() => import("../pages/VerifyEmail"));
 export const Account = lazy(() => import("../pages/Account"));
 export const ProductDetail = lazy(() => import("../pages/ProductDetail"));
 export const ShopPage = lazy(() => import("../pages/ShopPage"));
+export const TrackOrder = lazy(() => import("../pages/TrackOrder"));
+
 
 export const Dashboard = lazy(() => import("../pages/admin/dashboard/"));
 export const Products = lazy(() => import("../pages/admin/products/"));

@@ -18,7 +18,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 
 import {
   Home, Cart, Checkout, Login, Register, ForgotPassword, ResetPassword,
-  VerifyEmail, Account, ProductDetail, ShopPage,
+  VerifyEmail, Account, ProductDetail, ShopPage, TrackOrder,
   Dashboard, Products, Orders, HeroSlides, Categories, Coupons, Settings,
   NotFound, Footer, PrivacyPolicy, TermsOfUse, About, Contact
 } from "./routes/lazyPages";
@@ -68,6 +68,7 @@ function AppContent() {
       <Suspense fallback={<LoadingFallback />}>
         <ErrorBoundary>
           <Routes>
+            {/* Public routes */}
             <Route path="/" element={<Home />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
@@ -76,13 +77,16 @@ function AppContent() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/account" element={<Account />} />
             <Route path="/products/:slug" element={<ProductDetail />} />
+            <Route path="/shop" element={<ShopPage />} /> 
+            <Route path="/track-order" element={<TrackOrder />} />
 
+            {/* Authenticated routes */}
             <Route element={<ProtectedRoute />}>
-              <Route path="/shop" element={<ShopPage />} />
+              <Route path="/account" element={<Account />} />
             </Route>
 
+            {/* Admin routes */}
             <Route element={<AdminRoute />}>
               <Route path="/admin" element={<Dashboard />} />
               <Route path="/admin/products" element={<Products />} />
@@ -99,6 +103,7 @@ function AppContent() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
 
+            {/* 404 fallback */}
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

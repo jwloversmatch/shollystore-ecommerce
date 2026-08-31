@@ -1,7 +1,7 @@
-// backend/src/controllers/auth.controller.ts
 import { Request, Response } from 'express';
 import crypto from 'crypto';
 import { User, IUser } from '../models/User';
+import { Order } from '../models/Order'; 
 import { generateToken } from '../utils/generateToken';
 import {
   sendVerificationEmail,
@@ -31,6 +31,18 @@ const hashToken = (raw: string) =>
 const makeToken = () => {
   const raw = crypto.randomBytes(32).toString('hex');
   return { raw, hashed: hashToken(raw) };
+};
+
+/** Link any guest orders (user: null) that have the same email to this user */
+const linkGuestOrdersToUser = async (userId: any, email: string) => {
+  try {
+    await Order.updateMany(
+      { user: null, guestEmail: email.toLowerCase() },
+      { $set: { user: userId, guestEmail: undefined } }
+    );
+  } catch (err) {
+    console.error('Failed to link guest orders:', err);
+  }
 };
 
 /** Strip sensitive fields before sending user data to the client */
@@ -96,8 +108,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
     });
 
     // Send verification email only — welcome email now fires from verifyEmail,
-    // once the address is actually confirmed. Sending both here caused them
-    // to arrive at the same time.
+    // once the address is actually confirmed.
     sendVerificationEmail(normEmail, raw).catch((err) =>
       console.error('Failed to send verification email:', err),
     );
@@ -135,8 +146,10 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
     user.verificationExpires = undefined;
     await user.save();
 
-    // Send the welcome email now that the address is confirmed — kept separate
-    // in time from the verification email on purpose.
+    // Link any guest orders placed with this email before verification
+    await linkGuestOrdersToUser(user._id, user.email);
+
+    // Send the welcome email now that the address is confirmed
     sendWelcomeEmail(
       { email: user.email, name: user.name },
       'WELCOME10'
@@ -253,6 +266,10 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
     ];
 
     await user.save();
+
+    // Link any guest orders placed with this email (in case they were not linked before)
+    await linkGuestOrdersToUser(user._id, user.email);
+
     setRefreshCookie(res, refreshRaw);
 
     res.json({
@@ -362,7 +379,6 @@ export const logoutAllDevices = async (req: AuthRequest, res: Response): Promise
 // POST /api/auth/forgot-password
 export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Generic response regardless of outcome — prevents email enumeration
     const respond = () =>
       res.json({
         success: true,
