@@ -66,7 +66,6 @@ const CategoriesPage = () => {
   const bg = isDark ? "#0A0A0B" : "#FCFAF5";
   const cardBg = isDark ? "#141414" : "#fff";
 
-
   const toggleExpand = (id: string) => {
     setExpandedMap((prev) => ({ ...prev, [id]: !prev[id] }));
   };
@@ -142,7 +141,12 @@ const CategoriesPage = () => {
 
   if (isLoading) {
     return (
-      <main id="main-content" tabIndex={-1} className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto pb-28 md:pb-10 space-y-5 focus:outline-none" style={{ background: bg, paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))' }}>
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto pb-28 md:pb-10 space-y-5 focus:outline-none pt-[calc(56px+env(safe-area-inset-top,0px))] md:pt-[calc(80px+env(safe-area-inset-top,0px))] lg:pt-[calc(88px+env(safe-area-inset-top,0px))]"
+        style={{ background: bg }}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl animate-pulse" style={{ background: cardBg }} />
@@ -161,7 +165,12 @@ const CategoriesPage = () => {
   }
 
   return (
-    <main id="main-content" tabIndex={-1} className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto pb-28 md:pb-10 space-y-5 focus:outline-none" style={{ background: bg, paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))' }}>
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto pb-28 md:pb-10 space-y-5 focus:outline-none pt-[calc(56px+env(safe-area-inset-top,0px))] md:pt-[calc(80px+env(safe-area-inset-top,0px))] lg:pt-[calc(88px+env(safe-area-inset-top,0px))]"
+      style={{ background: bg }}
+    >
       <ConfirmationModal isOpen={deleteModal} onClose={() => setDeleteModal(false)} onConfirm={confirmDelete} title="Delete Category" message="Are you sure you want to delete this category? This action cannot be undone." confirmText="Delete" cancelText="Cancel" type="danger" />
 
       {/* Header */}

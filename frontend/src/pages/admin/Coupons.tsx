@@ -215,11 +215,8 @@ const Coupons = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto space-y-6 focus:outline-none"
-        style={{
-          background: bg,
-          paddingTop: "calc(56px + env(safe-area-inset-top, 0px))",
-        }}
+        className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto space-y-6 focus:outline-none pt-[calc(56px+env(safe-area-inset-top,0px))] md:pt-[calc(80px+env(safe-area-inset-top,0px))] lg:pt-[calc(88px+env(safe-area-inset-top,0px))]"
+        style={{ background: bg }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -236,24 +233,12 @@ const Coupons = () => {
             boxShadow: cardShadow,
           }}
         >
-          <div
-            className="overflow-x-auto"
-            role="status"
-            aria-label="Loading coupons"
-          >
+          <div className="overflow-x-auto" role="status" aria-label="Loading coupons">
             <span className="sr-only">Loading...</span>
             <table className="w-full text-left">
               <thead style={{ background: theadBg }}>
                 <tr>
-                  {[
-                    "Code",
-                    "Type",
-                    "Amount",
-                    "Min Order",
-                    "Usage",
-                    "Active",
-                    "Actions",
-                  ].map((h) => (
+                  {["Code", "Type", "Amount", "Min Order", "Usage", "Active", "Actions"].map((h) => (
                     <th
                       key={h}
                       className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest"
@@ -266,11 +251,7 @@ const Coupons = () => {
               </thead>
               <tbody>
                 {Array.from({ length: 4 }).map((_, idx) => (
-                  <tr
-                    key={idx}
-                    className="border-t"
-                    style={{ borderColor: tableBorder }}
-                  >
+                  <tr key={idx} className="border-t" style={{ borderColor: tableBorder }}>
                     {Array.from({ length: 7 }).map((_, c) => (
                       <td key={c} className="px-4 sm:px-6 py-3">
                         <div
@@ -294,11 +275,8 @@ const Coupons = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto space-y-6 focus:outline-none"
-      style={{
-        background: bg,
-        paddingTop: "calc(56px + env(safe-area-inset-top, 0px))",
-      }}
+      className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto space-y-6 focus:outline-none pt-[calc(56px+env(safe-area-inset-top,0px))] md:pt-[calc(80px+env(safe-area-inset-top,0px))] lg:pt-[calc(88px+env(safe-area-inset-top,0px))]"
+      style={{ background: bg }}
     >
       <ConfirmationModal
         isOpen={deleteModalOpen}
@@ -332,11 +310,7 @@ const Coupons = () => {
                 className="w-4 h-4 rounded-full flex items-center justify-center"
                 style={{ background: `${ACCENT}18` }}
               >
-                <span
-                  className="text-[10px] font-extrabold"
-                  style={{ color: ACCENT }}
-                  aria-hidden="true"
-                >
+                <span className="text-[10px] font-extrabold" style={{ color: ACCENT }} aria-hidden="true">
                   C
                 </span>
               </div>
@@ -347,10 +321,7 @@ const Coupons = () => {
                 Admin
               </p>
             </div>
-            <h1
-              className="text-2xl md:text-3xl font-black leading-none"
-              style={{ color: textPrimary }}
-            >
+            <h1 className="text-2xl md:text-3xl font-black leading-none" style={{ color: textPrimary }}>
               Coupons
             </h1>
           </div>
@@ -381,15 +352,7 @@ const Coupons = () => {
             </caption>
             <thead style={{ background: theadBg }}>
               <tr>
-                {[
-                  "Code",
-                  "Type",
-                  "Amount",
-                  "Min Order",
-                  "Usage",
-                  "Active",
-                  "Actions",
-                ].map((h) => (
+                {["Code", "Type", "Amount", "Min Order", "Usage", "Active", "Actions"].map((h) => (
                   <th
                     key={h}
                     scope="col"
@@ -410,36 +373,21 @@ const Coupons = () => {
                   className="border-t transition-colors"
                   style={{ borderColor: tableBorder }}
                 >
-                  <td
-                    className="px-4 sm:px-6 py-3 font-semibold text-sm"
-                    style={{ color: textPrimary }}
-                  >
+                  <td className="px-4 sm:px-6 py-3 font-semibold text-sm" style={{ color: textPrimary }}>
                     {coupon.code}
                   </td>
-                  <td
-                    className="px-4 sm:px-6 py-3 text-sm capitalize"
-                    style={{ color: textSecondary }}
-                  >
+                  <td className="px-4 sm:px-6 py-3 text-sm capitalize" style={{ color: textSecondary }}>
                     {coupon.discountType}
                   </td>
-                  <td
-                    className="px-4 sm:px-6 py-3 text-sm"
-                    style={{ color: textSecondary }}
-                  >
+                  <td className="px-4 sm:px-6 py-3 text-sm" style={{ color: textSecondary }}>
                     {coupon.discountType === "percentage"
                       ? `${coupon.discountAmount}%`
                       : `₦${coupon.discountAmount.toLocaleString()}`}
                   </td>
-                  <td
-                    className="px-4 sm:px-6 py-3 text-sm"
-                    style={{ color: textSecondary }}
-                  >
+                  <td className="px-4 sm:px-6 py-3 text-sm" style={{ color: textSecondary }}>
                     ₦{(coupon.minOrderAmount || 0).toLocaleString()}
                   </td>
-                  <td
-                    className="px-4 sm:px-6 py-3 text-sm"
-                    style={{ color: textSecondary }}
-                  >
+                  <td className="px-4 sm:px-6 py-3 text-sm" style={{ color: textSecondary }}>
                     {coupon.usedCount}
                     {coupon.usageLimit > 0 ? ` / ${coupon.usageLimit}` : ""}
                   </td>
@@ -448,18 +396,8 @@ const Coupons = () => {
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold"
                       style={
                         coupon.isActive
-                          ? {
-                              background: `${ACCENT}15`,
-                              color: ACCENT,
-                              border: `1px solid ${ACCENT}30`,
-                            }
-                          : {
-                              background: isDark
-                                ? "rgba(255,255,255,0.06)"
-                                : "rgba(0,0,0,0.05)",
-                              color: textMuted,
-                              border: inputBorder,
-                            }
+                          ? { background: `${ACCENT}15`, color: ACCENT, border: `1px solid ${ACCENT}30` }
+                          : { background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", color: textMuted, border: inputBorder }
                       }
                     >
                       {coupon.isActive ? "Yes" : "No"}
@@ -487,11 +425,7 @@ const Coupons = () => {
               ))}
               {coupons.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 sm:px-6 py-12 text-center text-sm"
-                    style={{ color: textMuted }}
-                  >
+                  <td colSpan={7} className="px-4 sm:px-6 py-12 text-center text-sm" style={{ color: textMuted }}>
                     No coupons found. Create your first coupon to get started.
                   </td>
                 </tr>
@@ -530,11 +464,7 @@ const Coupons = () => {
               aria-labelledby="drawer-title"
             >
               <div className="flex justify-between items-center mb-6">
-                <h2
-                  id="drawer-title"
-                  className="text-xl font-black"
-                  style={{ color: textPrimary }}
-                >
+                <h2 id="drawer-title" className="text-xl font-black" style={{ color: textPrimary }}>
                   {editingCoupon ? "Edit Coupon" : "New Coupon"}
                 </h2>
                 <button
@@ -549,9 +479,7 @@ const Coupons = () => {
               <form
                 onSubmit={handleSubmit(onSubmit)}
                 className="space-y-5"
-                aria-label={
-                  editingCoupon ? "Edit coupon form" : "Create coupon form"
-                }
+                aria-label={editingCoupon ? "Edit coupon form" : "Create coupon form"}
               >
                 <div>
                   <label
@@ -665,11 +593,7 @@ const Coupons = () => {
                     {...register("isActive")}
                     className="w-4 h-4 rounded focus:ring-0 accent-[#e8622a]"
                   />
-                  <label
-                    htmlFor="coupon-active"
-                    className="text-sm font-bold"
-                    style={{ color: textSecondary }}
-                  >
+                  <label htmlFor="coupon-active" className="text-sm font-bold" style={{ color: textSecondary }}>
                     Active
                   </label>
                 </div>
@@ -693,10 +617,7 @@ const Coupons = () => {
                     }}
                   />
                 </div>
-                <div
-                  className="flex justify-end gap-3 pt-4 border-t"
-                  style={{ borderColor: inputBorder }}
-                >
+                <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: inputBorder }}>
                   <button
                     type="button"
                     onClick={closeDrawer}
