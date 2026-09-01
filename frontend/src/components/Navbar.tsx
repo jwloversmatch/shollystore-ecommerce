@@ -117,6 +117,8 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  // Get the current user to conditionally show Account/Wishlist
+  const user = useSelector((s: RootState) => s.auth.user);
 
   // Close on outside click
   useEffect(() => {
@@ -173,24 +175,30 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
             role="menu"
             aria-label="User menu"
           >
-            <Link
-              to="/account"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-              role="menuitem"
-            >
-              <User className="w-4 h-4" aria-hidden="true" />
-              Account
-            </Link>
-            <Link
-              to="/account?tab=wishlist"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-              role="menuitem"
-            >
-              <Heart className="w-4 h-4" aria-hidden="true" />
-              Wishlist
-            </Link>
+            {/* Only show Account and Wishlist for regular users */}
+            {user?.role === "user" && (
+              <>
+                <Link
+                  to="/account"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                  role="menuitem"
+                >
+                  <User className="w-4 h-4" aria-hidden="true" />
+                  Account
+                </Link>
+                <Link
+                  to="/account?tab=wishlist"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                  role="menuitem"
+                >
+                  <Heart className="w-4 h-4" aria-hidden="true" />
+                  Wishlist
+                </Link>
+              </>
+            )}
+
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
