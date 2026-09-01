@@ -23,7 +23,8 @@ import adminCategoryRoutes from './routes/adminCategoryRoutes';
 import adminMarketingRoutes from './routes/adminMarketingRoutes';
 import couponRoutes from './routes/couponRoutes';
 import pushRoutes from './routes/pushRoutes';
-import contactRoutes from './routes/contactRoutes'; // <-- new import
+import contactRoutes from './routes/contactRoutes';
+import wishlistRoutes from './routes/wishlistRoutes';
 import { getSitemap, getRobotsTxt } from './routes/seoRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
@@ -108,7 +109,8 @@ app.use('/api/admin/marketing', adminMarketingRoutes);
 app.use('/api/admin/coupons', couponRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/push', pushRoutes);
-app.use("/api/contact", contactRoutes); // <-- new mount
+app.use("/api/contact", contactRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 
 app.get("/api/health", (_req: Request, res: Response) => {
   res.status(200).json({ status: "OK", message: "Server is running" });

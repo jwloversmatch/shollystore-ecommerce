@@ -2,6 +2,7 @@ import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { apiSlice } from './features/api/apiSlice';
 import cartReducer from './features/cart/cartSlice';
 import authReducer from './features/auth/authSlice';
+import wishlistReducer from './features/wishlist/wishlistSlice'; 
 import { persistStore, persistReducer } from 'redux-persist';
 
 // custom storage (unchanged)
@@ -25,12 +26,13 @@ const storage = {
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['cart', 'auth'],
+  whitelist: ['cart', 'auth', 'wishlist'], 
 };
 
 const rootReducer = combineReducers({
   auth: authReducer,
   cart: cartReducer,
+  wishlist: wishlistReducer, 
   [apiSlice.reducerPath]: apiSlice.reducer,
 });
 
@@ -44,6 +46,5 @@ export const store = configureStore({
 
 export const persistor = persistStore(store);
 
-// ✅ FIX: Derive RootState from rootReducer so all slices are visible
 export type RootState = ReturnType<typeof rootReducer>;
 export type AppDispatch = typeof store.dispatch;

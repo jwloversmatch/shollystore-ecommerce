@@ -1,11 +1,17 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, Check } from "lucide-react";
-import { useDispatch } from "react-redux";
+import { ShoppingCart, Check, Heart } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { addToCart } from "../features/cart/cartSlice";
+import { toggleWishlist } from "../features/wishlist/wishlistSlice"; // ✅ new
+import {
+  useAddToWishlistMutation,
+  useRemoveFromWishlistMutation,
+} from "../features/api/apiSlice"; // ✅ new
 import { getCloudinaryUrl } from "../utils/cloudinary";
 import { formatPrice } from "../utils/format";
+import type { RootState } from "../store"; // ✅ new
 import type { IVariant } from "../types/home";
 
 interface ProductProps {
@@ -41,13 +47,19 @@ const ProductCard = ({
   const [imgError, setImgError] = useState(false);
   const [added, setAdded] = useState(false);
 
+  // Wishlist state and mutations
+  const wishlistIds = useSelector((s: RootState) => s.wishlist.ids);
+  const [addToWishlist] = useAddToWishlistMutation();
+  const [removeFromWishlist] = useRemoveFromWishlistMutation();
+
   const isOutOfStock = stock !== undefined && stock === 0;
   const accent = isOutOfStock ? "#ef4444" : "#e8622a";
   const hasSale =
     (compareAtPrice && compareAtPrice > price) ||
     (discountPercent && discountPercent > 0);
 
-  // Use centralized formatter
+  const isWishlisted = wishlistIds.includes(_id);
+
   const priceDisplay = formatPrice(price, { compact: true });
   const compareAtPriceDisplay = compareAtPrice
     ? formatPrice(compareAtPrice, { compact: true })
@@ -68,6 +80,26 @@ const ProductCard = ({
       setTimeout(() => setAdded(false), 1800);
     },
     [dispatch, _id, name, image, price, stock, isOutOfStock],
+  );
+
+  const handleWishlistToggle = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      try {
+        if (isWishlisted) {
+          await removeFromWishlist(_id).unwrap();
+          dispatch(toggleWishlist(_id));
+          toast.success("Removed from wishlist");
+        } else {
+          await addToWishlist(_id).unwrap();
+          dispatch(toggleWishlist(_id));
+          toast.success("Added to wishlist");
+        }
+      } catch {
+        toast.error("Failed to update wishlist");
+      }
+    },
+    [dispatch, isWishlisted, _id, addToWishlist, removeFromWishlist],
   );
 
   const imgSrc = getCloudinaryUrl(imgError ? FALLBACK : image, 400);
@@ -136,6 +168,23 @@ const ProductCard = ({
                 {isOutOfStock ? "Sold Out" : `${stock} left`}
               </div>
             )}
+
+            {/* Wishlist heart button (top right) */}
+            <button
+              onClick={handleWishlistToggle}
+              className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-colors pointer-events-auto ${
+                isWishlisted
+                  ? "bg-red-50 dark:bg-red-500/20 text-red-500"
+                  : "bg-white/80 dark:bg-black/40 text-gray-400 hover:text-red-400"
+              }`}
+              aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            >
+              <Heart
+                className="w-4 h-4"
+                fill={isWishlisted ? "currentColor" : "none"}
+                aria-hidden="true"
+              />
+            </button>
 
             {/* Out of stock overlay */}
             {isOutOfStock && (

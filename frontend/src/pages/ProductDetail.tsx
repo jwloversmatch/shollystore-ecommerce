@@ -2,8 +2,9 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux"; // ✅ added useSelector
 import { addToCart } from "../features/cart/cartSlice";
+import { toggleWishlist } from "../features/wishlist/wishlistSlice"; // ✅ new
 import toast from "react-hot-toast";
 import SEO from "../components/SEO";
 import {
@@ -15,12 +16,16 @@ import {
   Check,
   Tag,
   ChevronRight,
+  Heart, // ✅ added
 } from "lucide-react";
 import {
   useGetProductBySlugQuery,
   useGetCategoryTreeQuery,
+  useAddToWishlistMutation,      // ✅ new
+  useRemoveFromWishlistMutation,  // ✅ new
 } from "../features/api/apiSlice";
 import type { ProductItem } from "../types/home";
+import type { RootState } from "../store"; // ✅ import RootState
 import { getCloudinaryUrl } from "../utils/cloudinary";
 
 // ─── Types (unchanged) ────────────────────────────────────────────────────────
@@ -92,6 +97,11 @@ const ProductDetail = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Wishlist state & mutations
+  const wishlistIds = useSelector((s: RootState) => s.wishlist.ids);
+  const [addToWishlist] = useAddToWishlistMutation();
+  const [removeFromWishlist] = useRemoveFromWishlistMutation();
 
   const [qty, setQty] = useState(1);
   const [imgError, setImgError] = useState(false);
@@ -170,6 +180,26 @@ const ProductDetail = () => {
   const hasDiscount =
     product?.discount?.percentage && product.discount.percentage > 0;
   const discountPercent = product?.discount?.percentage;
+
+  // Wishlist toggle
+  const isWishlisted = product ? wishlistIds.includes(product._id) : false;
+
+  const handleWishlistToggle = async () => {
+    if (!product) return;
+    try {
+      if (isWishlisted) {
+        await removeFromWishlist(product._id).unwrap();
+        dispatch(toggleWishlist(product._id));
+        toast.success("Removed from wishlist");
+      } else {
+        await addToWishlist(product._id).unwrap();
+        dispatch(toggleWishlist(product._id));
+        toast.success("Added to wishlist");
+      }
+    } catch {
+      toast.error("Failed to update wishlist");
+    }
+  };
 
   const handleAddToCart = () => {
     if (!product || isOutOfStock) {
@@ -715,6 +745,24 @@ const ProductDetail = () => {
                   <Plus className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
+
+              {/* Wishlist heart button (desktop) */}
+              <button
+                onClick={handleWishlistToggle}
+                className={`w-12 h-12 rounded-xl flex items-center justify-center border transition-colors ${
+                  isWishlisted
+                    ? "text-red-500 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20"
+                    : "text-gray-400 bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.09] hover:text-red-400"
+                }`}
+                aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+              >
+                <Heart
+                  className="w-5 h-5"
+                  fill={isWishlisted ? "currentColor" : "none"}
+                  aria-hidden="true"
+                />
+              </button>
+
               <button
                 onClick={handleAddToCart}
                 className="flex-1 h-12 rounded-xl font-black text-white text-[15px] flex items-center justify-center gap-2.5 transition-all"
@@ -807,6 +855,23 @@ const ProductDetail = () => {
           >
             <div className="bg-[#FCFAF5] dark:bg-[#0A0A0B] px-4 pb-3 pt-2 border-t border-gray-200 dark:border-white/[0.07]">
               <div className="flex gap-2.5">
+                {/* Wishlist heart button (mobile) */}
+                <button
+                  onClick={handleWishlistToggle}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center border ${
+                    isWishlisted
+                      ? "text-red-500 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20"
+                      : "text-gray-400 bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.1]"
+                  }`}
+                  aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                >
+                  <Heart
+                    className="w-5 h-5"
+                    fill={isWishlisted ? "currentColor" : "none"}
+                    aria-hidden="true"
+                  />
+                </button>
+
                 <div
                   className="flex items-center rounded-xl overflow-hidden shrink-0 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.1]"
                   aria-label="Quantity selector"

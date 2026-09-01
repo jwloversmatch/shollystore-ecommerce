@@ -21,10 +21,13 @@ import SEO from "../components/SEO";
 import AccountHeader from "./account/AccountHeader";
 import AccountOrders from "./account/AccountOrders";
 import AccountProfile from "./account/AccountProfile";
+import AccountWishlist from "./account/AccountWishlist";
 import OrderDetailModal from "./account/OrderDetailModal";
 import ConfirmationModal from "../components/ConfirmationModal";
 
 import type { Order, IAddress } from "../types/account";
+
+type ActiveTab = "orders" | "profile" | "wishlist";
 
 const Account = () => {
   const navigate = useNavigate();
@@ -42,9 +45,10 @@ const Account = () => {
     : null;
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [activeTab, setActiveTab] = useState<"orders" | "profile">("orders");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("orders");
   const orderTabRef = useRef<HTMLButtonElement>(null);
   const profileTabRef = useRef<HTMLButtonElement>(null);
+  const wishlistTabRef = useRef<HTMLButtonElement>(null);
 
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
@@ -76,7 +80,6 @@ const Account = () => {
   const [deleteAccount, { isLoading: deletingAccount }] =
     useDeleteAccountMutation();
 
-  // Address deletion confirmation state
   const [deleteAddressTarget, setDeleteAddressTarget] = useState<string | null>(null);
   const [isDeleteAddressModalOpen, setIsDeleteAddressModalOpen] = useState(false);
 
@@ -90,15 +93,34 @@ const Account = () => {
     return null;
   }
 
-  const handleTabKeyDown = (e: React.KeyboardEvent, current: "orders" | "profile") => {
+  const handleTabKeyDown = (e: React.KeyboardEvent, current: ActiveTab) => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
     e.preventDefault();
-    const next: "orders" | "profile" =
-      e.key === "Home" ? "orders" :
-      e.key === "End" ? "profile" :
-      current === "orders" ? "profile" : "orders";
-    setActiveTab(next);
-    (next === "orders" ? orderTabRef : profileTabRef).current?.focus();
+
+    const tabs: ActiveTab[] = ["orders", "profile", "wishlist"];
+    const currentIndex = tabs.indexOf(current);
+    let nextIndex: number;
+
+    if (e.key === "Home") {
+      nextIndex = 0;
+    } else if (e.key === "End") {
+      nextIndex = tabs.length - 1;
+    } else {
+      nextIndex =
+        e.key === "ArrowRight"
+          ? (currentIndex + 1) % tabs.length
+          : (currentIndex - 1 + tabs.length) % tabs.length;
+    }
+
+    const nextTab = tabs[nextIndex];
+    setActiveTab(nextTab);
+
+    const refMap: Record<ActiveTab, React.RefObject<HTMLButtonElement | null>> = {
+      orders: orderTabRef,
+      profile: profileTabRef,
+      wishlist: wishlistTabRef,
+    };
+    refMap[nextTab].current?.focus();
   };
 
   const startEditing = () => {
@@ -194,7 +216,6 @@ const Account = () => {
     }
   };
 
-  // Address deletion with confirmation modal
   const requestDeleteAddress = (id: string) => {
     setDeleteAddressTarget(id);
     setIsDeleteAddressModalOpen(true);
@@ -232,7 +253,7 @@ const Account = () => {
     >
       <SEO
         title="My Account"
-        description="Manage your orders and profile settings."
+        description="Manage your orders, profile settings, and wishlist."
       />
 
       <AccountHeader user={user} />
@@ -277,10 +298,27 @@ const Account = () => {
         >
           👤 Profile Settings
         </button>
+        <button
+          ref={wishlistTabRef}
+          onClick={() => setActiveTab("wishlist")}
+          onKeyDown={(e) => handleTabKeyDown(e, "wishlist")}
+          role="tab"
+          aria-selected={activeTab === "wishlist"}
+          aria-controls="panel-wishlist"
+          id="tab-wishlist"
+          tabIndex={activeTab === "wishlist" ? 0 : -1}
+          className={`pb-3 px-1 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === "wishlist"
+              ? "border-[#e8622a] text-[#e8622a]"
+              : "border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-gray-300"
+          }`}
+        >
+          ❤️ Wishlist
+        </button>
       </nav>
 
       <AnimatePresence mode="wait">
-        {activeTab === "orders" ? (
+        {activeTab === "orders" && (
           <div
             key="orders"
             role="tabpanel"
@@ -294,7 +332,9 @@ const Account = () => {
               onViewOrder={setSelectedOrder}
             />
           </div>
-        ) : (
+        )}
+
+        {activeTab === "profile" && (
           <div
             key="profile"
             role="tabpanel"
@@ -330,6 +370,17 @@ const Account = () => {
             />
           </div>
         )}
+
+        {activeTab === "wishlist" && (
+          <div
+            key="wishlist"
+            role="tabpanel"
+            id="panel-wishlist"
+            aria-labelledby="tab-wishlist"
+          >
+            <AccountWishlist />
+          </div>
+        )}
       </AnimatePresence>
 
       <OrderDetailModal
@@ -337,7 +388,6 @@ const Account = () => {
         onClose={() => setSelectedOrder(null)}
       />
 
-      {/* Address deletion confirmation modal */}
       <ConfirmationModal
         isOpen={isDeleteAddressModalOpen}
         onClose={() => setIsDeleteAddressModalOpen(false)}

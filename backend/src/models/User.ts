@@ -56,6 +56,9 @@ export interface IUser extends Document {
   // ── Addresses ────────────────────────────────────────
   addresses: IAddress[];
 
+  //WishList ───────────────────────────────
+  wishlist: mongoose.Types.ObjectId[];
+
   // ── Session management ───────────────────────────────
   lastLogin?:    Date;
   refreshTokens: IRefreshToken[];   
@@ -98,6 +101,9 @@ const UserSchema: Schema = new Schema({
 
   // ── Addresses ────────────────────────────────────────
   addresses: { type: [AddressSchema], default: [] },
+
+  // ── WishList ────────────────────────────────────────
+  wishlist: { type: [{ type: Schema.Types.ObjectId, ref: 'Product' }], default: [] },
 
   // ── Session management ───────────────────────────────
   lastLogin:     { type: Date },

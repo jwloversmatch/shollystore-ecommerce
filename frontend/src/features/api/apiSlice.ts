@@ -41,7 +41,22 @@ export interface RevenueTrendItem {
   orders: number;
 }
 
-// ─── Base query with token from localStorage ──────────────────────────────────
+// ─── Wishlist product type (populated by backend) ───────────────────────────
+export interface WishlistProduct {
+  _id: string;
+  name: string;
+  slug: string;
+  price: number;
+  images?: string[];
+  stock?: number;
+  category?: {
+    _id: string;
+    name: string;
+    slug: string;
+  } | null;
+}
+
+// ─── Base query with token from localStorage ─────────────────────────────────
 const baseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
   prepareHeaders: (headers) => {
@@ -51,7 +66,7 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
-// ─── Wrapper: auto-logout on 401 ──────────────────────────────────────────────
+// ─── Wrapper: auto-logout on 401 ─────────────────────────────────────────────
 const baseQueryWithReauth: typeof baseQuery = async (
   args,
   api,
@@ -60,14 +75,13 @@ const baseQueryWithReauth: typeof baseQuery = async (
   const result = await baseQuery(args, api, extraOptions);
 
   if (result.error && result.error.status === 401) {
-    // Token expired or invalid — log the user out
     api.dispatch(logout());
   }
 
   return result;
 };
 
-// ─── API Slice ────────────────────────────────────────────────────────────────
+// ─── API Slice ───────────────────────────────────────────────────────────────
 export const apiSlice = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithReauth,
@@ -79,6 +93,7 @@ export const apiSlice = createApi({
     "HeroSlide",
     "Category",
     "Coupon",
+    "Wishlist",
   ],
   endpoints: (builder) => ({
     // ══════════════════════════════════════════════════════════════════
@@ -179,7 +194,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["Order", "Product"],
     }),
 
-    // ─── Revenue Trend (NEW) ────────────────────────────────────────────────
+    // ─── Revenue Trend ───────────────────────────────────────────────────────
     getRevenueTrend: builder.query<
       { success: boolean; data: RevenueTrendItem[] },
       number
@@ -242,12 +257,10 @@ export const apiSlice = createApi({
       }),
     }),
 
-    // Verify email via token
     verifyEmail: builder.query<{ success: boolean; message: string }, string>({
       query: (token) => `/auth/verify-email?token=${token}`,
     }),
 
-    // Resend verification email
     resendVerification: builder.mutation<
       { success: boolean; message: string },
       string
@@ -291,7 +304,6 @@ export const apiSlice = createApi({
       }),
     }),
 
-    // ─── Delete Account ─────────────────────────────────────────────────────────
     deleteAccount: builder.mutation<
       { success: boolean; message: string },
       string
@@ -563,7 +575,6 @@ export const apiSlice = createApi({
       providesTags: ["Product"],
     }),
 
-    // Inside endpoints
     trackOrder: builder.query<
       {
         success: boolean;
@@ -591,7 +602,7 @@ export const apiSlice = createApi({
             accountNumber?: string;
             whatsappNumber?: string;
           };
-          shippingFee?: number; // ✅ ADDED
+          shippingFee?: number;
           createdAt: string;
         };
       },
@@ -599,6 +610,32 @@ export const apiSlice = createApi({
     >({
       query: ({ orderId, email }) =>
         `/orders/track/${orderId}?email=${encodeURIComponent(email)}`,
+    }),
+
+    // ─── Wishlist endpoints ────────────────────────────────────────────────
+    getWishlist: builder.query<{ success: boolean; wishlist: WishlistProduct[] }, void>({
+      query: () => "/wishlist",
+      providesTags: ["Wishlist"],
+    }),
+    addToWishlist: builder.mutation<
+      { success: boolean; wishlist: string[] },
+      string
+    >({
+      query: (productId) => ({
+        url: `/wishlist/${productId}`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Wishlist"],
+    }),
+    removeFromWishlist: builder.mutation<
+      { success: boolean; wishlist: string[] },
+      string
+    >({
+      query: (productId) => ({
+        url: `/wishlist/${productId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Wishlist"],
     }),
   }),
 });
@@ -663,4 +700,7 @@ export const {
   useValidateCouponMutation,
   useSendMarketingEmailMutation,
   useSendPushNotificationMutation,
+  useGetWishlistQuery,
+  useAddToWishlistMutation,
+  useRemoveFromWishlistMutation,
 } = apiSlice;
