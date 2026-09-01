@@ -16,6 +16,7 @@ import {
   MoreHorizontal,
   X,
   Store,
+  Heart,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
@@ -108,7 +109,7 @@ const NavBtn: React.FC<NavBtnProps> = ({ to, icon, label, active, badge }) => {
   );
 };
 
-// ─── User dropdown menu (account + logout) ───────────────────────────────────
+// ─── User dropdown menu (account + wishlist + logout) ───────────────────────
 const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -174,6 +175,15 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
             >
               <User className="w-4 h-4" aria-hidden="true" />
               Account
+            </Link>
+            <Link
+              to="/account/wishlist"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+              role="menuitem"
+            >
+              <Heart className="w-4 h-4" aria-hidden="true" />
+              Wishlist
             </Link>
             <button
               onClick={handleLogout}
