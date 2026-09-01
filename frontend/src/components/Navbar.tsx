@@ -65,7 +65,9 @@ interface NavBtnProps {
 }
 const NavBtn: React.FC<NavBtnProps> = ({ to, icon, label, active, badge }) => {
   const accessibleLabel =
-    badge && badge > 0 ? `${label}, ${badge} ${badge === 1 ? "item" : "items"}` : label;
+    badge && badge > 0
+      ? `${label}, ${badge} ${badge === 1 ? "item" : "items"}`
+      : label;
 
   return (
     <Link
@@ -149,7 +151,11 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
         }`}
       >
         <User
-          className={mobile ? "w-5 h-5 text-gray-600 dark:text-gray-400" : "w-5 h-5 text-gray-600 dark:text-gray-400"}
+          className={
+            mobile
+              ? "w-5 h-5 text-gray-600 dark:text-gray-400"
+              : "w-5 h-5 text-gray-600 dark:text-gray-400"
+          }
           aria-hidden="true"
         />
       </motion.button>
@@ -177,7 +183,7 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
               Account
             </Link>
             <Link
-              to="/account/wishlist"
+              to="/account?tab=wishlist"
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
               role="menuitem"
@@ -288,7 +294,11 @@ const Navbar = () => {
             className="text-2xl font-black tracking-tight shrink-0 flex items-center gap-2 text-gray-900 dark:text-white"
             aria-label={`${BRAND_NAME} - Home`}
           >
-            <Store className="w-6 h-6" style={{ color: ACCENT }} aria-hidden="true" />
+            <Store
+              className="w-6 h-6"
+              style={{ color: ACCENT }}
+              aria-hidden="true"
+            />
             <span>{BRAND_NAME}</span>
           </Link>
 
@@ -387,7 +397,11 @@ const Navbar = () => {
                 className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white"
                 aria-label={`${BRAND_NAME} - Home`}
               >
-                <Store className="w-5 h-5" style={{ color: ACCENT }} aria-hidden="true" />
+                <Store
+                  className="w-5 h-5"
+                  style={{ color: ACCENT }}
+                  aria-hidden="true"
+                />
                 <span>{BRAND_NAME}</span>
               </Link>
 
@@ -431,7 +445,9 @@ const Navbar = () => {
                 icon={<Home className="w-5 h-5" />}
                 label="Home"
                 active={
-                  user?.role === "admin" ? pathname === "/admin" : pathname === "/"
+                  user?.role === "admin"
+                    ? pathname === "/admin"
+                    : pathname === "/"
                 }
               />
 
@@ -520,7 +536,10 @@ const Navbar = () => {
                   aria-modal="true"
                   aria-labelledby="admin-drawer-title"
                 >
-                  <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
+                  <div
+                    className="flex justify-center pt-3 pb-1"
+                    aria-hidden="true"
+                  >
                     <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-white/15" />
                   </div>
 
@@ -592,7 +611,7 @@ const Navbar = () => {
             )}
           </AnimatePresence>
         </>,
-        document.body
+        document.body,
       )}
     </>
   );

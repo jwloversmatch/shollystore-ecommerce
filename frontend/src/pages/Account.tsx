@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "../store";
 import { AnimatePresence } from "framer-motion";
@@ -34,6 +34,14 @@ const Account = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
 
+  // ─── Read tab from URL query parameter ──────────────────────────────────────
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") as ActiveTab | null;
+
+  // Validate tab; default to "orders"
+  const validTabs: ActiveTab[] = ["orders", "profile", "wishlist"];
+  const initialTab = tabFromUrl && validTabs.includes(tabFromUrl) ? tabFromUrl : "orders";
+
   const {
     data: orders = [],
     isLoading: loading,
@@ -45,10 +53,22 @@ const Account = () => {
     : null;
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [activeTab, setActiveTab] = useState<ActiveTab>("orders");
+  const [activeTab, setActiveTab] = useState<ActiveTab>(initialTab);
   const orderTabRef = useRef<HTMLButtonElement>(null);
   const profileTabRef = useRef<HTMLButtonElement>(null);
   const wishlistTabRef = useRef<HTMLButtonElement>(null);
+
+  // ─── Sync activeTab with URL ────────────────────────────────────────────────
+  useEffect(() => {
+    if (activeTab !== "orders") {
+      setSearchParams({ tab: activeTab }, { replace: true });
+    } else {
+      // Remove the tab param when on default tab
+      setSearchParams({}, { replace: true });
+    }
+  }, [activeTab, setSearchParams]);
+
+  // ... rest of the state and handlers (unchanged) ...
 
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
@@ -92,6 +112,8 @@ const Account = () => {
   if (!user) {
     return null;
   }
+
+  // ... handleTabKeyDown, startEditing, etc. (unchanged) ...
 
   const handleTabKeyDown = (e: React.KeyboardEvent, current: ActiveTab) => {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
@@ -241,13 +263,15 @@ const Account = () => {
     toast.success("Default address updated");
   };
 
+  // ─── Main return ─────────────────────────────────────────────────────────────
   return (
     <main
       id="main-content"
       tabIndex={-1}
       className="min-h-screen p-4 md:p-6 max-w-6xl mx-auto space-y-8 focus:outline-none bg-[#FCFAF5] dark:bg-[#0A0A0B]"
       style={{
-        paddingTop: "calc(56px + env(safe-area-inset-top, 0px))",
+        // Increased top padding to clear the fixed navbar (desktop + mobile)
+        paddingTop: "calc(96px + env(safe-area-inset-top, 0px))",
         paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
       }}
     >
