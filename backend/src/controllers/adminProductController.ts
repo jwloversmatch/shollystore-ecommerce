@@ -122,6 +122,7 @@ export const bulkImportProducts = async (req: Request, res: Response): Promise<v
 
     const results = {
       created: 0,
+      updated: 0,
       skipped: 0,
       errors: [] as { row: number; message: string }[],
     };
@@ -131,55 +132,99 @@ export const bulkImportProducts = async (req: Request, res: Response): Promise<v
       const rowNumber = i + 1;
 
       try {
-        if (!row.name || !row.price || !row.category) {
-          throw new Error("Name, price, and category are required");
+        if (!row.name && !row.slug && !row.sku) {
+          throw new Error("Name, slug, or SKU is required to identify the product");
         }
 
-        const price = parseFloat(row.price);
-        if (isNaN(price) || price < 0) {
-          throw new Error("Invalid price");
+        // Resolve category if provided
+        let categoryId: string | null = null;
+        if (row.category) {
+          categoryId = await resolveCategoryId(row.category);
+          if (!categoryId) {
+            throw new Error(`Category '${row.category}' not found`);
+          }
         }
 
-        const categoryId = await resolveCategoryId(row.category);
-        if (!categoryId) {
-          throw new Error(`Category '${row.category}' not found`);
+        // Build the data object only with fields that are provided and non-empty
+        const updateData: any = {};
+        if (row.name?.trim()) updateData.name = row.name.trim();
+        if (row.description?.trim()) updateData.description = row.description.trim();
+        if (row.price !== undefined && row.price !== "") {
+          const price = parseFloat(row.price);
+          if (isNaN(price) || price < 0) throw new Error("Invalid price");
+          updateData.price = price;
+        }
+        if (row.compareAtPrice !== undefined && row.compareAtPrice !== "") {
+          const compareAtPrice = parseFloat(row.compareAtPrice);
+          if (isNaN(compareAtPrice) || compareAtPrice < 0) throw new Error("Invalid compareAtPrice");
+          updateData.compareAtPrice = compareAtPrice;
+        }
+        if (categoryId) updateData.category = categoryId;
+        if (row.images !== undefined && row.images !== "") {
+          updateData.images = row.images
+            .split(",")
+            .map((url: string) => url.trim())
+            .filter(Boolean);
+        }
+        if (row.stock !== undefined && row.stock !== "") {
+          const stock = parseInt(row.stock, 10);
+          if (isNaN(stock) || stock < 0) throw new Error("Invalid stock");
+          updateData.stock = stock;
+        }
+        if (row.sku?.trim()) updateData.sku = row.sku.trim();
+        if (row.brand?.trim()) updateData.brand = row.brand.trim();
+        if (row.tags !== undefined && row.tags !== "") {
+          updateData.tags = row.tags
+            .split(",")
+            .map((tag: string) => tag.trim())
+            .filter(Boolean);
+        }
+        if (row.isActive !== undefined && row.isActive !== "") {
+          updateData.isActive = row.isActive.toLowerCase() === "true";
         }
 
-        const images = row.images
-          ? row.images.split(",").map((url: string) => url.trim()).filter(Boolean)
-          : [];
-
-        const tags = row.tags
-          ? row.tags.split(",").map((tag: string) => tag.trim()).filter(Boolean)
-          : [];
-
-        const slug = row.slug?.trim() || row.name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "");
-
-        const existing = await Product.findOne({ slug });
-        if (existing) {
-          throw new Error(`Product with slug '${slug}' already exists`);
+        // Determine slug from row or generate from name (only for new products)
+        let slug = row.slug?.trim();
+        if (!slug && row.name?.trim()) {
+          slug = row.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "");
         }
 
-        const productData = {
-          name: row.name.trim(),
-          slug,
-          description: row.description?.trim() || "",
-          price,
-          compareAtPrice: row.compareAtPrice ? parseFloat(row.compareAtPrice) : undefined,
-          category: categoryId,
-          images,
-          stock: row.stock ? parseInt(row.stock, 10) : 0,
-          sku: row.sku?.trim(),
-          brand: row.brand?.trim(),
-          tags,
-          isActive: row.isActive ? row.isActive.toLowerCase() === "true" : true,
-        };
+        // Try to find existing product by slug or SKU
+        let existingProduct = null;
+        if (slug) {
+          existingProduct = await Product.findOne({ slug });
+        }
+        if (!existingProduct && row.sku) {
+          existingProduct = await Product.findOne({ sku: row.sku.trim() });
+        }
 
-        await Product.create(productData);
-        results.created++;
+        if (existingProduct) {
+          // Update existing product (only provided fields)
+          Object.assign(existingProduct, updateData);
+          await existingProduct.save();
+          results.updated++;
+        } else {
+          // Create new product
+          if (!updateData.name || !updateData.price || !updateData.category) {
+            throw new Error("Name, price, and category are required for new products");
+          }
+          if (!slug) {
+            throw new Error("Slug is required (could not be generated)");
+          }
+          // Check slug uniqueness again before creation
+          const slugExists = await Product.findOne({ slug });
+          if (slugExists) {
+            throw new Error(`Product with slug '${slug}' already exists`);
+          }
+
+          const productData = { ...updateData, slug };
+          const product = new Product(productData);
+          await product.save();
+          results.created++;
+        }
       } catch (err: any) {
         results.skipped++;
         results.errors.push({
@@ -193,6 +238,7 @@ export const bulkImportProducts = async (req: Request, res: Response): Promise<v
       success: true,
       total: products.length,
       created: results.created,
+      updated: results.updated,
       skipped: results.skipped,
       errors: results.errors,
     });

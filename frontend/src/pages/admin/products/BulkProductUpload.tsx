@@ -20,6 +20,7 @@ interface BulkImportResult {
   success: boolean;
   total: number;
   created: number;
+  updated: number;
   skipped: number;
   errors: BulkImportError[];
 }
@@ -50,10 +51,13 @@ const BulkProductUpload = ({ onClose }: { onClose: () => void }) => {
     try {
       const data = await bulkImportProducts(formData).unwrap();
       setResult(data);
-      toast.success(`Imported ${data.created} products successfully`);
+      const successMessage =
+        data.updated > 0
+          ? `Imported ${data.created} and updated ${data.updated} products successfully`
+          : `Imported ${data.created} products successfully`;
+      toast.success(successMessage);
       setFile(null);
     } catch (err: unknown) {
-      // Type guard for RTK Query error
       if (err && typeof err === "object" && "data" in err) {
         const errorData = (err as { data?: { message?: string } }).data;
         toast.error(errorData?.message || "Something went wrong");
@@ -140,14 +144,23 @@ const BulkProductUpload = ({ onClose }: { onClose: () => void }) => {
         <div className="mt-6 space-y-3">
           <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
             <CheckCircle2 className="w-5 h-5" />
-            <span>{result.created} products imported successfully</span>
+            <span>{result.created} products imported</span>
           </div>
+
+          {result.updated > 0 && (
+            <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+              <CheckCircle2 className="w-5 h-5" />
+              <span>{result.updated} products updated</span>
+            </div>
+          )}
+
           {result.skipped > 0 && (
             <div className="flex items-start gap-2 text-yellow-600 dark:text-yellow-500">
               <XCircle className="w-5 h-5 mt-0.5" />
               <span>{result.skipped} products skipped</span>
             </div>
           )}
+
           {result.errors.length > 0 && (
             <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4">
               <h4 className="font-semibold text-red-600 dark:text-red-400 mb-2">

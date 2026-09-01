@@ -721,6 +721,7 @@ export const apiSlice = createApi({
         success: boolean;
         total: number;
         created: number;
+        updated: number;
         skipped: number;
         errors: { row: number; message: string }[];
       },
