@@ -20,6 +20,7 @@ import HomeHero from "./home/HomeHero";
 import HomeMarquee from "./home/HomeMarquee";
 import HomeFeatures from "./home/HomeFeatures";
 import HomeSpecialOffer from "./home/HomeSpecialOffer";
+import HomeHowItWorks from "./home/HomeHowItWorks";
 import FeaturedProductsGrid from "../components/FeaturedProductsGrid";
 import { ArrowRight } from "lucide-react";
 
@@ -216,6 +217,7 @@ const Home = () => {
 
       <HomeMarquee categoryNames={categoryNames} />
       <HomeFeatures />
+      <HomeHowItWorks />
       {/* Featured Products section */}
       <section
         className="bg-[#FCFAF5] dark:bg-[#111111] py-14 md:py-18"
