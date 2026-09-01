@@ -6,6 +6,7 @@ import { addToCart } from "../features/cart/cartSlice";
 import { toggleWishlist } from "../features/wishlist/wishlistSlice";
 import toast from "react-hot-toast";
 import SEO from "../components/SEO";
+import ConfirmationModal from "../components/ConfirmationModal";
 import {
   ShoppingCart,
   ArrowLeft,
@@ -16,6 +17,8 @@ import {
   Tag,
   ChevronRight,
   Heart,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import {
   useGetProductBySlugQuery,
@@ -24,6 +27,8 @@ import {
   useRemoveFromWishlistMutation,
   useGetProductReviewsQuery,
   useAddReviewMutation,
+  useUpdateReviewMutation,
+  useDeleteReviewMutation,
 } from "../features/api/apiSlice";
 import type { ProductItem } from "../types/home";
 import type { RootState } from "../store";
@@ -49,6 +54,7 @@ interface LocalVariant {
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
 const PLACEHOLDER = "https://via.placeholder.com/600";
+const MAX_REVIEW_LENGTH = 500; // match backend limit
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const getCategoryName = (cat: ProductItem["category"]): string =>
@@ -94,6 +100,7 @@ const getColorHex = (name: string): string | null => {
   return colorMap[lower] || null;
 };
 
+// ─── Main Component ───────────────────────────────────────────────────────────
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const dispatch = useDispatch();
@@ -104,7 +111,12 @@ const ProductDetail = () => {
   const user = useSelector((s: RootState) => s.auth.user);
   const [addToWishlist] = useAddToWishlistMutation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
+  const [addReview, { isLoading: addingReview }] = useAddReviewMutation();
+  const [updateReview, { isLoading: updatingReview }] =
+    useUpdateReviewMutation();
+  const [deleteReview] = useDeleteReviewMutation();
 
+  // Product state
   const [qty, setQty] = useState(1);
   const [imgError, setImgError] = useState(false);
   const [added, setAdded] = useState(false);
@@ -112,7 +124,26 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
-  const { data: product, isLoading, isError } = useGetProductBySlugQuery(slug || "");
+  // Review form state (add)
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+
+  // Review editing state
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [editRating, setEditRating] = useState(5);
+  const [editComment, setEditComment] = useState("");
+
+  // Delete confirmation state
+  const [deleteTarget, setDeleteTarget] = useState<{
+    reviewId: string;
+    productId: string;
+  } | null>(null);
+
+  const {
+    data: product,
+    isLoading,
+    isError,
+  } = useGetProductBySlugQuery(slug || "");
 
   const { data: categoryTree = [] } = useGetCategoryTreeQuery(undefined);
   const categoryId = product ? getCategoryId(product.category) : undefined;
@@ -184,41 +215,38 @@ const ProductDetail = () => {
 
   const isWishlisted = product ? wishlistIds.includes(product._id) : false;
 
-  // Reviews state
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewComment, setReviewComment] = useState("");
-  const [addReview, { isLoading: addingReview }] = useAddReviewMutation();
-
   const { data: reviewsData, isLoading: reviewsLoading } =
     useGetProductReviewsQuery(
       { productId: product?._id, page: 1, limit: 10 },
       { skip: !product },
     );
 
-  // ✅ SEO structured data for Product with AggregateRating
+  // SEO structured data
   const productSchema = useMemo(() => {
     if (!product) return undefined;
     return {
-      '@context': 'https://schema.org',
-      '@type': 'Product',
+      "@context": "https://schema.org",
+      "@type": "Product",
       name: product.name,
       description: product.description || product.name,
       image: product.images?.[0] || PLACEHOLDER,
       sku: product.sku,
-      brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
+      brand: product.brand
+        ? { "@type": "Brand", name: product.brand }
+        : undefined,
       offers: {
-        '@type': 'Offer',
+        "@type": "Offer",
         price: displayPrice,
-        priceCurrency: 'NGN',
+        priceCurrency: "NGN",
         availability: isOutOfStock
-          ? 'https://schema.org/OutOfStock'
-          : 'https://schema.org/InStock',
+          ? "https://schema.org/OutOfStock"
+          : "https://schema.org/InStock",
         url: window.location.href,
       },
       ...(product.numberOfReviews && product.numberOfReviews > 0
         ? {
             aggregateRating: {
-              '@type': 'AggregateRating',
+              "@type": "AggregateRating",
               ratingValue: product.averageRating || 0,
               reviewCount: product.numberOfReviews,
             },
@@ -227,6 +255,7 @@ const ProductDetail = () => {
     };
   }, [product, displayPrice, isOutOfStock]);
 
+  // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleWishlistToggle = async () => {
     if (!product) return;
     if (!user) {
@@ -285,10 +314,15 @@ const ProductDetail = () => {
     }
   };
 
+  // ─── Review handlers ────────────────────────────────────────────────────────
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
+    if (!user || !product) {
       toast.error("Please login to write a review");
+      return;
+    }
+    if (!reviewComment.trim()) {
+      toast.error("Please enter a review comment");
       return;
     }
     try {
@@ -306,6 +340,73 @@ const ProductDetail = () => {
           ? (err as { data?: { message?: string } }).data?.message
           : "Failed to submit review";
       toast.error(message || "Failed to submit review");
+    }
+  };
+
+  const handleStartEdit = (review: {
+    _id: string;
+    rating: number;
+    comment: string;
+  }) => {
+    setEditingReviewId(review._id);
+    setEditRating(review.rating);
+    setEditComment(review.comment);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingReviewId(null);
+    setEditRating(5);
+    setEditComment("");
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingReviewId || !product) return;
+    if (!editComment.trim()) {
+      toast.error("Please enter a review comment");
+      return;
+    }
+    try {
+      await updateReview({
+        productId: product._id,
+        reviewId: editingReviewId,
+        rating: editRating,
+        comment: editComment,
+      }).unwrap();
+      toast.success("Review updated");
+      setEditingReviewId(null);
+      setEditRating(5);
+      setEditComment("");
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "data" in err
+          ? (err as { data?: { message?: string } }).data?.message
+          : "Failed to update review";
+      toast.error(message || "Failed to update review");
+    }
+  };
+
+  const handleDeleteClick = (reviewId: string) => {
+    if (!product) return;
+    setDeleteTarget({ reviewId, productId: product._id });
+  };
+
+  const confirmDeleteReview = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteReview({
+        productId: deleteTarget.productId,
+        reviewId: deleteTarget.reviewId,
+      }).unwrap();
+      toast.success("Review deleted");
+      setDeleteTarget(null);
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "data" in err
+          ? (err as { data?: { message?: string } }).data?.message
+          : "Failed to delete review";
+      toast.error(message || "Failed to delete review");
+      setDeleteTarget(null);
     }
   };
 
@@ -419,11 +520,7 @@ const ProductDetail = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen px-4 md:px-8 max-w-7xl mx-auto bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
-      style={{
-        paddingTop: "calc(56px + env(safe-area-inset-top, 0px))",
-        paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
-      }}
+      className="min-h-screen px-4 md:px-8 max-w-7xl mx-auto bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(96px+env(safe-area-inset-top,0px))] pb-[calc(64px+env(safe-area-inset-bottom,0px))]"
     >
       <SEO
         title={product.name}
@@ -937,38 +1034,115 @@ const ProductDetail = () => {
             <p className="text-gray-500">Loading reviews...</p>
           ) : reviewsData?.reviews?.length ? (
             <div className="space-y-4">
-              {reviewsData.reviews.map((review) => (
-                <div
-                  key={review._id}
-                  className="border-b border-gray-200 dark:border-white/[0.06] pb-4"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                      {review.user.avatar ? (
-                        <img
-                          src={review.user.avatar}
-                          alt={review.user.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-sm font-bold">
-                          {review.user.name.charAt(0)}
-                        </span>
-                      )}
-                    </div>
-                    <span className="font-bold text-gray-900 dark:text-white">
-                      {review.user.name}
-                    </span>
-                    <StarRating rating={review.rating} />
+              {reviewsData.reviews.map((review) => {
+                const isOwner = user && review.user._id === user._id;
+                const isEditing = editingReviewId === review._id;
+                return (
+                  <div
+                    key={review._id}
+                    className="border-b border-gray-200 dark:border-white/[0.06] pb-4"
+                  >
+                    {isEditing ? (
+                      <form onSubmit={handleSaveEdit} className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">
+                            Your Rating
+                          </label>
+                          <StarRating
+                            rating={editRating}
+                            interactive
+                            onChange={setEditRating}
+                            size={24}
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor={`edit-comment-${review._id}`}
+                            className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1"
+                          >
+                            Your Review
+                          </label>
+                          <textarea
+                            id={`edit-comment-${review._id}`}
+                            value={editComment}
+                            onChange={(e) => setEditComment(e.target.value)}
+                            placeholder="Update your review..."
+                            required
+                            rows={4}
+                            maxLength={MAX_REVIEW_LENGTH}
+                            className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-white resize-none"
+                          />
+                          <p className="text-xs text-gray-400 mt-1">
+                            {editComment.length}/{MAX_REVIEW_LENGTH}
+                          </p>
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            type="submit"
+                            disabled={updatingReview}
+                            className="px-6 py-2.5 rounded-xl font-bold text-white bg-[#e8622a] disabled:opacity-50"
+                          >
+                            {updatingReview ? "Saving..." : "Save Changes"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCancelEdit}
+                            className="px-6 py-2.5 rounded-xl font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.08]"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                            {review.user.avatar ? (
+                              <img
+                                src={review.user.avatar}
+                                alt={review.user.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-sm font-bold">
+                                {review.user.name.charAt(0)}
+                              </span>
+                            )}
+                          </div>
+                          <span className="font-bold text-gray-900 dark:text-white">
+                            {review.user.name}
+                          </span>
+                          <StarRating rating={review.rating} />
+                        </div>
+                        <p className="mt-2 text-gray-700 dark:text-gray-300">
+                          {review.comment}
+                        </p>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-xs text-gray-400">
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </span>
+                          {isOwner && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleStartEdit(review)}
+                                className="text-xs font-bold text-blue-500 hover:text-blue-600 flex items-center gap-1"
+                              >
+                                <Pencil className="w-3 h-3" /> Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteClick(review._id)}
+                                className="text-xs font-bold text-red-500 hover:text-red-600 flex items-center gap-1"
+                              >
+                                <Trash2 className="w-3 h-3" /> Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <p className="mt-2 text-gray-700 dark:text-gray-300">
-                    {review.comment}
-                  </p>
-                  <span className="text-xs text-gray-400">
-                    {new Date(review.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-gray-500">
@@ -976,7 +1150,7 @@ const ProductDetail = () => {
             </p>
           )}
 
-          {/* Review form */}
+          {/* Add review form */}
           {user ? (
             <form onSubmit={handleSubmitReview} className="mt-8 space-y-4">
               <div>
@@ -1004,8 +1178,12 @@ const ProductDetail = () => {
                   placeholder="Share your experience..."
                   required
                   rows={4}
-                  className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-white"
+                  maxLength={MAX_REVIEW_LENGTH}
+                  className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-white resize-none"
                 />
+                <p className="text-xs text-gray-400 mt-1">
+                  {reviewComment.length}/{MAX_REVIEW_LENGTH}
+                </p>
               </div>
               <button
                 type="submit"
@@ -1118,6 +1296,18 @@ const ProductDetail = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Delete confirmation modal */}
+      <ConfirmationModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDeleteReview}
+        title="Delete Review?"
+        message="This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
     </main>
   );
 };
