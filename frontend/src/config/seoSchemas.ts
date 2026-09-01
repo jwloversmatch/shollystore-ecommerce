@@ -27,7 +27,8 @@ export const buildProductSchema = (product: {
         : 'https://schema.org/OutOfStock',
     url: productUrl(product.slug),
   },
-  ...(product.averageRating && product.numberOfReviews
+  // Improved check: only include if both numbers are >= 0
+  ...(product.averageRating != null && product.numberOfReviews != null
     ? {
         aggregateRating: {
           '@type': 'AggregateRating',
@@ -61,7 +62,10 @@ export const organizationSchema = {
   logo: `${SITE_CONFIG.url}/logo.png`,
   description: SITE_CONFIG.description,
   sameAs: [
-    `https://twitter.com/${SITE_CONFIG.twitter.replace('@', '')}`,
+    // Improved: handle both handle and full URL
+    SITE_CONFIG.twitter.startsWith('http')
+      ? SITE_CONFIG.twitter
+      : `https://twitter.com/${SITE_CONFIG.twitter.replace('@', '')}`,
   ],
   contactPoint: {
     '@type': 'ContactPoint',
@@ -79,7 +83,7 @@ export const websiteSchema = {
   url: SITE_CONFIG.url,
   potentialAction: {
     '@type': 'SearchAction',
-    target: `${SITE_CONFIG.url}/shop?q={search_term_string}`,
+    target: `${SITE_CONFIG.url}/shop?search={search_term_string}`, 
     'query-input': 'required name=search_term_string',
   },
 };

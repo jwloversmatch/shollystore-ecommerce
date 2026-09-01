@@ -10,7 +10,6 @@ interface SEOProps {
   twitterCard?: 'summary_large_image' | 'summary';
   keywords?: string;
   noIndex?: boolean;
-  /** Product-specific Open Graph price (NGN) */
   productPrice?: number;
   productAvailability?: 'in stock' | 'out of stock';
 }
@@ -29,8 +28,22 @@ const SEO = ({
 }: SEOProps) => {
   const siteName = SITE_CONFIG.name;
   const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
-  const resolvedOgImage = ogImage || SITE_CONFIG.ogImage;
-  const resolvedCanonical = canonicalUrl || SITE_CONFIG.url;
+
+  // Helper: convert to absolute URL if needed
+  const toAbsoluteUrl = (url: string) => {
+    if (url.startsWith('http')) return url;
+    return new URL(url, SITE_CONFIG.url).toString();
+  };
+
+  // Resolve canonical: prefer explicit prop, else current page URL (without hash)
+  const resolvedCanonical = canonicalUrl
+    ? toAbsoluteUrl(canonicalUrl)
+    : window.location.href.split('#')[0];
+
+  // Resolve og:image: ensure absolute
+  const resolvedOgImage = ogImage
+    ? toAbsoluteUrl(ogImage)
+    : toAbsoluteUrl(SITE_CONFIG.ogImage);
 
   const trimmedDescription = description.slice(0, 160);
 
@@ -70,6 +83,9 @@ const SEO = ({
       <meta name="twitter:image" content={resolvedOgImage} />
       <meta name="twitter:image:alt" content={title} />
       <meta name="twitter:site" content={SITE_CONFIG.twitter} />
+      {SITE_CONFIG.twitterCreator && (
+        <meta name="twitter:creator" content={SITE_CONFIG.twitterCreator} />
+      )}
 
       <meta name="author" content={siteName} />
       <meta httpEquiv="content-language" content="en-NG" />

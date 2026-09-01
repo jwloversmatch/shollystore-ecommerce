@@ -17,6 +17,7 @@ import {
 } from "../features/api/apiSlice";
 import ProductCard from "../components/ProductCard";
 import ProductSearchBox from "../components/ProductSearchBox";
+import SEO from "../components/SEO";
 import { ACCENT, PLACEHOLDER } from "../types/home";
 import type { ProductItem } from "../types/home";
 
@@ -246,6 +247,18 @@ const ShopPage = () => {
     debouncedSearch.length > 0 ||
     sortBy !== "newest";
 
+  // ─── SEO dynamic title & description ────────────────────────────────────
+  const seoTitle = currentNode
+    ? `${currentNode.name} – Shop`
+    : debouncedSearch
+    ? `Search: "${debouncedSearch}" – Shop`
+    : "Shop";
+  const seoDescription =
+    currentNode?.name ||
+    (debouncedSearch
+      ? `Browse products matching "${debouncedSearch}"`
+      : "Browse our full collection of products");
+
   // ─── Render ────────────────────────────────────────────────────────────
   return (
     <main
@@ -253,10 +266,12 @@ const ShopPage = () => {
       tabIndex={-1}
       className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] pb-28 md:pb-16 focus:outline-none"
       style={{
-        paddingTop: "calc(56px + env(safe-area-inset-top, 0px))",
+        paddingTop: "calc(96px + env(safe-area-inset-top, 0px))",
         paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
       }}
     >
+      <SEO title={seoTitle} description={seoDescription} />
+
       {/* Search + sort bar */}
       <div className="px-4 md:px-6 py-3 mb-6 sm:mt-3 md:mt-4 bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]">
         <div className="max-w-7xl mx-auto">

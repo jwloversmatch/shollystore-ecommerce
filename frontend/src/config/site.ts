@@ -6,6 +6,7 @@ export const SITE_CONFIG = {
     import.meta.env.VITE_SITE_DESCRIPTION ||
     'Shop the best deals on fashion, beverages, electronics and more. Fast delivery across Nigeria.',
   twitter: import.meta.env.VITE_TWITTER_HANDLE || '@sholex',
+  twitterCreator: import.meta.env.VITE_TWITTER_CREATOR || '@sholex',
   ogImage: `${import.meta.env.VITE_SITE_URL || 'https://sholex.vercel.app'}/og-default.jpg`,
   locale: 'en_NG',
   phone: import.meta.env.VITE_CONTACT_PHONE || '+234-000-000-0000',
