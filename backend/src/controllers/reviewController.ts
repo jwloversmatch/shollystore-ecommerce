@@ -16,6 +16,39 @@ const Filter = require("bad-words") as {
 
 const profanityFilter = new Filter();
 
+// ─── Custom Nigerian & general profanity list ─────────────────────────────
+const customBannedWords = [
+  // English general profanity
+  "ass", "asshole", "bastard", "bitch", "bollocks", "bullshit", "cunt", "damn",
+  "dick", "dickhead", "fuck", "fucker", "fucking", "motherfucker", "piss",
+  "prick", "pussy", "shit", "slut", "twat", "wanker", "whore", "nigga", "nigger",
+  // Nigerian Pidgin / slang
+  "ashewo", "agbero", "ode", "oloshi", "yeye", "mumu", "oponu", "werey",
+  "alayee", "efulefu", "nzuzu", "onye ara", "aboki", "ngbeke", "akpali",
+  "oshisco", "kolo", "mad man", "craze", "waka pass",
+  // Additional common insults
+  "idiot", "stupid", "fool", "moron", "imbecile", "retard", "scumbag",
+  "douche", "douchebag", "jackass", "arse", "arsehole", "bugger", "git",
+  "minger", "pillock", "plonker", "tosser", "wazzock",
+];
+
+profanityFilter.addWords(...customBannedWords);
+
+// Regex fallback – catches variations and the above words even if library misses
+const profanityRegex = new RegExp(
+  "\\b(" +
+    customBannedWords
+      .map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("|") +
+    ")\\b",
+  "i"
+);
+
+// Helper to check profanity
+const containsProfanity = (text: string): boolean => {
+  return profanityFilter.isProfane(text) || profanityRegex.test(text);
+};
+
 // Helper: recalculate and update product's averageRating & numberOfReviews
 const updateProductRatingStats = async (productId: string) => {
   const stats = await Review.aggregate([
@@ -51,7 +84,7 @@ export const createReview = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Comment is required" });
     }
 
-    if (profanityFilter.isProfane(cleanComment)) {
+    if (containsProfanity(cleanComment)) {
       return res.status(400).json({ message: "Review contains inappropriate language." });
     }
 
@@ -121,10 +154,9 @@ export const updateReview = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Review not found or not authorized" });
     }
 
-    // ✅ 15-minute edit window
     const now = Date.now();
     const createdAt = new Date(review.createdAt).getTime();
-    const editWindowMs = 15 * 60 * 1000; // 15 minutes
+    const editWindowMs = 15 * 60 * 1000;
     if (now - createdAt > editWindowMs) {
       return res.status(403).json({
         message: "Review can no longer be edited. The 15-minute edit window has passed.",
@@ -143,7 +175,7 @@ export const updateReview = async (req: Request, res: Response) => {
       if (!cleanComment) {
         return res.status(400).json({ message: "Comment cannot be empty" });
       }
-      if (profanityFilter.isProfane(cleanComment)) {
+      if (containsProfanity(cleanComment)) {
         return res.status(400).json({ message: "Review contains inappropriate language." });
       }
       review.comment = cleanComment;
