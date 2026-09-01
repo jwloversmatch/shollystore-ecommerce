@@ -714,6 +714,25 @@ export const apiSlice = createApi({
         { type: "Product", id: productId },
       ],
     }),
+
+    // ─── Admin Bulk Import ────────────────────────────────────────────────────
+    bulkImportProducts: builder.mutation<
+      {
+        success: boolean;
+        total: number;
+        created: number;
+        skipped: number;
+        errors: { row: number; message: string }[];
+      },
+      FormData
+    >({
+      query: (formData) => ({
+        url: "/admin/products/bulk-import",
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["Product"],
+    }),
   }),
 });
 
@@ -784,4 +803,5 @@ export const {
   useAddReviewMutation,
   useUpdateReviewMutation,
   useDeleteReviewMutation,
+  useBulkImportProductsMutation,
 } = apiSlice;

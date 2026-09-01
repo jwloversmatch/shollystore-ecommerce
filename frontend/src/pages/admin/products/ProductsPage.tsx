@@ -1,19 +1,20 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import toast from "react-hot-toast";
 import {
   useGetProductsQuery,
   useDeleteProductMutation,
   useUpdateStockMutation,
 } from "../../../features/api/apiSlice";
-import { Search, Plus, Flame, ArrowLeft } from "lucide-react";
+import { Search, Plus, Flame, ArrowLeft, FileSpreadsheet } from "lucide-react";
 import ConfirmationModal from "../../../components/ConfirmationModal";
 import { ProductRowSkeleton } from "../../../components/Skeletons";
 import { useTheme } from "../../../context/ThemeContext";
 import ProductDrawer from "./ProductDrawer";
 import MarketingModal from "./MarketingModal";
 import ProductTable from "./ProductTable";
+import BulkProductUpload from "./BulkProductUpload";
 import type { ProductItem } from "../../../types/home";
 
 const ACCENT = "#e8622a";
@@ -43,18 +44,12 @@ const ProductsPage = () => {
   const [categoryFilter] = useState("All");
   const [showLowStock, setShowLowStock] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<ProductItem | null>(
-    null,
-  );
+  const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalAction, setModalAction] = useState<{
-    type: "delete";
-    id: string;
-  } | null>(null);
+  const [modalAction, setModalAction] = useState<{ type: "delete"; id: string } | null>(null);
   const [marketingOpen, setMarketingOpen] = useState(false);
-  const [marketingProduct, setMarketingProduct] = useState<ProductItem | null>(
-    null,
-  );
+  const [marketingProduct, setMarketingProduct] = useState<ProductItem | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   // Theme styles
   const bg = isDark ? "#0A0A0B" : "#FCFAF5";
@@ -70,9 +65,7 @@ const ProductsPage = () => {
     if (categoryFilter !== "All")
       f = f.filter((p) => getCategoryId(p.category) === categoryFilter);
     if (searchTerm)
-      f = f.filter((p) =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()),
-      );
+      f = f.filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
     if (showLowStock) f = f.filter((p) => (p.stock ?? 0) < 5);
     return f.slice().sort((a, b) => b._id.localeCompare(a._id));
   }, [products, searchTerm, categoryFilter, showLowStock]);
@@ -123,10 +116,7 @@ const ProductsPage = () => {
         id="main-content"
         tabIndex={-1}
         className="p-4 md:p-6 max-w-7xl mx-auto space-y-5 pb-28 md:pb-10 focus:outline-none"
-        style={{
-          background: bg,
-          paddingTop: "calc(56px + env(safe-area-inset-top, 0px))",
-        }}
+        style={{ background: bg, paddingTop: "calc(56px + env(safe-area-inset-top, 0px))" }}
       >
         <div
           className="rounded-2xl overflow-hidden"
@@ -145,10 +135,7 @@ const ProductsPage = () => {
       id="main-content"
       tabIndex={-1}
       className="p-4 md:p-6 max-w-7xl mx-auto space-y-5 pb-28 md:pb-10 focus:outline-none"
-      style={{
-        background: bg,
-        paddingTop: "calc(56px + env(safe-area-inset-top, 0px))",
-      }}
+      style={{ background: bg, paddingTop: "calc(56px + env(safe-area-inset-top, 0px))" }}
     >
       <ConfirmationModal
         isOpen={modalOpen}
@@ -161,58 +148,76 @@ const ProductsPage = () => {
         type="danger"
       />
 
+      {/* Bulk upload modal */}
+      <AnimatePresence>
+        {bulkOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+            onClick={() => setBulkOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <BulkProductUpload onClose={() => setBulkOpen(false)} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/admin")}
             className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors shrink-0"
-            style={{
-              background: inputBg,
-              border: `1px solid ${inputBorder}`,
-              color: textMuted,
-            }}
+            style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: textMuted }}
             aria-label="Back to admin dashboard"
           >
             <ArrowLeft className="w-5 h-5" aria-hidden="true" />
           </button>
           <div>
             <div className="flex items-center gap-1.5 mb-0.5">
-              <Flame
-                className="w-3 h-3"
-                style={{ color: ACCENT }}
-                aria-hidden="true"
-              />
-              <p
-                className="text-[10px] font-extrabold uppercase tracking-[0.2em]"
-                style={{ color: ACCENT }}
-              >
+              <Flame className="w-3 h-3" style={{ color: ACCENT }} aria-hidden="true" />
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em]" style={{ color: ACCENT }}>
                 Admin
               </p>
             </div>
-            <h1
-              className="text-2xl md:text-3xl font-black leading-none"
-              style={{ color: textPrimary }}
-            >
+            <h1 className="text-2xl md:text-3xl font-black leading-none" style={{ color: textPrimary }}>
               Products
             </h1>
-            <p
-              className="text-xs mt-0.5"
-              style={{ color: textMuted }}
-              aria-live="polite"
-            >
+            <p className="text-xs mt-0.5" style={{ color: textMuted }} aria-live="polite">
               {products.length} products in catalog
             </p>
           </div>
         </div>
-        <button
-          onClick={() => handleOpenDrawer()}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white text-sm shrink-0"
-          style={{ background: ACCENT, boxShadow: `0 6px 18px ${ACCENT}44` }}
-          aria-label="Add new product"
-        >
-          <Plus className="w-4 h-4" aria-hidden="true" /> Add Product
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setBulkOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm shrink-0 border"
+            style={{
+              background: inputBg,
+              borderColor: inputBorder,
+              color: textPrimary,
+            }}
+            aria-label="Bulk import products"
+          >
+            <FileSpreadsheet className="w-4 h-4" aria-hidden="true" /> Bulk Import
+          </button>
+          <button
+            onClick={() => handleOpenDrawer()}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white text-sm shrink-0"
+            style={{ background: ACCENT, boxShadow: `0 6px 18px ${ACCENT}44` }}
+            aria-label="Add new product"
+          >
+            <Plus className="w-4 h-4" aria-hidden="true" /> Add Product
+          </button>
+        </div>
       </header>
 
       {/* Filter bar */}
@@ -238,11 +243,7 @@ const ProductsPage = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none border transition-all"
-            style={{
-              background: inputBg,
-              borderColor: inputBorder,
-              color: textPrimary,
-            }}
+            style={{ background: inputBg, borderColor: inputBorder, color: textPrimary }}
           />
         </div>
         <button
