@@ -64,7 +64,7 @@ const ProductTable = ({ products, onEdit, onDelete, onMarketing, onStockUpdate, 
                     <td className="px-4 sm:px-5 py-3">
                       <div className="w-11 h-11 rounded-xl overflow-hidden border shrink-0" style={{ borderColor: inputBorder }}>
                         <img
-                          src={getCloudinaryUrl(product.images?.[0] || PLACEHOLDER, 100)}
+                          src={product.images?.[0] ? getCloudinaryUrl(product.images[0], 100) : PLACEHOLDER}
                           alt={product.name}
                           loading="lazy"
                           onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
