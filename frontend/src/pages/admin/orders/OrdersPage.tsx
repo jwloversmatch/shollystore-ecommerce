@@ -34,7 +34,15 @@ const OrdersPage = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const { data, isLoading, refetch } = useGetAllOrdersQuery({ page, limit, status: statusFilter, paymentMethod: paymentFilter, search: searchTerm, startDate, endDate });
+  const { data, isLoading, refetch } = useGetAllOrdersQuery({
+    page,
+    limit,
+    status: statusFilter,
+    paymentMethod: paymentFilter,
+    search: searchTerm,
+    startDate,
+    endDate,
+  });
   const [updateStatus] = useUpdateOrderStatusMutation();
   const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
   const orderModalRef = useRef<HTMLDivElement>(null);
@@ -49,16 +57,26 @@ const OrdersPage = () => {
   const inputBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)";
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
-    try { await updateStatus({ id: orderId, status: newStatus }).unwrap(); refetch(); }
-    catch (error) { console.error("Failed to update status:", error); }
+    try {
+      await updateStatus({ id: orderId, status: newStatus }).unwrap();
+      refetch();
+    } catch (error) {
+      console.error("Failed to update status:", error);
+    }
   };
 
-  const handleClearFilters = () => { setStatusFilter("All"); setPaymentFilter("All"); setSearchTerm(""); setStartDate(""); setEndDate(""); setPage(1); };
+  const handleClearFilters = () => {
+    setStatusFilter("All");
+    setPaymentFilter("All");
+    setSearchTerm("");
+    setStartDate("");
+    setEndDate("");
+    setPage(1);
+  };
 
   const orders = useMemo(() => data?.orders || [], [data?.orders]);
   const totalPages = data?.totalPages || 1;
 
-  // CSV Export with auth token
   const handleExportCSV = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -90,22 +108,51 @@ const OrdersPage = () => {
 
   if (isLoading) {
     return (
-      <main id="main-content" tabIndex={-1} className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 focus:outline-none" style={{ background: bg, paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))' }}>
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">{Array.from({ length: 4 }).map((_, i) => <StatsCardSkeleton key={i} dark={isDark} />)}</div>
-        <div className="rounded-2xl border" style={{ background: cardBg, borderColor: cardBorder }}>{Array.from({ length: 5 }).map((_, i) => <OrderRowSkeleton key={i} dark={isDark} />)}</div>
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 focus:outline-none pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(96px+env(safe-area-inset-top,0px))]"
+        style={{ background: bg }}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatsCardSkeleton key={i} dark={isDark} />
+          ))}
+        </div>
+        <div className="rounded-2xl border" style={{ background: cardBg, borderColor: cardBorder }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <OrderRowSkeleton key={i} dark={isDark} />
+          ))}
+        </div>
       </main>
     );
   }
 
   return (
-    <main id="main-content" tabIndex={-1} className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 md:space-y-8 focus:outline-none" style={{ background: bg, paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))' }}>
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 md:space-y-8 focus:outline-none pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(96px+env(safe-area-inset-top,0px))]"
+      style={{ background: bg }}
+    >
       {/* Header */}
       <header className="flex flex-row items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate("/admin")} className="p-2 rounded-xl border transition-colors" style={{ background: inputBg, borderColor: inputBorder, color: textSecondary }} aria-label="Back to admin dashboard"><ArrowLeft className="w-5 h-5" /></button>
+          <button
+            onClick={() => navigate("/admin")}
+            className="p-2 rounded-xl border transition-colors"
+            style={{ background: inputBg, borderColor: inputBorder, color: textSecondary }}
+            aria-label="Back to admin dashboard"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold" style={{ color: textPrimary }}>All Orders</h1>
-            <p className="text-xs sm:text-sm mt-1" style={{ color: textMuted }}>View and manage every customer order</p>
+            <h1 className="text-2xl md:text-3xl font-bold" style={{ color: textPrimary }}>
+              All Orders
+            </h1>
+            <p className="text-xs sm:text-sm mt-1" style={{ color: textMuted }}>
+              View and manage every customer order
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -118,7 +165,13 @@ const OrdersPage = () => {
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline">Export CSV</span>
           </button>
-          <button onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2 px-4 py-2 rounded-xl shadow-sm border transition text-sm font-medium" style={{ background: inputBg, borderColor: inputBorder, color: textSecondary }} aria-expanded={showFilters} aria-controls="filters-panel">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl shadow-sm border transition text-sm font-medium"
+            style={{ background: inputBg, borderColor: inputBorder, color: textSecondary }}
+            aria-expanded={showFilters}
+            aria-controls="filters-panel"
+          >
             <Filter className="w-4 h-4" />
             <span className="hidden sm:inline">Filters</span>
           </button>
@@ -132,11 +185,16 @@ const OrdersPage = () => {
       <AnimatePresence>
         {showFilters && (
           <OrderFilters
-            statusFilter={statusFilter} setStatusFilter={setStatusFilter}
-            paymentFilter={paymentFilter} setPaymentFilter={setPaymentFilter}
-            searchTerm={searchTerm} setSearchTerm={setSearchTerm}
-            startDate={startDate} setStartDate={setStartDate}
-            endDate={endDate} setEndDate={setEndDate}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            paymentFilter={paymentFilter}
+            setPaymentFilter={setPaymentFilter}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            startDate={startDate}
+            setStartDate={setStartDate}
+            endDate={endDate}
+            setEndDate={setEndDate}
             onClear={handleClearFilters}
             isDark={isDark}
           />
