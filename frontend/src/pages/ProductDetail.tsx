@@ -54,7 +54,8 @@ interface LocalVariant {
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
 const PLACEHOLDER = "https://via.placeholder.com/600";
-const MAX_REVIEW_LENGTH = 500; // match backend limit
+const MAX_REVIEW_LENGTH = 500;
+const EDIT_WINDOW_MS = 15 * 60 * 1000;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const getCategoryName = (cat: ProductItem["category"]): string =>
@@ -112,8 +113,7 @@ const ProductDetail = () => {
   const [addToWishlist] = useAddToWishlistMutation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
   const [addReview, { isLoading: addingReview }] = useAddReviewMutation();
-  const [updateReview, { isLoading: updatingReview }] =
-    useUpdateReviewMutation();
+  const [updateReview, { isLoading: updatingReview }] = useUpdateReviewMutation();
   const [deleteReview] = useDeleteReviewMutation();
 
   // Product state
@@ -139,11 +139,10 @@ const ProductDetail = () => {
     productId: string;
   } | null>(null);
 
-  const {
-    data: product,
-    isLoading,
-    isError,
-  } = useGetProductBySlugQuery(slug || "");
+  // Current time (lazy initializer avoids effect)
+  const [currentTime] = useState(() => Date.now());
+
+  const { data: product, isLoading, isError } = useGetProductBySlugQuery(slug || "");
 
   const { data: categoryTree = [] } = useGetCategoryTreeQuery(undefined);
   const categoryId = product ? getCategoryId(product.category) : undefined;
@@ -231,9 +230,7 @@ const ProductDetail = () => {
       description: product.description || product.name,
       image: product.images?.[0] || PLACEHOLDER,
       sku: product.sku,
-      brand: product.brand
-        ? { "@type": "Brand", name: product.brand }
-        : undefined,
+      brand: product.brand ? { "@type": "Brand", name: product.brand } : undefined,
       offers: {
         "@type": "Offer",
         price: displayPrice,
@@ -1037,6 +1034,10 @@ const ProductDetail = () => {
               {reviewsData.reviews.map((review) => {
                 const isOwner = user && review.user._id === user._id;
                 const isEditing = editingReviewId === review._id;
+                const canEdit =
+                  isOwner &&
+                  currentTime - new Date(review.createdAt).getTime() <
+                    EDIT_WINDOW_MS;
                 return (
                   <div
                     key={review._id}
@@ -1123,12 +1124,14 @@ const ProductDetail = () => {
                           </span>
                           {isOwner && (
                             <div className="flex gap-2">
-                              <button
-                                onClick={() => handleStartEdit(review)}
-                                className="text-xs font-bold text-blue-500 hover:text-blue-600 flex items-center gap-1"
-                              >
-                                <Pencil className="w-3 h-3" /> Edit
-                              </button>
+                              {canEdit && (
+                                <button
+                                  onClick={() => handleStartEdit(review)}
+                                  className="text-xs font-bold text-blue-500 hover:text-blue-600 flex items-center gap-1"
+                                >
+                                  <Pencil className="w-3 h-3" /> Edit
+                                </button>
+                              )}
                               <button
                                 onClick={() => handleDeleteClick(review._id)}
                                 className="text-xs font-bold text-red-500 hover:text-red-600 flex items-center gap-1"
