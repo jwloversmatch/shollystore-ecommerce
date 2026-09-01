@@ -17,6 +17,7 @@ import {
 } from "../features/api/apiSlice";
 import ProductCard from "../components/ProductCard";
 import ProductSearchBox from "../components/ProductSearchBox";
+import ProductQuickViewModal from "../components/ProductQuickViewModal";
 import SEO from "../components/SEO";
 import { SITE_CONFIG, productUrl } from "../config/site";
 import { ACCENT, PLACEHOLDER } from "../types/home";
@@ -80,6 +81,7 @@ const ShopPage = () => {
   const [search, setSearch] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [sortBy, setSortBy] = useState(sortParam);
+  const [quickViewProduct, setQuickViewProduct] = useState<ProductItem | null>(null);
   const limit = 12;
 
   const [getParentFallback, parentResult] = useLazyGetProductsQuery();
@@ -673,6 +675,8 @@ const ShopPage = () => {
                           }
                           averageRating={product.averageRating}
                           numberOfReviews={product.numberOfReviews}
+                          onQuickView={setQuickViewProduct}
+                          fullProduct={product}
                         />
                       ))}
                     </motion.div>
@@ -705,6 +709,8 @@ const ShopPage = () => {
                           }
                           averageRating={product.averageRating}
                           numberOfReviews={product.numberOfReviews}
+                          onQuickView={setQuickViewProduct}
+                          fullProduct={product}
                         />
                       ))}
                     </motion.div>
@@ -740,6 +746,8 @@ const ShopPage = () => {
                   }
                   averageRating={product.averageRating}
                   numberOfReviews={product.numberOfReviews}
+                  onQuickView={setQuickViewProduct}
+                  fullProduct={product}
                 />
               ))}
             </motion.div>
@@ -793,6 +801,13 @@ const ShopPage = () => {
           </>
         )}
       </div>
+
+      {/* Quick View Modal */}
+      <ProductQuickViewModal
+        product={quickViewProduct}
+        isOpen={!!quickViewProduct}
+        onClose={() => setQuickViewProduct(null)}
+      />
     </main>
   );
 };

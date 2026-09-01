@@ -35,6 +35,7 @@ export interface ProductItem {
   variants?: IVariant[];  
   averageRating?: number;
   numberOfReviews?: number;
+  isActive?: boolean;
 }
 
 export interface HeroSlide {

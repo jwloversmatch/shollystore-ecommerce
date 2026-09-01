@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, Check, Heart } from "lucide-react";
+import { ShoppingCart, Check, Heart, Eye } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { addToCart } from "../features/cart/cartSlice";
@@ -12,7 +12,7 @@ import {
 import { getCloudinaryUrl } from "../utils/cloudinary";
 import { formatPrice } from "../utils/format";
 import type { RootState } from "../store";
-import type { IVariant } from "../types/home";
+import type { IVariant, ProductItem } from "../types/home";
 import { StarRating } from "./StarRating";
 
 interface ProductProps {
@@ -29,6 +29,8 @@ interface ProductProps {
   index?: number;
   averageRating?: number;
   numberOfReviews?: number;
+  onQuickView?: (product: ProductItem) => void;
+  fullProduct?: ProductItem;
 }
 
 const FALLBACK = "https://via.placeholder.com/300x300?text=No+Image";
@@ -47,12 +49,13 @@ const ProductCard = ({
   index,
   averageRating,
   numberOfReviews,
+  onQuickView,
+  fullProduct,
 }: ProductProps) => {
   const dispatch = useDispatch();
   const [imgError, setImgError] = useState(false);
   const [added, setAdded] = useState(false);
 
-  // Wishlist state and mutations
   const wishlistIds = useSelector((s: RootState) => s.wishlist.ids);
   const user = useSelector((s: RootState) => s.auth.user);
   const [addToWishlist] = useAddToWishlistMutation();
@@ -70,6 +73,31 @@ const ProductCard = ({
   const compareAtPriceDisplay = compareAtPrice
     ? formatPrice(compareAtPrice, { compact: true })
     : null;
+
+  // Create a product object for quick view if fullProduct not provided
+  const modalProduct: ProductItem = fullProduct || {
+    _id,
+    name,
+    price,
+    images: [image],
+    category,
+    stock,
+    compareAtPrice,
+    discount: discountPercent ? { percentage: discountPercent } : undefined,
+    variants,
+    averageRating,
+    numberOfReviews,
+    slug: undefined,
+    description: undefined,
+    brand: undefined,
+    sku: undefined,
+    tags: undefined,
+    isFeatured: undefined,
+    attributes: undefined,
+    barcode: undefined,
+    taxClass: undefined,
+    isActive: true,
+  };
 
   const handleAddToCart = useCallback(
     (e: React.MouseEvent) => {
@@ -91,13 +119,10 @@ const ProductCard = ({
   const handleWishlistToggle = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
-
-      // Guest guard
       if (!user) {
         toast.error("Please login to add items to your wishlist");
         return;
       }
-
       try {
         if (isWishlisted) {
           await removeFromWishlist(_id).unwrap();
@@ -114,6 +139,13 @@ const ProductCard = ({
     },
     [dispatch, isWishlisted, _id, addToWishlist, removeFromWishlist, user],
   );
+
+  const handleQuickView = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onQuickView) {
+      onQuickView(modalProduct);
+    }
+  };
 
   const imgSrc = getCloudinaryUrl(imgError ? FALLBACK : image, 400);
   const srcSet = !imgError
@@ -180,6 +212,19 @@ const ProductCard = ({
               >
                 {isOutOfStock ? "Sold Out" : `${stock} left`}
               </div>
+            )}
+
+            {/* Quick view button */}
+            {onQuickView && (
+              <button
+                onClick={handleQuickView}
+                className={`absolute top-3 left-3 z-10 w-8 h-8 rounded-full flex items-center justify-center pointer-events-auto transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 ${
+                  isOutOfStock ? "bg-black/40 text-white" : "bg-white/80 dark:bg-black/40 text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+                aria-label="Quick view"
+              >
+                <Eye className="w-4 h-4" aria-hidden="true" />
+              </button>
             )}
 
             {/* Wishlist heart button (top right) */}
@@ -264,11 +309,9 @@ const ProductCard = ({
                       className="text-xs text-gray-500 line-through truncate min-w-0"
                       aria-label={`Original price: ${compareAtPriceDisplay?.full ?? ''}`}
                     >
-                      {/* Mobile: compact */}
                       <span className="sm:hidden">
                         {compareAtPriceDisplay?.short}
                       </span>
-                      {/* Desktop: full */}
                       <span className="hidden sm:inline">
                         {compareAtPriceDisplay?.full}
                       </span>
@@ -292,11 +335,9 @@ const ProductCard = ({
                 >
                   <span className="text-gray-500 dark:text-gray-400 text-xs pb-0.5">₦</span>
                   <span className="font-black text-xl leading-none text-gray-900 dark:text-white">
-                    {/* Mobile: compact */}
                     <span className="sm:hidden">
                       {priceDisplay.short.replace('₦', '')}
                     </span>
-                    {/* Desktop: full */}
                     <span className="hidden sm:inline">
                       {price.toLocaleString()}
                     </span>
