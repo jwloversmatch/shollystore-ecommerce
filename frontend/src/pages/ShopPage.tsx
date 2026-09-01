@@ -18,6 +18,7 @@ import {
 import ProductCard from "../components/ProductCard";
 import ProductSearchBox from "../components/ProductSearchBox";
 import SEO from "../components/SEO";
+import { SITE_CONFIG, productUrl } from "../config/site";
 import { ACCENT, PLACEHOLDER } from "../types/home";
 import type { ProductItem } from "../types/home";
 
@@ -54,10 +55,12 @@ const SORT_OPTIONS = [
   { label: "Name: Z-A", value: "name_desc" },
 ];
 
+// Shop-specific Open Graph image (replace with your actual image URL)
+const SHOP_OG_IMAGE = `${SITE_CONFIG.url}/shop-banner.jpg`;
+
 const ShopPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  // Explicitly type tree as CategoryNode[]
   const { data: treeData } = useGetCategoryTreeQuery(undefined);
   const tree: CategoryNode[] = useMemo(
     () => (treeData as CategoryNode[]) || [],
@@ -67,7 +70,6 @@ const ShopPage = () => {
   // ─── Safe initial state from URL ────────────────────────────────────────
   const initialSearch = searchParams.get("search") || "";
   const categoryParam = searchParams.get("category") || "";
-  // Filter to only valid ObjectId strings (24 hex chars)
   const initialSelectedPath = categoryParam
     ? categoryParam.split(",").filter((id) => /^[0-9a-fA-F]{24}$/.test(id))
     : [];
@@ -80,7 +82,6 @@ const ShopPage = () => {
   const [sortBy, setSortBy] = useState(sortParam);
   const limit = 12;
 
-  // Lazy queries for fallback suggestions
   const [getParentFallback, parentResult] = useLazyGetProductsQuery();
   const [getGlobalFallback, globalResult] = useLazyGetProductsQuery();
 
@@ -118,7 +119,6 @@ const ShopPage = () => {
   // ─── Single effect to synchronise search, category, and sort to URL ────
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
-    // Remove the keys we manage
     params.delete("search");
     params.delete("category");
     params.delete("sort");
@@ -127,7 +127,6 @@ const ShopPage = () => {
     if (selectedPath.length > 0) params.set("category", selectedPath.join(","));
     if (sortBy !== "newest") params.set("sort", sortBy);
 
-    // Only update if the URL actually changes
     if (params.toString() !== searchParams.toString()) {
       setSearchParams(params, { replace: true });
     }
@@ -259,6 +258,65 @@ const ShopPage = () => {
       ? `Browse products matching "${debouncedSearch}"`
       : "Browse our full collection of products");
 
+  // ─── Clean canonical URL (only category, no pagination/sort/search) ─────
+  const canonicalUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    if (selectedPath.length > 0) {
+      params.set("category", selectedPath.join(","));
+    }
+    const query = params.toString();
+    return `${SITE_CONFIG.url}/shop${query ? `?${query}` : ""}`;
+  }, [selectedPath]);
+
+  // ─── Structured data for collection & breadcrumbs ───────────────────────
+  const shopSchema = useMemo(() => {
+    const breadcrumbItems = breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: crumb.id
+        ? `${SITE_CONFIG.url}/shop?category=${crumb.id}`
+        : `${SITE_CONFIG.url}/shop`,
+    }));
+
+    return {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'CollectionPage',
+          name: currentNode ? currentNode.name : 'Shop',
+          url: canonicalUrl, // ✅ use clean canonical URL in JSON-LD as well
+          description: seoDescription,
+          mainEntity: {
+            '@type': 'ItemList',
+            itemListElement: products.map((product, index) => ({
+              '@type': 'ListItem',
+              position: index + 1,
+              item: {
+                '@type': 'Product',
+                name: product.name,
+                image: product.images?.[0] || PLACEHOLDER,
+                url: productUrl(product.slug || product._id),
+                offers: {
+                  '@type': 'Offer',
+                  price: product.price,
+                  priceCurrency: 'NGN',
+                  availability: (product.stock ?? 0) > 0
+                    ? 'https://schema.org/InStock'
+                    : 'https://schema.org/OutOfStock',
+                },
+              },
+            })),
+          },
+        },
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: breadcrumbItems,
+        },
+      ],
+    };
+  }, [currentNode, products, breadcrumbs, seoDescription, canonicalUrl]);
+
   // ─── Render ────────────────────────────────────────────────────────────
   return (
     <main
@@ -270,7 +328,16 @@ const ShopPage = () => {
         paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
       }}
     >
-      <SEO title={seoTitle} description={seoDescription} />
+      <SEO
+        title={seoTitle}
+        description={seoDescription}
+        canonicalUrl={canonicalUrl}   // 👈 pass clean URL
+        ogImage={SHOP_OG_IMAGE}
+        keywords={[currentNode?.name, 'shop', 'products', 'buy online']
+          .filter(Boolean)
+          .join(', ')}
+        jsonLd={shopSchema}
+      />
 
       {/* Search + sort bar */}
       <div className="px-4 md:px-6 py-3 mb-6 sm:mt-3 md:mt-4 bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]">

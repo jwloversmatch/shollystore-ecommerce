@@ -12,6 +12,8 @@ interface SEOProps {
   noIndex?: boolean;
   productPrice?: number;
   productAvailability?: 'in stock' | 'out of stock';
+  /** Optional JSON-LD schema object to inject as a script tag */
+  jsonLd?: object;
 }
 
 const SEO = ({
@@ -25,22 +27,20 @@ const SEO = ({
   noIndex = false,
   productPrice,
   productAvailability,
+  jsonLd,
 }: SEOProps) => {
   const siteName = SITE_CONFIG.name;
   const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
 
-  // Helper: convert to absolute URL if needed
   const toAbsoluteUrl = (url: string) => {
     if (url.startsWith('http')) return url;
     return new URL(url, SITE_CONFIG.url).toString();
   };
 
-  // Resolve canonical: prefer explicit prop, else current page URL (without hash)
   const resolvedCanonical = canonicalUrl
     ? toAbsoluteUrl(canonicalUrl)
     : window.location.href.split('#')[0];
 
-  // Resolve og:image: ensure absolute
   const resolvedOgImage = ogImage
     ? toAbsoluteUrl(ogImage)
     : toAbsoluteUrl(SITE_CONFIG.ogImage);
@@ -89,6 +89,10 @@ const SEO = ({
 
       <meta name="author" content={siteName} />
       <meta httpEquiv="content-language" content="en-NG" />
+
+      {jsonLd && (
+        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+      )}
     </Helmet>
   );
 };
