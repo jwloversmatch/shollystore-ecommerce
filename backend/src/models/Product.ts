@@ -1,5 +1,8 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { sendLowStockAdminEmail, sendOutOfStockAdminEmail } from "../services/email.service";
+import {
+  sendLowStockAdminEmail,
+  sendOutOfStockAdminEmail,
+} from "../services/email.service";
 
 // ─── Variant sub‑schema ────────────────────────────────────────
 export interface IVariant {
@@ -99,43 +102,34 @@ export interface IProduct extends Document {
     validUntil?: Date;
   };
 
-  // flexible attributes & variants
   attributes?: Record<string, string | number | boolean>;
   variants?: IVariant[];
 
-  // product type flags
   isActive?: boolean;
   isDigital?: boolean;
   isGiftCard?: boolean;
   preOrder?: boolean;
 
-  // inventory policies
   inventoryPolicy?: "deny" | "continue";
   minOrderQuantity?: number;
   maxOrderQuantity?: number;
 
-  // tax
   taxable?: boolean;
   taxClass?: string;
 
-  // media
   videoUrl?: string;
   downloadUrl?: string;
 
-  // shipping
   shippingInfo?: IShippingInfo;
   returnPolicy?: string;
 
-  // marketing & SEO
   seo?: ISEO;
   relatedProducts?: mongoose.Types.ObjectId[];
   averageRating?: number;
   numberOfReviews?: number;
 
-  // scheduling
   publishedAt?: Date;
 
-  // extra flexible fields
   customFields?: { key: string; value: string }[];
   createdAt: Date;
   updatedAt: Date;
@@ -213,6 +207,7 @@ ProductSchema.index(
   },
 );
 
+// Single-field indexes
 ProductSchema.index({ name: 1 });
 ProductSchema.index({ stock: 1 });
 ProductSchema.index({ createdAt: -1 });
@@ -220,47 +215,50 @@ ProductSchema.index({ "variants.sku": 1 });
 ProductSchema.index({ tags: 1 });
 ProductSchema.index({ isActive: 1 });
 ProductSchema.index({ category: 1 });
+ProductSchema.index({ price: 1 });
+
+// Compound indexes for common query patterns
+ProductSchema.index({ category: 1, createdAt: -1 });
+ProductSchema.index({ category: 1, price: 1 });
+ProductSchema.index({ averageRating: -1, numberOfReviews: -1 });
 
 // ─── Low stock & out-of-stock notification helper ──────────────
-ProductSchema.methods.checkLowStockAndNotify = async function (): Promise<void> {
-  const threshold = this.lowStockThreshold ?? 5;
+ProductSchema.methods.checkLowStockAndNotify =
+  async function (): Promise<void> {
+    const threshold = this.lowStockThreshold ?? 5;
 
-  // 1. Out-of-stock (stock === 0)
-  if (this.stock === 0 && !this.outOfStockNotified) {
-    await sendOutOfStockAdminEmail({
-      name: this.name,
-      sku: this.sku,
-      stock: this.stock,
-    });
-    this.outOfStockNotified = true;
-    this.lowStockNotified = true; 
-    await this.save();
-    return;
-  }
+    if (this.stock === 0 && !this.outOfStockNotified) {
+      await sendOutOfStockAdminEmail({
+        name: this.name,
+        sku: this.sku,
+        stock: this.stock,
+      });
+      this.outOfStockNotified = true;
+      this.lowStockNotified = true;
+      await this.save();
+      return;
+    }
 
-  // 2. Reset out-of-stock flag when stock is replenished
-  if (this.stock > 0 && this.outOfStockNotified) {
-    this.outOfStockNotified = false;
-    await this.save();
-  }
+    if (this.stock > 0 && this.outOfStockNotified) {
+      this.outOfStockNotified = false;
+      await this.save();
+    }
 
-  // 3. Low stock (stock > 0 but below threshold)
-  if (this.stock > 0 && this.stock < threshold && !this.lowStockNotified) {
-    await sendLowStockAdminEmail({
-      name: this.name,
-      sku: this.sku,
-      stock: this.stock,
-      lowStockThreshold: threshold,
-    });
-    this.lowStockNotified = true;
-    await this.save();
-  }
+    if (this.stock > 0 && this.stock < threshold && !this.lowStockNotified) {
+      await sendLowStockAdminEmail({
+        name: this.name,
+        sku: this.sku,
+        stock: this.stock,
+        lowStockThreshold: threshold,
+      });
+      this.lowStockNotified = true;
+      await this.save();
+    }
 
-  // 4. Reset low-stock flag when stock is above threshold
-  if (this.stock >= threshold && this.lowStockNotified) {
-    this.lowStockNotified = false;
-    await this.save();
-  }
-};
+    if (this.stock >= threshold && this.lowStockNotified) {
+      this.lowStockNotified = false;
+      await this.save();
+    }
+  };
 
 export const Product = mongoose.model<IProduct>("Product", ProductSchema);

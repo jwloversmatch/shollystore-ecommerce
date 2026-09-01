@@ -18,16 +18,15 @@ const escapeRegex = (str: string): string =>
 const toSearchWords = (query: string): string[] =>
   query.trim().split(/\s+/).filter(Boolean);
 
-const setNoCacheHeaders = (res: Response) => {
-  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-  res.set("Pragma", "no-cache");
-  res.set("Expires", "0");
-  res.removeHeader("ETag");
-  res.removeHeader("Last-Modified");
+const setShortCacheHeaders = (res: Response) => {
+  res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
 };
 
-export const getProducts = async (req: Request, res: Response): Promise<void> => {
-  setNoCacheHeaders(res);
+export const getProducts = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  setShortCacheHeaders(res);
 
   try {
     const filter: any = {};
@@ -70,14 +69,21 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
     const skip = (page - 1) * limit;
 
     const searchParam = req.query.search
-      ? (Array.isArray(req.query.search) ? String(req.query.search[0]) : String(req.query.search)).trim()
+      ? (Array.isArray(req.query.search)
+          ? String(req.query.search[0])
+          : String(req.query.search)
+        ).trim()
       : "";
 
     // No search: standard category/filter browsing
     if (!searchParam) {
       const [products, total] = await Promise.all([
         Product.find(filter)
-          .populate("category", "name slug parent")
+          .lean()
+          .select(
+            "name slug price images stock category averageRating numberOfReviews",
+          )
+          .populate("category", "name slug")
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(limit),
@@ -94,14 +100,12 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
     const words = toSearchWords(searchParam);
     if (words.length === 1) {
       const term = words[0];
-      // Match categories whose name or slug starts with the term (e.g., "men" -> "men's")
       const categoryRegex = new RegExp(`^${escapeRegex(term)}`, "i");
       const matchedCategories = await Category.find({
         $or: [{ name: categoryRegex }, { slug: categoryRegex }],
       });
 
       if (matchedCategories.length > 0) {
-        // Collect all descendant IDs from every matched category
         const allCategoryIds = new Set<string>();
         for (const cat of matchedCategories) {
           const ids = await resolveCategoryWithDescendants(cat._id.toString());
@@ -110,7 +114,6 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
 
         if (allCategoryIds.size > 0) {
           const categoryFilter = { $in: Array.from(allCategoryIds) };
-          // Combine with any existing category filter (if provided) using $and
           const combinedFilter: any = { ...filter };
           if (combinedFilter.category) {
             const existingCategoryCondition = combinedFilter.category;
@@ -125,7 +128,11 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
 
           const [products, total] = await Promise.all([
             Product.find(combinedFilter)
-              .populate("category", "name slug parent")
+              .lean()
+              .select(
+                "name slug price images stock category averageRating numberOfReviews",
+              )
+              .populate("category", "name slug")
               .sort({ createdAt: -1 })
               .skip(skip)
               .limit(limit),
@@ -146,7 +153,11 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
 
     const [exactProducts, exactTotal] = await Promise.all([
       Product.find({ ...filter, name: exactNameRegex })
-        .populate("category", "name slug parent")
+        .lean()
+        .select(
+          "name slug price images stock category averageRating numberOfReviews",
+        )
+        .populate("category", "name slug")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -170,9 +181,13 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
     const searchFilters: any[] = [];
     if (filter.category) {
       if (filter.category.$in) {
-        searchFilters.push({ in: { path: "category", value: filter.category.$in } });
+        searchFilters.push({
+          in: { path: "category", value: filter.category.$in },
+        });
       } else {
-        searchFilters.push({ equals: { path: "category", value: filter.category } });
+        searchFilters.push({
+          equals: { path: "category", value: filter.category },
+        });
       }
     }
     if (filter.isFeatured === true) {
@@ -212,7 +227,12 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
                   as: "category",
                 },
               },
-              { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+              {
+                $unwind: {
+                  path: "$category",
+                  preserveNullAndEmptyArrays: true,
+                },
+              },
             ],
             totalCount: [{ $count: "count" }],
           },
@@ -222,7 +242,8 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
       const aggResult = await Product.aggregate(pipeline).exec();
       const resultDoc = aggResult[0] || { results: [], totalCount: [] };
       const products = resultDoc.results || [];
-      const total = resultDoc.totalCount?.length > 0 ? resultDoc.totalCount[0].count : 0;
+      const total =
+        resultDoc.totalCount?.length > 0 ? resultDoc.totalCount[0].count : 0;
 
       if (total > 0) {
         res.json({
@@ -256,7 +277,11 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
 
     const [products, total] = await Promise.all([
       Product.find(fallbackFilter)
-        .populate("category", "name slug parent")
+        .lean()
+        .select(
+          "name slug price images stock category averageRating numberOfReviews",
+        )
+        .populate("category", "name slug")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -272,8 +297,11 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-export const getProductSuggestions = async (req: Request, res: Response): Promise<void> => {
-  setNoCacheHeaders(res); 
+export const getProductSuggestions = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  setShortCacheHeaders(res);
 
   try {
     const raw = Array.isArray(req.query.q) ? req.query.q[0] : req.query.q;
@@ -292,10 +320,9 @@ export const getProductSuggestions = async (req: Request, res: Response): Promis
       const categoryRegex = new RegExp(`^${escapeRegex(term)}`, "i");
       const matchedCategories = await Category.find({
         $or: [{ name: categoryRegex }, { slug: categoryRegex }],
-      }).limit(5); // limit to 5 categories max
+      }).limit(5);
 
       if (matchedCategories.length > 0) {
-        // Collect all descendant category IDs
         const allCategoryIds = new Set<string>();
         for (const cat of matchedCategories) {
           const ids = await resolveCategoryWithDescendants(cat._id.toString());
@@ -303,7 +330,6 @@ export const getProductSuggestions = async (req: Request, res: Response): Promis
         }
 
         if (allCategoryIds.size > 0) {
-          // Find products in those categories (limited to 8)
           const products = await Product.find({
             category: { $in: Array.from(allCategoryIds) },
             isActive: { $ne: false },
@@ -311,13 +337,12 @@ export const getProductSuggestions = async (req: Request, res: Response): Promis
             .select("name slug price images category")
             .limit(8)
             .populate("category", "name slug")
-            .lean();
+            .lean(); // already lean
 
           if (products.length > 0) {
             res.json({ suggestions: products });
             return;
           }
-          // If no products in those categories, fall through to text search
         }
       }
     }
@@ -325,7 +350,7 @@ export const getProductSuggestions = async (req: Request, res: Response): Promis
     // ── Text‑based suggestions (fallback) ─────────────────────────────
     const prefixRegexes = words.map((word) => {
       const escaped = escapeRegex(word);
-      return new RegExp(`\\b${escaped}`, "i"); 
+      return new RegExp(`\\b${escaped}`, "i");
     });
 
     const matchFilter: any = {
@@ -338,7 +363,6 @@ export const getProductSuggestions = async (req: Request, res: Response): Promis
       ]),
     };
 
-    // Optional category scoping (if category query param is present)
     if (req.query.category) {
       const includeSubcategories = req.query.includeSubcategories !== "false";
       const categoryParam = Array.isArray(req.query.category)
@@ -380,11 +404,15 @@ export const getProductSuggestions = async (req: Request, res: Response): Promis
   }
 };
 
-export const getProductBySlug = async (req: Request, res: Response): Promise<void> => {
-  setNoCacheHeaders(res);
+export const getProductBySlug = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  setShortCacheHeaders(res);
 
   try {
     const product = await Product.findOne({ slug: req.params.slug })
+      .lean()
       .populate("category", "name slug parent")
       .populate("relatedProducts", "name slug images price");
 
