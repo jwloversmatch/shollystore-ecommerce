@@ -56,6 +56,17 @@ export interface WishlistProduct {
   } | null;
 }
 
+// ─── Review interface ────────────────────────────────────────────────────
+export interface Review {
+  _id: string;
+  product: string;
+  user: { _id: string; name: string; avatar?: string };
+  rating: number;
+  comment: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── Base query with token from localStorage ─────────────────────────────────
 const baseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
@@ -94,6 +105,7 @@ export const apiSlice = createApi({
     "Category",
     "Coupon",
     "Wishlist",
+    "Review",
   ],
   endpoints: (builder) => ({
     // ══════════════════════════════════════════════════════════════════
@@ -613,7 +625,10 @@ export const apiSlice = createApi({
     }),
 
     // ─── Wishlist endpoints ────────────────────────────────────────────────
-    getWishlist: builder.query<{ success: boolean; wishlist: WishlistProduct[] }, void>({
+    getWishlist: builder.query<
+      { success: boolean; wishlist: WishlistProduct[] },
+      void
+    >({
       query: () => "/wishlist",
       providesTags: ["Wishlist"],
     }),
@@ -636,6 +651,68 @@ export const apiSlice = createApi({
         method: "DELETE",
       }),
       invalidatesTags: ["Wishlist"],
+    }),
+
+    getProductReviews: builder.query<
+      {
+        reviews: Review[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          pages: number;
+        };
+      },
+      { productId: string; page?: number; limit?: number }
+    >({
+      query: ({ productId, page = 1, limit = 10 }) =>
+        `/products/${productId}/reviews?page=${page}&limit=${limit}`,
+      providesTags: (result, _error, { productId }) =>
+        result ? [{ type: "Review", id: productId }] : ["Review"],
+    }),
+
+    addReview: builder.mutation<
+      Review,
+      { productId: string; rating: number; comment: string }
+    >({
+      query: ({ productId, rating, comment }) => ({
+        url: `/products/${productId}/reviews`,
+        method: "POST",
+        body: { rating, comment },
+      }),
+      invalidatesTags: (_result, _error, { productId }) => [
+        { type: "Review", id: productId },
+        { type: "Product", id: productId },
+      ],
+    }),
+
+    updateReview: builder.mutation<
+      Review,
+      { productId: string; reviewId: string; rating?: number; comment?: string }
+    >({
+      query: ({ productId, reviewId, ...body }) => ({
+        url: `/products/${productId}/reviews/${reviewId}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { productId }) => [
+        { type: "Review", id: productId },
+        { type: "Product", id: productId },
+      ],
+    }),
+
+    deleteReview: builder.mutation<
+      { message: string },
+      { productId: string; reviewId: string }
+    >({
+      query: ({ productId, reviewId }) => ({
+        url: `/products/${productId}/reviews/${reviewId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_result, _error, { productId }) => [
+        { type: "Review", id: productId },
+        { type: "Product", id: productId },
+      ],
     }),
   }),
 });
@@ -703,4 +780,8 @@ export const {
   useGetWishlistQuery,
   useAddToWishlistMutation,
   useRemoveFromWishlistMutation,
+  useGetProductReviewsQuery,
+  useAddReviewMutation,
+  useUpdateReviewMutation,
+  useDeleteReviewMutation,
 } = apiSlice;

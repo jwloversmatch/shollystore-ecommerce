@@ -1,10 +1,9 @@
-// ── Accessible ProductDetail.tsx ───────────────────────────────────────────────
 import { useState, useMemo } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useDispatch, useSelector } from "react-redux"; // ✅ added useSelector
+import { useDispatch, useSelector } from "react-redux";
 import { addToCart } from "../features/cart/cartSlice";
-import { toggleWishlist } from "../features/wishlist/wishlistSlice"; // ✅ new
+import { toggleWishlist } from "../features/wishlist/wishlistSlice";
 import toast from "react-hot-toast";
 import SEO from "../components/SEO";
 import {
@@ -16,19 +15,22 @@ import {
   Check,
   Tag,
   ChevronRight,
-  Heart, // ✅ added
+  Heart,
 } from "lucide-react";
 import {
   useGetProductBySlugQuery,
   useGetCategoryTreeQuery,
-  useAddToWishlistMutation,      // ✅ new
-  useRemoveFromWishlistMutation,  // ✅ new
+  useAddToWishlistMutation,
+  useRemoveFromWishlistMutation,
+  useGetProductReviewsQuery,
+  useAddReviewMutation,
 } from "../features/api/apiSlice";
 import type { ProductItem } from "../types/home";
-import type { RootState } from "../store"; // ✅ import RootState
+import type { RootState } from "../store";
 import { getCloudinaryUrl } from "../utils/cloudinary";
+import { StarRating } from "../components/StarRating";
 
-// ─── Types (unchanged) ────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface CategoryNode {
   _id: string;
   name: string;
@@ -44,11 +46,11 @@ interface LocalVariant {
   compareAtPrice?: number;
 }
 
-// ─── Constants (unchanged) ────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
 const PLACEHOLDER = "https://via.placeholder.com/600";
 
-// ─── Helpers (unchanged) ──────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 const getCategoryName = (cat: ProductItem["category"]): string =>
   !cat ? "General" : typeof cat === "string" ? cat : (cat.name ?? "General");
 
@@ -98,8 +100,8 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Wishlist state & mutations
   const wishlistIds = useSelector((s: RootState) => s.wishlist.ids);
+  const user = useSelector((s: RootState) => s.auth.user);
   const [addToWishlist] = useAddToWishlistMutation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
 
@@ -110,7 +112,6 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
-  // ✅ Use direct slug lookup instead of fetching all products
   const { data: product, isLoading, isError } = useGetProductBySlugQuery(slug || "");
 
   const { data: categoryTree = [] } = useGetCategoryTreeQuery(undefined);
@@ -181,11 +182,57 @@ const ProductDetail = () => {
     product?.discount?.percentage && product.discount.percentage > 0;
   const discountPercent = product?.discount?.percentage;
 
-  // Wishlist toggle
   const isWishlisted = product ? wishlistIds.includes(product._id) : false;
+
+  // Reviews state
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [addReview, { isLoading: addingReview }] = useAddReviewMutation();
+
+  const { data: reviewsData, isLoading: reviewsLoading } =
+    useGetProductReviewsQuery(
+      { productId: product?._id, page: 1, limit: 10 },
+      { skip: !product },
+    );
+
+  // ✅ SEO structured data for Product with AggregateRating
+  const productSchema = useMemo(() => {
+    if (!product) return undefined;
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.name,
+      description: product.description || product.name,
+      image: product.images?.[0] || PLACEHOLDER,
+      sku: product.sku,
+      brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
+      offers: {
+        '@type': 'Offer',
+        price: displayPrice,
+        priceCurrency: 'NGN',
+        availability: isOutOfStock
+          ? 'https://schema.org/OutOfStock'
+          : 'https://schema.org/InStock',
+        url: window.location.href,
+      },
+      ...(product.numberOfReviews && product.numberOfReviews > 0
+        ? {
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: product.averageRating || 0,
+              reviewCount: product.numberOfReviews,
+            },
+          }
+        : {}),
+    };
+  }, [product, displayPrice, isOutOfStock]);
 
   const handleWishlistToggle = async () => {
     if (!product) return;
+    if (!user) {
+      toast.error("Please login to add items to your wishlist");
+      return;
+    }
     try {
       if (isWishlisted) {
         await removeFromWishlist(product._id).unwrap();
@@ -235,6 +282,30 @@ const ProductDetail = () => {
       navigate(-1);
     } else {
       navigate("/shop");
+    }
+  };
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error("Please login to write a review");
+      return;
+    }
+    try {
+      await addReview({
+        productId: product._id,
+        rating: reviewRating,
+        comment: reviewComment,
+      }).unwrap();
+      toast.success("Review submitted!");
+      setReviewComment("");
+      setReviewRating(5);
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "data" in err
+          ? (err as { data?: { message?: string } }).data?.message
+          : "Failed to submit review";
+      toast.error(message || "Failed to submit review");
     }
   };
 
@@ -359,6 +430,7 @@ const ProductDetail = () => {
         description={`Buy ${product.name} from Sholex. ${product.description || ""}`}
         ogImage={product.images?.[0]}
         ogType="product"
+        jsonLd={productSchema}
       />
 
       {/* Breadcrumb */}
@@ -754,7 +826,9 @@ const ProductDetail = () => {
                     ? "text-red-500 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20"
                     : "text-gray-400 bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.09] hover:text-red-400"
                 }`}
-                aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                aria-label={
+                  isWishlisted ? "Remove from wishlist" : "Add to wishlist"
+                }
               >
                 <Heart
                   className="w-5 h-5"
@@ -840,6 +914,119 @@ const ProductDetail = () => {
         </section>
       </div>
 
+      {/* Reviews Section */}
+      <section aria-label="Customer reviews" className="mt-10">
+        <div className="border-t border-gray-200 dark:border-white/[0.06] pt-8">
+          <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">
+            Customer Reviews
+          </h2>
+
+          {/* Rating summary */}
+          <div className="flex items-center gap-3 mb-6">
+            <StarRating rating={product.averageRating || 0} />
+            <span className="font-bold text-gray-900 dark:text-white">
+              {product.averageRating?.toFixed(1) || "0.0"}
+            </span>
+            <span className="text-gray-500 dark:text-gray-400 text-sm">
+              ({product.numberOfReviews || 0} reviews)
+            </span>
+          </div>
+
+          {/* Review list */}
+          {reviewsLoading ? (
+            <p className="text-gray-500">Loading reviews...</p>
+          ) : reviewsData?.reviews?.length ? (
+            <div className="space-y-4">
+              {reviewsData.reviews.map((review) => (
+                <div
+                  key={review._id}
+                  className="border-b border-gray-200 dark:border-white/[0.06] pb-4"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                      {review.user.avatar ? (
+                        <img
+                          src={review.user.avatar}
+                          alt={review.user.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-sm font-bold">
+                          {review.user.name.charAt(0)}
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-bold text-gray-900 dark:text-white">
+                      {review.user.name}
+                    </span>
+                    <StarRating rating={review.rating} />
+                  </div>
+                  <p className="mt-2 text-gray-700 dark:text-gray-300">
+                    {review.comment}
+                  </p>
+                  <span className="text-xs text-gray-400">
+                    {new Date(review.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500">
+              No reviews yet. Be the first to review this product!
+            </p>
+          )}
+
+          {/* Review form */}
+          {user ? (
+            <form onSubmit={handleSubmitReview} className="mt-8 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Your Rating
+                </label>
+                <StarRating
+                  rating={reviewRating}
+                  interactive
+                  onChange={setReviewRating}
+                  size={24}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="review-comment"
+                  className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Your Review
+                </label>
+                <textarea
+                  id="review-comment"
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Share your experience..."
+                  required
+                  rows={4}
+                  className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-white"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={addingReview}
+                className="px-6 py-3 rounded-xl font-bold text-white bg-[#e8622a] disabled:opacity-50"
+              >
+                {addingReview ? "Submitting..." : "Submit Review"}
+              </button>
+            </form>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-6">
+              Please{" "}
+              <Link to="/login" className="text-[#e8622a] font-bold">
+                login
+              </Link>{" "}
+              to write a review.
+            </p>
+          )}
+        </div>
+      </section>
+
       {/* Mobile sticky CTA */}
       <AnimatePresence>
         {!isOutOfStock && (
@@ -863,7 +1050,9 @@ const ProductDetail = () => {
                       ? "text-red-500 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20"
                       : "text-gray-400 bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.1]"
                   }`}
-                  aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                  aria-label={
+                    isWishlisted ? "Remove from wishlist" : "Add to wishlist"
+                  }
                 >
                   <Heart
                     className="w-5 h-5"

@@ -33,6 +33,8 @@ export interface ProductItem {
   barcode?: string;
   taxClass?: string;
   variants?: IVariant[];  
+  averageRating?: number;
+  numberOfReviews?: number;
 }
 
 export interface HeroSlide {

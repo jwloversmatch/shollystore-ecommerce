@@ -4,15 +4,16 @@ import { ShoppingCart, Check, Heart } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { addToCart } from "../features/cart/cartSlice";
-import { toggleWishlist } from "../features/wishlist/wishlistSlice"; 
+import { toggleWishlist } from "../features/wishlist/wishlistSlice";
 import {
   useAddToWishlistMutation,
   useRemoveFromWishlistMutation,
 } from "../features/api/apiSlice";
 import { getCloudinaryUrl } from "../utils/cloudinary";
 import { formatPrice } from "../utils/format";
-import type { RootState } from "../store"; 
+import type { RootState } from "../store";
 import type { IVariant } from "../types/home";
+import { StarRating } from "./StarRating";
 
 interface ProductProps {
   _id: string;
@@ -26,6 +27,8 @@ interface ProductProps {
   discountPercent?: number;
   variants?: IVariant[];
   index?: number;
+  averageRating?: number;
+  numberOfReviews?: number;
 }
 
 const FALLBACK = "https://via.placeholder.com/300x300?text=No+Image";
@@ -42,6 +45,8 @@ const ProductCard = ({
   discountPercent,
   variants,
   index,
+  averageRating,
+  numberOfReviews,
 }: ProductProps) => {
   const dispatch = useDispatch();
   const [imgError, setImgError] = useState(false);
@@ -49,7 +54,7 @@ const ProductCard = ({
 
   // Wishlist state and mutations
   const wishlistIds = useSelector((s: RootState) => s.wishlist.ids);
-  const user = useSelector((s: RootState) => s.auth.user); // 👈 get user
+  const user = useSelector((s: RootState) => s.auth.user);
   const [addToWishlist] = useAddToWishlistMutation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
 
@@ -216,6 +221,16 @@ const ProductCard = ({
             <h3 className="font-bold text-sm leading-snug truncate mb-1 text-gray-900 dark:text-white">
               {name}
             </h3>
+
+            {/* Rating display */}
+            {averageRating !== undefined && numberOfReviews !== undefined && (
+              <div className="flex items-center gap-1.5 mb-2">
+                <StarRating rating={averageRating} size={12} />
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  ({numberOfReviews})
+                </span>
+              </div>
+            )}
 
             {/* Variant pills */}
             {variants && variants.length > 0 && (
