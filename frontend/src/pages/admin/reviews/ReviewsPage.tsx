@@ -12,7 +12,6 @@ const ReviewsPage = () => {
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  // ✅ No explicit generic – types come from apiSlice
   const { data, isLoading } = useGetAdminReviewsQuery({ page, limit: 20 });
   const [deleteReview] = useDeleteAdminReviewMutation();
 
@@ -43,7 +42,7 @@ const ReviewsPage = () => {
   const pagination = data?.pagination;
 
   return (
-    <main className="p-4 md:p-6 max-w-7xl mx-auto space-y-5 pb-28 md:pb-10">
+    <main className="p-4 md:p-6 max-w-7xl mx-auto space-y-5 pb-28 md:pb-10 pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(96px+env(safe-area-inset-top,0px))]">
       <h1 className="text-2xl font-bold">Reviews</h1>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
