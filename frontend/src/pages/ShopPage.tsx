@@ -285,7 +285,7 @@ const ShopPage = () => {
         {
           "@type": "CollectionPage",
           name: currentNode ? currentNode.name : "Shop",
-          url: canonicalUrl, // ✅ use clean canonical URL in JSON-LD as well
+          url: canonicalUrl,
           description: seoDescription,
           mainEntity: {
             "@type": "ItemList",
@@ -332,7 +332,7 @@ const ShopPage = () => {
       <SEO
         title={seoTitle}
         description={seoDescription}
-        canonicalUrl={canonicalUrl} // 👈 pass clean URL
+        canonicalUrl={canonicalUrl}
         ogImage={SHOP_OG_IMAGE}
         keywords={[currentNode?.name, "shop", "products", "buy online"]
           .filter(Boolean)
@@ -643,6 +643,8 @@ const ShopPage = () => {
                           onClick={() =>
                             navigate(`/products/${product.slug || product._id}`)
                           }
+                          averageRating={product.averageRating}
+                          numberOfReviews={product.numberOfReviews}
                         />
                       ))}
                     </motion.div>
@@ -673,6 +675,8 @@ const ShopPage = () => {
                           onClick={() =>
                             navigate(`/products/${product.slug || product._id}`)
                           }
+                          averageRating={product.averageRating}
+                          numberOfReviews={product.numberOfReviews}
                         />
                       ))}
                     </motion.div>
@@ -706,6 +710,8 @@ const ShopPage = () => {
                   onClick={() =>
                     navigate(`/products/${product.slug || product._id}`)
                   }
+                  averageRating={product.averageRating}
+                  numberOfReviews={product.numberOfReviews}
                 />
               ))}
             </motion.div>

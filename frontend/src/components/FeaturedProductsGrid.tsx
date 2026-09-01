@@ -36,6 +36,8 @@ const FeaturedProductsGrid = () => {
               onClick={() =>
                 navigate(`/products/${product.slug || product._id}`)
               }
+              averageRating={product.averageRating}
+              numberOfReviews={product.numberOfReviews}
             />
           ))}
     </div>
