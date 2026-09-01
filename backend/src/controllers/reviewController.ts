@@ -2,6 +2,19 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { Review } from "../models/Review";
 import { Product } from "../models/Product";
+import { sanitizeString } from "../middleware/sanitize";
+
+// Safe import for bad-words
+const Filter = require("bad-words") as {
+  new (): {
+    isProfane(text: string): boolean;
+    clean(text: string): string;
+    addWords(...words: string[]): void;
+    removeWords(...words: string[]): void;
+  };
+};
+
+const profanityFilter = new Filter();
 
 // Helper: recalculate and update product's averageRating & numberOfReviews
 const updateProductRatingStats = async (productId: string) => {
@@ -25,7 +38,6 @@ const updateProductRatingStats = async (productId: string) => {
 // POST /api/products/:productId/reviews
 export const createReview = async (req: Request, res: Response) => {
   try {
-    // Ensure productId is a string (Express can return string|string[])
     const productId = String(req.params.productId);
     const { rating, comment } = req.body;
     const userId = (req as any).user._id;
@@ -33,8 +45,14 @@ export const createReview = async (req: Request, res: Response) => {
     if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({ message: "Rating must be between 1 and 5" });
     }
-    if (!comment || !comment.trim()) {
+
+    const cleanComment = sanitizeString(comment, 500);
+    if (!cleanComment) {
       return res.status(400).json({ message: "Comment is required" });
+    }
+
+    if (profanityFilter.isProfane(cleanComment)) {
+      return res.status(400).json({ message: "Review contains inappropriate language." });
     }
 
     const product = await Product.findById(productId);
@@ -51,7 +69,7 @@ export const createReview = async (req: Request, res: Response) => {
       product: productId,
       user: userId,
       rating,
-      comment: comment.trim(),
+      comment: cleanComment,
     });
 
     await updateProductRatingStats(productId);
@@ -103,8 +121,34 @@ export const updateReview = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Review not found or not authorized" });
     }
 
-    if (rating) review.rating = rating;
-    if (comment) review.comment = comment.trim();
+    // ✅ 15-minute edit window
+    const now = Date.now();
+    const createdAt = new Date(review.createdAt).getTime();
+    const editWindowMs = 15 * 60 * 1000; // 15 minutes
+    if (now - createdAt > editWindowMs) {
+      return res.status(403).json({
+        message: "Review can no longer be edited. The 15-minute edit window has passed.",
+      });
+    }
+
+    if (rating !== undefined) {
+      if (rating < 1 || rating > 5) {
+        return res.status(400).json({ message: "Rating must be between 1 and 5" });
+      }
+      review.rating = rating;
+    }
+
+    if (comment !== undefined) {
+      const cleanComment = sanitizeString(comment, 500);
+      if (!cleanComment) {
+        return res.status(400).json({ message: "Comment cannot be empty" });
+      }
+      if (profanityFilter.isProfane(cleanComment)) {
+        return res.status(400).json({ message: "Review contains inappropriate language." });
+      }
+      review.comment = cleanComment;
+    }
+
     await review.save();
 
     await updateProductRatingStats(productId);

@@ -87,3 +87,14 @@ export const couponLimiter = rateLimit({
   skip: shouldSkipRateLimit,
   message: { success: false, message: 'Too many coupon validation attempts.' },
 });
+
+/** Review submissions */
+export const reviewLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: shouldSkipRateLimit,
+  keyGenerator: (req) => (req as any).user?._id || req.ip,
+  message: { success: false, message: 'Too many review submissions. Please try again later.' },
+});

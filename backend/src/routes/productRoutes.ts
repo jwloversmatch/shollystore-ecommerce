@@ -11,6 +11,7 @@ import {
   deleteReview,
 } from "../controllers/reviewController";
 import { protect } from "../middleware/auth";
+import { reviewLimiter } from "../middleware/rateLimiter"; 
 
 const router = express.Router();
 
@@ -18,14 +19,15 @@ router.route("/").get(getProducts);
 
 router.get("/suggestions", getProductSuggestions);
 
-// Review routes (must be before /:slug to avoid conflict)
-router.route("/:productId/reviews")
+router
+  .route("/:productId/reviews")
   .get(getProductReviews)
-  .post(protect, createReview);
+  .post(protect, reviewLimiter, createReview);
 
-router.route("/:productId/reviews/:reviewId")
-  .put(protect, updateReview)
-  .delete(protect, deleteReview);
+router
+  .route("/:productId/reviews/:reviewId")
+  .put(protect, reviewLimiter, updateReview)   
+  .delete(protect, reviewLimiter, deleteReview);
 
 router.get("/:slug", getProductBySlug);
 
