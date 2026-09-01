@@ -1,17 +1,17 @@
-import { Helmet } from 'react-helmet-async';
-import { SITE_CONFIG } from '../config/site';
+import { Helmet } from "react-helmet-async";
+import { SITE_CONFIG } from "../config/site";
 
 interface SEOProps {
   title: string;
   description: string;
   canonicalUrl?: string;
   ogImage?: string;
-  ogType?: 'website' | 'product';
-  twitterCard?: 'summary_large_image' | 'summary';
+  ogType?: "website" | "product";
+  twitterCard?: "summary_large_image" | "summary";
   keywords?: string;
   noIndex?: boolean;
   productPrice?: number;
-  productAvailability?: 'in stock' | 'out of stock';
+  productAvailability?: "in stock" | "out of stock";
   /** Optional JSON-LD schema object to inject as a script tag */
   jsonLd?: object;
 }
@@ -21,8 +21,8 @@ const SEO = ({
   description,
   canonicalUrl,
   ogImage,
-  ogType = 'website',
-  twitterCard = 'summary_large_image',
+  ogType = "website",
+  twitterCard = "summary_large_image",
   keywords,
   noIndex = false,
   productPrice,
@@ -33,13 +33,13 @@ const SEO = ({
   const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
 
   const toAbsoluteUrl = (url: string) => {
-    if (url.startsWith('http')) return url;
+    if (url.startsWith("http")) return url;
     return new URL(url, SITE_CONFIG.url).toString();
   };
 
   const resolvedCanonical = canonicalUrl
     ? toAbsoluteUrl(canonicalUrl)
-    : window.location.href.split('#')[0];
+    : window.location.href.split("#")[0];
 
   const resolvedOgImage = ogImage
     ? toAbsoluteUrl(ogImage)
@@ -52,7 +52,10 @@ const SEO = ({
       <title>{fullTitle}</title>
       <meta name="description" content={trimmedDescription} />
       {keywords && <meta name="keywords" content={keywords} />}
-      <meta name="robots" content={noIndex ? 'noindex, follow' : 'index, follow'} />
+      <meta
+        name="robots"
+        content={noIndex ? "noindex, follow" : "index, follow"}
+      />
 
       <link rel="canonical" href={resolvedCanonical} />
 
@@ -67,12 +70,18 @@ const SEO = ({
       <meta property="og:locale" content={SITE_CONFIG.locale} />
       <meta property="og:url" content={resolvedCanonical} />
 
-      {ogType === 'product' && productPrice != null && (
+      {ogType === "product" && productPrice != null && (
         <>
-          <meta property="product:price:amount" content={String(productPrice)} />
+          <meta
+            property="product:price:amount"
+            content={String(productPrice)}
+          />
           <meta property="product:price:currency" content="NGN" />
           {productAvailability && (
-            <meta property="product:availability" content={productAvailability} />
+            <meta
+              property="product:availability"
+              content={productAvailability}
+            />
           )}
         </>
       )}

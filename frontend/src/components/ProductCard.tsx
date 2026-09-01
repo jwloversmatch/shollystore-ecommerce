@@ -4,14 +4,14 @@ import { ShoppingCart, Check, Heart } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { addToCart } from "../features/cart/cartSlice";
-import { toggleWishlist } from "../features/wishlist/wishlistSlice"; // ✅ new
+import { toggleWishlist } from "../features/wishlist/wishlistSlice"; 
 import {
   useAddToWishlistMutation,
   useRemoveFromWishlistMutation,
-} from "../features/api/apiSlice"; // ✅ new
+} from "../features/api/apiSlice";
 import { getCloudinaryUrl } from "../utils/cloudinary";
 import { formatPrice } from "../utils/format";
-import type { RootState } from "../store"; // ✅ new
+import type { RootState } from "../store"; 
 import type { IVariant } from "../types/home";
 
 interface ProductProps {
@@ -49,6 +49,7 @@ const ProductCard = ({
 
   // Wishlist state and mutations
   const wishlistIds = useSelector((s: RootState) => s.wishlist.ids);
+  const user = useSelector((s: RootState) => s.auth.user); // 👈 get user
   const [addToWishlist] = useAddToWishlistMutation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
 
@@ -85,6 +86,13 @@ const ProductCard = ({
   const handleWishlistToggle = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
+
+      // Guest guard
+      if (!user) {
+        toast.error("Please login to add items to your wishlist");
+        return;
+      }
+
       try {
         if (isWishlisted) {
           await removeFromWishlist(_id).unwrap();
@@ -99,7 +107,7 @@ const ProductCard = ({
         toast.error("Failed to update wishlist");
       }
     },
-    [dispatch, isWishlisted, _id, addToWishlist, removeFromWishlist],
+    [dispatch, isWishlisted, _id, addToWishlist, removeFromWishlist, user],
   );
 
   const imgSrc = getCloudinaryUrl(imgError ? FALLBACK : image, 400);

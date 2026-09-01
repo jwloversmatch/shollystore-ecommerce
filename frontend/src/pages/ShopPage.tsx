@@ -250,8 +250,8 @@ const ShopPage = () => {
   const seoTitle = currentNode
     ? `${currentNode.name} – Shop`
     : debouncedSearch
-    ? `Search: "${debouncedSearch}" – Shop`
-    : "Shop";
+      ? `Search: "${debouncedSearch}" – Shop`
+      : "Shop";
   const seoDescription =
     currentNode?.name ||
     (debouncedSearch
@@ -271,7 +271,7 @@ const ShopPage = () => {
   // ─── Structured data for collection & breadcrumbs ───────────────────────
   const shopSchema = useMemo(() => {
     const breadcrumbItems = breadcrumbs.map((crumb, index) => ({
-      '@type': 'ListItem',
+      "@type": "ListItem",
       position: index + 1,
       name: crumb.name,
       item: crumb.id
@@ -280,37 +280,38 @@ const ShopPage = () => {
     }));
 
     return {
-      '@context': 'https://schema.org',
-      '@graph': [
+      "@context": "https://schema.org",
+      "@graph": [
         {
-          '@type': 'CollectionPage',
-          name: currentNode ? currentNode.name : 'Shop',
+          "@type": "CollectionPage",
+          name: currentNode ? currentNode.name : "Shop",
           url: canonicalUrl, // ✅ use clean canonical URL in JSON-LD as well
           description: seoDescription,
           mainEntity: {
-            '@type': 'ItemList',
+            "@type": "ItemList",
             itemListElement: products.map((product, index) => ({
-              '@type': 'ListItem',
+              "@type": "ListItem",
               position: index + 1,
               item: {
-                '@type': 'Product',
+                "@type": "Product",
                 name: product.name,
                 image: product.images?.[0] || PLACEHOLDER,
                 url: productUrl(product.slug || product._id),
                 offers: {
-                  '@type': 'Offer',
+                  "@type": "Offer",
                   price: product.price,
-                  priceCurrency: 'NGN',
-                  availability: (product.stock ?? 0) > 0
-                    ? 'https://schema.org/InStock'
-                    : 'https://schema.org/OutOfStock',
+                  priceCurrency: "NGN",
+                  availability:
+                    (product.stock ?? 0) > 0
+                      ? "https://schema.org/InStock"
+                      : "https://schema.org/OutOfStock",
                 },
               },
             })),
           },
         },
         {
-          '@type': 'BreadcrumbList',
+          "@type": "BreadcrumbList",
           itemListElement: breadcrumbItems,
         },
       ],
@@ -331,11 +332,11 @@ const ShopPage = () => {
       <SEO
         title={seoTitle}
         description={seoDescription}
-        canonicalUrl={canonicalUrl}   // 👈 pass clean URL
+        canonicalUrl={canonicalUrl} // 👈 pass clean URL
         ogImage={SHOP_OG_IMAGE}
-        keywords={[currentNode?.name, 'shop', 'products', 'buy online']
+        keywords={[currentNode?.name, "shop", "products", "buy online"]
           .filter(Boolean)
-          .join(', ')}
+          .join(", ")}
         jsonLd={shopSchema}
       />
 
