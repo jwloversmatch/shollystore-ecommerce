@@ -17,6 +17,7 @@ import {
   X,
   Store,
   Heart,
+  Star, // ✅ imported for reviews
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
@@ -47,6 +48,11 @@ const ADMIN_LINKS = [
     to: "/admin/coupons",
     label: "Coupons",
     icon: <BadgePercent className="w-5 h-5" aria-hidden="true" />,
+  },
+  {
+    to: "/admin/reviews",          // ✅ new link
+    label: "Reviews",
+    icon: <Star className="w-5 h-5" aria-hidden="true" />,
   },
   {
     to: "/admin/settings",
@@ -117,10 +123,8 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  // Get the current user to conditionally show Account/Wishlist
   const user = useSelector((s: RootState) => s.auth.user);
 
-  // Close on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -175,7 +179,6 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
             role="menu"
             aria-label="User menu"
           >
-            {/* Only show Account and Wishlist for regular users */}
             {user?.role === "user" && (
               <>
                 <Link
@@ -230,7 +233,6 @@ const Navbar = () => {
   const totalQty = cartItems.reduce((acc, i) => acc + i.qty, 0);
   const showCart = !user || user.role === "user";
 
-  // Announce cart changes to screen readers
   useEffect(() => {
     if (
       prevTotalQtyRef.current !== null &&
@@ -267,7 +269,6 @@ const Navbar = () => {
 
   return (
     <>
-      {/* Live region for cart updates */}
       <span
         ref={liveRegionRef}
         className="sr-only"
@@ -275,7 +276,6 @@ const Navbar = () => {
         aria-atomic="true"
       />
 
-      {/* Skip to content */}
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-[#e8622a] focus:text-white focus:rounded-xl focus:font-bold"
@@ -296,7 +296,6 @@ const Navbar = () => {
           shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
         />
         <div className="relative max-w-7xl mx-auto px-6 flex justify-between items-center py-4">
-          {/* Logo */}
           <Link
             to={user?.role === "admin" ? "/admin" : "/"}
             className="text-2xl font-black tracking-tight shrink-0 flex items-center gap-2 text-gray-900 dark:text-white"
@@ -310,7 +309,6 @@ const Navbar = () => {
             <span>{BRAND_NAME}</span>
           </Link>
 
-          {/* Admin links */}
           {user?.role === "admin" && (
             <div className="flex items-center gap-5">
               {ADMIN_LINKS.map((l) => (
@@ -326,7 +324,6 @@ const Navbar = () => {
             </div>
           )}
 
-          {/* Right: cart + theme toggle + user menu or login */}
           <div className="flex items-center gap-4 shrink-0">
             <ThemeToggle />
 
@@ -388,7 +385,6 @@ const Navbar = () => {
       {/* ══════ MOBILE — all fixed elements portaled to body ══════ */}
       {createPortal(
         <>
-          {/* Mobile top bar */}
           <nav
             className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center px-5
               bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]"
@@ -438,7 +434,6 @@ const Navbar = () => {
             </div>
           </nav>
 
-          {/* Mobile bottom nav */}
           <nav
             className="md:hidden fixed bottom-0 left-0 right-0 z-40
         bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
@@ -512,7 +507,6 @@ const Navbar = () => {
             </div>
           </nav>
 
-          {/* Admin bottom sheet (mobile) */}
           <AnimatePresence>
             {adminDrawer && (
               <>
