@@ -3,51 +3,7 @@ import mongoose from "mongoose";
 import { Review } from "../models/Review";
 import { Product } from "../models/Product";
 import { sanitizeString } from "../middleware/sanitize";
-
-// Safe import for bad-words
-const Filter = require("bad-words") as {
-  new (): {
-    isProfane(text: string): boolean;
-    clean(text: string): string;
-    addWords(...words: string[]): void;
-    removeWords(...words: string[]): void;
-  };
-};
-
-const profanityFilter = new Filter();
-
-// ─── Custom Nigerian & general profanity list ─────────────────────────────
-const customBannedWords = [
-  // English general profanity
-  "ass", "asshole", "bastard", "bitch", "bollocks", "bullshit", "cunt", "damn",
-  "dick", "dickhead", "fuck", "fucker", "fucking", "motherfucker", "piss",
-  "prick", "pussy", "shit", "slut", "twat", "wanker", "whore", "nigga", "nigger",
-  // Nigerian Pidgin / slang
-  "ashewo", "agbero", "ode", "oloshi", "yeye", "mumu", "oponu", "werey",
-  "alayee", "efulefu", "nzuzu", "onye ara", "aboki", "ngbeke", "akpali",
-  "oshisco", "kolo", "mad man", "craze", "waka pass",
-  // Additional common insults
-  "idiot", "stupid", "fool", "moron", "imbecile", "retard", "scumbag",
-  "douche", "douchebag", "jackass", "arse", "arsehole", "bugger", "git",
-  "minger", "pillock", "plonker", "tosser", "wazzock",
-];
-
-profanityFilter.addWords(...customBannedWords);
-
-// Regex fallback – catches variations and the above words even if library misses
-const profanityRegex = new RegExp(
-  "\\b(" +
-    customBannedWords
-      .map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-      .join("|") +
-    ")\\b",
-  "i"
-);
-
-// Helper to check profanity
-const containsProfanity = (text: string): boolean => {
-  return profanityFilter.isProfane(text) || profanityRegex.test(text);
-};
+import { containsProfanity } from "../utils/profanity";
 
 // Helper: recalculate and update product's averageRating & numberOfReviews
 const updateProductRatingStats = async (productId: string) => {
