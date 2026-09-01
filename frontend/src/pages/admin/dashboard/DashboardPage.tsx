@@ -39,7 +39,7 @@ import TopProductsList from "./TopProductsList";
 import RecentOrdersTable from "./RecentOrdersTable";
 import UserManagementTable from "./UserManagementTable";
 import LowStockWidget from "./LowStockWidget";
-import RecentReviewsWidget from "./RecentReviewsWidget"; // ✅ new
+import RecentReviewsWidget from "./RecentReviewsWidget"; 
 
 const ACCENT = "#e8622a";
 

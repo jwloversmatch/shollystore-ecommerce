@@ -88,6 +88,13 @@ const ShopPage = () => {
   const isInitialMount = useRef(true);
   const page = parseInt(searchParams.get("page") || "1") || 1;
 
+  // Ref to track previous filter values for change detection
+  const prevFilters = useRef({
+    selectedPath: initialSelectedPath.join(","),
+    debouncedSearch: initialSearch,
+    sortBy: sortParam,
+  });
+
   const handlePageChange = useCallback(
     (newPage: number) => {
       const params = new URLSearchParams(searchParams);
@@ -119,6 +126,25 @@ const ShopPage = () => {
   // ─── Single effect to synchronise search, category, and sort to URL ────
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
+
+    // Determine if any filter value changed compared to the last render
+    const currentFilters = {
+      selectedPath: selectedPath.join(","),
+      debouncedSearch,
+      sortBy,
+    };
+
+    const filtersChanged =
+      prevFilters.current.selectedPath !== currentFilters.selectedPath ||
+      prevFilters.current.debouncedSearch !== currentFilters.debouncedSearch ||
+      prevFilters.current.sortBy !== currentFilters.sortBy;
+
+    if (filtersChanged) {
+      // When filters change, reset page to 1 by removing the page param
+      params.delete("page");
+    }
+
+    // Remove the keys we manage (search, category, sort)
     params.delete("search");
     params.delete("category");
     params.delete("sort");
@@ -127,9 +153,13 @@ const ShopPage = () => {
     if (selectedPath.length > 0) params.set("category", selectedPath.join(","));
     if (sortBy !== "newest") params.set("sort", sortBy);
 
-    if (params.toString() !== searchParams.toString()) {
+    // Update URL only if something changed
+    if (params.toString() !== searchParams.toString() || filtersChanged) {
       setSearchParams(params, { replace: true });
     }
+
+    // Update previous filters ref
+    prevFilters.current = currentFilters;
   }, [debouncedSearch, selectedPath, sortBy, searchParams, setSearchParams]);
 
   // ─── Derived state and queries ─────────────────────────────────────────
@@ -228,7 +258,6 @@ const ShopPage = () => {
         setSelectedPath([...selectedPath, id]);
       }
     }
-    handlePageChange(1);
     setSearch("");
     setDebouncedSearch("");
   };
@@ -238,7 +267,6 @@ const ShopPage = () => {
     setSearch("");
     setDebouncedSearch("");
     setSortBy("newest");
-    handlePageChange(1);
   };
 
   const hasActiveFilters =
