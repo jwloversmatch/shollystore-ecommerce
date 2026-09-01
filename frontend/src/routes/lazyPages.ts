@@ -14,7 +14,7 @@ export const ProductDetail = lazy(() => import("../pages/ProductDetail"));
 export const ShopPage = lazy(() => import("../pages/ShopPage"));
 export const TrackOrder = lazy(() => import("../pages/TrackOrder"));
 
-
+// Admin pages
 export const Dashboard = lazy(() => import("../pages/admin/dashboard/"));
 export const Products = lazy(() => import("../pages/admin/products/"));
 export const Orders = lazy(() => import("../pages/admin/orders/"));
@@ -22,6 +22,7 @@ export const HeroSlides = lazy(() => import("../pages/admin/HeroSlides"));
 export const Categories = lazy(() => import("../pages/admin/categories/"));
 export const Coupons = lazy(() => import("../pages/admin/Coupons"));
 export const Settings = lazy(() => import("../pages/admin/settings/"));
+export const Reviews = lazy(() => import("../pages/admin/reviews/ReviewsPage"));
 
 export const NotFound = lazy(() => import("../pages/NotFound"));
 export const Footer = lazy(() => import("../pages/Footer"));

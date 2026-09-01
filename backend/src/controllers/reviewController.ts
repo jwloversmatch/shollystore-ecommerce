@@ -168,3 +168,46 @@ export const deleteReview = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// GET /api/admin/reviews – all reviews with pagination
+export const getAllReviewsAdmin = async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    const [reviews, total] = await Promise.all([
+      Review.find()
+        .populate("product", "name slug images")
+        .populate("user", "name email avatar")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Review.countDocuments(),
+    ]);
+
+    res.json({
+      reviews,
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// DELETE /api/admin/reviews/:reviewId
+export const deleteReviewAdmin = async (req: Request, res: Response) => {
+  try {
+    const reviewId = String(req.params.reviewId);
+    const review = await Review.findByIdAndDelete(reviewId);
+    if (!review) {
+      return res.status(404).json({ message: "Review not found" });
+    }
+
+    // Update product stats
+    await updateProductRatingStats(review.product.toString());
+    res.json({ message: "Review deleted" });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

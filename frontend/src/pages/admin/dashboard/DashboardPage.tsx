@@ -30,6 +30,7 @@ import QuickInventory from "./QuickInventory";
 import TopProductsList from "./TopProductsList";
 import RecentOrdersTable from "./RecentOrdersTable";
 import UserManagementTable from "./UserManagementTable";
+import LowStockWidget from "./LowStockWidget"; // ✅ new import
 
 const ACCENT = "#e8622a";
 
@@ -48,6 +49,7 @@ const DashboardPage = () => {
   const isDark = theme === "dark";
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [trendDays, setTrendDays] = useState(30); // ✅ new for date range
 
   const { data: statsData, isLoading: statsLoading, refetch: refetchStats } = useGetAdminStatsQuery({});
   const { data: productsResponse, isLoading: productsLoading, refetch: refetchProducts } = useGetProductsQuery({ limit: 9999 });
@@ -55,7 +57,7 @@ const DashboardPage = () => {
   const { data: topProductsData, refetch: refetchTopProducts } = useGetTopProductsQuery({});
   const { data: orderCustomerData } = useGetOrderCustomerCountQuery({});
   const { data: usersData, refetch: refetchUsers } = useGetUsersQuery({});
-  const { data: revenueTrendData } = useGetRevenueTrendQuery(30);
+  const { data: revenueTrendData } = useGetRevenueTrendQuery(trendDays); // ✅ dynamic days
 
   const [updateStatus] = useUpdateOrderStatusMutation();
   const [deleteProduct] = useDeleteProductMutation();
@@ -139,15 +141,21 @@ const DashboardPage = () => {
         </div>
       </header>
 
-      {/* Stat Cards */}
+      {/* Stat Cards (clickable) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" role="group" aria-label="Store statistics">
         {[
-          { label: "Total Revenue", value: `₦${stats.totalRevenue.toLocaleString()}`, icon: <TrendingUp className="w-5 h-5" />, color: "#e8622a", bg: "rgba(232,98,42,0.12)" },
-          { label: "Recent Orders", value: stats.orders?.length || 0, icon: <ShoppingBag className="w-5 h-5" />, color: "#3b82f6", bg: "rgba(59,130,246,0.12)" },
-          { label: "Customers", value: realCustomers, icon: <Users className="w-5 h-5" />, color: "#8b5cf6", bg: "rgba(139,92,246,0.12)" },
-          { label: "Low Stock Alerts", value: lowStockCount, icon: <AlertTriangle className="w-5 h-5" />, color: "#ef4444", bg: "rgba(239,68,68,0.12)" },
+          { label: "Total Revenue", value: `₦${stats.totalRevenue.toLocaleString()}`, icon: <TrendingUp className="w-5 h-5" />, color: "#e8622a", bg: "rgba(232,98,42,0.12)", path: "/admin/orders" },
+          { label: "Recent Orders", value: stats.orders?.length || 0, icon: <ShoppingBag className="w-5 h-5" />, color: "#3b82f6", bg: "rgba(59,130,246,0.12)", path: "/admin/orders" },
+          { label: "Customers", value: realCustomers, icon: <Users className="w-5 h-5" />, color: "#8b5cf6", bg: "rgba(139,92,246,0.12)", path: "/admin/users" },
+          { label: "Low Stock Alerts", value: lowStockCount, icon: <AlertTriangle className="w-5 h-5" />, color: "#ef4444", bg: "rgba(239,68,68,0.12)", path: "/admin/products?lowStock=true" },
         ].map((s, i) => (
-          <div key={i} className="relative rounded-2xl p-4 md:p-5 overflow-hidden" style={{ background: cardBg, border: `1px solid ${s.color}22`, boxShadow: cardShadow }}>
+          <button
+            key={i}
+            onClick={() => navigate(s.path)}
+            className="relative rounded-2xl p-4 md:p-5 overflow-hidden text-left"
+            style={{ background: cardBg, border: `1px solid ${s.color}22`, boxShadow: cardShadow }}
+            aria-label={`View ${s.label}`}
+          >
             <div className="absolute -bottom-6 -right-6 w-20 h-20 rounded-full blur-2xl pointer-events-none" style={{ background: s.color, opacity: 0.18 }} aria-hidden="true" />
             <div className="flex items-start justify-between relative z-10">
               <div>
@@ -156,12 +164,38 @@ const DashboardPage = () => {
               </div>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: s.bg, color: s.color }}>{s.icon}</div>
             </div>
-          </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Revenue Trend Date Range Selector */}
+      <div className="flex items-center gap-2">
+        {[7, 30, 90].map((days) => (
+          <button
+            key={days}
+            onClick={() => setTrendDays(days)}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all`}
+            style={{
+              background: trendDays === days ? ACCENT : inputBg,
+              color: trendDays === days ? "#fff" : textSecondary,
+              border: `1px solid ${trendDays === days ? ACCENT : inputBorder}`,
+            }}
+            aria-pressed={trendDays === days}
+          >
+            {days}D
+          </button>
         ))}
       </div>
 
       {/* Charts */}
       <DashboardCharts analytics={analytics} statusPieData={statusPieData} revenueTrend={revenueTrend} isDark={isDark} />
+
+      {/* Low Stock Widget */}
+      <LowStockWidget
+        products={sortedProducts}
+        onRestock={handleStockUpdate}
+        isDark={isDark}
+      />
 
       {/* Quick Inventory + Top Products */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -178,6 +212,7 @@ const DashboardPage = () => {
   );
 };
 
+// DashboardSkeleton unchanged...
 const DashboardSkeleton = () => (
   <>
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

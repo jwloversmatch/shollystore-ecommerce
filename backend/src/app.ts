@@ -25,6 +25,7 @@ import couponRoutes from './routes/couponRoutes';
 import pushRoutes from './routes/pushRoutes';
 import contactRoutes from './routes/contactRoutes';
 import wishlistRoutes from './routes/wishlistRoutes';
+import adminReviewRoutes from './routes/adminReviewRoutes';
 import { getSitemap, getRobotsTxt } from './routes/seoRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
@@ -97,6 +98,7 @@ app.use("/api/admin/orders", adminOrderRoutes);
 app.use('/api/admin/users', adminUserRoutes);
 app.use('/api/admin/inventory', adminInventoryRoutes);
 app.use('/api/admin/products', adminProductRoutes);
+app.use('/api/admin/reviews', adminReviewRoutes); // ✅ new
 app.use('/api/upload', uploadRoutes);
 
 app.use('/api/settings/public', publicSettingsRoutes);

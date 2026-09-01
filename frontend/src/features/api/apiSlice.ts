@@ -67,6 +67,36 @@ export interface Review {
   updatedAt: string;
 }
 
+export interface AdminReview {
+  _id: string;
+  product: {
+    _id: string;
+    name: string;
+    slug?: string;
+    images?: string[];
+  };
+  user: {
+    _id: string;
+    name: string;
+    email?: string;
+    avatar?: string;
+  };
+  rating: number;
+  comment: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewsResponse {
+  reviews: AdminReview[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
 // ─── Base query with token from localStorage ─────────────────────────────────
 const baseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
@@ -734,6 +764,23 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["Product"],
     }),
+
+    getAdminReviews: builder.query<
+      ReviewsResponse,
+      { page?: number; limit?: number }
+    >({
+      query: ({ page = 1, limit = 20 }) =>
+        `/admin/reviews?page=${page}&limit=${limit}`,
+      providesTags: ["Review"],
+    }),
+
+    deleteAdminReview: builder.mutation<{ message: string }, string>({
+      query: (reviewId) => ({
+        url: `/admin/reviews/${reviewId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Review", "Product"],
+    }),
   }),
 });
 
@@ -805,4 +852,6 @@ export const {
   useUpdateReviewMutation,
   useDeleteReviewMutation,
   useBulkImportProductsMutation,
+  useGetAdminReviewsQuery,
+  useDeleteAdminReviewMutation,
 } = apiSlice;
