@@ -31,7 +31,7 @@ export const getProducts = async (
   try {
     const filter: any = {};
 
-    // Category filtering (if category query param is present)
+    // Category filtering
     if (req.query.category) {
       const includeSubcategories = req.query.includeSubcategories !== "false";
       const categoryParam = Array.isArray(req.query.category)
@@ -68,6 +68,9 @@ export const getProducts = async (
     const limit = parseInt(req.query.limit as string) || 12;
     const skip = (page - 1) * limit;
 
+    // Check if this is an admin request (large limit) to return full documents
+    const isAdminRequest = limit > 100;
+
     const searchParam = req.query.search
       ? (Array.isArray(req.query.search)
           ? String(req.query.search[0])
@@ -77,18 +80,25 @@ export const getProducts = async (
 
     // No search: standard category/filter browsing
     if (!searchParam) {
+      const baseQuery = Product.find(filter)
+        .lean()
+        .populate("category", "name slug")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+      // For admin requests, return full documents (no select projection)
+      const query = isAdminRequest
+        ? baseQuery
+        : baseQuery.select(
+            "name slug price images stock category averageRating numberOfReviews"
+          );
+
       const [products, total] = await Promise.all([
-        Product.find(filter)
-          .lean()
-          .select(
-            "name slug price images stock category averageRating numberOfReviews",
-          )
-          .populate("category", "name slug")
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(limit),
+        query,
         Product.countDocuments(filter),
       ]);
+
       res.json({
         products,
         pagination: { page, limit, total, pages: Math.ceil(total / limit) },
@@ -96,7 +106,7 @@ export const getProducts = async (
       return;
     }
 
-    // ── Single‑word search: try to match categories first ───────────────────
+    // ── Single-word search: try to match categories first ──
     const words = toSearchWords(searchParam);
     if (words.length === 1) {
       const term = words[0];
@@ -126,16 +136,21 @@ export const getProducts = async (
             combinedFilter.category = categoryFilter;
           }
 
+          const baseQuery = Product.find(combinedFilter)
+            .lean()
+            .populate("category", "name slug")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+          const query = isAdminRequest
+            ? baseQuery
+            : baseQuery.select(
+                "name slug price images stock category averageRating numberOfReviews"
+              );
+
           const [products, total] = await Promise.all([
-            Product.find(combinedFilter)
-              .lean()
-              .select(
-                "name slug price images stock category averageRating numberOfReviews",
-              )
-              .populate("category", "name slug")
-              .sort({ createdAt: -1 })
-              .skip(skip)
-              .limit(limit),
+            query,
             Product.countDocuments(combinedFilter),
           ]);
 
@@ -148,19 +163,24 @@ export const getProducts = async (
       }
     }
 
-    // ── Exact name match (case‑insensitive) ─────────────────────────────
+    // ── Exact name match ──
     const exactNameRegex = new RegExp(`^${escapeRegex(searchParam)}$`, "i");
 
+    const baseExactQuery = Product.find({ ...filter, name: exactNameRegex })
+      .lean()
+      .populate("category", "name slug")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const exactQuery = isAdminRequest
+      ? baseExactQuery
+      : baseExactQuery.select(
+          "name slug price images stock category averageRating numberOfReviews"
+        );
+
     const [exactProducts, exactTotal] = await Promise.all([
-      Product.find({ ...filter, name: exactNameRegex })
-        .lean()
-        .select(
-          "name slug price images stock category averageRating numberOfReviews",
-        )
-        .populate("category", "name slug")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
+      exactQuery,
       Product.countDocuments({ ...filter, name: exactNameRegex }),
     ]);
 
@@ -177,7 +197,7 @@ export const getProducts = async (
       return;
     }
 
-    // ── Multi‑word or no exact name match: text search ─────────────────────
+    // ── Multi-word or no exact name match: text search ──
     const searchFilters: any[] = [];
     if (filter.category) {
       if (filter.category.$in) {
@@ -275,16 +295,21 @@ export const getProducts = async (
       $and: andConditions,
     };
 
+    const baseFallbackQuery = Product.find(fallbackFilter)
+      .lean()
+      .populate("category", "name slug")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const fallbackQuery = isAdminRequest
+      ? baseFallbackQuery
+      : baseFallbackQuery.select(
+          "name slug price images stock category averageRating numberOfReviews"
+        );
+
     const [products, total] = await Promise.all([
-      Product.find(fallbackFilter)
-        .lean()
-        .select(
-          "name slug price images stock category averageRating numberOfReviews",
-        )
-        .populate("category", "name slug")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
+      fallbackQuery,
       Product.countDocuments(fallbackFilter),
     ]);
 
@@ -337,7 +362,7 @@ export const getProductSuggestions = async (
             .select("name slug price images category")
             .limit(8)
             .populate("category", "name slug")
-            .lean(); // already lean
+            .lean();
 
           if (products.length > 0) {
             res.json({ suggestions: products });
