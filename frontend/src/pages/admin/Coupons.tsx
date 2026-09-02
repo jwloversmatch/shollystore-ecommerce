@@ -10,7 +10,7 @@ import {
   useUpdateCouponMutation,
   useDeleteCouponMutation,
 } from "../../features/api/apiSlice";
-import { Plus, X, Edit2, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, X, Edit2, Trash2, ArrowLeft, Loader2 } from "lucide-react";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -26,10 +26,17 @@ interface Coupon {
   usedCount: number;
 }
 
-// ─── Constants ─────────────────────────────────────────────────────────────────
+interface CouponFormValues {
+  code: string;
+  discountType: "percentage" | "fixed";
+  usageLimit: number;
+  isActive: boolean;
+  expiresAt?: string;
+}
+
 const ACCENT = "#e8622a";
 
-// ─── Shared formatting helper ──────────────────────────────────────────────────
+// Format numbers with commas
 const formatWithCommas = (raw: string): string => {
   if (!raw) return "";
   const [intPart, decPart] = raw.split(".");
@@ -37,6 +44,7 @@ const formatWithCommas = (raw: string): string => {
   return decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
 };
 
+// Custom hook for formatted numeric inputs
 function useFormattedInput(initial: string | number = "") {
   const [raw, setRaw] = useState(String(initial));
   const inputRef = useRef<HTMLInputElement>(null);
@@ -106,15 +114,21 @@ function useFormattedInput(initial: string | number = "") {
   };
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// Helper: determine coupon status
+const getCouponStatus = (coupon: Coupon): "active" | "expired" | "inactive" => {
+  if (!coupon.isActive) return "inactive";
+  if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) return "expired";
+  return "active";
+};
+
 const Coupons = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
   const { data: coupons = [], isLoading, refetch } = useGetCouponsQuery({});
-  const [createCoupon] = useCreateCouponMutation();
-  const [updateCoupon] = useUpdateCouponMutation();
+  const [createCoupon, { isLoading: creating }] = useCreateCouponMutation();
+  const [updateCoupon, { isLoading: updating }] = useUpdateCouponMutation();
   const [deleteCoupon] = useDeleteCouponMutation();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -126,7 +140,7 @@ const Coupons = () => {
   const discountAmountInput = useFormattedInput(10);
   const minOrderAmountInput = useFormattedInput(0);
 
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset } = useForm<CouponFormValues>();
 
   // Theme styles
   const bg = isDark ? "#0A0A0B" : "#FCFAF5";
@@ -173,14 +187,15 @@ const Coupons = () => {
     setDrawerOpen(true);
   };
 
-  const onSubmit = async (data: Record<string, unknown>) => {
+  const onSubmit = async (data: CouponFormValues) => {
     try {
       const payload = {
         ...data,
+        code: data.code.trim().toUpperCase(),
         discountAmount: Number(discountAmountInput.raw),
         minOrderAmount: Number(minOrderAmountInput.raw) || 0,
         usageLimit: Number(data.usageLimit) || 0,
-        isActive: data.isActive === "true" || data.isActive === true,
+        isActive: data.isActive,
       };
       if (editingCoupon) {
         await updateCoupon({ id: editingCoupon._id, ...payload }).unwrap();
@@ -203,13 +218,18 @@ const Coupons = () => {
   };
   const confirmDelete = async () => {
     if (!couponToDelete) return;
-    await deleteCoupon(couponToDelete);
-    refetch();
-    setDeleteModalOpen(false);
-    setCouponToDelete(null);
+    try {
+      await deleteCoupon(couponToDelete).unwrap();
+      toast.success("Coupon deleted");
+      refetch();
+    } catch {
+      toast.error("Failed to delete coupon");
+    } finally {
+      setDeleteModalOpen(false);
+      setCouponToDelete(null);
+    }
   };
 
-  // ══════ LOADING ═════════════════════════════════════════════════════
   if (isLoading) {
     return (
       <main
@@ -238,7 +258,7 @@ const Coupons = () => {
             <table className="w-full text-left">
               <thead style={{ background: theadBg }}>
                 <tr>
-                  {["Code", "Type", "Amount", "Min Order", "Usage", "Active", "Actions"].map((h) => (
+                  {["Code", "Type", "Amount", "Min Order", "Usage", "Expires", "Status", "Actions"].map((h) => (
                     <th
                       key={h}
                       className="px-4 sm:px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest"
@@ -252,11 +272,11 @@ const Coupons = () => {
               <tbody>
                 {Array.from({ length: 4 }).map((_, idx) => (
                   <tr key={idx} className="border-t" style={{ borderColor: tableBorder }}>
-                    {Array.from({ length: 7 }).map((_, c) => (
+                    {Array.from({ length: 8 }).map((_, c) => (
                       <td key={c} className="px-4 sm:px-6 py-3">
                         <div
                           className="h-4 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse"
-                          style={{ width: c === 6 ? "60%" : "80%" }}
+                          style={{ width: c === 7 ? "60%" : "80%" }}
                         />
                       </td>
                     ))}
@@ -270,7 +290,6 @@ const Coupons = () => {
     );
   }
 
-  // ══════ MAIN PAGE ═════════════════════════════════════════════════════
   return (
     <main
       id="main-content"
@@ -352,7 +371,7 @@ const Coupons = () => {
             </caption>
             <thead style={{ background: theadBg }}>
               <tr>
-                {["Code", "Type", "Amount", "Min Order", "Usage", "Active", "Actions"].map((h) => (
+                {["Code", "Type", "Amount", "Min Order", "Usage", "Expires", "Status", "Actions"].map((h) => (
                   <th
                     key={h}
                     scope="col"
@@ -365,67 +384,88 @@ const Coupons = () => {
               </tr>
             </thead>
             <tbody>
-              {coupons.map((coupon: Coupon) => (
-                <motion.tr
-                  key={coupon._id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="border-t transition-colors"
-                  style={{ borderColor: tableBorder }}
-                >
-                  <td className="px-4 sm:px-6 py-3 font-semibold text-sm" style={{ color: textPrimary }}>
-                    {coupon.code}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 text-sm capitalize" style={{ color: textSecondary }}>
-                    {coupon.discountType}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 text-sm" style={{ color: textSecondary }}>
-                    {coupon.discountType === "percentage"
-                      ? `${coupon.discountAmount}%`
-                      : `₦${coupon.discountAmount.toLocaleString()}`}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 text-sm" style={{ color: textSecondary }}>
-                    ₦{(coupon.minOrderAmount || 0).toLocaleString()}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 text-sm" style={{ color: textSecondary }}>
-                    {coupon.usedCount}
-                    {coupon.usageLimit > 0 ? ` / ${coupon.usageLimit}` : ""}
-                  </td>
-                  <td className="px-4 sm:px-6 py-3">
-                    <span
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold"
-                      style={
-                        coupon.isActive
-                          ? { background: `${ACCENT}15`, color: ACCENT, border: `1px solid ${ACCENT}30` }
-                          : { background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", color: textMuted, border: inputBorder }
-                      }
-                    >
-                      {coupon.isActive ? "Yes" : "No"}
-                    </span>
-                  </td>
-                  <td className="px-4 sm:px-6 py-3 text-right">
-                    <div className="flex justify-end gap-1">
-                      <button
-                        onClick={() => openDrawer(coupon)}
-                        className="p-1.5 rounded-lg text-blue-400 hover:text-blue-300 transition-colors hover:bg-blue-500/10"
-                        aria-label={`Edit coupon ${coupon.code}`}
+              {coupons.map((coupon: Coupon) => {
+                const status = getCouponStatus(coupon);
+                const remaining = coupon.usageLimit > 0
+                  ? Math.max(0, coupon.usageLimit - coupon.usedCount)
+                  : undefined;
+
+                return (
+                  <motion.tr
+                    key={coupon._id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="border-t transition-colors"
+                    style={{ borderColor: tableBorder }}
+                  >
+                    <td className="px-4 sm:px-6 py-3 font-semibold text-sm" style={{ color: textPrimary }}>
+                      {coupon.code}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 text-sm capitalize" style={{ color: textSecondary }}>
+                      {coupon.discountType}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 text-sm" style={{ color: textSecondary }}>
+                      {coupon.discountType === "percentage"
+                        ? `${coupon.discountAmount}%`
+                        : `₦${coupon.discountAmount.toLocaleString()}`}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 text-sm" style={{ color: textSecondary }}>
+                      ₦{(coupon.minOrderAmount || 0).toLocaleString()}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 text-sm" style={{ color: textSecondary }}>
+                      <span>{coupon.usedCount}</span>
+                      {coupon.usageLimit > 0 && (
+                        <span className="text-xs" style={{ color: textMuted }}>
+                          {" "}/ {coupon.usageLimit}
+                        </span>
+                      )}
+                      {remaining !== undefined && (
+                        <span className="ml-1 text-xs font-bold" style={{ color: remaining > 0 ? ACCENT : textMuted }}>
+                          ({remaining} left)
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 text-sm" style={{ color: textSecondary }}>
+                      {coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString() : "—"}
+                    </td>
+                    <td className="px-4 sm:px-6 py-3">
+                      <span
+                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold"
+                        style={
+                          status === "active"
+                            ? { background: "rgba(16,185,129,0.12)", color: "#34d399", border: "1px solid rgba(16,185,129,0.3)" }
+                            : status === "expired"
+                            ? { background: "rgba(239,68,68,0.1)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)" }
+                            : { background: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", color: textMuted, border: inputBorder }
+                        }
                       >
-                        <Edit2 className="w-4 h-4" aria-hidden="true" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(coupon._id)}
-                        className="p-1.5 rounded-lg text-red-400 hover:text-red-300 transition-colors hover:bg-red-500/10"
-                        aria-label={`Delete coupon ${coupon.code}`}
-                      >
-                        <Trash2 className="w-4 h-4" aria-hidden="true" />
-                      </button>
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
+                        {status === "active" ? "Active" : status === "expired" ? "Expired" : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="px-4 sm:px-6 py-3 text-right">
+                      <div className="flex justify-end gap-1">
+                        <button
+                          onClick={() => openDrawer(coupon)}
+                          className="p-1.5 rounded-lg text-blue-400 hover:text-blue-300 transition-colors hover:bg-blue-500/10"
+                          aria-label={`Edit coupon ${coupon.code}`}
+                        >
+                          <Edit2 className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(coupon._id)}
+                          className="p-1.5 rounded-lg text-red-400 hover:text-red-300 transition-colors hover:bg-red-500/10"
+                          aria-label={`Delete coupon ${coupon.code}`}
+                        >
+                          <Trash2 className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                );
+              })}
               {coupons.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 sm:px-6 py-12 text-center text-sm" style={{ color: textMuted }}>
+                  <td colSpan={8} className="px-4 sm:px-6 py-12 text-center text-sm" style={{ color: textMuted }}>
                     No coupons found. Create your first coupon to get started.
                   </td>
                 </tr>
@@ -493,6 +533,9 @@ const Coupons = () => {
                     id="coupon-code"
                     {...register("code", { required: true })}
                     placeholder="e.g., SAVE10"
+                    onChange={(e) => {
+                      e.target.value = e.target.value.toUpperCase();
+                    }}
                     className="w-full px-4 py-3.5 rounded-xl text-sm outline-none border transition-all"
                     style={{
                       background: inputBg,
@@ -632,12 +675,14 @@ const Coupons = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-3 rounded-xl font-black text-white text-sm transition-all"
+                    disabled={creating || updating}
+                    className="flex items-center gap-2 px-5 py-3 rounded-xl font-black text-white text-sm transition-all disabled:opacity-55"
                     style={{
                       background: ACCENT,
                       boxShadow: `0 6px 18px ${ACCENT}44`,
                     }}
                   >
+                    {(creating || updating) && <Loader2 className="w-4 h-4 animate-spin" />}
                     Save
                   </button>
                 </div>
