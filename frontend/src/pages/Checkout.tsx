@@ -171,9 +171,15 @@ const Checkout = () => {
 
   const [showCreateAccountModal, setShowCreateAccountModal] = useState(false);
 
+  // Helper to get selected saved address object
+  const selectedSavedAddress = savedAddresses.find(
+    (addr: IAddress) => addr._id === selectedAddressId,
+  );
+
   const selectSavedAddress = (addr: IAddress) => {
     setSelectedAddressId(addr._id);
     setIsNewAddress(false);
+    // Still reset the form in case user switches to new later
     reset({ address: addr.address, city: addr.city });
   };
   const selectNewAddress = () => {
@@ -183,7 +189,9 @@ const Checkout = () => {
   };
 
   const city = useWatch({ control, name: "city" }) || "";
-  const shippingFee = calculateShippingFee(city);
+  const shippingFee = calculateShippingFee(
+    selectedSavedAddress && !isNewAddress ? selectedSavedAddress.city : city,
+  );
 
   const totalPrice = cart.cartItems.reduce(
     (a: number, i: CartItem) => a + i.price * i.qty,
@@ -214,21 +222,31 @@ const Checkout = () => {
     }
 
     try {
+      // Use saved address if selected, otherwise form values
+      const finalShippingAddress = selectedSavedAddress && !isNewAddress
+        ? {
+            address: selectedSavedAddress.address,
+            city: selectedSavedAddress.city,
+            postalCode: selectedSavedAddress.postalCode || "",
+            country: selectedSavedAddress.country || "Nigeria",
+          }
+        : {
+            address: data.address,
+            city: data.city,
+            postalCode: "",
+            country: "Nigeria",
+          };
+
       const orderPayload = {
         orderItems: cart.cartItems.map((item) => ({
-          product: item._id, // ✅ fixed field name
+          product: item._id, // ✅ correct field
           name: item.name,
           qty: item.qty,
           price: item.price,
           image: item.image,
           stock: item.stock,
         })),
-        shippingAddress: {
-          address: data.address,
-          city: data.city,
-          postalCode: "",
-          country: "Nigeria",
-        },
+        shippingAddress: finalShippingAddress,
         paymentMethod,
         couponCode: cart.appliedCoupon || undefined,
         ...(user
@@ -262,11 +280,7 @@ const Checkout = () => {
 
   if (!isRehydrated) {
     return (
-      <main
-        id="main-content"
-        tabIndex={-1}
-        className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0A0A0B]"
-      >
+      <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0A0A0B]">
         <SEO title="Checkout" description="Complete your order securely." />
         <p className="text-gray-500 dark:text-gray-400">Loading...</p>
       </main>

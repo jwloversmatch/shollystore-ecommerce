@@ -3,7 +3,7 @@ import { Product, IProduct, IVariant } from '../models/Product';
 import { Coupon } from '../models/Coupon';
 
 export interface OrderItemInput {
-  product: string;          // ✅ changed from _id to product
+  product: string;          // ✅ changed from _id
   name: string;
   qty: number;
   price: number;
@@ -55,7 +55,6 @@ const getAvailableStock = (product: IProduct, variant?: IVariant): number => {
   return product.stock;
 };
 
-/** Server-side price calculation — never trust client-supplied totals */
 export const calculateOrderPricing = async (
   items: OrderItemInput[],
   couponCode?: string,
@@ -65,8 +64,7 @@ export const calculateOrderPricing = async (
   let subtotal = 0;
 
   for (const item of items) {
-    // ✅ Use item.product instead of item._id
-    const product = await Product.findById(item.product);
+    const product = await Product.findById(item.product);   // ✅ use product
     if (!product || product.isActive === false) {
       throw new Error(`Product not found: ${item.product}`);
     }
@@ -114,7 +112,7 @@ export const calculateOrderPricing = async (
     }
   }
 
-  const taxAmount = 0; // extend when tax rules are configured in settings
+  const taxAmount = 0;
   const totalPrice = Math.max(0, subtotal - discount + taxAmount + shippingFee);
 
   return {
