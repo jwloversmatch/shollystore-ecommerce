@@ -3,7 +3,7 @@ import { Product, IProduct, IVariant } from '../models/Product';
 import { Coupon } from '../models/Coupon';
 
 export interface OrderItemInput {
-  _id: string;
+  product: string;          // ✅ changed from _id to product
   name: string;
   qty: number;
   price: number;
@@ -25,7 +25,7 @@ export interface OrderPricing {
   subtotal: number;
   discount: number;
   taxAmount: number;
-  shippingFee: number;      
+  shippingFee: number;
   totalPrice: number;
   couponCode?: string;
 }
@@ -59,15 +59,16 @@ const getAvailableStock = (product: IProduct, variant?: IVariant): number => {
 export const calculateOrderPricing = async (
   items: OrderItemInput[],
   couponCode?: string,
-  shippingFee: number = 0,  
+  shippingFee: number = 0,
 ): Promise<OrderPricing> => {
   const orderItems: PricedOrderItem[] = [];
   let subtotal = 0;
 
   for (const item of items) {
-    const product = await Product.findById(item._id);
+    // ✅ Use item.product instead of item._id
+    const product = await Product.findById(item.product);
     if (!product || product.isActive === false) {
-      throw new Error(`Product not found: ${item._id}`);
+      throw new Error(`Product not found: ${item.product}`);
     }
 
     const variant = findVariant(product, item.variant);
@@ -114,14 +115,14 @@ export const calculateOrderPricing = async (
   }
 
   const taxAmount = 0; // extend when tax rules are configured in settings
-  const totalPrice = Math.max(0, subtotal - discount + taxAmount + shippingFee); 
+  const totalPrice = Math.max(0, subtotal - discount + taxAmount + shippingFee);
 
   return {
     orderItems,
     subtotal,
     discount,
     taxAmount,
-    shippingFee,     
+    shippingFee,
     totalPrice,
     couponCode: appliedCoupon,
   };
