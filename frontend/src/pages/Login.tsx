@@ -92,10 +92,10 @@ const Login = () => {
 
   return (
     <main
-      id="main-content"
-      tabIndex={-1}
-      className="min-h-screen flex items-center justify-center px-4 py-6 md:py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none pt-[calc(72px+env(safe-area-inset-top,0px))] md:pt-[calc(88px+env(safe-area-inset-top,0px))] lg:pt-[calc(96px+env(safe-area-inset-top,0px))]"
-    >
+  id="main-content"
+  tabIndex={-1}
+  className="min-h-screen flex items-center justify-center px-4 py-4 md:py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none pt-[calc(56px+env(safe-area-inset-top,0px))] md:pt-[calc(88px+env(safe-area-inset-top,0px))] lg:pt-[calc(96px+env(safe-area-inset-top,0px))]"
+>
       <SEO
         title="Sign In"
         description={`Log in to your ${BRAND_NAME} account to manage orders, track deliveries, and enjoy exclusive deals.`}

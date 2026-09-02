@@ -136,6 +136,7 @@ export const apiSlice = createApi({
     "Coupon",
     "Wishlist",
     "Review",
+    "Cart"
   ],
   endpoints: (builder) => ({
     // ══════════════════════════════════════════════════════════════════
@@ -781,7 +782,32 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["Review", "Product"],
     }),
+
+   saveCart: builder.mutation<
+  { success: boolean; cart: unknown },
+  {
+    items: {
+      product: string;
+      qty: number;
+      price: number;
+      variant?: { sku?: string; color?: string; size?: string };
+    }[];
+  }
+>({
+  query: (items) => ({
+    url: "/cart",
+    method: "POST",
+    body: { items },
   }),
+  invalidatesTags: ["Cart"],
+}),
+
+getCart: builder.query({
+  query: () => "/cart",
+  providesTags: ["Cart"],
+}),
+  }),
+
 });
 
 export const {
@@ -854,4 +880,6 @@ export const {
   useBulkImportProductsMutation,
   useGetAdminReviewsQuery,
   useDeleteAdminReviewMutation,
+  useSaveCartMutation,
+  useGetCartQuery
 } = apiSlice;

@@ -654,3 +654,52 @@ export const sendContactNotification = async (contact: {
     `New contact message from ${contact.name} (${contact.email}): ${contact.message}`
   );
 };
+
+export const sendAbandonedCartEmail = async (
+  email: string,
+  name: string | undefined,
+  cart: any  // We could type this better, but to avoid any we can define an interface
+) => {
+  // To avoid any, define a minimal interface:
+  interface AbandonedCartItem {
+    qty: number;
+    price: number;
+    product?: {
+      name?: string;
+      price?: number;
+    };
+  }
+
+  const cartItems = (cart.items as AbandonedCartItem[]) || [];
+
+  const itemsHtml = cartItems
+    .map((item) => {
+      const productName = item.product?.name || "Product";
+      const total = (item.price * item.qty).toLocaleString();
+      return `<p style="margin:6px 0;">• ${item.qty}× ${productName} – ₦${total}</p>`;
+    })
+    .join("");
+
+  const checkoutUrl = `${CLIENT_URL}/checkout`;
+
+  const html = layout({
+    headerBg: "#fef3c7",
+    body: `
+      <div class="body" style="text-align:center;">
+        <h2>You left something behind 🛒</h2>
+        <p>Hi ${name || "there"}, we noticed you added items to your cart but didn't complete your order.</p>
+        <div class="box" style="text-align:left; margin:20px 0;">
+          ${itemsHtml}
+        </div>
+        <a href="${checkoutUrl}" class="btn" style="background:#e8622a;color:#fff;box-shadow:0 4px 12px rgba(232,98,42,.3);">Complete Your Purchase</a>
+        <p style="margin-top:24px;font-size:14px;color:#718096;">Your cart is saved for a limited time. Prices and availability may change.</p>
+      </div>`,
+  });
+
+  return sendEmail(
+    email,
+    "Don't forget about your cart 🛒",
+    html,
+    `Hi ${name || "there"}, you left items in your cart. Complete your purchase now: ${checkoutUrl}`
+  );
+};
