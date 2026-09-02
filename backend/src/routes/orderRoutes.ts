@@ -6,7 +6,7 @@ import {
   getMyOrders,
   trackOrder
 } from '../controllers/orderController';
-import { protect } from '../middleware/auth';
+import { protect, optionalAuth  } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { checkoutLimiter } from '../middleware/rateLimiter';
 import { createOrderSchema } from '../validation/schemas';
@@ -20,7 +20,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), paystackWebho
 router.get('/verify/:reference', protect, verifyPayment);
 
 // Create order – public (guest checkout allowed)
-router.route('/').post(checkoutLimiter, validate(createOrderSchema), createOrder);
+router.route('/').post(checkoutLimiter, optionalAuth, validate(createOrderSchema), createOrder);
 
 // My orders – still protected
 router.get('/my-orders', protect, getMyOrders);
