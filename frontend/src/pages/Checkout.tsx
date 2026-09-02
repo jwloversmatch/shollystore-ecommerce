@@ -34,7 +34,7 @@ import {
   Phone,
 } from "lucide-react";
 import SEO from "../components/SEO";
-import { calculateShippingFee } from "../utils/format"; // ✅ centralized utility
+import { calculateShippingFee } from "../utils/format";
 
 const ACCENT = "#e8622a";
 const FOCUS_RING =
@@ -60,6 +60,9 @@ interface CartItem {
 interface OrderResponse {
   _id: string;
   trackingNumber?: string;
+}
+interface PersistState {
+  _persist: { version: number; rehydrated: boolean };
 }
 
 const checkoutSchema = z.object({
@@ -137,6 +140,9 @@ const Checkout = () => {
   const dispatch = useDispatch();
   const cart = useSelector((s: RootState) => s.cart);
   const { user } = useSelector((s: RootState) => s.auth);
+  const isRehydrated = useSelector(
+    (s: RootState & PersistState) => s._persist?.rehydrated,
+  );
 
   const [createOrder, { isLoading }] = useCreateOrderMutation();
   const { data: publicSettings } = useGetPublicSettingsQuery({});
@@ -159,7 +165,6 @@ const Checkout = () => {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [isNewAddress, setIsNewAddress] = useState(true);
 
-  // Guest fields
   const [guestEmail, setGuestEmail] = useState("");
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
@@ -177,7 +182,6 @@ const Checkout = () => {
     reset({ address: "", city: "" });
   };
 
-  // Watch city value for shipping fee calculation using useWatch
   const city = useWatch({ control, name: "city" }) || "";
   const shippingFee = calculateShippingFee(city);
 
@@ -204,7 +208,7 @@ const Checkout = () => {
   };
 
   const onSubmit = async (data: CheckoutFormData) => {
-    if (!user && !guestEmail.trim()) {
+    if (!user && isRehydrated && !guestEmail.trim()) {
       toast.error("Email is required for guest checkout");
       return;
     }
@@ -212,7 +216,7 @@ const Checkout = () => {
     try {
       const orderPayload = {
         orderItems: cart.cartItems.map((item) => ({
-          _id: item._id,
+          product: item._id, // ✅ fixed field name
           name: item.name,
           qty: item.qty,
           price: item.price,
@@ -255,6 +259,19 @@ const Checkout = () => {
       );
     }
   };
+
+  if (!isRehydrated) {
+    return (
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0A0A0B]"
+      >
+        <SEO title="Checkout" description="Complete your order securely." />
+        <p className="text-gray-500 dark:text-gray-400">Loading...</p>
+      </main>
+    );
+  }
 
   if (orderSuccess) {
     const d = publicSettings || {
@@ -410,7 +427,6 @@ const Checkout = () => {
           </button>
         </div>
 
-        {/* Use the extracted modal */}
         <CreateAccountModal
           isOpen={showCreateAccountModal}
           guestEmail={guestEmail}
@@ -499,8 +515,8 @@ const Checkout = () => {
               className="space-y-5"
               aria-label="Checkout form"
             >
-              {/* Guest info fields */}
-              {!user && (
+              {/* Guest info fields – only shown for guests after rehydration */}
+              {!user && isRehydrated && (
                 <fieldset className="rounded-2xl p-5 md:p-6 space-y-4 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]">
                   <legend className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-4">
                     Contact Information
