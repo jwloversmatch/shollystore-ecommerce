@@ -78,6 +78,26 @@ export const createOrder = async (
       existingOrder = await Order.findOne({ trackingNumber });
     }
 
+    // Ensure orderItems have required fields (fallback for safety)
+    const sanitizedOrderItems = pricing.orderItems.map((item: any) => ({
+      name: item.name || "Unknown Product",
+      qty: item.qty || 1,
+      price: item.price || 0,
+      product: item.product,
+      image: item.image || "",
+      variant: item.variant,
+    }));
+
+    // Ensure shippingAddress has required fields (fallback for safety)
+    const sanitizedShippingAddress = {
+      address: shippingAddress?.address || "No address provided",
+      city: shippingAddress?.city || "No city provided",
+      postalCode: shippingAddress?.postalCode || "",
+      country: shippingAddress?.country || "Nigeria",
+      phone: shippingAddress?.phone || "",
+      email: shippingAddress?.email || "",
+    };
+
     const orderData = {
       user: req.user?._id || null,
       guestEmail: isGuest ? guestEmail : undefined,
@@ -85,8 +105,8 @@ export const createOrder = async (
       phone: req.user?.phone || req.body.phone || "",
       email: customerEmail,
       trackingNumber,
-      orderItems: pricing.orderItems,
-      shippingAddress,
+      orderItems: sanitizedOrderItems,
+      shippingAddress: sanitizedShippingAddress,
       totalPrice,
       subtotal,
       taxAmount,
@@ -112,6 +132,9 @@ export const createOrder = async (
       giftMessage: giftMessage || undefined,
       shippingInfo: shippingInfo || {},
     };
+
+    // 🔍 Temporary log to inspect actual orderData
+    console.log("orderData to save:", JSON.stringify(orderData, null, 2));
 
     const createdOrder = (await Order.create(orderData)) as IOrder;
 
@@ -468,5 +491,3 @@ export const trackOrder = async (
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
-
-
