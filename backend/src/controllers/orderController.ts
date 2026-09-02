@@ -187,12 +187,10 @@ export const createOrder = async (
       return;
     }
     if (error instanceof PaystackError) {
-      res
-        .status(502)
-        .json({
-          success: false,
-          message: "Payment processing failed. Please try again.",
-        });
+      res.status(502).json({
+        success: false,
+        message: "Payment processing failed. Please try again.",
+      });
       return;
     }
     sendError(res, 500, "Internal server error");
@@ -470,3 +468,5 @@ export const trackOrder = async (
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
+

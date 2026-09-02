@@ -28,7 +28,10 @@ const resolveCategoryId = async (input: string): Promise<string | null> => {
   return cat ? cat._id.toString() : null;
 };
 
-export const createProduct = async (req: Request, res: Response): Promise<void> => {
+export const createProduct = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     if (!req.body.category) {
       res.status(400).json({ message: "Category is required" });
@@ -65,7 +68,10 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-export const updateProduct = async (req: Request, res: Response): Promise<void> => {
+export const updateProduct = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) {
@@ -73,7 +79,10 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    if (req.body.category && req.body.category !== product.category.toString()) {
+    if (
+      req.body.category &&
+      req.body.category !== product.category.toString()
+    ) {
       const categoryExists = await Category.findById(req.body.category);
       if (!categoryExists) {
         res.status(400).json({ message: "Invalid category ID" });
@@ -90,7 +99,10 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-export const deleteProduct = async (req: Request, res: Response): Promise<void> => {
+export const deleteProduct = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) {
@@ -105,7 +117,10 @@ export const deleteProduct = async (req: Request, res: Response): Promise<void> 
 };
 
 // Bulk import products from CSV
-export const bulkImportProducts = async (req: Request, res: Response): Promise<void> => {
+export const bulkImportProducts = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     if (!req.file) {
       res.status(400).json({ message: "CSV file is required" });
@@ -133,7 +148,9 @@ export const bulkImportProducts = async (req: Request, res: Response): Promise<v
 
       try {
         if (!row.name && !row.slug && !row.sku) {
-          throw new Error("Name, slug, or SKU is required to identify the product");
+          throw new Error(
+            "Name, slug, or SKU is required to identify the product",
+          );
         }
 
         // Resolve category if provided
@@ -148,7 +165,8 @@ export const bulkImportProducts = async (req: Request, res: Response): Promise<v
         // Build the data object only with fields that are provided and non-empty
         const updateData: any = {};
         if (row.name?.trim()) updateData.name = row.name.trim();
-        if (row.description?.trim()) updateData.description = row.description.trim();
+        if (row.description?.trim())
+          updateData.description = row.description.trim();
         if (row.price !== undefined && row.price !== "") {
           const price = parseFloat(row.price);
           if (isNaN(price) || price < 0) throw new Error("Invalid price");
@@ -156,7 +174,8 @@ export const bulkImportProducts = async (req: Request, res: Response): Promise<v
         }
         if (row.compareAtPrice !== undefined && row.compareAtPrice !== "") {
           const compareAtPrice = parseFloat(row.compareAtPrice);
-          if (isNaN(compareAtPrice) || compareAtPrice < 0) throw new Error("Invalid compareAtPrice");
+          if (isNaN(compareAtPrice) || compareAtPrice < 0)
+            throw new Error("Invalid compareAtPrice");
           updateData.compareAtPrice = compareAtPrice;
         }
         if (categoryId) updateData.category = categoryId;
@@ -209,7 +228,9 @@ export const bulkImportProducts = async (req: Request, res: Response): Promise<v
         } else {
           // Create new product
           if (!updateData.name || !updateData.price || !updateData.category) {
-            throw new Error("Name, price, and category are required for new products");
+            throw new Error(
+              "Name, price, and category are required for new products",
+            );
           }
           if (!slug) {
             throw new Error("Slug is required (could not be generated)");
@@ -242,6 +263,72 @@ export const bulkImportProducts = async (req: Request, res: Response): Promise<v
       skipped: results.skipped,
       errors: results.errors,
     });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const exportProducts = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const products = await Product.find()
+      .populate("category", "name slug")
+      .lean();
+
+    const csvHeaders = [
+      "name",
+      "slug",
+      "description",
+      "price",
+      "compareAtPrice",
+      "category",
+      "images",
+      "stock",
+      "sku",
+      "brand",
+      "tags",
+      "isActive",
+    ];
+
+    const escapeCsv = (value: unknown): string => {
+      if (value === null || value === undefined) return "";
+      let str = String(value);
+      if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+        str = `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const lines = [csvHeaders.join(",")];
+    products.forEach((product: any) => {
+      const row = [
+        product.name,
+        product.slug,
+        product.description,
+        product.price,
+        product.compareAtPrice ?? "",
+        typeof product.category === "object" && product.category
+          ? product.category.name
+          : "",
+        Array.isArray(product.images) ? product.images.join(",") : "",
+        product.stock,
+        product.sku ?? "",
+        product.brand ?? "",
+        Array.isArray(product.tags) ? product.tags.join(",") : "",
+        product.isActive ?? true,
+      ];
+      lines.push(row.map(escapeCsv).join(","));
+    });
+
+    const csvString = lines.join("\n");
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="products-export-${new Date().toISOString().split("T")[0]}.csv"`,
+    );
+    res.send(csvString);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

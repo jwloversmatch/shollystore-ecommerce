@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { Download } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   useGetProductsQuery,
@@ -22,6 +23,34 @@ const ACCENT = "#e8622a";
 const getCategoryId = (cat: ProductItem["category"]): string => {
   if (!cat) return "";
   return typeof cat === "string" ? cat : cat._id;
+};
+
+const handleExportCSV = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  const url = `${import.meta.env.VITE_API_URL}/admin/products/export`;
+
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) throw new Error("Export failed");
+
+    const blob = await res.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = `products-export-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  } catch (err) {
+    console.error("CSV export failed:", err);
+    toast.error("Failed to export products");
+  }
 };
 
 const ProductsPage = () => {
@@ -223,7 +252,23 @@ const ProductsPage = () => {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {/* Export CSV button */}
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm shrink-0 border"
+            style={{
+              background: inputBg,
+              borderColor: inputBorder,
+              color: "#10b981",
+            }}
+            aria-label="Export products to CSV"
+          >
+            <Download className="w-4 h-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Export CSV</span>
+          </button>
+
+          {/* Bulk import button */}
           <button
             onClick={() => setBulkOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm shrink-0 border"
@@ -237,6 +282,8 @@ const ProductsPage = () => {
             <FileSpreadsheet className="w-4 h-4" aria-hidden="true" /> Bulk
             Import
           </button>
+
+          {/* Add product button */}
           <button
             onClick={() => handleOpenDrawer()}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white text-sm shrink-0"
