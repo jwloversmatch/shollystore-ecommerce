@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
@@ -7,6 +7,9 @@ import { toggleWishlist } from "../features/wishlist/wishlistSlice";
 import toast from "react-hot-toast";
 import SEO from "../components/SEO";
 import ConfirmationModal from "../components/ConfirmationModal";
+import RelatedProducts from "../components/RelatedProducts";
+import RecentlyViewed from "../components/RecentlyViewed";
+import { useRecentlyViewed } from "../hooks/useRecentlyViewed";
 import {
   ShoppingCart,
   ArrowLeft,
@@ -142,6 +145,9 @@ const ProductDetail = () => {
   // Current time (lazy initializer avoids effect)
   const [currentTime] = useState(() => Date.now());
 
+  // Recently viewed hook
+  const { recentIds, addToRecentlyViewed } = useRecentlyViewed();
+
   const { data: product, isLoading, isError } = useGetProductBySlugQuery(slug || "");
 
   const { data: categoryTree = [] } = useGetCategoryTreeQuery(undefined);
@@ -219,6 +225,11 @@ const ProductDetail = () => {
       { productId: product?._id, page: 1, limit: 10 },
       { skip: !product },
     );
+
+  // Add current product to recently viewed
+  useEffect(() => {
+    if (product?._id) addToRecentlyViewed(product._id);
+  }, [product?._id, addToRecentlyViewed]);
 
   // SEO structured data
   const productSchema = useMemo(() => {
@@ -1007,6 +1018,14 @@ const ProductDetail = () => {
           </div>
         </section>
       </div>
+
+      {/* Related Products */}
+      {product.relatedProducts && product.relatedProducts.length > 0 && (
+        <RelatedProducts products={product.relatedProducts as ProductItem[]} />
+      )}
+
+      {/* Recently Viewed */}
+      <RecentlyViewed recentIds={recentIds} />
 
       {/* Reviews Section */}
       <section aria-label="Customer reviews" className="mt-10">
