@@ -49,7 +49,7 @@ export const addressSchema = z.object({
 });
 
 export const orderItemSchema = z.object({
-  _id: z.string().regex(/^[a-f\d]{24}$/i, 'Invalid product ID'),
+  product: z.string().regex(/^[a-f\d]{24}$/i, 'Invalid product ID'),
   name: z.string().max(200),
   qty: z.number().int().min(1).max(100),
   price: z.number().min(0),
