@@ -94,8 +94,7 @@ const Login = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-16 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
-      style={{ paddingTop: "calc(56px + env(safe-area-inset-top, 0px))" }}
+      className="min-h-screen flex items-center justify-center px-4 py-6 md:py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(120px+env(safe-area-inset-top,0px))] lg:pt-[calc(140px+env(safe-area-inset-top,0px))]"
     >
       <SEO
         title="Sign In"
