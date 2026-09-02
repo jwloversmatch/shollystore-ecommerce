@@ -81,7 +81,7 @@ export const processAbandonedCarts = async (
       return;
     }
 
-    const cutoff = new Date(Date.now() - 1 * 60 * 1000); // 1 minute ago
+    const cutoff = new Date(Date.now() - 3 * 60 * 60 * 1000); // 3 hours ago
     const carts = await Cart.find({
       updatedAt: { $lt: cutoff },
       emailSent: false,
