@@ -36,6 +36,16 @@ export interface ProductItem {
   averageRating?: number;
   numberOfReviews?: number;
   isActive?: boolean;
+
+  relatedProducts?: (string | {
+  _id: string;
+  name: string;
+  slug?: string;
+  images?: string[];
+  price?: number;
+  averageRating?: number;
+  numberOfReviews?: number;
+})[];
 }
 
 export interface HeroSlide {

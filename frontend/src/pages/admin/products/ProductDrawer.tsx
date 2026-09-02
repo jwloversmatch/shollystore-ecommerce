@@ -8,6 +8,7 @@ import {
   useUpdateProductMutation,
   useUploadImageMutation,
   useGetCategoryTreeQuery,
+  useGetProductsQuery,
 } from "../../../features/api/apiSlice";
 import { X, AlertCircle, Loader2, Plus, Trash2, Upload } from "lucide-react";
 import { useFocusTrap } from "../../../hooks/useFocusTrap";
@@ -81,12 +82,13 @@ const ProductDrawer = ({ product, onClose, isDark }: ProductDrawerProps) => {
   const [updateProduct] = useUpdateProductMutation();
   const [uploadImage] = useUploadImageMutation();
   const { data: categoryTree = [] } = useGetCategoryTreeQuery({});
+  const { data: allProductsData } = useGetProductsQuery({ limit: 9999 });
 
   const [uploading, setUploading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [notifyCustomers, setNotifyCustomers] = useState(false);
 
-  // Initialize state from product prop using lazy initializers
+  // Variants – lazy initializer from product prop
   const [variants, setVariants] = useState<Variant[]>(() =>
     product?.variants?.map((v) => ({
       sku: v.sku || "",
@@ -99,9 +101,18 @@ const ProductDrawer = ({ product, onClose, isDark }: ProductDrawerProps) => {
       images: v.images || [],
     })) || []
   );
+
   const [existingImages, setExistingImages] = useState<string[]>(() => product?.images || []);
   const [rawPrice, setRawPrice] = useState(() => product?.price?.toString() || "");
   const [rawCompareAt, setRawCompareAt] = useState(() => product?.compareAtPrice?.toString() || "");
+
+  // Related products – lazy initializer, no effect needed
+  const [relatedProductIds, setRelatedProductIds] = useState<string[]>(() =>
+    product?.relatedProducts?.map((item) =>
+      typeof item === "string" ? item : item._id
+    ) || []
+  );
+  const [relatedSearch, setRelatedSearch] = useState("");
 
   const priceInputRef = useRef<HTMLInputElement>(null);
   const compareAtRef = useRef<HTMLInputElement>(null);
@@ -128,7 +139,7 @@ const ProductDrawer = ({ product, onClose, isDark }: ProductDrawerProps) => {
     }
   });
 
-  // Reset form when product changes (react-hook-form reset is not a setState call)
+  // Reset form only when product changes (react-hook-form reset is not setState)
   useEffect(() => {
     if (product) {
       reset({
@@ -198,6 +209,17 @@ const ProductDrawer = ({ product, onClose, isDark }: ProductDrawerProps) => {
     setVariants(newVariants);
   };
 
+  const toggleRelatedProduct = (id: string) => {
+    setRelatedProductIds((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+    );
+  };
+
+  const availableProducts = allProductsData?.products || [];
+  const filteredOtherProducts = availableProducts.filter(
+    (p) => p._id !== product?._id && p.name.toLowerCase().includes(relatedSearch.toLowerCase())
+  );
+
   const onSubmit = async (data: ProductFormData) => {
     try {
       const imageUrls: string[] = [...existingImages];
@@ -226,6 +248,7 @@ const ProductDrawer = ({ product, onClose, isDark }: ProductDrawerProps) => {
           isActive: v.isActive !== undefined ? v.isActive : true,
           images: v.images || [],
         }));
+
       const payload = {
         name: data.name,
         price: Number(data.price),
@@ -243,7 +266,9 @@ const ProductDrawer = ({ product, onClose, isDark }: ProductDrawerProps) => {
           : undefined,
         isFeatured: data.isFeatured || false,
         variants: validVariants.length > 0 ? validVariants : undefined,
+        relatedProducts: relatedProductIds.length > 0 ? relatedProductIds : undefined,
       };
+
       if (product) {
         await updateProduct({ id: product._id, ...payload }).unwrap();
         toast.success("Product updated successfully");
@@ -621,6 +646,48 @@ const ProductDrawer = ({ product, onClose, isDark }: ProductDrawerProps) => {
             ) : (
               <p className="text-xs text-center py-4" style={{ color: textMuted }}>
                 No variants added yet. Click "Add Variant" to create one.
+              </p>
+            )}
+          </div>
+
+          {/* Related Products */}
+          <div>
+            <DLabel hint="Select products that are related or complementary. These will appear on the product page.">Related Products</DLabel>
+            <input
+              type="search"
+              placeholder="Search products..."
+              value={relatedSearch}
+              onChange={(e) => setRelatedSearch(e.target.value)}
+              className={buildInputCls(false)}
+              style={{ background: inputBg, borderColor: inputBorder, color: textPrimary, marginBottom: "0.5rem" }}
+            />
+            <div className="max-h-52 overflow-y-auto rounded-xl border p-2" style={{ borderColor: inputBorder }}>
+              {filteredOtherProducts.length === 0 ? (
+                <p className="text-xs text-center py-4" style={{ color: textMuted }}>
+                  No products found.
+                </p>
+              ) : (
+                filteredOtherProducts.map((p) => (
+                  <label
+                    key={p._id}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5"
+                    style={{ color: textPrimary }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={relatedProductIds.includes(p._id)}
+                      onChange={() => toggleRelatedProduct(p._id)}
+                      className="w-4 h-4 rounded"
+                      style={{ accentColor: ACCENT }}
+                    />
+                    <span className="text-sm">{p.name}</span>
+                  </label>
+                ))
+              )}
+            </div>
+            {relatedProductIds.length > 0 && (
+              <p className="mt-2 text-xs" style={{ color: textMuted }}>
+                {relatedProductIds.length} related product{relatedProductIds.length > 1 ? "s" : ""} selected.
               </p>
             )}
           </div>
