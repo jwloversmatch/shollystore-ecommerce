@@ -15,7 +15,7 @@ import AdminRoute from "./components/AdminRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./context/ThemeContext";
-import CartSync from "./components/CartSync"; // ✅ new import
+import CartSync from "./components/CartSync"; 
 
 import {
   Home, Cart, Checkout, Login, Register, ForgotPassword, ResetPassword,
@@ -65,7 +65,7 @@ function AppContent() {
   return (
     <>
       {!hideNavbar && <Navbar />}
-      <CartSync /> {/* ✅ now imported and rendered */}
+      <CartSync /> 
 
       <Suspense fallback={<LoadingFallback />}>
         <ErrorBoundary>

@@ -50,7 +50,7 @@ const ADMIN_LINKS = [
     icon: <BadgePercent className="w-5 h-5" aria-hidden="true" />,
   },
   {
-    to: "/admin/reviews",          // ✅ new link
+    to: "/admin/reviews", // ✅ new link
     label: "Reviews",
     icon: <Star className="w-5 h-5" aria-hidden="true" />,
   },
@@ -137,6 +137,14 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
 
   const handleLogout = () => {
     dispatch(logout());
+    navigator.serviceWorker.controller?.postMessage({
+      type: "CLEAR_API_CACHE",
+    });
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: "CLEAR_API_CACHE",
+      });
+    }
     navigate("/");
     setOpen(false);
   };
@@ -254,6 +262,14 @@ const Navbar = () => {
 
   const handleLogout = () => {
     dispatch(logout());
+    navigator.serviceWorker.controller?.postMessage({
+      type: "CLEAR_API_CACHE",
+    });
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: "CLEAR_API_CACHE",
+      });
+    }
     navigate("/");
     setAdminDrawer(false);
   };
