@@ -6,7 +6,8 @@ import {
   getMyOrders,
   trackOrder
 } from '../controllers/orderController';
-import { protect, optionalAuth  } from '../middleware/auth';
+import { protect,  } from '../middleware/auth';
+import {optionalAuth} from '../middleware/optionalAuth'
 import { validate } from '../middleware/validate';
 import { checkoutLimiter } from '../middleware/rateLimiter';
 import { createOrderSchema } from '../validation/schemas';
