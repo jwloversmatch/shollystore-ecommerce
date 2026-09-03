@@ -74,9 +74,10 @@ interface ProductDrawerProps {
   product: ProductItem | null;
   onClose: () => void;
   isDark: boolean;
+  onSaved?: () => void; // ✅ new callback for parent refresh
 }
 
-const ProductDrawer = ({ product, onClose, isDark }: ProductDrawerProps) => {
+const ProductDrawer = ({ product, onClose, isDark, onSaved }: ProductDrawerProps) => {
   const drawerRef = useRef<HTMLDivElement>(null);
   const [createProduct] = useCreateProductMutation();
   const [updateProduct] = useUpdateProductMutation();
@@ -276,6 +277,7 @@ const ProductDrawer = ({ product, onClose, isDark }: ProductDrawerProps) => {
         await createProduct({ ...payload, notifyCustomers }).unwrap();
         toast.success("Product created successfully");
       }
+      onSaved?.(); // ✅ notify parent to refresh
       onClose();
     } catch (err) {
       const e = err as { data?: { message: string } };

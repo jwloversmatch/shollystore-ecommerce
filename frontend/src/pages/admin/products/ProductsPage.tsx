@@ -58,9 +58,12 @@ const ProductsPage = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  const { data: productsData, isLoading } = useGetProductsQuery({
-    limit: 9999,
-  });
+  const {
+    data: productsData,
+    isLoading,
+    refetch, // ✅ added refetch for instant refresh
+  } = useGetProductsQuery({ limit: 9999 });
+
   const products = useMemo<ProductItem[]>(
     () => productsData?.products ?? [],
     [productsData?.products],
@@ -96,14 +99,33 @@ const ProductsPage = () => {
   const inputBg = isDark ? "#1c1c1c" : "#f3f4f6";
   const inputBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)";
 
+  // ✅ Enhanced search filter
   const filteredProducts = useMemo(() => {
     let f = products;
     if (categoryFilter !== "All")
       f = f.filter((p) => getCategoryId(p.category) === categoryFilter);
-    if (searchTerm)
-      f = f.filter((p) =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()),
-      );
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      f = f.filter((p) => {
+        const categoryName =
+          typeof p.category === "string"
+            ? p.category
+            : p.category?.name?.toLowerCase() || "";
+        const sku = p.sku?.toLowerCase() || "";
+        const brand = p.brand?.toLowerCase() || "";
+        const tags = (p.tags || []).join(" ").toLowerCase();
+
+        return (
+          p.name.toLowerCase().includes(term) ||
+          categoryName.includes(term) ||
+          sku.includes(term) ||
+          brand.includes(term) ||
+          tags.includes(term)
+        );
+      });
+    }
+
     if (showLowStock) f = f.filter((p) => (p.stock ?? 0) < 5);
     return f.slice().sort((a, b) => b._id.localeCompare(a._id));
   }, [products, searchTerm, categoryFilter, showLowStock]);
@@ -123,6 +145,7 @@ const ProductsPage = () => {
     try {
       await deleteProduct(modalAction.id).unwrap();
       toast.success("Product deleted");
+      refetch(); // ✅ refresh after delete
     } catch {
       toast.error("Failed to delete product");
     }
@@ -133,6 +156,7 @@ const ProductsPage = () => {
   const handleQuickStock = async (id: string, cur: number, delta: number) => {
     try {
       await updateStock({ id, stock: Math.max(0, cur + delta) }).unwrap();
+      refetch(); // ✅ refresh after stock change
     } catch {
       toast.error("Failed to update stock");
     }
@@ -314,7 +338,7 @@ const ProductsPage = () => {
           <input
             id="product-search"
             type="search"
-            placeholder="Search products…"
+            placeholder="Search by name, category, SKU, brand, or tags…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none border transition-all"
@@ -353,9 +377,11 @@ const ProductsPage = () => {
       <AnimatePresence>
         {isDrawerOpen && (
           <ProductDrawer
+            key={editingProduct?._id || "new"}
             product={editingProduct}
             onClose={handleCloseDrawer}
             isDark={isDark}
+            onSaved={refetch}   
           />
         )}
       </AnimatePresence>
