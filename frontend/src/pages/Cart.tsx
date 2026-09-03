@@ -346,6 +346,7 @@ const OrderSummary = ({
   handleRemoveCoupon,
   isApplying,
   finalTotal,
+  user, // 👈 now receives user prop
 }: {
   totalPrice: number;
   totalItems: number;
@@ -359,6 +360,7 @@ const OrderSummary = ({
   handleRemoveCoupon: () => void;
   isApplying: boolean;
   finalTotal: number;
+  user: { email: string } | null; // user prop to conditionally show coupon
 }) => (
   <motion.aside
     initial={{ opacity: 0, x: 20 }}
@@ -394,70 +396,95 @@ const OrderSummary = ({
         </h2>
       </div>
 
-      {/* Coupon input */}
-      <div className="mb-5">
-        <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2.5 flex items-center gap-1.5">
-          <Tag className="w-3 h-3" aria-hidden="true" /> Discount Code
-        </p>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <label htmlFor="cart-coupon" className="sr-only">
-              Coupon code
-            </label>
-            <input
-              id="cart-coupon"
-              type="text"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-              disabled={!!appliedCoupon}
-              placeholder="Enter code"
-              className="w-full px-4 py-3 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] outline-none placeholder-gray-500 dark:placeholder-gray-600 text-gray-900 dark:text-white focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-mono tracking-widest"
-            />
+      {/* Coupon area: only if user logged in */}
+      {user ? (
+        <div className="mb-5">
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2.5 flex items-center gap-1.5">
+            <Tag className="w-3 h-3" aria-hidden="true" /> Discount Code
+          </p>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <label htmlFor="cart-coupon" className="sr-only">
+                Coupon code
+              </label>
+              <input
+                id="cart-coupon"
+                type="text"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                disabled={!!appliedCoupon}
+                placeholder="Enter code"
+                className="w-full px-4 py-3 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] outline-none placeholder-gray-500 dark:placeholder-gray-600 text-gray-900 dark:text-white focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-mono tracking-widest"
+              />
+            </div>
+            {!appliedCoupon ? (
+              <button
+                type="button"
+                onClick={handleApplyCoupon}
+                disabled={isApplying || !couponCode.trim()}
+                className="px-4 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 shrink-0"
+                style={{ background: ACCENT }}
+                aria-label="Apply coupon code"
+              >
+                {isApplying ? (
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  "Apply"
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleRemoveCoupon}
+                className="px-4 py-3 rounded-xl text-sm font-bold transition-all shrink-0 text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20"
+                aria-label="Remove coupon"
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
+              </button>
+            )}
           </div>
-          {!appliedCoupon ? (
-            <button
-              type="button"
-              onClick={handleApplyCoupon}
-              disabled={isApplying || !couponCode.trim()}
-              className="px-4 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 shrink-0"
-              style={{ background: ACCENT }}
-              aria-label="Apply coupon code"
-            >
-              {isApplying ? (
-                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-              ) : (
-                "Apply"
-              )}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleRemoveCoupon}
-              className="px-4 py-3 rounded-xl text-sm font-bold transition-all shrink-0 text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20"
-              aria-label="Remove coupon"
-            >
-              <X className="w-4 h-4" aria-hidden="true" />
-            </button>
-          )}
+          <AnimatePresence>
+            {couponError && (
+              <p
+                className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"
+                role="alert"
+              >
+                <AlertCircle className="w-3 h-3" aria-hidden="true" />{" "}
+                {couponError}
+              </p>
+            )}
+            {appliedCoupon && (
+              <p className="mt-1.5 text-xs font-bold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle className="w-3 h-3" aria-hidden="true" />{" "}
+                {appliedCoupon} applied
+              </p>
+            )}
+          </AnimatePresence>
         </div>
-        <AnimatePresence>
-          {couponError && (
-            <p
-              className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"
-              role="alert"
-            >
-              <AlertCircle className="w-3 h-3" aria-hidden="true" />{" "}
-              {couponError}
-            </p>
-          )}
-          {appliedCoupon && (
-            <p className="mt-1.5 text-xs font-bold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-              <CheckCircle className="w-3 h-3" aria-hidden="true" />{" "}
-              {appliedCoupon} applied
-            </p>
-          )}
-        </AnimatePresence>
-      </div>
+      ) : (
+        <div className="mb-5 p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-sm text-blue-800 dark:text-blue-200">
+          <p className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+            <span>
+              Have a coupon?{" "}
+              <Link
+                to="/login"
+                className="font-bold underline hover:opacity-80 transition-opacity"
+              >
+                Sign in
+              </Link>{" "}
+              or{" "}
+              <Link
+                to="/register"
+                className="font-bold underline hover:opacity-80 transition-opacity"
+              >
+                create an account
+              </Link>{" "}
+              to apply it to your order.
+            </span>
+          </p>
+        </div>
+      )}
 
       <dl className="space-y-3 text-sm">
         <div className="flex justify-between items-center">
@@ -762,23 +789,6 @@ const Cart = () => {
           isClearModalOpen={showClearModal}
         />
 
-        {/* Guest account prompt */}
-        {!user && (
-          <div className="mb-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-sm text-blue-800 dark:text-blue-200 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
-            <span>
-              Have an account?{" "}
-              <Link
-                to="/login"
-                className="font-bold underline hover:opacity-80 transition-opacity"
-              >
-                Sign in
-              </Link>{" "}
-              for faster checkout and order history.
-            </span>
-          </div>
-        )}
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-8">
           <div className="lg:col-span-2 space-y-3" aria-label="Cart items">
             <AnimatePresence mode="popLayout">
@@ -801,6 +811,7 @@ const Cart = () => {
             handleRemoveCoupon={handleRemoveCoupon}
             isApplying={isApplying}
             finalTotal={finalTotal}
+            user={user}          // 👈 pass user prop
           />
         </div>
       </div>
