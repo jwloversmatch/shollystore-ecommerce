@@ -4,6 +4,7 @@ import { Order, IOrder } from "../models/Order";
 import { Product } from "../models/Product";
 import { User } from "../models/User";
 import { Coupon } from "../models/Coupon";
+import { Settings } from "../models/Settings"; 
 import { paystack, PaystackError, ValidationError } from "../config/paystack";
 import {
   sendOrderConfirmation,
@@ -51,27 +52,17 @@ export const createOrder = async (
       return;
     }
 
-    // Shipping fee — now guarded, so a bad address doesn't die silently
-    let shippingFee: number;
-    try {
-      shippingFee = calculateShippingFee(shippingAddress);
-    } catch (shippingError) {
-      console.error("[createOrder] shipping fee calc failed:", shippingError);
-      res.status(400).json({
-        success: false,
-        message:
-          shippingError instanceof Error
-            ? shippingError.message
-            : "Could not calculate shipping for this address",
-      });
-      return;
-    }
+    // Calculate shipping fee based on destination (robust)
+    const shippingFee = calculateShippingFee(shippingAddress);
 
     let pricing;
     try {
-      pricing = await calculateOrderPricing(orderItems, couponCode, shippingFee);
+      pricing = await calculateOrderPricing(
+        orderItems,
+        couponCode,
+        shippingFee,
+      );
     } catch (pricingError) {
-      console.error("[createOrder] pricing failed:", pricingError);
       const msg =
         pricingError instanceof Error ? pricingError.message : "Invalid order";
       res.status(400).json({ success: false, message: msg });
@@ -80,6 +71,7 @@ export const createOrder = async (
 
     const { subtotal, discount, taxAmount, totalPrice } = pricing;
 
+    // Generate unique tracking number
     let trackingNumber = generateTrackingNumber();
     let existingOrder = await Order.findOne({ trackingNumber });
     while (existingOrder) {
@@ -87,6 +79,7 @@ export const createOrder = async (
       existingOrder = await Order.findOne({ trackingNumber });
     }
 
+    // Sanitize items
     const sanitizedOrderItems = pricing.orderItems.map((item: any) => ({
       name: item.name || "Unknown Product",
       qty: item.qty || 1,
@@ -96,6 +89,7 @@ export const createOrder = async (
       variant: item.variant,
     }));
 
+    // Sanitize shipping address
     const sanitizedShippingAddress = {
       address: shippingAddress?.address || "No address provided",
       city: shippingAddress?.city || "No city provided",
@@ -104,6 +98,22 @@ export const createOrder = async (
       phone: shippingAddress?.phone || "",
       email: shippingAddress?.email || "",
     };
+
+    const settings = await Settings.findOne();
+
+    // Build payment details from settings (fallback to env as last resort)
+    const paymentDetails =
+      paymentMethod === "bank_transfer"
+        ? {
+            bankName: settings?.bankName || process.env.BANK_NAME || "",
+            accountName: settings?.bankAccountName || process.env.BANK_ACCOUNT_NAME || "",
+            accountNumber: settings?.bankAccountNumber || process.env.BANK_ACCOUNT_NUMBER || "",
+          }
+        : paymentMethod === "whatsapp"
+          ? {
+              whatsappNumber: settings?.whatsappNumber || process.env.WHATSAPP_NUMBER || "",
+            }
+          : undefined;
 
     const orderData = {
       user: req.user?._id || null,
@@ -120,16 +130,7 @@ export const createOrder = async (
       shippingFee,
       status: "Pending" as const,
       paymentMethod,
-      paymentDetails:
-        paymentMethod === "bank_transfer"
-          ? {
-              bankName: process.env.BANK_NAME || "",
-              accountName: process.env.BANK_ACCOUNT_NAME || "",
-              accountNumber: process.env.BANK_ACCOUNT_NUMBER || "",
-            }
-          : paymentMethod === "whatsapp"
-            ? { whatsappNumber: process.env.WHATSAPP_NUMBER || "" }
-            : undefined,
+      paymentDetails, 
       couponCode: pricing.couponCode || undefined,
       discount,
       notes: notes || undefined,
@@ -138,29 +139,7 @@ export const createOrder = async (
       shippingInfo: shippingInfo || {},
     };
 
-    let createdOrder: IOrder;
-    try {
-      createdOrder = (await Order.create(orderData)) as IOrder;
-    } catch (createError: any) {
-      console.error("[createOrder] Order.create failed:", createError);
-
-      if (createError?.code === 11000) {
-        res.status(409).json({
-          success: false,
-          message: "Duplicate order, please try again",
-        });
-        return;
-      }
-      if (createError instanceof mongoose.Error.ValidationError) {
-        const firstMsg = Object.values(createError.errors)[0]?.message;
-        res.status(400).json({
-          success: false,
-          message: firstMsg || "Order validation failed",
-        });
-        return;
-      }
-      throw createError; // let outer catch handle anything unexpected
-    }
+    const createdOrder = (await Order.create(orderData)) as IOrder;
 
     if (paymentMethod === "paystack") {
       try {
@@ -174,7 +153,6 @@ export const createOrder = async (
         );
 
         if (!paymentData.status) {
-          console.error("[createOrder] Paystack init returned status:false", paymentData);
           await Order.findByIdAndDelete(createdOrder._id);
           res.status(400).json({ success: false, message: "Paystack error" });
           return;
@@ -194,7 +172,6 @@ export const createOrder = async (
           reference: paymentData.data.reference,
         });
       } catch (paystackError) {
-        console.error("[createOrder] Paystack initialization threw:", paystackError);
         await Order.findByIdAndDelete(createdOrder._id);
         throw paystackError;
       }
@@ -211,7 +188,10 @@ export const createOrder = async (
         createdOrder.paymentDetails,
         shippingFee,
       ).catch((emailError) => {
-        console.error("Failed to send customer order confirmation email:", emailError);
+        console.error(
+          "Failed to send customer order confirmation email:",
+          emailError,
+        );
       });
 
       sendAdminOrderNotification(createdOrder, "created").catch((err) =>
@@ -228,7 +208,6 @@ export const createOrder = async (
       });
     }
   } catch (error: any) {
-    console.error("[createOrder] unhandled error:", error); // <-- was missing entirely
     if (error instanceof ValidationError) {
       res.status(400).json({ success: false, message: error.message });
       return;
