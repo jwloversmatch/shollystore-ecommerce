@@ -15,7 +15,7 @@ import AdminRoute from "./components/AdminRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./context/ThemeContext";
-import CartSync from "./components/CartSync"; 
+import CartSync from "./components/CartSync";
 
 import {
   Home, Cart, Checkout, Login, Register, ForgotPassword, ResetPassword,
@@ -54,6 +54,8 @@ function AppContent() {
     }
     const main = document.getElementById("main-content");
     main?.focus({ preventScroll: true });
+    // Reset scroll to top on navigation
+    window.scrollTo(0, 0);
   }, [location.pathname]);
 
   // Hide navbar on specific pages
@@ -65,11 +67,12 @@ function AppContent() {
   return (
     <>
       {!hideNavbar && <Navbar />}
-      <CartSync /> 
+      <CartSync />
 
       <Suspense fallback={<LoadingFallback />}>
         <ErrorBoundary>
-          <Routes>
+          {/* Force remount of Routes on every pathname change */}
+          <Routes key={location.pathname}>
             {/* Public routes */}
             <Route path="/" element={<Home />} />
             <Route path="/cart" element={<Cart />} />
