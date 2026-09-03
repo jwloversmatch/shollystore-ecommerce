@@ -45,9 +45,15 @@ const cartSlice = createSlice({
       } else {
         state.cartItems.push(item);
       }
+      // Clear coupon because cart total may change
+      state.appliedCoupon = null;
+      state.couponDiscount = 0;
     },
     removeFromCart: (state, action: PayloadAction<string>) => {
       state.cartItems = state.cartItems.filter((x) => x._id !== action.payload);
+      // Clear coupon because cart total changes
+      state.appliedCoupon = null;
+      state.couponDiscount = 0;
     },
     updateQuantity: (
       state,
@@ -58,6 +64,9 @@ const cartSlice = createSlice({
       if (item) {
         item.qty = Math.max(1, Math.min(qty, item.stock));
       }
+      // Clear coupon because cart total changes
+      state.appliedCoupon = null;
+      state.couponDiscount = 0;
     },
     saveShippingAddress: (
       state,
