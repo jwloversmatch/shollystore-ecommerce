@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTrackOrderQuery } from "../features/api/apiSlice";
 import { AlertCircle, Loader2, Search, ArrowLeft } from "lucide-react";
 import SEO from "../components/SEO";
-import { formatPaymentMethod } from "../utils/format"; 
+import { formatPaymentMethod } from "../utils/format";
 
 const ACCENT = "#e8622a";
 
@@ -11,6 +11,7 @@ const TrackOrder = () => {
   const [orderId, setOrderId] = useState("");
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [emailError, setEmailError] = useState("");
   const navigate = useNavigate();
 
   const { data, isFetching, isError, error } = useTrackOrderQuery(
@@ -20,6 +21,14 @@ const TrackOrder = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Simple email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError("Please enter a valid email address");
+      return;
+    }
+    setEmailError("");
     setSubmitted(true);
   };
 
@@ -42,7 +51,7 @@ const TrackOrder = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen px-4 py-8 bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+      className="min-h-screen px-4 py-8 bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(96px+env(safe-area-inset-top,0px))]"
     >
       <SEO title="Track Order" description="Check the status of your order." />
       <div className="max-w-2xl mx-auto">
@@ -85,11 +94,19 @@ const TrackOrder = () => {
               id="track-email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError("");
+              }}
               required
               className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white outline-none focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12"
               placeholder="you@example.com"
             />
+            {emailError && (
+              <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold">
+                <AlertCircle className="w-3 h-3" aria-hidden="true" /> {emailError}
+              </p>
+            )}
           </div>
           <button
             type="submit"

@@ -117,7 +117,11 @@ const ProductDrawer = ({ product, onClose, isDark, onSaved }: ProductDrawerProps
 
   const priceInputRef = useRef<HTMLInputElement>(null);
   const compareAtRef = useRef<HTMLInputElement>(null);
-  const pendingCursorRef = useRef<number | null>(null);
+  // Tracks which input element (price OR compare-at) needs its caret
+  // restored after a re-render, plus the target position. Fixed: this used
+  // to be a bare number and always restored the caret on priceInputRef,
+  // which broke typing mid-value in the Compare-at-Price field.
+  const pendingCursorRef = useRef<{ el: HTMLInputElement; pos: number } | null>(null);
 
   const { register, handleSubmit, reset, setValue, control, formState: { errors, isSubmitting } } = useForm<ProductFormData>({ resolver: zodResolver(productSchema) });
   const isFeatured = useWatch({ control, name: "isFeatured" });
@@ -134,8 +138,9 @@ const ProductDrawer = ({ product, onClose, isDark, onSaved }: ProductDrawerProps
   useFocusTrap(drawerRef, true, onClose);
 
   useLayoutEffect(() => {
-    if (pendingCursorRef.current !== null && priceInputRef.current) {
-      priceInputRef.current.setSelectionRange(pendingCursorRef.current, pendingCursorRef.current);
+    if (pendingCursorRef.current) {
+      const { el, pos } = pendingCursorRef.current;
+      el.setSelectionRange(pos, pos);
       pendingCursorRef.current = null;
     }
   });
@@ -185,7 +190,9 @@ const ProductDrawer = ({ product, onClose, isDark, onSaved }: ProductDrawerProps
     for (let i = 0; i < newFormatted.length; i++) {
       if (newFormatted[i] !== ",") { charCount++; if (charCount === nonCommasBefore) { newCursor = i + 1; break; } }
     }
-    pendingCursorRef.current = newCursor;
+    // Capture the element that actually fired this change (Price or
+    // Compare-at-Price) so the caret gets restored on the right input.
+    pendingCursorRef.current = { el, pos: newCursor };
     setRaw(cleaned);
     setValue(fieldName, cleaned, { shouldValidate: true });
   };
@@ -226,13 +233,18 @@ const ProductDrawer = ({ product, onClose, isDark, onSaved }: ProductDrawerProps
       const imageUrls: string[] = [...existingImages];
       if (files.length > 0) {
         setUploading(true);
-        for (const file of files) {
-          const fd = new FormData();
-          fd.append("image", file);
-          const res = await uploadImage(fd).unwrap();
-          imageUrls.push(res.url);
+        // try/finally: previously, if any single upload threw, setUploading(false)
+        // was skipped entirely and the drawer stayed frozen on its spinner forever.
+        try {
+          for (const file of files) {
+            const fd = new FormData();
+            fd.append("image", file);
+            const res = await uploadImage(fd).unwrap();
+            imageUrls.push(res.url);
+          }
+        } finally {
+          setUploading(false);
         }
-        setUploading(false);
       }
       const tagsArray = data.tags
         ? data.tags.split(",").map((t) => t.trim()).filter((t) => t.length > 0)
