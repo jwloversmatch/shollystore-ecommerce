@@ -55,30 +55,35 @@ const VerifyEmail = () => {
   const [resendVerification, { isLoading: isResending }] =
     useResendVerificationMutation();
 
-  // If no token, show error immediately
-  const { data, isError, isLoading: isVerifying } = useVerifyEmailQuery(token, {
+  const {
+    data,
+    isError,
+    isLoading: isVerifying,
+    isSuccess,
+  } = useVerifyEmailQuery(token, {
     skip: !token,
+    refetchOnMountOrArgChange: false,
+    refetchOnFocus: false,
+    refetchOnReconnect: false,
   });
 
-  // Determine status based on query states
-  let status: "loading" | "success" | "error" = "loading";
+  let status: "loading" | "success" | "error"; // ✅ no initial useless assignment
   let message = "";
 
   if (!token) {
     status = "error";
     message = "Invalid or missing verification link. Please request a new one.";
-  } else if (isVerifying) {
-    status = "loading";
+  } else if (isSuccess) {
+    status = "success";
+    message = data?.message || "Your email has been successfully verified!";
   } else if (isError) {
     status = "error";
     message = "An error occurred. Please try again later.";
-  } else if (data) {
-    status = data.success ? "success" : "error";
-    message =
-      data.message ||
-      (data.success
-        ? "Your email has been successfully verified!"
-        : "Verification failed. The token may have expired or been invalid.");
+  } else if (isVerifying) {
+    status = "loading";
+  } else {
+    status = "error";
+    message = "Verification failed. The token may have expired or been invalid.";
   }
 
   const handleResend = async (e: React.FormEvent) => {
@@ -101,7 +106,7 @@ const VerifyEmail = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen flex items-center justify-center p-4 relative bg-[#FCFAF5] dark:bg-[#0A0A0B] overflow-hidden focus:outline-none"
+      className="min-h-screen flex items-center justify-center p-4 relative bg-[#FCFAF5] dark:bg-[#0A0A0B] overflow-hidden focus:outline-none pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(96px+env(safe-area-inset-top,0px))] pb-[calc(64px+env(safe-area-inset-bottom,0px))]"
     >
       <SEO
         title="Verify Your Email"
@@ -131,7 +136,7 @@ const VerifyEmail = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 bg-white/90 dark:bg-[#141414] backdrop-blur-2xl rounded-3xl shadow-2xl p-8 max-w-md w-full text-center border border-gray-200 dark:border-white/[0.07] overflow-hidden"
+        className="relative z-10 bg-white dark:bg-[#141414] rounded-3xl shadow-2xl p-8 max-w-md w-full text-center border border-gray-200 dark:border-white/[0.07] overflow-hidden"
       >
         {/* Floating sparkles */}
         <motion.div
@@ -286,7 +291,7 @@ const VerifyEmail = () => {
                       value={resendEmail}
                       onChange={(e) => setResendEmail(e.target.value)}
                       autoComplete="email"
-                      className="w-full border border-gray-300 dark:border-white/[0.08] rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-[#e8622a] focus:border-transparent placeholder:text-gray-400 bg-white/70 dark:bg-[#1c1c1c] dark:text-white"
+                      className="w-full border border-gray-300 dark:border-white/[0.08] rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-[#e8622a] focus:border-transparent placeholder:text-gray-400 bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-white"
                       required
                     />
                   </div>
