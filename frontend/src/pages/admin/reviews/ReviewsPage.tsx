@@ -12,7 +12,11 @@ const ReviewsPage = () => {
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data, isLoading } = useGetAdminReviewsQuery({ page, limit: 20 });
+  const { data, isLoading } = useGetAdminReviewsQuery({
+    page,
+    limit: 20,
+    search,
+  });
   const [deleteReview] = useDeleteAdminReviewMutation();
 
   const handleDelete = async () => {
@@ -32,13 +36,6 @@ const ReviewsPage = () => {
   };
 
   const reviews = data?.reviews ?? [];
-  const filteredReviews = reviews.filter(
-    (r) =>
-      r.comment.toLowerCase().includes(search.toLowerCase()) ||
-      r.user.name.toLowerCase().includes(search.toLowerCase()) ||
-      r.product.name.toLowerCase().includes(search.toLowerCase())
-  );
-
   const pagination = data?.pagination;
 
   return (
@@ -48,9 +45,12 @@ const ReviewsPage = () => {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
           type="search"
-          placeholder="Search reviews..."
+          placeholder="Search by comment, user, or product..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
           className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-white"
         />
       </div>
@@ -59,7 +59,7 @@ const ReviewsPage = () => {
         <p>Loading...</p>
       ) : (
         <div className="space-y-3">
-          {filteredReviews.map((review) => (
+          {reviews.map((review) => (
             <div
               key={review._id}
               className="border rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3"
@@ -93,7 +93,7 @@ const ReviewsPage = () => {
               </button>
             </div>
           ))}
-          {filteredReviews.length === 0 && <p>No reviews found.</p>}
+          {reviews.length === 0 && <p>No reviews found.</p>}
         </div>
       )}
 

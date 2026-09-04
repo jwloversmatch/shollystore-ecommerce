@@ -1,82 +1,40 @@
-// backend/src/services/email.service.ts
 import dotenv from "dotenv";
 import path from "path";
+import { enqueueEmail } from "./emailQueue.service";
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
-const BREVO_API_KEY  = process.env.BREVO_API_KEY;
-const SENDER_EMAIL   = process.env.BREVO_SENDER_EMAIL;
-const SENDER_NAME    = process.env.BREVO_SENDER_NAME;
 const CLIENT_URL     = process.env.CLIENT_URL;
 const STORE_LOGO_URL = process.env.STORE_LOGO_URL || `${CLIENT_URL}/icons/sholex-180.png`;
-
-if (!BREVO_API_KEY && process.env.NODE_ENV !== 'production') {
-  console.warn("BREVO_API_KEY is missing. Emails will be simulated in development.");
-}
 
 type SendEmailResult = {
   success:    boolean;
   messageId?: string;
-  error?:     any;
+  error?:     unknown;
   simulated?: boolean;
 };
 
-// ─── Core sender ──────────────────────────────────────────────────────────────
-
+// ─── Core sender (now enqueues instead of sending directly) ─────────────────
 const sendEmail = async (
   to:           string,
   subject:      string,
   htmlContent:  string,
   textContent?: string,
 ): Promise<SendEmailResult> => {
-  if (!BREVO_API_KEY) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.info(`Email simulated → ${to}: ${subject}`);
-    }
-    return { success: true, simulated: true };
-  }
+  await enqueueEmail({
+    to,
+    subject,
+    html: htmlContent,
+    text: textContent,
+  });
 
-  try {
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "api-key": BREVO_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        // NOTE: these fallbacks only kick in if BREVO_SENDER_EMAIL/BREVO_SENDER_NAME
-        // are missing from .env. Set those to a domain you've verified (SPF+DKIM)
-        // in Brevo — the fallback below is a placeholder, not a real fix for deliverability.
-        sender: {
-          name:  SENDER_NAME  || "sholex",
-          email: SENDER_EMAIL || "noreply@sholex.com",
-        },
-        to: [{ email: to }],
-        subject,
-        htmlContent,
-        textContent: textContent || stripHtml(htmlContent),
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = (await response.json().catch(() => ({}))) as any;
-      throw new Error(errorData.message || `Brevo API returned status ${response.status}`);
-    }
-
-    const data = (await response.json()) as any;
-    return { success: true, messageId: data.messageId };
-  } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : 'Email send failed';
-    console.error("Brevo email error:", msg);
-    return { success: false, error: msg };
-  }
+  return { success: true, simulated: true };
 };
 
 const stripHtml = (html: string): string =>
   html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
 
 // ─── Shared layout wrapper ────────────────────────────────────────────────────
-
 interface LayoutOptions {
   headerBg:  string;
   headerText?: string;
@@ -132,7 +90,7 @@ const layout = ({ headerBg, headerText = '#2d3748', body, logoUrl = STORE_LOGO_U
 </html>`;
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// AUTH EMAILS (All unchanged)
+// AUTH EMAILS (Unchanged)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const sendVerificationEmail = async (
@@ -252,7 +210,7 @@ export const sendEmailChangeVerification = async (
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ORDER EMAILS (All unchanged)
+// ORDER EMAILS (Unchanged)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const sendOrderConfirmation = async (
@@ -265,7 +223,7 @@ export const sendOrderConfirmation = async (
   subtotal?:  number,
   paymentMethod?: string,
   paymentDetails?: any,
-  shippingFee?: number,         
+  shippingFee?: number,
 ) => {
   const greeting = name ? `Thank you, <strong>${name}</strong>! 🎉` : `Order Confirmed! 🎉`;
 
@@ -276,7 +234,6 @@ export const sendOrderConfirmation = async (
     ? `<p style="margin:8px 0;color:#4a5568;"><strong>Subtotal</strong> ₦${subtotal.toLocaleString()}</p>`
     : '';
 
-  // Shipping fee line
   let shippingFeeLine = '';
   if (shippingFee !== undefined) {
     shippingFeeLine = shippingFee === 0
@@ -284,7 +241,6 @@ export const sendOrderConfirmation = async (
       : `<p style="margin:8px 0;color:#4a5568;"><strong>Shipping</strong> ₦${shippingFee.toLocaleString()}</p>`;
   }
 
-  // Payment instructions for bank transfer / whatsapp
   let paymentSection = '';
   if (paymentMethod === 'bank_transfer' && paymentDetails) {
     paymentSection = `
@@ -298,7 +254,6 @@ export const sendOrderConfirmation = async (
       <p style="margin:16px 0;"><strong>Please complete payment via WhatsApp:</strong> ${paymentDetails.whatsappNumber || 'N/A'}</p>`;
   }
 
-  // Track order button
   const trackUrl = `${CLIENT_URL}/track-order?orderId=${orderId}&email=${encodeURIComponent(email)}`;
   const trackButton = `
     <p style="margin-top:24px;text-align:center;">
@@ -480,12 +435,10 @@ export const sendAdminOrderNotification = async (
     return;
   }
 
-  // Use order fields directly for guest orders, fallback to user if available
   let userEmail = order.email || order.guestEmail || "N/A";
   let userName  = order.name || "";
   let userPhone = order.phone || "";
 
-  // If it's a logged-in user and we don't have email/name from order, fetch from User
   if (order.user && (!userEmail || userEmail === "N/A" || !userName)) {
     try {
       const { User } = await import("../models/User.js");
@@ -538,7 +491,7 @@ export const sendAdminOrderNotification = async (
   return sendEmail(adminEmail, subject, html);
 };
 
-// ─── LOW STOCK ADMIN NOTIFICATION (NEW) ───────────────────────────────────────
+// ─── LOW STOCK ADMIN NOTIFICATION ───────────────────────────────────────────────
 
 export const sendLowStockAdminEmail = async (product: {
   name: string;
@@ -577,8 +530,6 @@ export const sendLowStockAdminEmail = async (product: {
   );
 };
 
-// ─── OUT OF STOCK ADMIN NOTIFICATION (NEW) ────────────────────────────────────
-
 export const sendOutOfStockAdminEmail = async (product: {
   name: string;
   sku?: string;
@@ -613,8 +564,6 @@ export const sendOutOfStockAdminEmail = async (product: {
     `Out of stock alert for ${product.name}. Current stock: 0.`,
   );
 };
-
-// ─── CONTACT FORM NOTIFICATION ───────────────────────────────────────────────
 
 export const sendContactNotification = async (contact: {
   name: string;
@@ -658,9 +607,8 @@ export const sendContactNotification = async (contact: {
 export const sendAbandonedCartEmail = async (
   email: string,
   name: string | undefined,
-  cart: any  // We could type this better, but to avoid any we can define an interface
+  cart: any
 ) => {
-  // To avoid any, define a minimal interface:
   interface AbandonedCartItem {
     qty: number;
     price: number;

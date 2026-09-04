@@ -1,4 +1,3 @@
-// routes/index.ts
 import { Application, Request, Response } from "express";
 
 import authRoutes from "./authRoutes";
@@ -24,6 +23,7 @@ import adminReviewRoutes from "./adminReviewRoutes";
 import { getSitemap, getRobotsTxt } from "./seoRoutes";
 import cartRoutes from "./cartRoutes";
 import { processAbandonedCarts } from "../controllers/cartController";
+import { processEmailQueue } from "../controllers/emailWorkerController"; 
 
 export const mountRoutes = (app: Application) => {
   // SEO routes
@@ -43,6 +43,7 @@ export const mountRoutes = (app: Application) => {
   app.use("/api/settings/public", publicSettingsRoutes);
   app.use("/api/cart", cartRoutes);
   app.get("/api/cron/abandoned-cart", processAbandonedCarts);
+  app.get("/api/cron/process-emails", processEmailQueue); 
 
   // Admin routes
   app.use("/api/admin/orders", adminOrderRoutes);

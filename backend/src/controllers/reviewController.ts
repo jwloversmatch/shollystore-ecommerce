@@ -2,8 +2,12 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { Review } from "../models/Review";
 import { Product } from "../models/Product";
+import { User } from "../models/User";
 import { sanitizeString } from "../middleware/sanitize";
 import { containsProfanity } from "../utils/profanity";
+
+const escapeRegex = (str: string): string =>
+  str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // Helper: recalculate and update product's averageRating & numberOfReviews
 const updateProductRatingStats = async (productId: string) => {
@@ -32,7 +36,9 @@ export const createReview = async (req: Request, res: Response) => {
     const userId = (req as any).user._id;
 
     if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ message: "Rating must be between 1 and 5" });
+      return res
+        .status(400)
+        .json({ message: "Rating must be between 1 and 5" });
     }
 
     const cleanComment = sanitizeString(comment, 500);
@@ -41,7 +47,9 @@ export const createReview = async (req: Request, res: Response) => {
     }
 
     if (containsProfanity(cleanComment)) {
-      return res.status(400).json({ message: "Review contains inappropriate language." });
+      return res
+        .status(400)
+        .json({ message: "Review contains inappropriate language." });
     }
 
     const product = await Product.findById(productId);
@@ -51,7 +59,9 @@ export const createReview = async (req: Request, res: Response) => {
 
     const existing = await Review.findOne({ product: productId, user: userId });
     if (existing) {
-      return res.status(400).json({ message: "You have already reviewed this product" });
+      return res
+        .status(400)
+        .json({ message: "You have already reviewed this product" });
     }
 
     const review = await Review.create({
@@ -65,7 +75,9 @@ export const createReview = async (req: Request, res: Response) => {
     res.status(201).json(review);
   } catch (error: any) {
     if (error.code === 11000) {
-      return res.status(400).json({ message: "You have already reviewed this product" });
+      return res
+        .status(400)
+        .json({ message: "You have already reviewed this product" });
     }
     res.status(500).json({ message: error.message });
   }
@@ -105,9 +117,15 @@ export const updateReview = async (req: Request, res: Response) => {
     const { rating, comment } = req.body;
     const userId = (req as any).user._id;
 
-    const review = await Review.findOne({ _id: reviewId, product: productId, user: userId });
+    const review = await Review.findOne({
+      _id: reviewId,
+      product: productId,
+      user: userId,
+    });
     if (!review) {
-      return res.status(404).json({ message: "Review not found or not authorized" });
+      return res
+        .status(404)
+        .json({ message: "Review not found or not authorized" });
     }
 
     const now = Date.now();
@@ -115,13 +133,16 @@ export const updateReview = async (req: Request, res: Response) => {
     const editWindowMs = 15 * 60 * 1000;
     if (now - createdAt > editWindowMs) {
       return res.status(403).json({
-        message: "Review can no longer be edited. The 15-minute edit window has passed.",
+        message:
+          "Review can no longer be edited. The 15-minute edit window has passed.",
       });
     }
 
     if (rating !== undefined) {
       if (rating < 1 || rating > 5) {
-        return res.status(400).json({ message: "Rating must be between 1 and 5" });
+        return res
+          .status(400)
+          .json({ message: "Rating must be between 1 and 5" });
       }
       review.rating = rating;
     }
@@ -132,7 +153,9 @@ export const updateReview = async (req: Request, res: Response) => {
         return res.status(400).json({ message: "Comment cannot be empty" });
       }
       if (containsProfanity(cleanComment)) {
-        return res.status(400).json({ message: "Review contains inappropriate language." });
+        return res
+          .status(400)
+          .json({ message: "Review contains inappropriate language." });
       }
       review.comment = cleanComment;
     }
@@ -159,7 +182,9 @@ export const deleteReview = async (req: Request, res: Response) => {
       user: userId,
     });
     if (!review) {
-      return res.status(404).json({ message: "Review not found or not authorized" });
+      return res
+        .status(404)
+        .json({ message: "Review not found or not authorized" });
     }
 
     await updateProductRatingStats(productId);
@@ -169,21 +194,45 @@ export const deleteReview = async (req: Request, res: Response) => {
   }
 };
 
-// GET /api/admin/reviews – all reviews with pagination
+// GET /api/admin/reviews – all reviews with pagination, optional search
 export const getAllReviewsAdmin = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const skip = (page - 1) * limit;
+    const search =
+      typeof req.query.search === "string" ? req.query.search.trim() : "";
+
+    let filter: any = {};
+
+    if (search) {
+      const regex = new RegExp(escapeRegex(search), "i");
+
+      const [matchingUsers, matchingProducts] = await Promise.all([
+        User.find({ name: regex }).select("_id"),
+        Product.find({ name: regex }).select("_id"),
+      ]);
+
+      const userIds = matchingUsers.map((u) => u._id);
+      const productIds = matchingProducts.map((p) => p._id);
+
+      filter = {
+        $or: [
+          { comment: regex },
+          ...(userIds.length ? [{ user: { $in: userIds } }] : []),
+          ...(productIds.length ? [{ product: { $in: productIds } }] : []),
+        ],
+      };
+    }
 
     const [reviews, total] = await Promise.all([
-      Review.find()
+      Review.find(filter)
         .populate("product", "name slug images")
         .populate("user", "name email avatar")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
-      Review.countDocuments(),
+      Review.countDocuments(filter),
     ]);
 
     res.json({
@@ -204,7 +253,6 @@ export const deleteReviewAdmin = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Review not found" });
     }
 
-    // Update product stats
     await updateProductRatingStats(review.product.toString());
     res.json({ message: "Review deleted" });
   } catch (error: any) {

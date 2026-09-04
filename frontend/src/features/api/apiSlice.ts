@@ -768,10 +768,10 @@ export const apiSlice = createApi({
 
     getAdminReviews: builder.query<
       ReviewsResponse,
-      { page?: number; limit?: number }
+      { page?: number; limit?: number; search?: string }
     >({
-      query: ({ page = 1, limit = 20 }) =>
-        `/admin/reviews?page=${page}&limit=${limit}`,
+      query: ({ page = 1, limit = 20, search = "" }) =>
+        `/admin/reviews?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}`,
       providesTags: ["Review"],
     }),
 
