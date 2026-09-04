@@ -27,8 +27,11 @@ class ErrorBoundaryBase extends Component<Props, State> {
   }
 
   componentDidUpdate(prevProps: Props): void {
-    // Auto-recover on navigation — without this, hasError stays true
-    // forever after the first error, freezing every future route.
+    // Auto-recover on navigation. Without this, hasError stays true
+    // forever after the first caught error, freezing every future route
+    // change behind this same fallback screen (or, worse, masking a
+    // frozen-looking page if the fallback itself never got a chance to
+    // paint before the browser's next navigation).
     if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
       this.setState({ hasError: false });
     }
@@ -73,7 +76,8 @@ class ErrorBoundaryBase extends Component<Props, State> {
 }
 
 // Small functional wrapper: class components can't call hooks directly,
-// so this grabs the current pathname and feeds it in as resetKey.
+// so this grabs the current pathname and feeds it in as resetKey. App.tsx
+// needs no changes — this already renders inside <Router>.
 const ErrorBoundary = ({ children, fallback }: Omit<Props, 'resetKey'>) => {
   const location = useLocation();
   return (
