@@ -1,11 +1,8 @@
 // backend/src/services/marketingEmail.service.ts
 import { User } from '../models/User';
 import { Settings } from '../models/Settings';
+import { sendEmailViaBrevo } from './brevoSender'; 
 
-const BREVO_API_KEY = process.env.BREVO_API_KEY;
-// NOTE: fallbacks below only apply if the env vars are unset — set MARKETING_SENDER_EMAIL /
-// MARKETING_SENDER_NAME (or BREVO_SENDER_EMAIL / BREVO_SENDER_NAME) to your actual
-// SPF/DKIM-verified sending domain in Brevo. This fallback is a placeholder, not a fix.
 const SENDER_EMAIL = process.env.MARKETING_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'store@sholex.com';
 const SENDER_NAME = process.env.MARKETING_SENDER_NAME || process.env.BREVO_SENDER_NAME || 'sholex';
 const CLIENT_URL = process.env.CLIENT_URL || 'https://sholex.vercel.app';
@@ -36,41 +33,20 @@ const getStoreName = async (): Promise<string> => {
   return cachedStoreName;
 };
 
-// ---------- Send email via Brevo ----------
+// ---------- Send email via Brevo (wraps imported function) ----------
 const sendBrevoEmail = async (
   to: string[],
   subject: string,
   htmlContent: string,
   textContent?: string,
 ): Promise<void> => {
-  if (!BREVO_API_KEY) {
-    console.warn('⚠️ BREVO_API_KEY missing. Marketing email will be logged only.');
-    console.log(`📧 Marketing to ${to.length} recipients: ${subject}`);
-    return;
-  }
-  const BATCH_SIZE = 100;
-  for (let i = 0; i < to.length; i += BATCH_SIZE) {
-    const batch = to.slice(i, i + BATCH_SIZE);
+  // Loop through recipients sequentially; adjust concurrency if needed
+  for (const email of to) {
     try {
-      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-          to: batch.map(email => ({ email })),
-          subject,
-          htmlContent,
-          textContent: textContent || stripHtml(htmlContent),
-        }),
-      });
-      if (!response.ok) {
-        const errorData = (await response.json().catch(() => ({}))) as { message?: string };
-        throw new Error(errorData.message || `Brevo API returned status ${response.status}`);
-      }
-      const data = (await response.json()) as { messageId?: string };
-      console.log(`✅ Marketing batch ${Math.floor(i / BATCH_SIZE) + 1} sent: ${data.messageId}`);
+      const result = await sendEmailViaBrevo(email, subject, htmlContent, textContent);
+      console.log(`✅ Marketing email sent to ${email}: ${result.messageId || 'simulated'}`);
     } catch (error: any) {
-      console.error(`❌ Marketing batch failed:`, error.message);
+      console.error(`❌ Failed to send marketing email to ${email}:`, error.message);
     }
   }
 };
