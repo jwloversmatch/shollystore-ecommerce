@@ -1,17 +1,18 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { logger } from '../utils/logger';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  resetKey?: string;
 }
 
 interface State {
   hasError: boolean;
 }
 
-class ErrorBoundary extends Component<Props, State> {
+class ErrorBoundaryBase extends Component<Props, State> {
   state: State = { hasError: false };
 
   static getDerivedStateFromError(): State {
@@ -23,6 +24,14 @@ class ErrorBoundary extends Component<Props, State> {
       error,
       componentStack: info.componentStack,
     });
+  }
+
+  componentDidUpdate(prevProps: Props): void {
+    // Auto-recover on navigation — without this, hasError stays true
+    // forever after the first error, freezing every future route.
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false });
+    }
   }
 
   render() {
@@ -62,5 +71,16 @@ class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
+
+// Small functional wrapper: class components can't call hooks directly,
+// so this grabs the current pathname and feeds it in as resetKey.
+const ErrorBoundary = ({ children, fallback }: Omit<Props, 'resetKey'>) => {
+  const location = useLocation();
+  return (
+    <ErrorBoundaryBase resetKey={location.pathname} fallback={fallback}>
+      {children}
+    </ErrorBoundaryBase>
+  );
+};
 
 export default ErrorBoundary;
