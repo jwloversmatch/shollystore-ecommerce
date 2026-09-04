@@ -136,8 +136,7 @@ const Login = () => {
       />
       {/* Main card */}
       <div
-        className="relative z-10 w-full max-w-5xl rounded-3xl overflow-hidden grid md:grid-cols-[1fr_1.1fr] bg-[#FCFAF5] dark:bg-[#111111] border border-gray-200 dark:border-white/[0.07] shadow-lg dark:shadow-[0_40px_100px_rgba(0,0,0,0.7)]"
-        style={{ minHeight: 620 }}
+        className="relative z-10 w-full max-w-5xl rounded-3xl overflow-hidden grid md:grid-cols-[1fr_1.1fr] bg-[#FCFAF5] dark:bg-[#111111] border border-gray-200 dark:border-white/[0.07] shadow-lg dark:shadow-[0_40px_100px_rgba(0,0,0,0.7)] md:min-h-[620px]"
       >
         {/* Left panel – decorative, hidden from screen readers */}
         <div
