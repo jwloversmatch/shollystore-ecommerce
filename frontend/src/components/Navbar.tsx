@@ -124,6 +124,8 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((s: RootState) => s.auth.user);
+  const wishlistIds = useSelector((s: RootState) => s.wishlist.ids);
+  const wishlistCount = wishlistIds.length;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -206,6 +208,14 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
                 >
                   <Heart className="w-4 h-4" aria-hidden="true" />
                   Wishlist
+                  {wishlistCount > 0 && (
+                    <span
+                      className="ml-auto text-[10px] font-black rounded-full px-2 py-0.5"
+                      style={{ background: `${ACCENT}20`, color: ACCENT }}
+                    >
+                      {wishlistCount}
+                    </span>
+                  )}
                 </Link>
               </>
             )}
@@ -229,9 +239,10 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
 const Navbar = () => {
   const { user } = useSelector((s: RootState) => s.auth);
   const { cartItems } = useSelector((s: RootState) => s.cart);
+  const wishlistIds = useSelector((s: RootState) => s.wishlist.ids);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
 
   const [adminDrawer, setAdminDrawer] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -239,7 +250,9 @@ const Navbar = () => {
   const prevTotalQtyRef = useRef<number | null>(null);
 
   const totalQty = cartItems.reduce((acc, i) => acc + i.qty, 0);
+  const wishlistCount = wishlistIds.length;
   const showCart = !user || user.role === "user";
+  const isWishlistActive = pathname === "/account" && search.includes("tab=wishlist");
 
   useEffect(() => {
     if (
@@ -375,6 +388,33 @@ const Navbar = () => {
               </Link>
             )}
 
+            {/* ✅ Wishlist heart with badge (desktop) */}
+            {user?.role === "user" && (
+              <Link
+                to="/account?tab=wishlist"
+                className="relative p-1"
+                aria-label={`Wishlist with ${wishlistCount} ${wishlistCount === 1 ? "item" : "items"}`}
+              >
+                <Heart
+                  className={`w-5 h-5 transition-colors ${
+                    isWishlistActive
+                      ? "text-[#e8622a]"
+                      : "text-gray-600 dark:text-gray-500 hover:text-black dark:hover:text-white"
+                  }`}
+                  aria-hidden="true"
+                />
+                {wishlistCount > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 text-white text-[9px] font-black min-w-[18px] min-h-[18px] rounded-full flex items-center justify-center px-1"
+                    style={{ background: ACCENT }}
+                    aria-hidden="true"
+                  >
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
+            )}
+
             {user ? (
               <UserMenu />
             ) : (
@@ -442,6 +482,26 @@ const Navbar = () => {
                         aria-hidden="true"
                       >
                         {totalQty}
+                      </span>
+                    )}
+                  </Link>
+                )}
+                {/* ✅ Wishlist heart with badge (mobile top) */}
+                {user?.role === "user" && (
+                  <Link
+                    to="/account?tab=wishlist"
+                    className="relative p-1.5 rounded-xl transition-colors"
+                    style={{ color: isWishlistActive ? ACCENT : "#6b7280" }}
+                    aria-label={`Wishlist with ${wishlistCount} ${wishlistCount === 1 ? "item" : "items"}`}
+                  >
+                    <Heart className="w-5 h-5" aria-hidden="true" />
+                    {wishlistCount > 0 && (
+                      <span
+                        className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
+                        style={{ background: ACCENT }}
+                        aria-hidden="true"
+                      >
+                        {wishlistCount}
                       </span>
                     )}
                   </Link>
