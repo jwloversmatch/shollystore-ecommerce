@@ -151,7 +151,18 @@ const ProductCard = ({
   const srcSet = !imgError
     ? `${getCloudinaryUrl(image, 400)} 400w, ${getCloudinaryUrl(image, 800)} 800w`
     : undefined;
-  const sizes = "(max-width: 640px) 100vw, 50vw";
+
+  // Matches the actual grid breakpoints this card renders in:
+  // 2 columns below md, 3 columns from md to lg, 4 columns at lg+.
+  // (The previous "100vw / 50vw" string assumed a single-column mobile
+  // layout that this grid never uses, causing oversized fetches on phones.)
+  const sizes = "(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw";
+
+  // First row of cards (up to 4, matching the widest lg:grid-cols-4 layout)
+  // should load eagerly and with high priority since they're visible on
+  // page load — native lazy-loading them was delaying LCP. Everything
+  // below the fold still defers as before.
+  const isAboveFold = index !== undefined && index < 4;
 
   return (
     <motion.div
@@ -194,7 +205,9 @@ const ProductCard = ({
               srcSet={srcSet}
               sizes={sizes}
               alt={name}
-              loading="lazy"
+              loading={isAboveFold ? "eager" : "lazy"}
+              fetchPriority={isAboveFold ? "high" : "auto"}
+              decoding="async"
               onError={() => setImgError(true)}
               className="max-w-full max-h-full object-contain transition-transform duration-500 ease-out motion-safe:group-hover:scale-105 motion-safe:group-focus-within:scale-105"
             />
