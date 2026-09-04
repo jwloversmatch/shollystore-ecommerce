@@ -16,6 +16,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./context/ThemeContext";
 import CartSync from "./components/CartSync";
+import WishlistSync from "./components/WishlistSync"; 
 
 import {
   Home, Cart, Checkout, Login, Register, ForgotPassword, ResetPassword,
@@ -26,7 +27,6 @@ import {
 
 const ACCENT = "#e8622a";
 
-// Loading fallback – lightweight, no heavy animations
 const LoadingFallback = () => (
   <div
     className="min-h-screen flex justify-center items-center bg-gray-50 dark:bg-[#0A0A0B]"
@@ -54,24 +54,20 @@ function AppContent() {
     }
     const main = document.getElementById("main-content");
     main?.focus({ preventScroll: true });
-    // Reset scroll to top on navigation
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  // Hide navbar on specific pages
   const hideNavbar = ["/cart", "/checkout", "/404"].includes(location.pathname);
-
-  // Show footer on Home, Shop, and legal pages
   const showFooter = ["/", "/shop", "/privacy", "/terms", "/about", "/contact"].includes(location.pathname);
 
   return (
     <>
       {!hideNavbar && <Navbar />}
       <CartSync />
+      <WishlistSync />  
 
       <Suspense fallback={<LoadingFallback />}>
         <ErrorBoundary>
-          {/* Force remount of Routes on every pathname change */}
           <Routes key={location.pathname}>
             {/* Public routes */}
             <Route path="/" element={<Home />} />
