@@ -1,4 +1,4 @@
-import { Home } from "lucide-react";
+import { Home, Pencil } from "lucide-react";
 import Toggle from "./Toggle";
 import type { SettingsData } from "./settingsSchema";
 
@@ -8,9 +8,10 @@ interface HomepageContentProps {
   settings: SettingsData | undefined;
   onToggleLandingMode: () => void;
   isDark: boolean;
+  onEdit: () => void;
 }
 
-const HomepageContent = ({ settings, onToggleLandingMode, isDark }: HomepageContentProps) => {
+const HomepageContent = ({ settings, onToggleLandingMode, isDark, onEdit }: HomepageContentProps) => {
   const cardBg = isDark ? "#141414" : "#fff";
   const cardBorder = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)";
   const cardShadow = isDark ? "0 8px 32px rgba(0,0,0,0.35)" : "0 4px 16px rgba(0,0,0,0.06)";
@@ -29,9 +30,22 @@ const HomepageContent = ({ settings, onToggleLandingMode, isDark }: HomepageCont
     <section className="relative rounded-2xl overflow-hidden" style={{ background: cardBg, border: `1px solid ${cardBorder}`, boxShadow: cardShadow }}>
       <div className="absolute top-0 inset-x-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
       <div className="p-6 md:p-7">
-        <div className="flex items-center gap-2.5 mb-5">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${ACCENT}18`, color: ACCENT }}><Home className="w-4 h-4" /></div>
-          <h2 className="text-lg font-black" style={{ color: textPrimary }}>Homepage Content</h2>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${ACCENT}18`, color: ACCENT }}>
+              <Home className="w-4 h-4" />
+            </div>
+            <h2 className="text-lg font-black" style={{ color: textPrimary }}>Homepage Content</h2>
+          </div>
+          <button
+            onClick={onEdit}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-colors"
+            style={{ background: ACCENT, boxShadow: `0 6px 18px ${ACCENT}44` }}
+            aria-label="Edit homepage content"
+          >
+            <Pencil className="w-4 h-4" />
+            Edit
+          </button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           {items.map(item => (
