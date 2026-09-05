@@ -1,14 +1,15 @@
 import { motion } from "framer-motion";
-import { Calendar, Eye, Ticket } from "lucide-react";
+import { Calendar, Eye, Ticket, Truck } from "lucide-react";
 import type { Order } from "../../types/account";
 import { getStatusInfo } from "../../utils/statusHelpers";
 
 interface OrderCardProps {
   order: Order;
   onViewDetails: (order: Order) => void;
+  onTrackOrder: (order: Order) => void;
 }
 
-const OrderCard = ({ order, onViewDetails }: OrderCardProps) => {
+const OrderCard = ({ order, onViewDetails, onTrackOrder }: OrderCardProps) => {
   const { icon, color, label } = getStatusInfo(order.status);
   return (
     <motion.div
@@ -59,15 +60,27 @@ const OrderCard = ({ order, onViewDetails }: OrderCardProps) => {
             </p>
           </div>
         </div>
-        <button
-          onClick={() => onViewDetails(order)}
-          className="flex items-center gap-1 text-sm font-medium hover:underline shrink-0 self-end sm:self-center"
-          style={{ color: "#e8622a" }}
-        >
-          <Eye className="w-4 h-4" />
-          View Details
-        </button>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+          <button
+            onClick={() => onViewDetails(order)}
+            className="flex items-center gap-1 text-sm font-medium hover:underline"
+            style={{ color: "#e8622a" }}
+          >
+            <Eye className="w-4 h-4" />
+            View Details
+          </button>
+          <button
+            onClick={() => onTrackOrder(order)}
+            className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-bold text-white bg-[#e8622a] shadow-md shadow-orange-500/30 transition-transform hover:scale-105"
+          >
+            <Truck className="w-4 h-4" />
+            Track
+          </button>
+        </div>
       </div>
+
       <div className="sm:hidden px-4 pb-3">
         <p className="text-xs text-gray-500 flex items-center gap-1">
           <Calendar className="w-3.5 h-3.5" />

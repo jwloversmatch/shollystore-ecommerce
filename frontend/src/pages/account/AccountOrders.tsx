@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ShoppingBag, AlertCircle, Truck } from "lucide-react";
+import { ShoppingBag, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { OrderRowSkeleton } from "../../components/Skeletons";
 import OrderCard from "./OrderCard";
@@ -17,7 +17,7 @@ const AccountOrders = ({ orders, loading, error, onViewOrder }: AccountOrdersPro
 
   const handleTrack = (order: Order) => {
     const email = order.email || order.guestEmail || "";
-    if (!email) return; // can't track without email
+    if (!email) return;
     navigate(`/track-order?orderId=${order._id}&email=${encodeURIComponent(email)}`);
   };
 
@@ -66,18 +66,12 @@ const AccountOrders = ({ orders, loading, error, onViewOrder }: AccountOrdersPro
   return (
     <div className="space-y-3">
       {orders.map((order) => (
-        <div key={order._id} className="relative">
-          <OrderCard order={order} onViewDetails={onViewOrder} />
-          {/* Track button */}
-          <button
-            onClick={() => handleTrack(order)}
-            className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-colors"
-            style={{ background: "#e8622a", boxShadow: "0 4px 12px rgba(232,98,42,0.3)" }}
-          >
-            <Truck className="w-4 h-4" />
-            Track Order
-          </button>
-        </div>
+        <OrderCard
+          key={order._id}
+          order={order}
+          onViewDetails={onViewOrder}
+          onTrackOrder={handleTrack}
+        />
       ))}
     </div>
   );
