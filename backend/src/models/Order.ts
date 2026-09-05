@@ -72,6 +72,9 @@ export interface IOrder extends Document {
   isGift?: boolean;
   giftMessage?: string;
   customFields?: Map<string, any>;
+  // ─── NEW fields for token-based tracking ──────────────────────────────────
+  trackingToken?: string;          
+  trackingTokenExpiresAt?: Date;   
   createdAt: Date;
   updatedAt: Date;
 }
@@ -175,6 +178,10 @@ const OrderSchema: Schema = new Schema(
     giftMessage: { type: String },
 
     customFields: { type: Map, of: Schema.Types.Mixed },
+
+    // ─── Token-based tracking fields ─────────────────────────────────────
+    trackingToken: { type: String, index: true },
+    trackingTokenExpiresAt: { type: Date },
   },
   { timestamps: true },
 );
@@ -187,6 +194,7 @@ OrderSchema.index({ createdAt: -1 });
 OrderSchema.index({ "orderItems.product": 1 });
 OrderSchema.index({ paymentMethod: 1 });
 OrderSchema.index({ trackingNumber: 1 });
-OrderSchema.index({ paymentEventId: 1 });   
+OrderSchema.index({ paymentEventId: 1 });
+OrderSchema.index({ trackingToken: 1 }); 
 
 export const Order = mongoose.model<IOrder>("Order", OrderSchema);

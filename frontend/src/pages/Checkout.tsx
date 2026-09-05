@@ -61,6 +61,7 @@ interface CartItem {
 interface OrderResponse {
   _id: string;
   trackingNumber?: string;
+  trackingToken?: string; // <-- NEW
 }
 interface PersistState {
   _persist: { version: number; rehydrated: boolean };
@@ -266,7 +267,11 @@ const Checkout = () => {
         window.location.assign(result.paymentUrl);
       } else {
         setOrderSuccess(true);
-        setOrderData(result.order);
+        setOrderData({
+          _id: result.order._id,
+          trackingNumber: result.order.trackingNumber,
+          trackingToken: result.trackingToken, // <-- capture token
+        });
         if (!user) {
           setShowCreateAccountModal(true);
         }
@@ -305,9 +310,16 @@ const Checkout = () => {
       (publicSettings as SettingsData)?.whatsappNumber || "+2348000000000";
 
     const waLink = `https://wa.me/${whatsappNumber.replace(/\D/g, "")}`;
-    const orderEmail = user?.email || guestEmail;
     const orderId = orderData?._id;
     const trackingNumber = orderData?.trackingNumber || orderId;
+    const trackingToken = orderData?.trackingToken; // <-- NEW
+
+    // Build tracking URL safely
+    const trackUrl = trackingToken
+      ? `/track-order?token=${trackingToken}`
+      : user
+        ? `/track-order?orderId=${orderId}`
+        : "/track-order";
 
     return (
       <main
@@ -438,11 +450,7 @@ const Checkout = () => {
           </button>
 
           <button
-            onClick={() =>
-              navigate(
-                `/track-order?orderId=${trackingNumber}&email=${encodeURIComponent(orderEmail || "")}`,
-              )
-            }
+            onClick={() => navigate(trackUrl)}
             className="mt-3 w-full py-3 rounded-xl font-bold text-sm border border-gray-300 dark:border-white/20 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition"
             aria-label="Track your order"
           >

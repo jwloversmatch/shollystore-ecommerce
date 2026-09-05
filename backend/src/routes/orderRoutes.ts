@@ -4,10 +4,11 @@ import {
   paystackWebhook,
   verifyPayment,
   getMyOrders,
-  trackOrder
+  trackMyOrder,
+  trackByToken,
 } from '../controllers/orderController';
-import { protect,  } from '../middleware/auth';
-import {optionalAuth} from '../middleware/optionalAuth'
+import { protect } from '../middleware/auth';
+import { optionalAuth } from '../middleware/optionalAuth';
 import { validate } from '../middleware/validate';
 import { checkoutLimiter } from '../middleware/rateLimiter';
 import { createOrderSchema } from '../validation/schemas';
@@ -26,6 +27,13 @@ router.route('/').post(checkoutLimiter, optionalAuth, validate(createOrderSchema
 // My orders – still protected
 router.get('/my-orders', protect, getMyOrders);
 
-router.get('/track/:orderId', trackOrder);
+// NEW: Authenticated tracking (logged-in user)
+router.get('/:orderId/track', protect, trackMyOrder);
+
+// NEW: Token-based tracking (public)
+router.get('/track/:token', trackByToken);
+
+// Note: The old track route is removed/disabled.
+// If you still need it as a fallback, use POST instead of GET later.
 
 export default router;

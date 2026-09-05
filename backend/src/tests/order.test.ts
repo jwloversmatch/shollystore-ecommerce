@@ -56,6 +56,7 @@ describe("Order API", () => {
     expect(res.body.order.shippingFee).toBe(2500);
     expect(res.body.order.totalPrice).toBe(product.price * 2 + 2500);
     expect(res.body.order.trackingNumber).toMatch(/^SHO-\d{4}-[A-Z0-9]{6}$/);
+    expect(res.body.trackingToken).toBeDefined(); // NEW
   });
 
   it("should charge ₦4000 shipping for non-Lagos city in Nigeria", async () => {
@@ -136,7 +137,8 @@ describe("Order API", () => {
     expect(res.body.success).toBe(false);
   });
 
-  it("should track an order by tracking number and email", async () => {
+  // ─── Token-based tracking tests ─────────────────────────────────────────
+  it("should track an order by token", async () => {
     const createRes = await request(app)
       .post("/api/orders")
       .set("Authorization", `Bearer ${authToken}`)
@@ -159,8 +161,12 @@ describe("Order API", () => {
       });
 
     const order = createRes.body.order;
+    const trackingToken = createRes.body.trackingToken;
+
+    expect(trackingToken).toBeDefined();
+
     const trackRes = await request(app).get(
-      `/api/orders/track/${order.trackingNumber}?email=${user.email}`,
+      `/api/orders/track/${trackingToken}`,
     );
 
     expect(trackRes.status).toBe(200);
@@ -169,7 +175,18 @@ describe("Order API", () => {
     expect(trackRes.body.order._id).toBe(order._id);
   });
 
-  it("should reject tracking with wrong email", async () => {
+  it("should reject tracking with invalid/expired token", async () => {
+    const invalidToken = "invalidtoken123";
+    const trackRes = await request(app).get(
+      `/api/orders/track/${invalidToken}`,
+    );
+
+    expect(trackRes.status).toBe(404);
+    expect(trackRes.body.success).toBe(false);
+  });
+
+  // ─── Authenticated tracking test ────────────────────────────────────────
+  it("should allow logged-in user to track their own order by ID", async () => {
     const createRes = await request(app)
       .post("/api/orders")
       .set("Authorization", `Bearer ${authToken}`)
@@ -191,10 +208,48 @@ describe("Order API", () => {
         paymentMethod: "bank_transfer",
       });
 
-    const order = createRes.body.order;
-    const trackRes = await request(app).get(
-      `/api/orders/track/${order.trackingNumber}?email=wrong@example.com`,
-    );
+    const orderId = createRes.body.order._id;
+
+    const trackRes = await request(app)
+      .get(`/api/orders/${orderId}/track`)
+      .set("Authorization", `Bearer ${authToken}`);
+
+    expect(trackRes.status).toBe(200);
+    expect(trackRes.body.success).toBe(true);
+    expect(trackRes.body.order._id).toBe(orderId);
+  });
+
+  it("should not allow user to track another user's order", async () => {
+    const createRes = await request(app)
+      .post("/api/orders")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({
+        orderItems: [
+          {
+            _id: product._id,
+            name: product.name,
+            qty: 1,
+            price: product.price,
+            image: product.images[0],
+          },
+        ],
+        shippingAddress: {
+          address: "1 Lagos",
+          city: "Lagos",
+          country: "Nigeria",
+        },
+        paymentMethod: "bank_transfer",
+      });
+
+    const orderId = createRes.body.order._id;
+
+    // Simulate another user by changing global test user
+    const otherUser = await createTestUser({ email: "other@example.com" });
+    global.__TEST_USER__ = otherUser;
+
+    const trackRes = await request(app)
+      .get(`/api/orders/${orderId}/track`)
+      .set("Authorization", `Bearer ${authToken}`);
 
     expect(trackRes.status).toBe(404);
   });
@@ -227,7 +282,6 @@ describe("Order API", () => {
       expect(createRes.status).toBe(201);
       const orderId = createRes.body.order._id;
 
-      // Mock Paystack signature verification to return true
       (paystack.verifyWebhookSignature as jest.Mock).mockReturnValue(true);
 
       const event = {
@@ -242,7 +296,6 @@ describe("Order API", () => {
         },
       };
 
-      // First webhook call
       const res1 = await request(app)
         .post("/api/orders/webhook")
         .set("x-paystack-signature", "valid-signature")
@@ -250,11 +303,9 @@ describe("Order API", () => {
 
       expect(res1.status).toBe(200);
 
-      // Check product stock reduced
       const updatedProduct = await Product.findById(product._id);
       expect(updatedProduct?.stock).toBe(product.stock - 1);
 
-      // Second webhook call (duplicate)
       const res2 = await request(app)
         .post("/api/orders/webhook")
         .set("x-paystack-signature", "valid-signature")
@@ -262,7 +313,6 @@ describe("Order API", () => {
 
       expect(res2.status).toBe(200);
 
-      // Stock should not be reduced again
       const finalProduct = await Product.findById(product._id);
       expect(finalProduct?.stock).toBe(product.stock - 1);
     });

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
+import crypto from "crypto"; // for token hashing
 import { Order, IOrder } from "../models/Order";
 import { Product } from "../models/Product";
 import { User } from "../models/User";
@@ -9,6 +10,7 @@ import { paystack, PaystackError, ValidationError } from "../config/paystack";
 import {
   sendOrderConfirmation,
   sendAdminOrderNotification,
+  sendOrderStatusUpdateEmail, // added for payment success status
 } from "../services/email.service";
 import { AuthRequest } from "../middleware/auth";
 import { calculateOrderPricing } from "../utils/orderPricing";
@@ -24,6 +26,45 @@ const generateTrackingNumber = (): string => {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return `SHO-${year}-${result}`;
+};
+
+// ─── Helper: generate a cryptographically secure tracking token ───────────────
+const generateTrackingToken = (): { raw: string; hashed: string } => {
+  const raw = crypto.randomBytes(32).toString("hex");
+  const hashed = crypto.createHash("sha256").update(raw).digest("hex");
+  return { raw, hashed };
+};
+
+// ─── Helper: sanitize order for tracking response ─────────────────────────────
+const sanitizeOrderForTracking = (order: IOrder, includeEmail = false) => {
+  return {
+    _id: order._id,
+    trackingNumber: order.trackingNumber,
+    status: order.status,
+    totalPrice: order.totalPrice,
+    orderItems: order.orderItems.map((item) => ({
+      name: item.name,
+      qty: item.qty,
+      price: item.price,
+      image: item.image || "",
+    })),
+    shippingAddress: {
+      address: order.shippingAddress.address,
+      city: order.shippingAddress.city,
+      postalCode: order.shippingAddress.postalCode,
+      country: order.shippingAddress.country,
+    },
+    paymentMethod: order.paymentMethod,
+    paymentDetails:
+      order.status === "Pending" &&
+      (order.paymentMethod === "bank_transfer" ||
+        order.paymentMethod === "whatsapp")
+        ? order.paymentDetails
+        : undefined,
+    shippingFee: order.shippingFee,
+    createdAt: order.createdAt,
+    ...(includeEmail ? { email: order.email || order.guestEmail || "" } : {}),
+  };
 };
 
 // @desc    Create Order (supports multiple payment methods)
@@ -79,6 +120,9 @@ export const createOrder = async (
       existingOrder = await Order.findOne({ trackingNumber });
     }
 
+    // Generate token for guest tracking
+    const { raw: rawToken, hashed: hashedToken } = generateTrackingToken();
+
     // Sanitize items
     const sanitizedOrderItems = pricing.orderItems.map((item: any) => ({
       name: item.name || "Unknown Product",
@@ -101,10 +145,8 @@ export const createOrder = async (
 
     const settings = await Settings.findOne();
 
-    // Build payment details from settings (fallback to env as last resort)
     let paymentDetails;
     if (paymentMethod === "bank_transfer") {
-      // Find default account, fallback to first active
       const defaultAccount =
         settings?.bankAccounts?.find((acc) => acc.isDefault && acc.isActive) ||
         settings?.bankAccounts?.find((acc) => acc.isActive) ||
@@ -150,9 +192,34 @@ export const createOrder = async (
       isGift: isGift || false,
       giftMessage: giftMessage || undefined,
       shippingInfo: shippingInfo || {},
+      trackingToken: hashedToken,
+      trackingTokenExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     };
 
     const createdOrder = (await Order.create(orderData)) as IOrder;
+
+    // Send confirmation email for all orders (with token)
+    const originalSubtotal = createdOrder.orderItems.reduce(
+      (sum, item) => sum + item.price * item.qty,
+      0,
+    );
+    sendOrderConfirmation(
+      customerEmail,
+      createdOrder.trackingNumber || createdOrder._id.toString(),
+      totalPrice,
+      req.user?.name || req.body.name || "",
+      discount,
+      pricing.couponCode,
+      originalSubtotal,
+      paymentMethod,
+      createdOrder.paymentDetails,
+      shippingFee,
+      rawToken,
+    ).catch((err) => console.error("Failed to send order confirmation:", err));
+
+    sendAdminOrderNotification(createdOrder, "created").catch((err) =>
+      console.error("Failed to send admin order notification:", err),
+    );
 
     if (paymentMethod === "paystack") {
       try {
@@ -171,16 +238,13 @@ export const createOrder = async (
           return;
         }
 
-        sendAdminOrderNotification(createdOrder, "created").catch((err) =>
-          console.error("Failed to send admin order notification:", err),
-        );
-
         res.status(201).json({
           success: true,
           order: {
             ...createdOrder.toObject(),
             trackingNumber: createdOrder.trackingNumber,
           },
+          trackingToken: rawToken,
           paymentUrl: paymentData.data.authorization_url,
           reference: paymentData.data.reference,
         });
@@ -189,34 +253,13 @@ export const createOrder = async (
         throw paystackError;
       }
     } else {
-      sendOrderConfirmation(
-        customerEmail,
-        createdOrder.trackingNumber || createdOrder._id.toString(),
-        totalPrice,
-        req.user?.name || req.body.name || "",
-        discount,
-        pricing.couponCode,
-        subtotal,
-        paymentMethod,
-        createdOrder.paymentDetails,
-        shippingFee,
-      ).catch((emailError) => {
-        console.error(
-          "Failed to send customer order confirmation email:",
-          emailError,
-        );
-      });
-
-      sendAdminOrderNotification(createdOrder, "created").catch((err) =>
-        console.error("Failed to send admin order notification:", err),
-      );
-
       res.status(201).json({
         success: true,
         order: {
           ...createdOrder.toObject(),
           trackingNumber: createdOrder.trackingNumber,
         },
+        trackingToken: rawToken,
         paymentMethod,
       });
     }
@@ -251,7 +294,6 @@ export const paystackWebhook = async (
       return;
     }
 
-    // Verify signature
     const isValid = paystack.verifyWebhookSignature(
       rawBody.toString(),
       signature,
@@ -270,14 +312,12 @@ export const paystackWebhook = async (
       return;
     }
 
-    // ── Idempotency check ─────────────────────────────────────────────────
     const eventId = event.data?.id;
     if (!eventId) {
       res.status(400).send("Event ID missing");
       return;
     }
 
-    // If this event has already been processed, return success
     const alreadyProcessed = await Order.findOne({ paymentEventId: eventId });
     if (alreadyProcessed) {
       res.status(200).send("Webhook already processed");
@@ -296,9 +336,7 @@ export const paystackWebhook = async (
       return;
     }
 
-    // ── Handle charge.success ────────────────────────────────────────────
     if (event.event === "charge.success") {
-      // Ensure stock is deducted only once
       if (order.status === "Pending") {
         for (const item of order.orderItems) {
           const product = await Product.findById(item.product);
@@ -352,35 +390,25 @@ export const paystackWebhook = async (
 
       const customerEmail = order.email || order.guestEmail || "";
       const customerName = order.name || "";
-      const originalSubtotal = order.orderItems.reduce(
-        (sum: number, item) => sum + item.price * item.qty,
-        0,
-      );
 
       if (customerEmail) {
-        sendOrderConfirmation(
+        sendOrderStatusUpdateEmail(
           customerEmail,
           order.trackingNumber || order._id.toString(),
+          "Paid",
           order.totalPrice,
           customerName,
           order.discount || 0,
           order.couponCode as string,
-          originalSubtotal,
-          order.paymentMethod,
-          order.paymentDetails,
-          order.shippingFee || 0,
         ).catch((emailError) => {
-          console.error("Failed to send order confirmation email:", emailError);
+          console.error("Failed to send payment status email:", emailError);
         });
-      } else {
-        console.warn("No email found for order", order._id);
       }
 
       res.status(200).send("Webhook received");
       return;
     }
 
-    // ── Handle charge.failed ─────────────────────────────────────────────
     if (event.event === "charge.failed") {
       order.paymentEventId = eventId;
       order.paymentEventType = event.event;
@@ -395,7 +423,6 @@ export const paystackWebhook = async (
       return;
     }
 
-    // Unknown event: just record it
     order.paymentEventId = eventId;
     order.paymentEventType = event.event;
     await order.save();
@@ -435,8 +462,58 @@ export const getMyOrders = async (
   }
 };
 
-// @desc    Track guest/order by ID or tracking number + email
-// @route   GET /api/orders/track/:orderId?email=...
+// ─── NEW: Track order for logged-in user (authenticated) ──────────────────────
+export const trackMyOrder = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const orderId = String(req.params.orderId);
+    const order = await Order.findOne({ _id: orderId, user: req.user!._id });
+
+    if (!order) {
+      res.status(404).json({ success: false, message: "Order not found" });
+      return;
+    }
+
+    res.json({
+      success: true,
+      order: sanitizeOrderForTracking(order, true),
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+// ─── NEW: Track order by token (public, for guests) ───────────────────────────
+export const trackByToken = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const token = String(req.params.token);
+    const hashed = crypto.createHash("sha256").update(token).digest("hex");
+
+    const order = await Order.findOne({
+      trackingToken: hashed,
+      trackingTokenExpiresAt: { $gt: new Date() },
+    });
+
+    if (!order) {
+      res.status(404).json({ success: false, message: "Invalid or expired tracking link" });
+      return;
+    }
+
+    res.json({
+      success: true,
+      order: sanitizeOrderForTracking(order, false),
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+// ─── Legacy trackOrder kept for possible fallback (not used in routes) ────────
 export const trackOrder = async (
   req: Request,
   res: Response,

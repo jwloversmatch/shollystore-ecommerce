@@ -32,6 +32,7 @@ export interface Order {
   shippingFee?: number;
   email?: string;
   guestEmail?: string;
+  trackingToken?: string;
 }
 
 export interface IAddress {

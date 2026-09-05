@@ -210,7 +210,7 @@ export const sendEmailChangeVerification = async (
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ORDER EMAILS (Unchanged)
+// ORDER EMAILS (Updated sendOrderConfirmation)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const sendOrderConfirmation = async (
@@ -224,6 +224,7 @@ export const sendOrderConfirmation = async (
   paymentMethod?: string,
   paymentDetails?: any,
   shippingFee?: number,
+  trackingToken?: string,   // new parameter
 ) => {
   const greeting = name ? `Thank you, <strong>${name}</strong>! 🎉` : `Order Confirmed! 🎉`;
 
@@ -254,7 +255,10 @@ export const sendOrderConfirmation = async (
       <p style="margin:16px 0;"><strong>Please complete payment via WhatsApp:</strong> ${paymentDetails.whatsappNumber || 'N/A'}</p>`;
   }
 
-  const trackUrl = `${CLIENT_URL}/track-order?orderId=${orderId}&email=${encodeURIComponent(email)}`;
+  const trackUrl = trackingToken
+    ? `${CLIENT_URL}/track-order?token=${encodeURIComponent(trackingToken)}`
+    : `${CLIENT_URL}/track-order?orderId=${encodeURIComponent(orderId)}`;
+
   const trackButton = `
     <p style="margin-top:24px;text-align:center;">
       <a href="${trackUrl}" class="btn" style="background:#e8622a;color:#fff;box-shadow:0 4px 12px rgba(232,98,42,.3);">Track Your Order</a>

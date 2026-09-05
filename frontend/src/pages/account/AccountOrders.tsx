@@ -16,9 +16,7 @@ const AccountOrders = ({ orders, loading, error, onViewOrder }: AccountOrdersPro
   const navigate = useNavigate();
 
   const handleTrack = (order: Order) => {
-    const email = order.email || order.guestEmail || "";
-    if (!email) return;
-    navigate(`/track-order?orderId=${order._id}&email=${encodeURIComponent(email)}`);
+    navigate(`/track-order?orderId=${order._id}`);
   };
 
   if (loading) {

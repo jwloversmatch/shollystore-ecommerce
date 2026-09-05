@@ -3,7 +3,7 @@ import { logout } from "../auth/authSlice";
 import type { Order } from "../../types/account";
 import type { ProductItem } from "../../types/home";
 // NEW: import settings types for bank accounts
-import type { SettingsData, BankAccount } from "../../pages/admin/settings/settingsSchema"; // adjust path if needed
+import type { SettingsData, BankAccount } from "../../pages/admin/settings/settingsSchema";
 
 // ─── Response types ───────────────────────────────────────────────────────────
 interface VerifyPaymentResponse {
@@ -96,6 +96,39 @@ export interface ReviewsResponse {
     limit: number;
     total: number;
     pages: number;
+  };
+}
+
+// ─── Tracking response type (new) ──────────────────────────────────────────
+export interface TrackOrderResponse {
+  success: boolean;
+  order: {
+    _id: string;
+    trackingNumber?: string;
+    status: string;
+    totalPrice: number;
+    orderItems: {
+      name: string;
+      qty: number;
+      price: number;
+      image?: string;
+    }[];
+    shippingAddress: {
+      address: string;
+      city: string;
+      postalCode?: string;
+      country?: string;
+    };
+    paymentMethod?: string;
+    paymentDetails?: {
+      bankName?: string;
+      accountName?: string;
+      accountNumber?: string;
+      whatsappNumber?: string;
+    };
+    shippingFee?: number;
+    createdAt: string;
+    email?: string; // included only for authenticated tracking
   };
 }
 
@@ -661,41 +694,17 @@ export const apiSlice = createApi({
       providesTags: ["Product"],
     }),
 
-    trackOrder: builder.query<
-      {
-        success: boolean;
-        order: {
-          _id: string;
-          trackingNumber?: string;
-          status: string;
-          totalPrice: number;
-          orderItems: {
-            name: string;
-            qty: number;
-            price: number;
-            image?: string;
-          }[];
-          shippingAddress: {
-            address: string;
-            city: string;
-            postalCode?: string;
-            country?: string;
-          };
-          paymentMethod?: string;
-          paymentDetails?: {
-            bankName?: string;
-            accountName?: string;
-            accountNumber?: string;
-            whatsappNumber?: string;
-          };
-          shippingFee?: number;
-          createdAt: string;
-        };
-      },
-      { orderId: string; email: string }
-    >({
-      query: ({ orderId, email }) =>
-        `/orders/track/${orderId}?email=${encodeURIComponent(email)}`,
+    // ─── Tracking: authenticated for logged-in users ─────────────────────
+    trackMyOrder: builder.query<TrackOrderResponse, string>({
+      query: (orderId) => `/orders/${orderId}/track`,
+      providesTags: (_result, _error, orderId) => [
+        { type: "Order", id: orderId },
+      ],
+    }),
+
+    // ─── Tracking: token-based for guests ─────────────────────────────────
+    trackByToken: builder.query<TrackOrderResponse, string>({
+      query: (token) => `/orders/track/${token}`,
     }),
 
     // ─── Wishlist endpoints ────────────────────────────────────────────────
@@ -852,7 +861,7 @@ export const apiSlice = createApi({
   }),
 });
 
-// ─── Export hooks (including new bank account hooks) ────────────────────────
+// ─── Export hooks ─────────────────────────────────────────────────────────────
 export const {
   useGetProductsQuery,
   useLazyGetProductsQuery,
@@ -864,7 +873,11 @@ export const {
   useGetAllOrdersQuery,
   useGetAdminStatsQuery,
   useUpdateOrderStatusMutation,
-  useTrackOrderQuery,
+  // New tracking hooks
+  useTrackMyOrderQuery,
+  useLazyTrackMyOrderQuery,
+  useTrackByTokenQuery,
+  useLazyTrackByTokenQuery,
   useGetRevenueTrendQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
@@ -894,7 +907,6 @@ export const {
   useUpdateStockMutation,
   useGetSettingsQuery,
   useUpdateSettingsMutation,
-  // NEW: bank account hooks
   useAddBankAccountMutation,
   useUpdateBankAccountMutation,
   useDeleteBankAccountMutation,
