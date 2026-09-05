@@ -429,6 +429,51 @@ export const getProductSuggestions = async (
   }
 };
 
+// @desc    Fetch a specific set of products by their IDs, in bulk
+// @route   GET /api/products/by-ids?ids=id1,id2,id3
+// Used by RecentlyViewed to avoid pulling the entire catalog just to pick
+// out a handful of previously-viewed products by id.
+//
+// ⚠ ROUTING: this must be registered BEFORE the `/:slug` catch-all route
+// (same reason `getProductSuggestions`'s `/suggestions` route already is) —
+// otherwise Express matches "by-ids" as if it were a product slug.
+export const getProductsByIds = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  setShortCacheHeaders(res);
+
+  try {
+    const idsParam = Array.isArray(req.query.ids)
+      ? String(req.query.ids[0])
+      : String(req.query.ids || "");
+
+    const ids = idsParam
+      .split(",")
+      .map((id) => id.trim())
+      .filter((id) => /^[0-9a-fA-F]{24}$/.test(id));
+
+    if (ids.length === 0) {
+      res.json({ products: [] });
+      return;
+    }
+
+    const products = await Product.find({
+      _id: { $in: ids },
+      isActive: { $ne: false },
+    })
+      .select(
+        "name slug price images stock category averageRating numberOfReviews compareAtPrice discount variants",
+      )
+      .populate("category", "name slug")
+      .lean();
+
+    res.json({ products });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const getProductBySlug = async (
   req: Request,
   res: Response,

@@ -1,35 +1,45 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useGetProductsQuery } from "../features/api/apiSlice";
+import { useGetProductsByIdsQuery } from "../features/api/apiSlice";
 import ProductCard from "./ProductCard";
 import type { ProductItem } from "../types/home";
 import { PLACEHOLDER } from "../types/home";
 
 interface RecentlyViewedProps {
   recentIds: string[];
+  currentProductId: string;
 }
 
-const RecentlyViewed = ({ recentIds }: RecentlyViewedProps) => {
+const RecentlyViewed = ({
+  recentIds,
+  currentProductId,
+}: RecentlyViewedProps) => {
   const navigate = useNavigate();
 
-  // Fetch all products once (may be heavy, but works for demo)
-  const { data, isLoading } = useGetProductsQuery({ limit: 9999 });
+  const filteredIds = useMemo(
+    () =>
+      Array.from(new Set(recentIds)).filter((id) => id !== currentProductId),
+    [recentIds, currentProductId],
+  );
 
-  // Derive recently viewed products during render, no effect needed
+  const { data, isLoading } = useGetProductsByIdsQuery(filteredIds, {
+    skip: filteredIds.length === 0,
+  });
+
+  // Keep original order of recentIds
   const products = useMemo(() => {
-    const allProducts = data?.products as ProductItem[] | undefined;
-    if (!allProducts) return [];
-
-    return recentIds
-      .map((id) => allProducts.find((p) => p._id === id))
+    const byId = new Map<string, ProductItem>();
+    data?.products?.forEach((p) => byId.set(p._id, p));
+    return filteredIds
+      .map((id) => byId.get(id))
       .filter(Boolean) as ProductItem[];
-  }, [data, recentIds]);
+  }, [data, filteredIds]);
 
   if (isLoading) {
-    return null; // or a small skeleton
+    return null;
   }
 
-  if (recentIds.length === 0 || products.length === 0) return null;
+  if (filteredIds.length === 0 || products.length === 0) return null;
 
   return (
     <section className="mt-16" aria-labelledby="recent-heading">
@@ -53,14 +63,12 @@ const RecentlyViewed = ({ recentIds }: RecentlyViewedProps) => {
             category={
               typeof product.category === "string"
                 ? product.category
-                : product.category?.name ?? "General"
+                : (product.category?.name ?? "General")
             }
             stock={product.stock}
             compareAtPrice={product.compareAtPrice}
             discountPercent={product.discount?.percentage}
-            onClick={() =>
-              navigate(`/products/${product.slug || product._id}`)
-            }
+            onClick={() => navigate(`/products/${product.slug || product._id}`)}
             averageRating={product.averageRating}
             numberOfReviews={product.numberOfReviews}
           />

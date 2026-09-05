@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
+import ProductQuickViewModal from "../components/ProductQuickViewModal";
 import type { ProductItem } from "../types/home";
 import { PLACEHOLDER } from "../types/home";
 
@@ -9,6 +11,9 @@ interface RelatedProductsProps {
 
 const RelatedProducts = ({ products }: RelatedProductsProps) => {
   const navigate = useNavigate();
+  const [quickViewProduct, setQuickViewProduct] = useState<ProductItem | null>(
+    null,
+  );
 
   if (!products || products.length === 0) return null;
 
@@ -39,17 +44,23 @@ const RelatedProducts = ({ products }: RelatedProductsProps) => {
             stock={product.stock}
             compareAtPrice={product.compareAtPrice}
             discountPercent={product.discount?.percentage}
+            variants={product.variants}
             onClick={() =>
               navigate(`/products/${product.slug || product._id}`)
             }
             averageRating={product.averageRating}
             numberOfReviews={product.numberOfReviews}
-            // Quick view props if you want to reuse the modal
-            // onQuickView={setQuickViewProduct}
-            // fullProduct={product}
+            onQuickView={setQuickViewProduct}
+            fullProduct={product}
           />
         ))}
       </div>
+
+      <ProductQuickViewModal
+        product={quickViewProduct}
+        isOpen={!!quickViewProduct}
+        onClose={() => setQuickViewProduct(null)}
+      />
     </section>
   );
 };

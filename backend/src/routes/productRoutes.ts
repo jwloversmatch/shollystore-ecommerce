@@ -3,6 +3,7 @@ import {
   getProducts,
   getProductBySlug,
   getProductSuggestions,
+  getProductsByIds,
 } from "../controllers/productController";
 import {
   getProductReviews,
@@ -11,9 +12,11 @@ import {
   deleteReview,
 } from "../controllers/reviewController";
 import { protect } from "../middleware/auth";
-import { reviewLimiter } from "../middleware/rateLimiter"; 
+import { reviewLimiter } from "../middleware/rateLimiter";
 
 const router = express.Router();
+
+router.get("/by-ids", getProductsByIds);
 
 router.route("/").get(getProducts);
 
@@ -26,7 +29,7 @@ router
 
 router
   .route("/:productId/reviews/:reviewId")
-  .put(protect, reviewLimiter, updateReview)   
+  .put(protect, reviewLimiter, updateReview)
   .delete(protect, reviewLimiter, deleteReview);
 
 router.get("/:slug", getProductBySlug);

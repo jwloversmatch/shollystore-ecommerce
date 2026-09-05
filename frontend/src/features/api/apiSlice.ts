@@ -217,6 +217,11 @@ export const apiSlice = createApi({
       providesTags: ["Product"],
     }),
 
+    getProductsByIds: builder.query<{ products: ProductItem[] }, string[]>({
+      query: (ids) => `/products/by-ids?ids=${ids.join(",")}`,
+      providesTags: ["Product"],
+    }),
+
     // ─── Orders (public) ────────────────────────────────────────────────────
     createOrder: builder.mutation({
       query: (orderData) => ({
@@ -970,4 +975,5 @@ export const {
   useDeleteAdminReviewMutation,
   useSaveCartMutation,
   useGetCartQuery,
+  useGetProductsByIdsQuery,
 } = apiSlice;

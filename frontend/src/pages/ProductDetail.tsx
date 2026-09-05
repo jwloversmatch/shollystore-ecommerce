@@ -1025,7 +1025,7 @@ const ProductDetail = () => {
       )}
 
       {/* Recently Viewed */}
-      <RecentlyViewed recentIds={recentIds} />
+      <RecentlyViewed recentIds={recentIds} currentProductId={product._id} />
 
       {/* Reviews Section */}
       <section aria-label="Customer reviews" className="mt-10">

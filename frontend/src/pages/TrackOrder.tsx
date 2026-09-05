@@ -56,8 +56,26 @@ const TrackOrder = () => {
   // Mutation hooks expose `isLoading`, not `isFetching` — `isFetching` only
   // exists on query-hook results (it tracks background refetches, which
   // mutations don't have since they're one-shot triggered actions).
-  const [trackMyOrderByCode, { data: authManualData, isLoading: authManualFetching, isError: authManualError, error: authManualErrorObj, reset: resetAuthManual }] = useTrackMyOrderByCodeMutation();
-  const [trackOrderManual, { data: guestManualData, isLoading: guestManualFetching, isError: guestManualError, error: guestManualErrorObj, reset: resetGuestManual }] = useTrackOrderManualMutation();
+  const [
+    trackMyOrderByCode,
+    {
+      data: authManualData,
+      isLoading: authManualFetching,
+      isError: authManualError,
+      error: authManualErrorObj,
+      reset: resetAuthManual,
+    },
+  ] = useTrackMyOrderByCodeMutation();
+  const [
+    trackOrderManual,
+    {
+      data: guestManualData,
+      isLoading: guestManualFetching,
+      isError: guestManualError,
+      error: guestManualErrorObj,
+      reset: resetGuestManual,
+    },
+  ] = useTrackOrderManualMutation();
 
   const isTokenMode = !!token;
   const isAuthMode = !!orderIdParam && !!user;
@@ -86,7 +104,9 @@ const TrackOrder = () => {
   const manualErrorObj = user ? authManualErrorObj : guestManualErrorObj;
 
   // Final values used in render
-  const finalData: TrackOrderResponse | undefined = isManualMode ? manualData : queryData;
+  const finalData: TrackOrderResponse | undefined = isManualMode
+    ? manualData
+    : queryData;
   const finalIsFetching = isManualMode ? manualIsFetching : queryIsFetching;
   const finalIsError = isManualMode ? manualIsError : queryIsError;
   const finalError = isManualMode ? manualErrorObj : queryError;
@@ -94,7 +114,10 @@ const TrackOrder = () => {
   useEffect(() => {
     if (finalData?.order && !finalIsFetching) {
       setTimeout(() => {
-        resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        resultRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       }, 100);
     }
   }, [finalData, finalIsFetching]);
@@ -105,7 +128,9 @@ const TrackOrder = () => {
 
     if (user) {
       try {
-        await trackMyOrderByCode({ trackingCode: trackingCode.trim() }).unwrap();
+        await trackMyOrderByCode({
+          trackingCode: trackingCode.trim(),
+        }).unwrap();
       } catch {
         // error handled by finalIsError
       }
@@ -192,7 +217,10 @@ const TrackOrder = () => {
             >
               <form onSubmit={handleManualSubmit} className="space-y-4">
                 <div>
-                  <label htmlFor="tracking-code" className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1">
+                  <label
+                    htmlFor="tracking-code"
+                    className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1"
+                  >
                     Tracking Code
                   </label>
                   <input
@@ -208,7 +236,10 @@ const TrackOrder = () => {
 
                 {!user && (
                   <div>
-                    <label htmlFor="manual-email" className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1">
+                    <label
+                      htmlFor="manual-email"
+                      className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1"
+                    >
                       Email used at checkout
                     </label>
                     <input
@@ -224,7 +255,10 @@ const TrackOrder = () => {
                       placeholder="you@example.com"
                     />
                     {emailError && (
-                      <p className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold" role="alert">
+                      <p
+                        className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"
+                        role="alert"
+                      >
                         <AlertCircle className="w-3 h-3" /> {emailError}
                       </p>
                     )}
@@ -235,9 +269,16 @@ const TrackOrder = () => {
                   type="submit"
                   disabled={finalIsFetching}
                   className="w-full py-4 rounded-xl font-black text-white text-[15px] flex items-center justify-center gap-2.5 disabled:opacity-50"
-                  style={{ background: ACCENT, boxShadow: `0 8px 24px ${ACCENT}44` }}
+                  style={{
+                    background: ACCENT,
+                    boxShadow: `0 8px 24px ${ACCENT}44`,
+                  }}
                 >
-                  {finalIsFetching ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+                  {finalIsFetching ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Search className="w-5 h-5" />
+                  )}
                   Track Order
                 </button>
               </form>
@@ -254,7 +295,10 @@ const TrackOrder = () => {
           {/* Loading indicator */}
           {finalIsFetching && (
             <div className="flex justify-center py-20">
-              <Loader2 className="w-12 h-12 animate-spin" style={{ color: ACCENT }} />
+              <Loader2
+                className="w-12 h-12 animate-spin"
+                style={{ color: ACCENT }}
+              />
             </div>
           )}
 
@@ -287,18 +331,30 @@ const TrackOrder = () => {
               <div className="flex items-center justify-between mb-6">
                 {timelineSteps.map((step, idx) => {
                   const currentStatus = order.status;
-                  const isCompleted = timelineSteps.indexOf(currentStatus) >= idx;
+                  const isCompleted =
+                    timelineSteps.indexOf(currentStatus) >= idx;
                   const isCurrent = currentStatus === step;
                   return (
-                    <div key={step} className="flex-1 flex flex-col items-center">
+                    <div
+                      key={step}
+                      className="flex-1 flex flex-col items-center"
+                    >
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          isCompleted ? "bg-emerald-500 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-400"
+                          isCompleted
+                            ? "bg-emerald-500 text-white"
+                            : "bg-gray-200 dark:bg-gray-700 text-gray-400"
                         }`}
                       >
-                        {isCompleted ? <CheckCircle size={16} /> : <Clock size={16} />}
+                        {isCompleted ? (
+                          <CheckCircle size={16} />
+                        ) : (
+                          <Clock size={16} />
+                        )}
                       </div>
-                      <span className={`mt-2 text-xs font-bold ${isCurrent ? "text-emerald-500" : isCompleted ? "text-gray-700 dark:text-gray-300" : "text-gray-400"}`}>
+                      <span
+                        className={`mt-2 text-xs font-bold ${isCurrent ? "text-emerald-500" : isCompleted ? "text-gray-700 dark:text-gray-300" : "text-gray-400"}`}
+                      >
                         {step}
                       </span>
                     </div>
@@ -309,43 +365,79 @@ const TrackOrder = () => {
               <div className="space-y-3 text-sm">
                 {order.trackingNumber && (
                   <p className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Tracking Number</span>
-                    <span className="font-mono font-bold text-gray-900 dark:text-white">{order.trackingNumber}</span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Tracking Number
+                    </span>
+                    <span className="font-mono font-bold text-gray-900 dark:text-white">
+                      {order.trackingNumber}
+                    </span>
                   </p>
                 )}
                 <p className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Status</span>
-                  <span className="font-bold text-gray-900 dark:text-white">{order.status}</span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Status
+                  </span>
+                  <span className="font-bold text-gray-900 dark:text-white">
+                    {order.status}
+                  </span>
                 </p>
                 <p className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Total</span>
-                  <span className="font-bold text-gray-900 dark:text-white">₦{order.totalPrice.toLocaleString()}</span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Total
+                  </span>
+                  <span className="font-bold text-gray-900 dark:text-white">
+                    ₦{order.totalPrice.toLocaleString()}
+                  </span>
                 </p>
                 {order.shippingFee !== undefined && (
                   <p className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Shipping</span>
-                    <span className="font-bold text-gray-900 dark:text-white">{order.shippingFee === 0 ? "Free" : `₦${order.shippingFee.toLocaleString()}`}</span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Shipping
+                    </span>
+                    <span className="font-bold text-gray-900 dark:text-white">
+                      {order.shippingFee === 0
+                        ? "Free"
+                        : `₦${order.shippingFee.toLocaleString()}`}
+                    </span>
                   </p>
                 )}
                 <p className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Payment Method</span>
-                  <span className="font-bold text-gray-900 dark:text-white">{formatPaymentMethod(order.paymentMethod)}</span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Payment Method
+                  </span>
+                  <span className="font-bold text-gray-900 dark:text-white">
+                    {formatPaymentMethod(order.paymentMethod)}
+                  </span>
                 </p>
               </div>
 
               {/* Items */}
               {order.orderItems.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="font-bold text-gray-900 dark:text-white mb-3">Items ({order.orderItems.length})</h3>
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-3">
+                    Items ({order.orderItems.length})
+                  </h3>
                   <div className="space-y-2">
                     {visibleItems?.map((item, idx) => (
                       <div key={idx} className="flex items-center gap-3">
-                        {item.image && <img src={item.image} alt={item.name} className="w-10 h-10 rounded object-cover" />}
+                        {item.image && (
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-10 h-10 rounded object-cover"
+                          />
+                        )}
                         <div className="flex-1">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white">{item.name}</p>
-                          <p className="text-xs text-gray-500">{item.qty} × ₦{item.price.toLocaleString()}</p>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                            {item.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {item.qty} × ₦{item.price.toLocaleString()}
+                          </p>
                         </div>
-                        <span className="text-sm font-bold">₦{(item.qty * item.price).toLocaleString()}</span>
+                        <span className="text-sm font-bold">
+                          ₦{(item.qty * item.price).toLocaleString()}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -361,7 +453,8 @@ const TrackOrder = () => {
                         </>
                       ) : (
                         <>
-                          <ChevronDown className="w-4 h-4" /> Show all {order.orderItems.length} items
+                          <ChevronDown className="w-4 h-4" /> Show all{" "}
+                          {order.orderItems.length} items
                         </>
                       )}
                     </button>
@@ -372,12 +465,15 @@ const TrackOrder = () => {
               {/* Shipping address */}
               <div className="mt-6">
                 <h3 className="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-emerald-500" /> Shipping Address
+                  <MapPin className="w-4 h-4 text-emerald-500" /> Shipping
+                  Address
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
                   {order.shippingAddress.address}, {order.shippingAddress.city}
-                  {order.shippingAddress.postalCode && `, ${order.shippingAddress.postalCode}`}
-                  {order.shippingAddress.country && `, ${order.shippingAddress.country}`}
+                  {order.shippingAddress.postalCode &&
+                    `, ${order.shippingAddress.postalCode}`}
+                  {order.shippingAddress.country &&
+                    `, ${order.shippingAddress.country}`}
                 </p>
               </div>
 
@@ -389,14 +485,21 @@ const TrackOrder = () => {
                   </p>
                   {order.paymentMethod === "bank_transfer" && (
                     <>
-                      <p className="text-sm">Bank: {order.paymentDetails.bankName}</p>
-                      <p className="text-sm">Account Name: {order.paymentDetails.accountName}</p>
-                      <p className="text-sm font-mono">Account Number: {order.paymentDetails.accountNumber}</p>
+                      <p className="text-sm">
+                        Bank: {order.paymentDetails.bankName}
+                      </p>
+                      <p className="text-sm">
+                        Account Name: {order.paymentDetails.accountName}
+                      </p>
+                      <p className="text-sm font-mono">
+                        Account Number: {order.paymentDetails.accountNumber}
+                      </p>
                     </>
                   )}
                   {order.paymentMethod === "whatsapp" && (
                     <p className="text-sm">
-                      Please chat with us on WhatsApp at {order.paymentDetails.whatsappNumber} to complete payment.
+                      Please chat with us on WhatsApp at{" "}
+                      {order.paymentDetails.whatsappNumber} to complete payment.
                     </p>
                   )}
                 </div>
