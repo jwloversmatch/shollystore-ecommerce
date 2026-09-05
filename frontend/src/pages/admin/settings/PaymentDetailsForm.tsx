@@ -6,12 +6,16 @@ import {
   Star,
   CheckCircle2,
   Circle,
+  MessageCircle,
+  Save,
 } from "lucide-react";
 import type { SettingsData, BankAccount } from "./settingsSchema";
 
 interface PaymentDetailsFormProps {
   settings: SettingsData | undefined;
   isDark: boolean;
+  whatsappNumber?: string;
+  onUpdateWhatsapp: (number: string) => void;
   onAddAccount: (
     data: Omit<BankAccount, "_id" | "isDefault" | "isActive">,
   ) => void;
@@ -23,6 +27,8 @@ interface PaymentDetailsFormProps {
 const PaymentDetailsForm = ({
   settings,
   isDark,
+  whatsappNumber = "",
+  onUpdateWhatsapp,
   onAddAccount,
   onUpdateAccount,
   onDeleteAccount,
@@ -44,6 +50,10 @@ const PaymentDetailsForm = ({
     accountNumber: "",
   });
 
+  // Initialize WhatsApp input with the prop value; no effect needed because
+  // the form unmounts when closed and remounts with the latest value.
+  const [whatsappInput, setWhatsappInput] = useState(whatsappNumber);
+
   const handleAdd = () => {
     if (
       !newAccount.bankName ||
@@ -58,6 +68,12 @@ const PaymentDetailsForm = ({
       accountName: "",
       accountNumber: "",
     });
+  };
+
+  const handleSaveWhatsapp = () => {
+    if (whatsappInput.trim() !== whatsappNumber) {
+      onUpdateWhatsapp(whatsappInput.trim());
+    }
   };
 
   return (
@@ -81,8 +97,49 @@ const PaymentDetailsForm = ({
             <Banknote className="w-4 h-4" />
           </div>
           <h2 className="text-lg font-black" style={{ color: textPrimary }}>
-            Bank Accounts
+            Payment Details
           </h2>
+        </div>
+
+        {/* WhatsApp number */}
+        <div
+          className="mb-6 p-4 rounded-xl"
+          style={{ background: inputBg, border: `1px solid ${inputBorder}` }}
+        >
+          <label
+            className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-widest mb-2"
+            style={{ color: textMuted }}
+          >
+            <MessageCircle
+              className="w-3.5 h-3.5"
+              style={{ color: "#25D366" }}
+            />
+            WhatsApp Number
+          </label>
+          <div className="flex gap-2">
+            <input
+              value={whatsappInput}
+              onChange={(e) => setWhatsappInput(e.target.value)}
+              placeholder="+2348000000000"
+              className={`${inputCls} flex-1`}
+              style={{
+                background: cardBg,
+                borderColor: inputBorder,
+                color: textPrimary,
+              }}
+            />
+            <button
+              onClick={handleSaveWhatsapp}
+              className="px-4 py-3 rounded-xl bg-green-500 hover:bg-green-600 text-white font-bold text-sm flex items-center gap-1.5 transition-colors"
+              title="Save WhatsApp number"
+            >
+              <Save size={16} />
+              Save
+            </button>
+          </div>
+          <p className="text-xs mt-1.5" style={{ color: textMuted }}>
+            Customers will send payment receipts to this number.
+          </p>
         </div>
 
         {/* Existing accounts list */}

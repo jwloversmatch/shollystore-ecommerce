@@ -58,7 +58,7 @@ const SettingsPage = () => {
     formState: { errors },
   } = useForm<SettingsFormData>({ resolver: zodResolver(settingsSchema) });
 
-  // Reset flat fields whenever settings load (but only if not currently editing homepage?)
+  // Reset flat fields whenever settings load (but only if not currently editing homepage)
   useEffect(() => {
     if (settings && !isEditingHomepage) {
       reset({
@@ -73,11 +73,10 @@ const SettingsPage = () => {
     }
   }, [settings, reset, isEditingHomepage]);
 
-  // ---- Save flat fields (homepage content + whatsapp) ----
+  // ---- Save flat fields (homepage content) ----
   const onSaveHomepage = async (data: SettingsFormData) => {
     try {
       await updateSettings({
-        whatsappNumber: data.whatsappNumber,
         heroTagline: data.heroTagline,
         heroTitle: data.heroTitle,
         heroDescription: data.heroDescription,
@@ -100,6 +99,17 @@ const SettingsPage = () => {
       refetch();
     } catch {
       toast.error("Failed to toggle landing mode.");
+    }
+  };
+
+  // ---- WhatsApp number handler ----
+  const handleUpdateWhatsapp = async (number: string) => {
+    try {
+      await updateSettings({ whatsappNumber: number }).unwrap();
+      toast.success("WhatsApp number updated!");
+      refetch();
+    } catch {
+      toast.error("Failed to update WhatsApp number.");
     }
   };
 
@@ -176,7 +186,7 @@ const SettingsPage = () => {
       className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto space-y-5 pb-28 md:pb-10 focus:outline-none pt-[calc(56px_+_env(safe-area-inset-top,0px))] md:pt-[calc(80px_+_env(safe-area-inset-top,0px))] lg:pt-[calc(88px_+_env(safe-area-inset-top,0px))]"
       style={{ background: bg }}
     >
-      {/* Page header – no global edit or clear buttons, just title */}
+      {/* Page header */}
       <SettingsHeader isDark={isDark} />
 
       {/* Homepage Content Section */}
@@ -244,6 +254,8 @@ const SettingsPage = () => {
             <PaymentDetailsForm
               settings={settings}
               isDark={isDark}
+              whatsappNumber={settings?.whatsappNumber || ""}
+              onUpdateWhatsapp={handleUpdateWhatsapp}
               onAddAccount={handleAddAccount}
               onUpdateAccount={handleUpdateAccount}
               onDeleteAccount={handleDeleteAccount}
@@ -263,7 +275,7 @@ const SettingsPage = () => {
         )}
       </section>
 
-      {/* Push Notifications (no edit state needed) */}
+      {/* Push Notifications */}
       <PushNotifications isDark={isDark} />
 
       {/* Audit Log */}
