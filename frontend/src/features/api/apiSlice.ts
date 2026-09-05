@@ -2,6 +2,8 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { logout } from "../auth/authSlice";
 import type { Order } from "../../types/account";
 import type { ProductItem } from "../../types/home";
+// NEW: import settings types for bank accounts
+import type { SettingsData, BankAccount } from "../../pages/admin/settings/settingsSchema"; // adjust path if needed
 
 // ─── Response types ───────────────────────────────────────────────────────────
 interface VerifyPaymentResponse {
@@ -466,6 +468,47 @@ export const apiSlice = createApi({
       invalidatesTags: ["Settings"],
     }),
 
+    // NEW: Bank account management endpoints
+    addBankAccount: builder.mutation<
+      SettingsData,
+      Omit<BankAccount, "_id" | "isDefault" | "isActive">
+    >({
+      query: (data) => ({
+        url: "/admin/settings/bank-accounts",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Settings"],
+    }),
+
+    updateBankAccount: builder.mutation<
+      SettingsData,
+      { id: string; data: Partial<Omit<BankAccount, "_id">> }
+    >({
+      query: ({ id, data }) => ({
+        url: `/admin/settings/bank-accounts/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["Settings"],
+    }),
+
+    deleteBankAccount: builder.mutation<SettingsData, string>({
+      query: (id) => ({
+        url: `/admin/settings/bank-accounts/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Settings"],
+    }),
+
+    setDefaultBankAccount: builder.mutation<SettingsData, string>({
+      query: (id) => ({
+        url: `/admin/settings/bank-accounts/${id}/default`,
+        method: "PUT",
+      }),
+      invalidatesTags: ["Settings"],
+    }),
+
     getPublicSettings: builder.query({
       query: () => "/settings/public",
     }),
@@ -809,6 +852,7 @@ export const apiSlice = createApi({
   }),
 });
 
+// ─── Export hooks (including new bank account hooks) ────────────────────────
 export const {
   useGetProductsQuery,
   useLazyGetProductsQuery,
@@ -850,6 +894,11 @@ export const {
   useUpdateStockMutation,
   useGetSettingsQuery,
   useUpdateSettingsMutation,
+  // NEW: bank account hooks
+  useAddBankAccountMutation,
+  useUpdateBankAccountMutation,
+  useDeleteBankAccountMutation,
+  useSetDefaultBankAccountMutation,
   useGetPublicSettingsQuery,
   useGetSettingsChangesQuery,
   useGetHeroSlidesQuery,

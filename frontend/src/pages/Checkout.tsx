@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import SEO from "../components/SEO";
 import { calculateShippingFee } from "../utils/format";
+import type { SettingsData } from "../pages/admin/settings/settingsSchema";
 
 const ACCENT = "#e8622a";
 const FOCUS_RING =
@@ -162,7 +163,9 @@ const Checkout = () => {
   >("paystack");
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderData, setOrderData] = useState<OrderResponse | null>(null);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null,
+  );
   const [isNewAddress, setIsNewAddress] = useState(true);
 
   const [guestEmail, setGuestEmail] = useState("");
@@ -171,7 +174,6 @@ const Checkout = () => {
 
   const [showCreateAccountModal, setShowCreateAccountModal] = useState(false);
 
-  // Helper to get selected saved address object
   const selectedSavedAddress = savedAddresses.find(
     (addr: IAddress) => addr._id === selectedAddressId,
   );
@@ -179,7 +181,6 @@ const Checkout = () => {
   const selectSavedAddress = (addr: IAddress) => {
     setSelectedAddressId(addr._id);
     setIsNewAddress(false);
-    // Still reset the form in case user switches to new later
     reset({ address: addr.address, city: addr.city });
   };
   const selectNewAddress = () => {
@@ -222,24 +223,24 @@ const Checkout = () => {
     }
 
     try {
-      // Use saved address if selected, otherwise form values
-      const finalShippingAddress = selectedSavedAddress && !isNewAddress
-        ? {
-            address: selectedSavedAddress.address,
-            city: selectedSavedAddress.city,
-            postalCode: selectedSavedAddress.postalCode || "",
-            country: selectedSavedAddress.country || "Nigeria",
-          }
-        : {
-            address: data.address,
-            city: data.city,
-            postalCode: "",
-            country: "Nigeria",
-          };
+      const finalShippingAddress =
+        selectedSavedAddress && !isNewAddress
+          ? {
+              address: selectedSavedAddress.address,
+              city: selectedSavedAddress.city,
+              postalCode: selectedSavedAddress.postalCode || "",
+              country: selectedSavedAddress.country || "Nigeria",
+            }
+          : {
+              address: data.address,
+              city: data.city,
+              postalCode: "",
+              country: "Nigeria",
+            };
 
       const orderPayload = {
         orderItems: cart.cartItems.map((item) => ({
-          product: item._id, // ✅ correct field
+          product: item._id,
           name: item.name,
           qty: item.qty,
           price: item.price,
@@ -288,13 +289,22 @@ const Checkout = () => {
   }
 
   if (orderSuccess) {
-    const d = publicSettings || {
-      bankAccountName: "Sholex",
-      bankAccountNumber: "0123456789",
-      bankName: "GTBank",
-      whatsappNumber: "+2348000000000",
-    };
-    const waLink = `https://wa.me/${d.whatsappNumber?.replace(/\D/g, "")}`;
+    // Extract default bank account from public settings
+    const defaultAccount =
+      (publicSettings as SettingsData)?.bankAccounts?.find(
+        (acc) => acc.isDefault && acc.isActive,
+      ) ||
+      (publicSettings as SettingsData)?.bankAccounts?.find(
+        (acc) => acc.isActive,
+      );
+
+    const bankName = defaultAccount?.bankName || "GTBank";
+    const accountName = defaultAccount?.accountName || "Sholex";
+    const accountNumber = defaultAccount?.accountNumber || "0123456789";
+    const whatsappNumber =
+      (publicSettings as SettingsData)?.whatsappNumber || "+2348000000000";
+
+    const waLink = `https://wa.me/${whatsappNumber.replace(/\D/g, "")}`;
     const orderEmail = user?.email || guestEmail;
     const orderId = orderData?._id;
     const trackingNumber = orderData?.trackingNumber || orderId;
@@ -347,11 +357,11 @@ const Checkout = () => {
                 Bank Transfer Details
               </p>
               {[
-                { label: "Bank", val: d.bankName },
-                { label: "Account Name", val: d.bankAccountName },
+                { label: "Bank", val: bankName },
+                { label: "Account Name", val: accountName },
                 {
                   label: "Account Number",
-                  val: d.bankAccountNumber,
+                  val: accountNumber,
                   highlight: true,
                 },
               ].map((row) => (
@@ -382,10 +392,10 @@ const Checkout = () => {
                     background: "#25D366",
                     boxShadow: "0 4px 12px rgba(37,211,102,0.35)",
                   }}
-                  aria-label={`Chat on WhatsApp: ${d.whatsappNumber}`}
+                  aria-label={`Chat on WhatsApp: ${whatsappNumber}`}
                 >
                   <MessageCircle className="w-4 h-4" aria-hidden="true" />{" "}
-                  {d.whatsappNumber}
+                  {whatsappNumber}
                 </a>
               </div>
             </div>
@@ -427,7 +437,6 @@ const Checkout = () => {
             />
           </button>
 
-          {/* Track Order button */}
           <button
             onClick={() =>
               navigate(
@@ -529,7 +538,6 @@ const Checkout = () => {
               className="space-y-5"
               aria-label="Checkout form"
             >
-              {/* Guest info fields – only shown for guests after rehydration */}
               {!user && isRehydrated && (
                 <fieldset className="rounded-2xl p-5 md:p-6 space-y-4 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]">
                   <legend className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-4">
@@ -943,7 +951,9 @@ const Checkout = () => {
                     Delivery
                   </span>
                   <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                    {shippingFee === 0 ? "Free" : `₦${shippingFee.toLocaleString()}`}
+                    {shippingFee === 0
+                      ? "Free"
+                      : `₦${shippingFee.toLocaleString()}`}
                   </span>
                 </div>
               </div>
