@@ -8,8 +8,11 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
+  Building2,
 } from "lucide-react";
 import { FaFacebook, FaInstagram, FaTwitter, FaYoutube } from "react-icons/fa";
+import PaystackLogo from "../components/PaystackLogo";
+import WhatsAppLogo from "../components/WhatsAppLogo";
 
 const footerVariants = {
   hidden: { opacity: 0 },
@@ -316,15 +319,23 @@ const Footer = () => {
           <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
             We Accept
           </h5>
-          <div className="flex flex-wrap gap-3">
-            {["Paystack", "Bank Transfer", "WhatsApp Pay"].map((method) => (
-              <span
-                key={method}
-                className="px-4 py-2 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-white/20"
-              >
-                {method}
-              </span>
-            ))}
+          <div className="flex flex-wrap gap-3 items-center">
+            {/* Paystack */}
+            <span className="flex items-center justify-center px-3 py-2 bg-white dark:bg-white/10 rounded-lg border border-gray-200 dark:border-white/20">
+              <PaystackLogo className="h-4 w-auto" />
+            </span>
+
+            {/* Bank Transfer */}
+            <span className="flex items-center gap-2 px-4 py-2 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-white/20">
+              <Building2 className="w-4 h-4" />
+              Bank Transfer
+            </span>
+
+            {/* WhatsApp Pay */}
+            <span className="flex items-center gap-2 px-4 py-2 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-white/20">
+              <WhatsAppLogo className="w-4 h-4 text-[#25D366]" />
+              WhatsApp Pay
+            </span>
           </div>
         </motion.div>
 
