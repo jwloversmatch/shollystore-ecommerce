@@ -1,12 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTrackOrderQuery } from "../features/api/apiSlice";
 import {
   AlertCircle,
   Loader2,
   Search,
-  ArrowLeft,
   CheckCircle,
   Clock,
   MapPin,
@@ -65,7 +63,6 @@ const TrackOrder = () => {
   const [emailError, setEmailError] = useState("");
   const [showAllItems, setShowAllItems] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
 
   const {
     data,
@@ -152,12 +149,6 @@ const TrackOrder = () => {
     >
       <SEO title="Track Order" description="Check the status of your order." />
       <div className="max-w-2xl mx-auto">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 mb-4 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back
-        </button>
         <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-6">
           Track Your Order
         </h1>
