@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
 import { useTrackOrderQuery } from "../features/api/apiSlice";
 import {
   AlertCircle,
@@ -17,49 +18,16 @@ import SEO from "../components/SEO";
 import { formatPaymentMethod } from "../utils/format";
 
 const ACCENT = "#e8622a";
-const STORAGE_KEY = "sholex_track_order";
 const INITIAL_ITEM_COUNT = 2;
 
 const TrackOrder = () => {
-  const [orderId, setOrderId] = useState<string>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as { orderId?: string };
-        return parsed.orderId || "";
-      }
-    } catch {
-      // Ignore invalid JSON
-    }
-    return "";
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlOrderId = searchParams.get("orderId") || "";
+  const urlEmail = searchParams.get("email") || "";
 
-  const [email, setEmail] = useState<string>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as { email?: string };
-        return parsed.email || "";
-      }
-    } catch {
-      // Ignore invalid JSON
-    }
-    return "";
-  });
-
-  const [submitted, setSubmitted] = useState<boolean>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as { orderId?: string; email?: string };
-        return !!(parsed.orderId && parsed.email);
-      }
-    } catch {
-      // Ignore invalid JSON
-    }
-    return false;
-  });
-
+  const [orderId, setOrderId] = useState(urlOrderId);
+  const [email, setEmail] = useState(urlEmail);
+  const [submitted, setSubmitted] = useState(() => !!(urlOrderId && urlEmail));
   const [emailError, setEmailError] = useState("");
   const [showAllItems, setShowAllItems] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -89,7 +57,10 @@ const TrackOrder = () => {
       setter(e.target.value);
       setSubmitted(false);
       if (emailError) setEmailError("");
-      localStorage.removeItem(STORAGE_KEY);
+      // Clear URL params if user starts typing
+      if (searchParams.toString()) {
+        setSearchParams({}, { replace: true });
+      }
     };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -101,10 +72,7 @@ const TrackOrder = () => {
     }
     setEmailError("");
     setSubmitted(true);
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ orderId, email })
-    );
+    // Optionally update URL to reflect current search (not necessary)
   };
 
   const handleTrackAnother = () => {
@@ -113,7 +81,7 @@ const TrackOrder = () => {
     setSubmitted(false);
     setEmailError("");
     setShowAllItems(false);
-    localStorage.removeItem(STORAGE_KEY);
+    setSearchParams({}, { replace: true }); // clear query params
   };
 
   let errorMessage = "Order not found. Please check your details.";

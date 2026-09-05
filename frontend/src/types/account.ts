@@ -2,6 +2,13 @@ export interface OrderItemDetail {
   name: string;
   qty: number;
   price: number;
+  product?: string;
+  image?: string;
+  variant?: {
+    sku?: string;
+    color?: string;
+    size?: string;
+  };
 }
 
 export interface Order {
@@ -22,7 +29,9 @@ export interface Order {
   phone?: string;
   couponCode?: string;
   discount?: number;
-  shippingFee?: number;   
+  shippingFee?: number;
+  email?: string;
+  guestEmail?: string;
 }
 
 export interface IAddress {
