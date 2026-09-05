@@ -4,21 +4,22 @@ import { enqueueEmail } from "./emailQueue.service";
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
-const CLIENT_URL     = process.env.CLIENT_URL;
-const STORE_LOGO_URL = process.env.STORE_LOGO_URL || `${CLIENT_URL}/icons/sholex-180.png`;
+const CLIENT_URL = process.env.CLIENT_URL;
+const STORE_LOGO_URL =
+  process.env.STORE_LOGO_URL || `${CLIENT_URL}/icons/sholex-180.png`;
 
 type SendEmailResult = {
-  success:    boolean;
+  success: boolean;
   messageId?: string;
-  error?:     unknown;
+  error?: unknown;
   simulated?: boolean;
 };
 
 // ─── Core sender (now enqueues instead of sending directly) ─────────────────
 const sendEmail = async (
-  to:           string,
-  subject:      string,
-  htmlContent:  string,
+  to: string,
+  subject: string,
+  htmlContent: string,
   textContent?: string,
 ): Promise<SendEmailResult> => {
   await enqueueEmail({
@@ -32,17 +33,25 @@ const sendEmail = async (
 };
 
 const stripHtml = (html: string): string =>
-  html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+  html
+    .replace(/<[^>]*>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 // ─── Shared layout wrapper ────────────────────────────────────────────────────
 interface LayoutOptions {
-  headerBg:  string;
+  headerBg: string;
   headerText?: string;
-  body:      string;
-  logoUrl?:  string;
+  body: string;
+  logoUrl?: string;
 }
 
-const layout = ({ headerBg, headerText = '#2d3748', body, logoUrl = STORE_LOGO_URL }: LayoutOptions) => `
+const layout = ({
+  headerBg,
+  headerText = "#2d3748",
+  body,
+  logoUrl = STORE_LOGO_URL,
+}: LayoutOptions) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -99,10 +108,12 @@ export const sendVerificationEmail = async (
   name?: string,
 ) => {
   const url = `${CLIENT_URL}/verify-email?token=${token}`;
-  const greeting = name ? `Hi <strong>${name}</strong>, welcome to Sholex! 🛍️` : `Welcome to Sholex! 🛍️`;
+  const greeting = name
+    ? `Hi <strong>${name}</strong>, welcome to Sholex! 🛍️`
+    : `Welcome to Sholex! 🛍️`;
 
   const html = layout({
-    headerBg: '#ffd6d6',
+    headerBg: "#ffd6d6",
     body: `
       <div class="body" style="text-align:center;">
         <h2>${greeting}</h2>
@@ -126,7 +137,7 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
   const url = `${CLIENT_URL}/reset-password?token=${token}`;
 
   const html = layout({
-    headerBg: '#fef3c7',
+    headerBg: "#fef3c7",
     body: `
       <div class="body" style="text-align:center;">
         <h2>Reset Your Password 🔐</h2>
@@ -149,11 +160,14 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
   );
 };
 
-export const sendPasswordChangedEmail = async (email: string, name?: string) => {
+export const sendPasswordChangedEmail = async (
+  email: string,
+  name?: string,
+) => {
   const greeting = name ? `Hi <strong>${name}</strong>,` : "Hi there,";
 
   const html = layout({
-    headerBg: '#fee2e2',
+    headerBg: "#fee2e2",
     body: `
       <div class="body" style="text-align:center;">
         <h2>Your Password Was Changed ✅</h2>
@@ -180,12 +194,12 @@ export const sendPasswordChangedEmail = async (email: string, name?: string) => 
 
 export const sendEmailChangeVerification = async (
   newEmail: string,
-  token:    string,
+  token: string,
 ) => {
   const url = `${CLIENT_URL}/verify-email-change?token=${token}`;
 
   const html = layout({
-    headerBg: '#dbeafe',
+    headerBg: "#dbeafe",
     body: `
       <div class="body" style="text-align:center;">
         <h2>Confirm Your New Email Address ✉️</h2>
@@ -214,45 +228,50 @@ export const sendEmailChangeVerification = async (
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const sendOrderConfirmation = async (
-  email:      string,
-  orderId:    string,
-  total:      number,
-  name?:      string,
-  discount?:  number,
+  email: string,
+  orderId: string,
+  total: number,
+  name?: string,
+  discount?: number,
   couponCode?: string,
-  subtotal?:  number,
+  subtotal?: number,
   paymentMethod?: string,
   paymentDetails?: any,
   shippingFee?: number,
-  trackingToken?: string,   // new parameter
+  trackingToken?: string,
 ) => {
-  const greeting = name ? `Thank you, <strong>${name}</strong>! 🎉` : `Order Confirmed! 🎉`;
+  const greeting = name
+    ? `Thank you, <strong>${name}</strong>! 🎉`
+    : `Order Confirmed! 🎉`;
 
-  const discountLine = discount && couponCode
-    ? `<p style="margin:4px 0;color:#4a5568;"><strong>Discount (${couponCode})</strong> &minus; ₦${discount.toLocaleString()}</p>`
-    : '';
-  const subtotalLine = subtotal !== undefined
-    ? `<p style="margin:8px 0;color:#4a5568;"><strong>Subtotal</strong> ₦${subtotal.toLocaleString()}</p>`
-    : '';
+  const discountLine =
+    discount && couponCode
+      ? `<p style="margin:4px 0;color:#4a5568;"><strong>Discount (${couponCode})</strong> &minus; ₦${discount.toLocaleString()}</p>`
+      : "";
+  const subtotalLine =
+    subtotal !== undefined
+      ? `<p style="margin:8px 0;color:#4a5568;"><strong>Subtotal</strong> ₦${subtotal.toLocaleString()}</p>`
+      : "";
 
-  let shippingFeeLine = '';
+  let shippingFeeLine = "";
   if (shippingFee !== undefined) {
-    shippingFeeLine = shippingFee === 0
-      ? `<p style="margin:8px 0;color:#4a5568;"><strong>Shipping</strong> Free</p>`
-      : `<p style="margin:8px 0;color:#4a5568;"><strong>Shipping</strong> ₦${shippingFee.toLocaleString()}</p>`;
+    shippingFeeLine =
+      shippingFee === 0
+        ? `<p style="margin:8px 0;color:#4a5568;"><strong>Shipping</strong> Free</p>`
+        : `<p style="margin:8px 0;color:#4a5568;"><strong>Shipping</strong> ₦${shippingFee.toLocaleString()}</p>`;
   }
 
-  let paymentSection = '';
-  if (paymentMethod === 'bank_transfer' && paymentDetails) {
+  let paymentSection = "";
+  if (paymentMethod === "bank_transfer" && paymentDetails) {
     paymentSection = `
       <div style="margin:20px 0;padding:16px;background:#f9fafb;border-radius:12px;">
-        <p><strong>Bank Name:</strong> ${paymentDetails.bankName || 'N/A'}</p>
-        <p><strong>Account Name:</strong> ${paymentDetails.accountName || 'N/A'}</p>
-        <p><strong>Account Number:</strong> <span style="font-family:monospace;">${paymentDetails.accountNumber || 'N/A'}</span></p>
+        <p><strong>Bank Name:</strong> ${paymentDetails.bankName || "N/A"}</p>
+        <p><strong>Account Name:</strong> ${paymentDetails.accountName || "N/A"}</p>
+        <p><strong>Account Number:</strong> <span style="font-family:monospace;">${paymentDetails.accountNumber || "N/A"}</span></p>
       </div>`;
-  } else if (paymentMethod === 'whatsapp' && paymentDetails) {
+  } else if (paymentMethod === "whatsapp" && paymentDetails) {
     paymentSection = `
-      <p style="margin:16px 0;"><strong>Please complete payment via WhatsApp:</strong> ${paymentDetails.whatsappNumber || 'N/A'}</p>`;
+      <p style="margin:16px 0;"><strong>Please complete payment via WhatsApp:</strong> ${paymentDetails.whatsappNumber || "N/A"}</p>`;
   }
 
   const trackUrl = trackingToken
@@ -265,13 +284,13 @@ export const sendOrderConfirmation = async (
     </p>`;
 
   const html = layout({
-    headerBg: '#dff2e6',
+    headerBg: "#dff2e6",
     body: `
       <div class="body">
         <h2>${greeting}</h2>
         <p>Thank you for your purchase! We're preparing your order and will ship it soon.</p>
         <div class="box">
-          <p><strong>Order #</strong> ${orderId}</p>
+          <p><strong>Tracking Number:</strong> <span style="font-family:monospace;">${orderId}</span></p>
           ${subtotalLine}
           ${discountLine}
           ${shippingFeeLine}
@@ -292,27 +311,28 @@ export const sendOrderConfirmation = async (
 };
 
 export const sendOrderShippedEmail = async (
-  email:      string,
-  orderId:    string,
-  name?:      string,
-  total?:     number,
-  discount?:  number,
+  email: string,
+  orderId: string,
+  name?: string,
+  total?: number,
+  discount?: number,
   couponCode?: string,
 ) => {
   const greeting = name
     ? `Hi <strong>${name}</strong>, your order has been shipped! 🚚`
     : `Your Order Has Been Shipped! 🚚`;
 
-  const discountLine = discount && couponCode
-    ? `<p style="margin:4px 0;"><strong>Discount (${couponCode})</strong> &minus; ₦${discount.toLocaleString()}</p>`
-    : '';
+  const discountLine =
+    discount && couponCode
+      ? `<p style="margin:4px 0;"><strong>Discount (${couponCode})</strong> &minus; ₦${discount.toLocaleString()}</p>`
+      : "";
   const totalLine = total
     ? `<p><strong>Total:</strong> ₦${total.toLocaleString()}</p>`
-    : '';
+    : "";
 
   const html = layout({
-    headerBg: '#60a5fa',
-    headerText: '#ffffff',
+    headerBg: "#60a5fa",
+    headerText: "#ffffff",
     body: `
       <div class="body" style="text-align:center;">
         <h2>${greeting}</h2>
@@ -332,27 +352,28 @@ export const sendOrderShippedEmail = async (
 };
 
 export const sendOrderDeliveredEmail = async (
-  email:      string,
-  orderId:    string,
-  name?:      string,
-  total?:     number,
-  discount?:  number,
+  email: string,
+  orderId: string,
+  name?: string,
+  total?: number,
+  discount?: number,
   couponCode?: string,
 ) => {
   const greeting = name
     ? `Thank you, <strong>${name}</strong>! Your order has been delivered ✅`
     : `Order Delivered! ✅`;
 
-  const discountLine = discount && couponCode
-    ? `<p style="margin:4px 0;"><strong>Discount (${couponCode})</strong> &minus; ₦${discount.toLocaleString()}</p>`
-    : '';
+  const discountLine =
+    discount && couponCode
+      ? `<p style="margin:4px 0;"><strong>Discount (${couponCode})</strong> &minus; ₦${discount.toLocaleString()}</p>`
+      : "";
   const totalLine = total
     ? `<p><strong>Total:</strong> ₦${total.toLocaleString()}</p>`
-    : '';
+    : "";
 
   const html = layout({
-    headerBg: '#34d399',
-    headerText: '#ffffff',
+    headerBg: "#34d399",
+    headerText: "#ffffff",
     body: `
       <div class="body" style="text-align:center;">
         <h2>${greeting}</h2>
@@ -372,32 +393,38 @@ export const sendOrderDeliveredEmail = async (
 };
 
 export const sendOrderStatusUpdateEmail = async (
-  email:      string,
-  orderId:    string,
-  status:     string,
-  total:      number,
-  name?:      string,
-  discount?:  number,
+  email: string,
+  orderId: string,
+  status: string,
+  total: number,
+  name?: string,
+  discount?: number,
   couponCode?: string,
-  subtotal?:  number,
+  subtotal?: number,
 ) => {
   const statusLabels: Record<string, string> = {
-    Shipped:   name ? `Hi ${name}, your order has been shipped! 🚚` : `Your order has been shipped! 🚚`,
-    Delivered: name ? `Hi ${name}, your order has been delivered! ✅` : `Your order has been delivered! ✅`,
+    Shipped: name
+      ? `Hi ${name}, your order has been shipped! 🚚`
+      : `Your order has been shipped! 🚚`,
+    Delivered: name
+      ? `Hi ${name}, your order has been delivered! ✅`
+      : `Your order has been delivered! ✅`,
   };
   const heading = statusLabels[status] || `Your order status is now ${status}`;
 
-  const badgeColor = status === 'Shipped' ? '#3b82f6' : '#34d399';
+  const badgeColor = status === "Shipped" ? "#3b82f6" : "#34d399";
 
-  const discountLine = discount && couponCode
-    ? `<p style="margin:8px 0;color:#4a5568;"><strong>Discount (${couponCode})</strong> &minus; ₦${discount.toLocaleString()}</p>`
-    : '';
-  const subtotalLine = subtotal && subtotal !== total
-    ? `<p style="margin:8px 0;color:#4a5568;"><strong>Subtotal</strong> ₦${subtotal.toLocaleString()}</p>`
-    : '';
+  const discountLine =
+    discount && couponCode
+      ? `<p style="margin:8px 0;color:#4a5568;"><strong>Discount (${couponCode})</strong> &minus; ₦${discount.toLocaleString()}</p>`
+      : "";
+  const subtotalLine =
+    subtotal && subtotal !== total
+      ? `<p style="margin:8px 0;color:#4a5568;"><strong>Subtotal</strong> ₦${subtotal.toLocaleString()}</p>`
+      : "";
 
   const html = layout({
-    headerBg: '#dff2e6',
+    headerBg: "#dff2e6",
     body: `
       <div class="body">
         <h2>${heading}</h2>
@@ -410,9 +437,11 @@ export const sendOrderStatusUpdateEmail = async (
           ${discountLine}
           <p style="margin:8px 0;"><strong>Total:</strong> ₦${total.toLocaleString()}</p>
         </div>
-        ${status === 'Delivered'
-          ? `<p>Your order has been delivered. Thank you for shopping with us! 🛍️</p>`
-          : `<p>We'll keep you updated on your order's progress.</p>`}
+        ${
+          status === "Delivered"
+            ? `<p>Your order has been delivered. Thank you for shopping with us! 🛍️</p>`
+            : `<p>We'll keep you updated on your order's progress.</p>`
+        }
       </div>`,
   });
 
@@ -429,8 +458,8 @@ export const sendOrderStatusUpdateEmail = async (
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const sendAdminOrderNotification = async (
-  order:     any,
-  action:    "created" | "updated",
+  order: any,
+  action: "created" | "updated",
   newStatus?: string,
 ) => {
   const adminEmail = process.env.ADMIN_EMAIL;
@@ -440,38 +469,46 @@ export const sendAdminOrderNotification = async (
   }
 
   let userEmail = order.email || order.guestEmail || "N/A";
-  let userName  = order.name || "";
+  let userName = order.name || "";
   let userPhone = order.phone || "";
 
   if (order.user && (!userEmail || userEmail === "N/A" || !userName)) {
     try {
       const { User } = await import("../models/User.js");
       const user = await User.findById(order.user);
-      userEmail = user?.email  || userEmail;
-      userName  = userName  || user?.name  || "";
+      userEmail = user?.email || userEmail;
+      userName = userName || user?.name || "";
       userPhone = userPhone || user?.phone || "";
     } catch (err) {
       console.error("Failed to fetch user for admin notification:", err);
     }
   }
 
-  const customerLabel = [userName, userEmail, userPhone ? `📞 ${userPhone}` : ""]
+  const customerLabel = [
+    userName,
+    userEmail,
+    userPhone ? `📞 ${userPhone}` : "",
+  ]
     .filter(Boolean)
     .join(" | ");
 
   const itemsList = order.orderItems
-    .map((item: any) => `${item.qty}× ${item.name} – ₦${(item.price * item.qty).toLocaleString()}`)
+    .map(
+      (item: any) =>
+        `${item.qty}× ${item.name} – ₦${(item.price * item.qty).toLocaleString()}`,
+    )
     .join("<br/>");
 
-  const subject = action === "created"
-    ? `🛒 New Order #${order._id} Placed`
-    : `🔄 Order #${order._id} → ${newStatus || order.status}`;
+  const subject =
+    action === "created"
+      ? `🛒 New Order #${order._id} Placed`
+      : `🔄 Order #${order._id} → ${newStatus || order.status}`;
 
   const statusColor: Record<string, string> = {
-    Paid:      'green',
-    Pending:   'orange',
-    Shipped:   'blue',
-    Delivered: 'green',
+    Paid: "green",
+    Pending: "orange",
+    Shipped: "blue",
+    Delivered: "green",
   };
 
   const couponLine = order.couponCode
@@ -485,7 +522,7 @@ export const sendAdminOrderNotification = async (
     <p><strong>Total:</strong> ₦${order.totalPrice.toLocaleString()}</p>
     ${couponLine}
     <p><strong>Payment Method:</strong> ${order.paymentMethod || "N/A"}</p>
-    <p><strong>Status:</strong> <strong style="color:${statusColor[order.status] || 'gray'};">${order.status}</strong></p>
+    <p><strong>Status:</strong> <strong style="color:${statusColor[order.status] || "gray"};">${order.status}</strong></p>
     <p><strong>Shipping:</strong> ${order.shippingAddress?.address || "N/A"}, ${order.shippingAddress?.city || "N/A"}</p>
     <h3>Items:</h3>
     <p>${itemsList}</p>
@@ -604,14 +641,14 @@ export const sendContactNotification = async (contact: {
     adminEmail,
     `📩 New Contact: ${contact.subject || "No Subject"} from ${contact.name}`,
     html,
-    `New contact message from ${contact.name} (${contact.email}): ${contact.message}`
+    `New contact message from ${contact.name} (${contact.email}): ${contact.message}`,
   );
 };
 
 export const sendAbandonedCartEmail = async (
   email: string,
   name: string | undefined,
-  cart: any
+  cart: any,
 ) => {
   interface AbandonedCartItem {
     qty: number;
@@ -652,6 +689,6 @@ export const sendAbandonedCartEmail = async (
     email,
     "Don't forget about your cart 🛒",
     html,
-    `Hi ${name || "there"}, you left items in your cart. Complete your purchase now: ${checkoutUrl}`
+    `Hi ${name || "there"}, you left items in your cart. Complete your purchase now: ${checkoutUrl}`,
   );
 };

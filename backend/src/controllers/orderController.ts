@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import crypto from "crypto"; // for token hashing
+import crypto from "crypto";
 import { Order, IOrder } from "../models/Order";
 import { Product } from "../models/Product";
 import { User } from "../models/User";
@@ -10,14 +10,14 @@ import { paystack, PaystackError, ValidationError } from "../config/paystack";
 import {
   sendOrderConfirmation,
   sendAdminOrderNotification,
-  sendOrderStatusUpdateEmail, // added for payment success status
+  sendOrderStatusUpdateEmail,
 } from "../services/email.service";
 import { AuthRequest } from "../middleware/auth";
 import { calculateOrderPricing } from "../utils/orderPricing";
 import { sendError } from "../utils/apiResponse";
 import { calculateShippingFee } from "../utils/shipping";
 
-// ─── Helper: generate a user-friendly tracking number ─────────────────────────
+// ─── Helpers ───────────────────────────────────────────────────────────────────
 const generateTrackingNumber = (): string => {
   const year = new Date().getFullYear();
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -28,14 +28,12 @@ const generateTrackingNumber = (): string => {
   return `SHO-${year}-${result}`;
 };
 
-// ─── Helper: generate a cryptographically secure tracking token ───────────────
 const generateTrackingToken = (): { raw: string; hashed: string } => {
   const raw = crypto.randomBytes(32).toString("hex");
   const hashed = crypto.createHash("sha256").update(raw).digest("hex");
   return { raw, hashed };
 };
 
-// ─── Helper: sanitize order for tracking response ─────────────────────────────
 const sanitizeOrderForTracking = (order: IOrder, includeEmail = false) => {
   return {
     _id: order._id,
@@ -67,8 +65,7 @@ const sanitizeOrderForTracking = (order: IOrder, includeEmail = false) => {
   };
 };
 
-// @desc    Create Order (supports multiple payment methods)
-// @route   POST /api/orders
+// ─── Create Order ─────────────────────────────────────────────────────────────
 export const createOrder = async (
   req: AuthRequest,
   res: Response,
@@ -93,7 +90,6 @@ export const createOrder = async (
       return;
     }
 
-    // Calculate shipping fee based on destination (robust)
     const shippingFee = calculateShippingFee(shippingAddress);
 
     let pricing;
@@ -112,7 +108,6 @@ export const createOrder = async (
 
     const { subtotal, discount, taxAmount, totalPrice } = pricing;
 
-    // Generate unique tracking number
     let trackingNumber = generateTrackingNumber();
     let existingOrder = await Order.findOne({ trackingNumber });
     while (existingOrder) {
@@ -120,10 +115,8 @@ export const createOrder = async (
       existingOrder = await Order.findOne({ trackingNumber });
     }
 
-    // Generate token for guest tracking
     const { raw: rawToken, hashed: hashedToken } = generateTrackingToken();
 
-    // Sanitize items
     const sanitizedOrderItems = pricing.orderItems.map((item: any) => ({
       name: item.name || "Unknown Product",
       qty: item.qty || 1,
@@ -133,7 +126,6 @@ export const createOrder = async (
       variant: item.variant,
     }));
 
-    // Sanitize shipping address
     const sanitizedShippingAddress = {
       address: shippingAddress?.address || "No address provided",
       city: shippingAddress?.city || "No city provided",
@@ -198,11 +190,11 @@ export const createOrder = async (
 
     const createdOrder = (await Order.create(orderData)) as IOrder;
 
-    // Send confirmation email for all orders (with token)
     const originalSubtotal = createdOrder.orderItems.reduce(
       (sum, item) => sum + item.price * item.qty,
       0,
     );
+
     sendOrderConfirmation(
       customerEmail,
       createdOrder.trackingNumber || createdOrder._id.toString(),
@@ -279,12 +271,12 @@ export const createOrder = async (
   }
 };
 
-// @desc    Paystack Webhook (Server-to-Server verification)
-// @route   POST /api/orders/webhook
+// ─── Paystack Webhook ─────────────────────────────────────────────────────────
 export const paystackWebhook = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
+  // ... unchanged from your previous version ...
   try {
     const signature = req.headers["x-paystack-signature"] as string;
     const rawBody = req.body;
@@ -433,6 +425,7 @@ export const paystackWebhook = async (
   }
 };
 
+// ─── Other exports ────────────────────────────────────────────────────────────
 export const verifyPayment = async (req: Request, res: Response) => {
   try {
     const reference = req.params.reference as string;
@@ -462,7 +455,7 @@ export const getMyOrders = async (
   }
 };
 
-// ─── NEW: Track order for logged-in user (authenticated) ──────────────────────
+// ─── Tracking: authenticated by order ID ─────────────────────────────────────
 export const trackMyOrder = async (
   req: AuthRequest,
   res: Response,
@@ -485,7 +478,7 @@ export const trackMyOrder = async (
   }
 };
 
-// ─── NEW: Track order by token (public, for guests) ───────────────────────────
+// ─── Tracking: token-based (public) ──────────────────────────────────────────
 export const trackByToken = async (
   req: Request,
   res: Response,
@@ -500,7 +493,9 @@ export const trackByToken = async (
     });
 
     if (!order) {
-      res.status(404).json({ success: false, message: "Invalid or expired tracking link" });
+      res
+        .status(404)
+        .json({ success: false, message: "Invalid or expired tracking link" });
       return;
     }
 
@@ -513,72 +508,76 @@ export const trackByToken = async (
   }
 };
 
-// ─── Legacy trackOrder kept for possible fallback (not used in routes) ────────
-export const trackOrder = async (
+// ─── Manual tracking: guest (POST) ───────────────────────────────────────────
+export const trackOrderManual = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
-    const orderId = String(req.params.orderId);
-    const email = String(req.query.email || "").toLowerCase();
+    const { orderId, email } = req.body;
 
     if (!orderId || !email) {
-      res
-        .status(400)
-        .json({ success: false, message: "Order ID and email are required" });
+      res.status(400).json({ success: false, message: "Order ID and email are required" });
       return;
     }
 
-    const isValidObjectId = mongoose.Types.ObjectId.isValid(orderId);
+    const cleanOrderId = String(orderId).trim();
+    const cleanEmail = String(email).toLowerCase().trim();
 
+    const isValidObjectId = mongoose.Types.ObjectId.isValid(cleanOrderId);
     const identifierCondition = isValidObjectId
-      ? {
-          $or: [
-            { _id: new mongoose.Types.ObjectId(orderId) },
-            { trackingNumber: orderId },
-          ],
-        }
-      : { trackingNumber: orderId };
-
-    const emailCondition = {
-      $or: [
-        { email: email.toLowerCase() },
-        { guestEmail: email.toLowerCase() },
-      ],
-    };
+      ? { $or: [{ _id: new mongoose.Types.ObjectId(cleanOrderId) }, { trackingNumber: cleanOrderId }] }
+      : { trackingNumber: cleanOrderId };
 
     const order = await Order.findOne({
-      $and: [identifierCondition, emailCondition],
+      $and: [
+        identifierCondition,
+        { $or: [{ email: cleanEmail }, { guestEmail: cleanEmail }] },
+      ],
     }).select("-__v");
 
     if (!order) {
-      res
-        .status(404)
-        .json({ success: false, message: "Order not found or email mismatch" });
+      res.status(404).json({ success: false, message: "Order not found or email mismatch" });
       return;
     }
 
-    const paymentDetails =
-      order.status === "Pending" &&
-      (order.paymentMethod === "bank_transfer" ||
-        order.paymentMethod === "whatsapp")
-        ? order.paymentDetails
-        : undefined;
+    res.json({
+      success: true,
+      order: sanitizeOrderForTracking(order, false),
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+// ─── Manual tracking: logged-in user by tracking code (POST) ─────────────────
+export const trackMyOrderByCode = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { trackingCode } = req.body;
+
+    if (!trackingCode) {
+      res
+        .status(400)
+        .json({ success: false, message: "Tracking code is required" });
+      return;
+    }
+
+    const order = await Order.findOne({
+      user: req.user!._id,
+      trackingNumber: String(trackingCode).trim(),
+    });
+
+    if (!order) {
+      res.status(404).json({ success: false, message: "Order not found" });
+      return;
+    }
 
     res.json({
       success: true,
-      order: {
-        _id: order._id,
-        trackingNumber: order.trackingNumber,
-        status: order.status,
-        totalPrice: order.totalPrice,
-        orderItems: order.orderItems,
-        shippingAddress: order.shippingAddress,
-        paymentMethod: order.paymentMethod,
-        paymentDetails,
-        shippingFee: order.shippingFee,
-        createdAt: order.createdAt,
-      },
+      order: sanitizeOrderForTracking(order, true),
     });
   } catch (error) {
     res.status(500).json({ success: false, message: "Internal server error" });

@@ -3,7 +3,10 @@ import { logout } from "../auth/authSlice";
 import type { Order } from "../../types/account";
 import type { ProductItem } from "../../types/home";
 // NEW: import settings types for bank accounts
-import type { SettingsData, BankAccount } from "../../pages/admin/settings/settingsSchema";
+import type {
+  SettingsData,
+  BankAccount,
+} from "../../pages/admin/settings/settingsSchema";
 
 // ─── Response types ───────────────────────────────────────────────────────────
 interface VerifyPaymentResponse {
@@ -858,6 +861,30 @@ export const apiSlice = createApi({
       query: () => "/cart",
       providesTags: ["Cart"],
     }),
+
+    // Authenticated manual tracking (by tracking code only)
+    trackMyOrderByCode: builder.mutation<
+      TrackOrderResponse,
+      { trackingCode: string }
+    >({
+      query: (data) => ({
+        url: "/orders/track/me",
+        method: "POST",
+        body: data,
+      }),
+    }),
+
+    // Guest manual tracking (by tracking code + email)
+    trackOrderManual: builder.mutation<
+      TrackOrderResponse,
+      { orderId: string; email: string }
+    >({
+      query: (data) => ({
+        url: "/orders/track",
+        method: "POST",
+        body: data,
+      }),
+    }),
   }),
 });
 
@@ -873,11 +900,12 @@ export const {
   useGetAllOrdersQuery,
   useGetAdminStatsQuery,
   useUpdateOrderStatusMutation,
-  // New tracking hooks
   useTrackMyOrderQuery,
   useLazyTrackMyOrderQuery,
   useTrackByTokenQuery,
   useLazyTrackByTokenQuery,
+  useTrackMyOrderByCodeMutation,
+  useTrackOrderManualMutation,
   useGetRevenueTrendQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
