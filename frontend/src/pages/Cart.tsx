@@ -27,7 +27,6 @@ import {
   Loader2,
   X,
   CheckCircle,
-  Clock,
 } from "lucide-react";
 import SEO from "../components/SEO";
 import { getCloudinaryUrl } from "../utils/cloudinary";
@@ -239,7 +238,7 @@ const CartHeader = ({
 // ─── Cart item row ────────────────────────────────────────────────────────────
 const CartItem = ({ item }: { item: CartItemType }) => {
   const dispatch = useDispatch();
-  
+
   // Fallback to 99 if stock is missing, so quantity controls always work
   const maxStock = item.stock ?? 99;
 
@@ -432,7 +431,10 @@ const OrderSummary = ({
                 aria-label="Apply coupon code"
               >
                 {isApplying ? (
-                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                  <Loader2
+                    className="w-4 h-4 animate-spin"
+                    aria-hidden="true"
+                  />
                 ) : (
                   "Apply"
                 )}
@@ -469,7 +471,10 @@ const OrderSummary = ({
       ) : (
         <div className="mb-5 p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-sm text-blue-800 dark:text-blue-200">
           <p className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+            <AlertCircle
+              className="w-4 h-4 shrink-0 mt-0.5"
+              aria-hidden="true"
+            />
             <span>
               Have a coupon?{" "}
               <Link
@@ -539,12 +544,6 @@ const OrderSummary = ({
             ₦{finalTotal.toLocaleString()}
           </span>
         </div>
-      </div>
-
-      {/* Delivery estimate */}
-      <div className="mt-5 flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-        <Clock className="w-3.5 h-3.5" />
-        <span>Estimated delivery: 2–5 business days</span>
       </div>
 
       <motion.button
