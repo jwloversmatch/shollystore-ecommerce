@@ -7,6 +7,10 @@ import {
   useGetSettingsQuery,
   useUpdateSettingsMutation,
   useGetSettingsChangesQuery,
+  useAddBankAccountMutation,
+  useUpdateBankAccountMutation,
+  useDeleteBankAccountMutation,
+  useSetDefaultBankAccountMutation,
 } from "../../../features/api/apiSlice";
 import { AnimatePresence } from "framer-motion";
 import ConfirmationModal from "../../../components/ConfirmationModal";
@@ -18,7 +22,7 @@ import PaymentDetails from "./PaymentDetails";
 import PaymentDetailsForm from "./PaymentDetailsForm";
 import PushNotifications from "./PushNotifications";
 import AuditLog from "./AuditLog";
-import { settingsSchema, type SettingsFormData } from "./settingsSchema";
+import { settingsSchema, type SettingsFormData, type BankAccount } from "./settingsSchema";
 
 const ACCENT = "#e8622a";
 
@@ -37,14 +41,18 @@ const SettingsPage = () => {
   const [updateSettings, { isLoading: updating }] = useUpdateSettingsMutation();
   const { data: changeLogs = [] } = useGetSettingsChangesQuery({});
 
+  // Bank account mutation hooks
+  const [addBankAccount] = useAddBankAccountMutation();
+  const [updateBankAccount] = useUpdateBankAccountMutation();
+  const [deleteBankAccount] = useDeleteBankAccountMutation();
+  const [setDefaultBankAccount] = useSetDefaultBankAccountMutation();
+
   const { register, handleSubmit, reset, formState: { errors } } = useForm<SettingsFormData>({ resolver: zodResolver(settingsSchema) });
 
   useEffect(() => {
     if (settings) {
+      // Only reset flat fields; bank accounts are separate
       reset({
-        bankAccountName: settings.bankAccountName || "",
-        bankAccountNumber: settings.bankAccountNumber || "",
-        bankName: settings.bankName || "",
         whatsappNumber: settings.whatsappNumber || "",
         heroTagline: settings.heroTagline || "",
         heroTitle: settings.heroTitle || "",
@@ -57,23 +65,103 @@ const SettingsPage = () => {
   }, [settings, reset]);
 
   const onSubmit = async (data: SettingsFormData) => {
-    try { await updateSettings(data).unwrap(); toast.success("Settings updated!"); refetch(); setIsEditing(false); }
-    catch { toast.error("Failed to update settings."); }
+    try {
+      // Send only flat fields to the main settings endpoint
+      await updateSettings({
+        whatsappNumber: data.whatsappNumber,
+        heroTagline: data.heroTagline,
+        heroTitle: data.heroTitle,
+        heroDescription: data.heroDescription,
+        specialOfferTitle: data.specialOfferTitle,
+        specialOfferText: data.specialOfferText,
+        landingMode: data.landingMode,
+      }).unwrap();
+      toast.success("Settings updated!");
+      refetch();
+      setIsEditing(false);
+    } catch {
+      toast.error("Failed to update settings.");
+    }
   };
 
   const toggleLandingMode = async () => {
-    try { await updateSettings({ landingMode: !settings?.landingMode }).unwrap(); toast.success(`Landing mode ${!settings?.landingMode ? "enabled" : "disabled"}`); refetch(); }
-    catch { toast.error("Failed to toggle landing mode."); }
+    try {
+      await updateSettings({ landingMode: !settings?.landingMode }).unwrap();
+      toast.success(`Landing mode ${!settings?.landingMode ? "enabled" : "disabled"}`);
+      refetch();
+    } catch {
+      toast.error("Failed to toggle landing mode.");
+    }
   };
 
   const handleClearAll = async () => {
+    // Clear only flat fields (and optionally bank accounts – but we'll keep this simple)
     try {
-      await updateSettings({ bankAccountName: "", bankAccountNumber: "", bankName: "", whatsappNumber: "", heroTagline: "", heroTitle: "", heroDescription: "", specialOfferTitle: "", specialOfferText: "", landingMode: false }).unwrap();
-      toast.success("Settings cleared!"); refetch(); setIsEditing(false); setClearModal(false);
-    } catch { toast.error("Failed to clear settings."); }
+      await updateSettings({
+        whatsappNumber: "",
+        heroTagline: "",
+        heroTitle: "",
+        heroDescription: "",
+        specialOfferTitle: "",
+        specialOfferText: "",
+        landingMode: false,
+      }).unwrap();
+      // Note: clearing bank accounts would require separate DELETE calls; not implemented here.
+      toast.success("Settings cleared!");
+      refetch();
+      setIsEditing(false);
+      setClearModal(false);
+    } catch {
+      toast.error("Failed to clear settings.");
+    }
   };
 
-  const hasPayment = !!(settings?.bankAccountName || settings?.bankAccountNumber || settings?.bankName || settings?.whatsappNumber);
+  // hasPayment now checks for bank accounts OR whatsapp number
+  const hasPayment = !!(
+    settings?.bankAccounts?.length ||
+    settings?.whatsappNumber
+  );
+
+  // Handler for bank account actions – passed to PaymentDetailsForm
+  const handleAddAccount = async (data: Omit<BankAccount, "_id" | "isDefault" | "isActive">) => {
+    try {
+      await addBankAccount(data).unwrap();
+      toast.success("Bank account added!");
+      refetch();
+    } catch {
+      toast.error("Failed to add bank account.");
+    }
+  };
+
+  const handleUpdateAccount = async (id: string, data: Partial<BankAccount>) => {
+    try {
+      await updateBankAccount({ id, data }).unwrap();
+      toast.success("Bank account updated!");
+      refetch();
+    } catch {
+      toast.error("Failed to update bank account.");
+    }
+  };
+
+  const handleDeleteAccount = async (id: string) => {
+    try {
+      await deleteBankAccount(id).unwrap();
+      toast.success("Bank account deleted!");
+      refetch();
+    } catch {
+      toast.error("Failed to delete bank account.");
+    }
+  };
+
+  const handleSetDefault = async (id: string) => {
+    try {
+      await setDefaultBankAccount(id).unwrap();
+      toast.success("Default bank account updated!");
+      refetch();
+    } catch {
+      toast.error("Failed to set default account.");
+    }
+  };
 
   // Theme styles
   const bg = isDark ? "#0A0A0B" : "#FCFAF5";
@@ -127,7 +215,14 @@ const SettingsPage = () => {
         ) : (
           <div className="space-y-5" role="region" aria-label="Edit settings">
             <HomepageContentForm register={register} errors={errors} settings={settings} onToggleLandingMode={toggleLandingMode} isDark={isDark} />
-            <PaymentDetailsForm register={register} errors={errors} isDark={isDark} />
+            <PaymentDetailsForm
+              settings={settings}
+              isDark={isDark}
+              onAddAccount={handleAddAccount}
+              onUpdateAccount={handleUpdateAccount}
+              onDeleteAccount={handleDeleteAccount}
+              onSetDefault={handleSetDefault}
+            />
             <div className="flex justify-end gap-3 pb-2">
               <button type="button" onClick={() => setIsEditing(false)} className="px-5 py-3 rounded-xl text-sm font-bold transition-colors" style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: textMuted }}>Cancel</button>
               <button type="button" onClick={handleSubmit(onSubmit)} disabled={updating} className="flex items-center gap-2.5 px-7 py-3 rounded-xl font-black text-white text-sm transition-all disabled:opacity-55" style={{ background: ACCENT, boxShadow: `0 6px 18px ${ACCENT}44` }}>{updating ? "Saving…" : "Save All Settings"}</button>
