@@ -16,7 +16,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./context/ThemeContext";
 import CartSync from "./components/CartSync";
-import WishlistSync from "./components/WishlistSync"; 
+import WishlistSync from "./components/WishlistSync";
+import StoreAssistant from "./components/StoreAssistant"; // <-- ADD THIS IMPORT
 
 import {
   Home, Cart, Checkout, Login, Register, ForgotPassword, ResetPassword,
@@ -64,7 +65,10 @@ function AppContent() {
     <>
       {!hideNavbar && <Navbar />}
       <CartSync />
-      <WishlistSync />  
+      <WishlistSync />
+
+      {/* Store Assistant – visible on all pages */}
+      <StoreAssistant />
 
       <Suspense fallback={<LoadingFallback />}>
         <ErrorBoundary>

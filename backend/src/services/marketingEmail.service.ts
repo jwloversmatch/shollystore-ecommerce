@@ -1,17 +1,24 @@
 // backend/src/services/marketingEmail.service.ts
-import { User } from '../models/User';
-import { Settings } from '../models/Settings';
-import { sendEmailViaBrevo } from './brevoSender'; 
+import { User } from "../models/User";
+import { Settings } from "../models/Settings";
+import { sendEmailViaBrevo } from "./brevoSender";
 
-const SENDER_EMAIL = process.env.MARKETING_SENDER_EMAIL || process.env.BREVO_SENDER_EMAIL || 'store@sholex.com';
-const SENDER_NAME = process.env.MARKETING_SENDER_NAME || process.env.BREVO_SENDER_NAME || 'sholex';
-const CLIENT_URL = process.env.CLIENT_URL || 'https://sholex.vercel.app';
-const STORE_LOGO_URL = process.env.STORE_LOGO_URL || `${CLIENT_URL}/icons/sholex-180.png`;
+const SENDER_EMAIL =
+  process.env.MARKETING_SENDER_EMAIL ||
+  process.env.BREVO_SENDER_EMAIL ||
+  "store@sholex.com";
+const SENDER_NAME =
+  process.env.MARKETING_SENDER_NAME ||
+  process.env.BREVO_SENDER_NAME ||
+  "sholex";
+const CLIENT_URL = process.env.CLIENT_URL || "https://sholex.vercel.app";
+const STORE_LOGO_URL =
+  process.env.STORE_LOGO_URL || `${CLIENT_URL}/icons/sholex-180.png`;
 
 // ---------- Shared logo image for all marketing emails ----------
 const LOGO_IMG = `<img src="${STORE_LOGO_URL}" alt="sholex" style="width:28px; height:28px; object-fit:contain; vertical-align:middle; margin-right:8px;" />`;
 
-const LOGO_HEADER = (storeName: string, extraStyle = '') => `
+const LOGO_HEADER = (storeName: string, extraStyle = "") => `
 <div style="text-align:center;padding:30px 20px;${extraStyle}">
   ${LOGO_IMG}
   <h1 style="margin:10px 0 0;font-size:24px;letter-spacing:-0.5px;display:inline-block;vertical-align:middle;">
@@ -25,10 +32,10 @@ const getStoreName = async (): Promise<string> => {
   if (cachedStoreName) return cachedStoreName;
   try {
     const settings = await Settings.findOne();
-    const rawTitle = settings?.heroTitle || '';
-    cachedStoreName = rawTitle.replace(/\|/g, '').trim() || 'sholex';
+    const rawTitle = settings?.heroTitle || "";
+    cachedStoreName = rawTitle.replace(/\|/g, "").trim() || "sholex";
   } catch {
-    cachedStoreName = 'sholex';
+    cachedStoreName = "sholex";
   }
   return cachedStoreName;
 };
@@ -43,27 +50,49 @@ const sendBrevoEmail = async (
   // Loop through recipients sequentially; adjust concurrency if needed
   for (const email of to) {
     try {
-      const result = await sendEmailViaBrevo(email, subject, htmlContent, textContent);
-      console.log(`✅ Marketing email sent to ${email}: ${result.messageId || 'simulated'}`);
+      const result = await sendEmailViaBrevo(
+        email,
+        subject,
+        htmlContent,
+        textContent,
+      );
+      console.log(
+        `✅ Marketing email sent to ${email}: ${result.messageId || "simulated"}`,
+      );
     } catch (error: any) {
-      console.error(`❌ Failed to send marketing email to ${email}:`, error.message);
+      console.error(
+        `❌ Failed to send marketing email to ${email}:`,
+        error.message,
+      );
     }
   }
 };
 
-const stripHtml = (html: string): string => html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+const stripHtml = (html: string): string =>
+  html
+    .replace(/<[^>]*>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 // ---------- Get all user emails ----------
-export const getAllUserEmails = async (): Promise<{ email: string; name?: string }[]> => {
-  const users = await User.find({ role: 'user' }, { email: 1, name: 1, _id: 0 }).lean();
+export const getAllUserEmails = async (): Promise<
+  { email: string; name?: string }[]
+> => {
+  const users = await User.find(
+    { role: "user" },
+    { email: 1, name: 1, _id: 0 },
+  ).lean();
   return users as { email: string; name?: string }[];
 };
 
 // ─── Welcome Email ──────────────────────────────────────────────────────────
-export const sendWelcomeEmail = async (recipient: { email: string; name?: string }, couponCode?: string) => {
+export const sendWelcomeEmail = async (
+  recipient: { email: string; name?: string },
+  couponCode?: string,
+) => {
   const storeName = await getStoreName();
-  const firstName = recipient.name?.split(' ')[0] || 'there';
-  const code = couponCode || 'WELCOME10';
+  const firstName = recipient.name?.split(" ")[0] || "there";
+  const code = couponCode || "WELCOME10";
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f4f7f6}.wrap{padding:20px;background:#f4f7f6}.card{max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.05)}.content{padding:40px 30px;text-align:center}.content h2{color:#2d3748;font-size:22px}.content p{color:#4a5568;line-height:1.6;font-size:16px}.code{background:#fff5f0;border:2px dashed #e8622a;padding:12px 24px;font-size:20px;font-weight:700;color:#e8622a;letter-spacing:2px;display:inline-block;border-radius:12px;margin:10px 0}.btn{display:inline-block;background:#e8622a;color:#fff;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:600;font-size:16px;margin:8px;box-shadow:0 4px 12px rgba(232,98,42,.3)}.ftr{background:#f9fafb;padding:20px;text-align:center;color:#a0aec0;font-size:13px;border-top:1px solid #e2e8f0}.ftr a{color:#e8622a;text-decoration:none}</style></head>
@@ -82,7 +111,11 @@ export const sendWelcomeEmail = async (recipient: { email: string; name?: string
       <div class="ftr">&copy; ${new Date().getFullYear()} ${storeName}.<br><a href="${CLIENT_URL}">Visit our store</a><p style="font-size:12px;margin-top:8px;"><a href="${CLIENT_URL}/unsubscribe">Unsubscribe</a></p></div>
     </div></div></body></html>`;
 
-  await sendBrevoEmail([recipient.email], `Welcome to ${storeName}, ${firstName}! 🎉`, html);
+  await sendBrevoEmail(
+    [recipient.email],
+    `Welcome to ${storeName}, ${firstName}! 🎉`,
+    html,
+  );
 };
 
 // ─── Abandoned Cart Recovery ────────────────────────────────────────────────
@@ -92,18 +125,22 @@ export const sendAbandonedCartEmail = async (
   cartTotal: number,
 ) => {
   const storeName = await getStoreName();
-  const firstName = recipient.name?.split(' ')[0] || 'there';
+  const firstName = recipient.name?.split(" ")[0] || "there";
 
-  const itemsHtml = cartItems.map(item => `
+  const itemsHtml = cartItems
+    .map(
+      (item) => `
     <tr><td style="padding:10px;border-bottom:1px solid #e2e8f0;"><img src="${item.image}" alt="${item.name}" style="width:50px;height:50px;border-radius:8px;object-fit:cover;"></td>
     <td style="padding:10px;border-bottom:1px solid #e2e8f0;color:#2d3748;">${item.name}</td>
     <td style="padding:10px;border-bottom:1px solid #e2e8f0;color:#4a5568;">${item.qty}x</td>
-    <td style="padding:10px;border-bottom:1px solid #e2e8f0;color:#2d3748;font-weight:600;">₦${(item.price * item.qty).toLocaleString()}</td></tr>`).join('');
+    <td style="padding:10px;border-bottom:1px solid #e2e8f0;color:#2d3748;font-weight:600;">₦${(item.price * item.qty).toLocaleString()}</td></tr>`,
+    )
+    .join("");
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f4f7f6}.wrap{padding:20px;background:#f4f7f6}.card{max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.05)}.content{padding:30px 20px}.content p{color:#4a5568;line-height:1.6}table{width:100%;border-collapse:collapse;margin:20px 0}.total{font-size:20px;font-weight:700;color:#e8622a;text-align:right;padding:15px}.btn{display:block;background:#e8622a;color:#fff;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:600;font-size:16px;text-align:center;margin:20px 0;box-shadow:0 4px 12px rgba(232,98,42,.3)}.ftr{background:#f9fafb;padding:20px;text-align:center;color:#a0aec0;font-size:13px;border-top:1px solid #e2e8f0}.ftr a{color:#e8622a;text-decoration:none}</style></head>
     <body><div class="wrap"><div class="card">
-      ${LOGO_HEADER(storeName, 'background:#fff5f0;border-bottom:3px solid #e8622a;')}
+      ${LOGO_HEADER(storeName, "background:#fff5f0;border-bottom:3px solid #e8622a;")}
       <div class="content">
         <p>Hey ${firstName}, your cart is waiting for you at ${storeName}.</p>
         <table>${itemsHtml}</table><div class="total">Total: ₦${cartTotal.toLocaleString()}</div>
@@ -112,15 +149,22 @@ export const sendAbandonedCartEmail = async (
       <div class="ftr">&copy; ${new Date().getFullYear()} ${storeName}.<br><a href="${CLIENT_URL}">Visit our store</a><p style="font-size:12px;margin-top:8px;"><a href="${CLIENT_URL}/unsubscribe">Unsubscribe</a></p></div>
     </div></div></body></html>`;
 
-  await sendBrevoEmail([recipient.email], `🛒 Don't forget your items, ${firstName}!`, html);
+  await sendBrevoEmail(
+    [recipient.email],
+    `🛒 Don't forget your items, ${firstName}!`,
+    html,
+  );
 };
 
 // ─── Promotional Campaign ────────────────────────────────────────────────────
 export const sendPromoEmail = async (
   recipients: { email: string; name?: string }[],
-  promoCode: string, discountPercent: number, minOrder: number, expiryDate: string,
+  promoCode: string,
+  discountPercent: number,
+  minOrder: number,
+  expiryDate: string,
 ) => {
-  const emails = recipients.map(r => r.email);
+  const emails = recipients.map((r) => r.email);
   const storeName = await getStoreName();
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -141,26 +185,33 @@ export const sendPromoEmail = async (
       <div class="ftr">&copy; ${new Date().getFullYear()} ${storeName}.<br><a href="${CLIENT_URL}">Visit our store</a><p style="font-size:12px;margin-top:8px;"><a href="${CLIENT_URL}/unsubscribe">Unsubscribe</a></p></div>
     </div></div></body></html>`;
 
-  await sendBrevoEmail(emails, `🎁 ${discountPercent}% Off – Use code ${promoCode}`, html);
+  await sendBrevoEmail(
+    emails,
+    `🎁 ${discountPercent}% Off – Use code ${promoCode}`,
+    html,
+  );
 };
 
 // ─── New Arrival Announcement ────────────────────────────────────────────────
 export const sendNewArrivalEmail = async (
   recipients: { email: string; name?: string }[],
-  productName: string, productImage: string, productUrl: string, description?: string,
+  productName: string,
+  productImage: string,
+  productUrl: string,
+  description?: string,
 ) => {
-  const emails = recipients.map(r => r.email);
+  const emails = recipients.map((r) => r.email);
   const storeName = await getStoreName();
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f4f7f6}.wrap{padding:20px;background:#f4f7f6}.card{max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.05)}.content{padding:40px 30px;text-align:center}.content h2{color:#2d3748;font-size:22px;margin-top:0}.product-img{width:200px;border-radius:12px;margin:20px 0;box-shadow:0 4px 12px rgba(0,0,0,.1)}.btn{display:inline-block;background:#e8622a;color:#fff;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:600;font-size:16px;box-shadow:0 4px 12px rgba(232,98,42,.3)}.ftr{background:#f9fafb;padding:20px;text-align:center;color:#a0aec0;font-size:13px;border-top:1px solid #e2e8f0}.ftr a{color:#e8622a;text-decoration:none}@media(max-width:480px){.content{padding:30px 20px}}</style></head>
     <body><div class="wrap"><div class="card">
-      ${LOGO_HEADER(storeName, 'background:#ffd6d6;')}
+      ${LOGO_HEADER(storeName, "background:#ffd6d6;")}
       <div class="content">
         <h2>🆕 New Arrival!</h2>
         <img src="${productImage}" alt="${productName}" class="product-img"/>
         <h3>${productName}</h3>
-        ${description ? `<p style="color:#4a5568;line-height:1.6;">${description}</p>` : ''}
+        ${description ? `<p style="color:#4a5568;line-height:1.6;">${description}</p>` : ""}
         <a href="${productUrl}" class="btn">View Product</a>
       </div>
       <div class="ftr">&copy; ${new Date().getFullYear()} ${storeName}.<br><a href="${CLIENT_URL}">Visit our store</a><p style="font-size:12px;margin-top:8px;"><a href="${CLIENT_URL}/unsubscribe">Unsubscribe</a></p></div>
@@ -172,15 +223,17 @@ export const sendNewArrivalEmail = async (
 // ─── Back‑in‑Stock Notification ──────────────────────────────────────────────
 export const sendBackInStockEmail = async (
   recipients: { email: string; name?: string }[],
-  productName: string, productImage: string, productUrl: string,
+  productName: string,
+  productImage: string,
+  productUrl: string,
 ) => {
-  const emails = recipients.map(r => r.email);
+  const emails = recipients.map((r) => r.email);
   const storeName = await getStoreName();
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f4f7f6}.wrap{padding:20px;background:#f4f7f6}.card{max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.05)}.content{padding:40px 30px;text-align:center}.content h2{color:#2d3748;font-size:22px;margin-top:0}.product-img{width:200px;border-radius:12px;margin:20px 0;box-shadow:0 4px 12px rgba(0,0,0,.1)}.btn{display:inline-block;background:#e8622a;color:#fff;padding:14px 32px;border-radius:50px;text-decoration:none;font-weight:600;font-size:16px;box-shadow:0 4px 12px rgba(232,98,42,.3)}.ftr{background:#f9fafb;padding:20px;text-align:center;color:#a0aec0;font-size:13px;border-top:1px solid #e2e8f0}.ftr a{color:#e8622a;text-decoration:none}@media(max-width:480px){.content{padding:30px 20px}}</style></head>
     <body><div class="wrap"><div class="card">
-      ${LOGO_HEADER(storeName, 'background:#dff2e6;')}
+      ${LOGO_HEADER(storeName, "background:#dff2e6;")}
       <div class="content">
         <h2>⚡ Back in Stock!</h2>
         <img src="${productImage}" alt="${productName}" class="product-img"/>
