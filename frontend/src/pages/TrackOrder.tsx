@@ -11,16 +11,55 @@ import {
   Clock,
   MapPin,
   CreditCard,
+  RotateCcw,
 } from "lucide-react";
 import SEO from "../components/SEO";
 import { formatPaymentMethod } from "../utils/format";
 
 const ACCENT = "#e8622a";
+const STORAGE_KEY = "sholex_track_order";
 
 const TrackOrder = () => {
-  const [orderId, setOrderId] = useState("");
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  // Lazy initializers – read localStorage only once, no effect needed
+  const [orderId, setOrderId] = useState<string>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as { orderId?: string };
+        return parsed.orderId || "";
+      }
+    } catch {
+      // Ignore invalid JSON
+    }
+    return "";
+  });
+
+  const [email, setEmail] = useState<string>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as { email?: string };
+        return parsed.email || "";
+      }
+    } catch {
+      // Ignore invalid JSON
+    }
+    return "";
+  });
+
+  const [submitted, setSubmitted] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as { orderId?: string; email?: string };
+        return !!(parsed.orderId && parsed.email);
+      }
+    } catch {
+      // Ignore invalid JSON
+    }
+    return false;
+  });
+
   const [emailError, setEmailError] = useState("");
   const resultRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -35,20 +74,22 @@ const TrackOrder = () => {
     { skip: !submitted || !orderId || !email }
   );
 
-  // Scroll to result when it appears (no setState here, only DOM operation)
+  // Scroll to result when it appears (DOM manipulation only)
   useEffect(() => {
     if (submitted && data?.order && !isFetching) {
-      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
     }
   }, [submitted, data, isFetching]);
 
-  // Clear result and errors when user edits inputs
   const handleInputChange =
     (setter: React.Dispatch<React.SetStateAction<string>>) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setter(e.target.value);
       setSubmitted(false);
       if (emailError) setEmailError("");
+      localStorage.removeItem(STORAGE_KEY);
     };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -60,6 +101,18 @@ const TrackOrder = () => {
     }
     setEmailError("");
     setSubmitted(true);
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ orderId, email })
+    );
+  };
+
+  const handleTrackAnother = () => {
+    setOrderId("");
+    setEmail("");
+    setSubmitted(false);
+    setEmailError("");
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   let errorMessage = "Order not found. Please check your details.";
@@ -98,100 +151,120 @@ const TrackOrder = () => {
           Track Your Order
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mb-8" noValidate>
-          <div>
-            <label
-              htmlFor="track-order-id"
-              className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1"
-            >
-              Order ID or Tracking Number
-            </label>
-            <input
-              id="track-order-id"
-              type="text"
-              value={orderId}
-              onChange={handleInputChange(setOrderId)}
-              required
-              className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white outline-none focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12"
-              placeholder="e.g., SHO-2026-AB12CD"
-              aria-required="true"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="track-email"
-              className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1"
-            >
-              Email used at checkout
-            </label>
-            <input
-              id="track-email"
-              type="email"
-              value={email}
-              onChange={handleInputChange(setEmail)}
-              required
-              className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white outline-none focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12"
-              placeholder="you@example.com"
-              aria-required="true"
-              aria-invalid={!!emailError}
-              aria-describedby={emailError ? "track-email-error" : undefined}
-            />
-            {emailError && (
-              <p
-                id="track-email-error"
-                className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"
-                role="alert"
-              >
-                <AlertCircle className="w-3 h-3" aria-hidden="true" /> {emailError}
-              </p>
-            )}
-          </div>
-          <button
-            type="submit"
-            disabled={isFetching || !orderId.trim() || !email.trim()}
-            className="w-full py-4 rounded-xl font-black text-white text-[15px] flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ background: ACCENT, boxShadow: `0 8px 24px ${ACCENT}44` }}
-            aria-busy={isFetching}
-          >
-            {isFetching ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Search className="w-5 h-5" />
-            )}
-            {isFetching ? "Searching…" : "Track Order"}
-          </button>
-        </form>
-
-        <AnimatePresence>
-          {isError && submitted && (
+        <AnimatePresence mode="wait">
+          {!shouldShowResult ? (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              key="form"
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-400 flex items-center gap-2"
-              role="alert"
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
             >
-              <AlertCircle className="w-4 h-4" />
-              {errorMessage}
-            </motion.div>
-          )}
+              <form onSubmit={handleSubmit} className="space-y-4 mb-8" noValidate>
+                <div>
+                  <label
+                    htmlFor="track-order-id"
+                    className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1"
+                  >
+                    Order ID or Tracking Number
+                  </label>
+                  <input
+                    id="track-order-id"
+                    type="text"
+                    value={orderId}
+                    onChange={handleInputChange(setOrderId)}
+                    required
+                    className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white outline-none focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12"
+                    placeholder="e.g., SHO-2026-AB12CD"
+                    aria-required="true"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="track-email"
+                    className="block text-sm font-bold text-gray-600 dark:text-gray-400 mb-1"
+                  >
+                    Email used at checkout
+                  </label>
+                  <input
+                    id="track-email"
+                    type="email"
+                    value={email}
+                    onChange={handleInputChange(setEmail)}
+                    required
+                    className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white outline-none focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12"
+                    placeholder="you@example.com"
+                    aria-required="true"
+                    aria-invalid={!!emailError}
+                    aria-describedby={emailError ? "track-email-error" : undefined}
+                  />
+                  {emailError && (
+                    <p
+                      id="track-email-error"
+                      className="mt-1.5 text-xs text-red-400 flex items-center gap-1 font-semibold"
+                      role="alert"
+                    >
+                      <AlertCircle className="w-3 h-3" aria-hidden="true" /> {emailError}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  disabled={isFetching || !orderId.trim() || !email.trim()}
+                  className="w-full py-4 rounded-xl font-black text-white text-[15px] flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: ACCENT, boxShadow: `0 8px 24px ${ACCENT}44` }}
+                  aria-busy={isFetching}
+                >
+                  {isFetching ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Search className="w-5 h-5" />
+                  )}
+                  {isFetching ? "Searching…" : "Track Order"}
+                </button>
+              </form>
 
-          {shouldShowResult && order && (
+              {isError && submitted && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-400 flex items-center gap-2"
+                  role="alert"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  {errorMessage}
+                </motion.div>
+              )}
+            </motion.div>
+          ) : (
             <motion.div
+              key="result"
               ref={resultRef}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
               className="mt-6 rounded-2xl p-6 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 shadow-lg"
             >
-              <h2 className="text-xl font-black text-gray-900 dark:text-white mb-4">
-                Order Details
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-black text-gray-900 dark:text-white">
+                  Order Details
+                </h2>
+                <button
+                  onClick={handleTrackAnother}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                  aria-label="Track another order"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Track Another
+                </button>
+              </div>
 
               {/* Status timeline */}
               <div className="flex items-center justify-between mb-6">
                 {timelineSteps.map((step, idx) => {
-                  const currentStatus = order.status;
+                  const currentStatus = order!.status;
                   const isCompleted =
                     timelineSteps.indexOf(currentStatus) >= idx;
                   const isCurrent = currentStatus === step;
@@ -227,37 +300,37 @@ const TrackOrder = () => {
               </div>
 
               <div className="space-y-3 text-sm">
-                {order.trackingNumber && (
+                {order!.trackingNumber && (
                   <p className="flex justify-between">
                     <span className="text-gray-500 dark:text-gray-400">
                       Tracking Number
                     </span>
                     <span className="font-mono font-bold text-gray-900 dark:text-white">
-                      {order.trackingNumber}
+                      {order!.trackingNumber}
                     </span>
                   </p>
                 )}
                 <p className="flex justify-between">
                   <span className="text-gray-500 dark:text-gray-400">Status</span>
                   <span className="font-bold text-gray-900 dark:text-white">
-                    {order.status}
+                    {order!.status}
                   </span>
                 </p>
                 <p className="flex justify-between">
                   <span className="text-gray-500 dark:text-gray-400">Total</span>
                   <span className="font-bold text-gray-900 dark:text-white">
-                    ₦{order.totalPrice.toLocaleString()}
+                    ₦{order!.totalPrice.toLocaleString()}
                   </span>
                 </p>
-                {order.shippingFee !== undefined && (
+                {order!.shippingFee !== undefined && (
                   <p className="flex justify-between">
                     <span className="text-gray-500 dark:text-gray-400">
                       Shipping
                     </span>
                     <span className="font-bold text-gray-900 dark:text-white">
-                      {order.shippingFee === 0
+                      {order!.shippingFee === 0
                         ? "Free"
-                        : `₦${order.shippingFee.toLocaleString()}`}
+                        : `₦${order!.shippingFee.toLocaleString()}`}
                     </span>
                   </p>
                 )}
@@ -266,19 +339,19 @@ const TrackOrder = () => {
                     Payment Method
                   </span>
                   <span className="font-bold text-gray-900 dark:text-white">
-                    {formatPaymentMethod(order.paymentMethod)}
+                    {formatPaymentMethod(order!.paymentMethod)}
                   </span>
                 </p>
               </div>
 
               {/* Items */}
-              {order.orderItems.length > 0 && (
+              {order!.orderItems.length > 0 && (
                 <div className="mt-6">
                   <h3 className="font-bold text-gray-900 dark:text-white mb-3">
                     Items
                   </h3>
                   <div className="space-y-2">
-                    {order.orderItems.map((item, idx) => (
+                    {order!.orderItems.map((item, idx) => (
                       <div key={idx} className="flex items-center gap-3">
                         {item.image && (
                           <img
@@ -311,38 +384,38 @@ const TrackOrder = () => {
                   Shipping Address
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
-                  {order.shippingAddress.address}, {order.shippingAddress.city}
-                  {order.shippingAddress.postalCode &&
-                    `, ${order.shippingAddress.postalCode}`}
-                  {order.shippingAddress.country &&
-                    `, ${order.shippingAddress.country}`}
+                  {order!.shippingAddress.address}, {order!.shippingAddress.city}
+                  {order!.shippingAddress.postalCode &&
+                    `, ${order!.shippingAddress.postalCode}`}
+                  {order!.shippingAddress.country &&
+                    `, ${order!.shippingAddress.country}`}
                 </p>
               </div>
 
               {/* Payment instructions */}
-              {order.paymentDetails && (
+              {order!.paymentDetails && (
                 <div className="mt-6 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
                   <p className="font-bold text-emerald-600 dark:text-emerald-400 mb-2 flex items-center gap-2">
                     <CreditCard className="w-4 h-4" />
                     Payment Instructions
                   </p>
-                  {order.paymentMethod === "bank_transfer" && (
+                  {order!.paymentMethod === "bank_transfer" && (
                     <>
                       <p className="text-sm">
-                        Bank: {order.paymentDetails.bankName}
+                        Bank: {order!.paymentDetails.bankName}
                       </p>
                       <p className="text-sm">
-                        Account Name: {order.paymentDetails.accountName}
+                        Account Name: {order!.paymentDetails.accountName}
                       </p>
                       <p className="text-sm font-mono">
-                        Account Number: {order.paymentDetails.accountNumber}
+                        Account Number: {order!.paymentDetails.accountNumber}
                       </p>
                     </>
                   )}
-                  {order.paymentMethod === "whatsapp" && (
+                  {order!.paymentMethod === "whatsapp" && (
                     <p className="text-sm">
                       Please chat with us on WhatsApp at{" "}
-                      {order.paymentDetails.whatsappNumber} to complete payment.
+                      {order!.paymentDetails.whatsappNumber} to complete payment.
                     </p>
                   )}
                 </div>
