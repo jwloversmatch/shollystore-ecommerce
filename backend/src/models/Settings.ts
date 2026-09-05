@@ -1,11 +1,31 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema, Types } from 'mongoose';
+
+export interface IBankAccount {
+  _id: Types.ObjectId;
+  label: string;
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  isDefault: boolean;
+  isActive: boolean;
+}
+
+const BankAccountSchema = new Schema<IBankAccount>(
+  {
+    label: { type: String, default: '' },
+    bankName: { type: String, required: true },
+    accountName: { type: String, required: true },
+    accountNumber: { type: String, required: true },
+    isDefault: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
+  },
+  { timestamps: true },
+);
 
 export interface ISettings extends Document {
-  bankAccountName: string;
-  bankAccountNumber: string;
-  bankName: string;
+  bankAccounts: Types.DocumentArray<IBankAccount>;
   whatsappNumber: string;
-  // --- new fields ---
+  // --- homepage content fields ---
   heroTagline: string;
   heroTitle: string;
   heroDescription: string;
@@ -15,11 +35,9 @@ export interface ISettings extends Document {
 }
 
 const SettingsSchema: Schema = new Schema({
-  bankAccountName: { type: String, default: '' },
-  bankAccountNumber: { type: String, default: '' },
-  bankName: { type: String, default: '' },
+  bankAccounts: { type: [BankAccountSchema], default: [] },
   whatsappNumber: { type: String, default: '' },
-  // --- new fields with defaults ---
+  // --- homepage content fields with defaults ---
   landingMode: { type: Boolean, default: false },
   heroTagline: { type: String, default: '📦 Bulk Beverage Store' },
   heroTitle: { type: String, default: 'Your Everyday | Drink Superstore' },

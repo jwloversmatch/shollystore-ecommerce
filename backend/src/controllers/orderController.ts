@@ -4,7 +4,7 @@ import { Order, IOrder } from "../models/Order";
 import { Product } from "../models/Product";
 import { User } from "../models/User";
 import { Coupon } from "../models/Coupon";
-import { Settings } from "../models/Settings"; 
+import { Settings } from "../models/Settings";
 import { paystack, PaystackError, ValidationError } from "../config/paystack";
 import {
   sendOrderConfirmation,
@@ -102,18 +102,31 @@ export const createOrder = async (
     const settings = await Settings.findOne();
 
     // Build payment details from settings (fallback to env as last resort)
-    const paymentDetails =
-      paymentMethod === "bank_transfer"
-        ? {
-            bankName: settings?.bankName || process.env.BANK_NAME || "",
-            accountName: settings?.bankAccountName || process.env.BANK_ACCOUNT_NAME || "",
-            accountNumber: settings?.bankAccountNumber || process.env.BANK_ACCOUNT_NUMBER || "",
-          }
-        : paymentMethod === "whatsapp"
-          ? {
-              whatsappNumber: settings?.whatsappNumber || process.env.WHATSAPP_NUMBER || "",
-            }
-          : undefined;
+    let paymentDetails;
+    if (paymentMethod === "bank_transfer") {
+      // Find default account, fallback to first active
+      const defaultAccount =
+        settings?.bankAccounts?.find((acc) => acc.isDefault && acc.isActive) ||
+        settings?.bankAccounts?.find((acc) => acc.isActive) ||
+        null;
+
+      paymentDetails = {
+        bankName: defaultAccount?.bankName || process.env.BANK_NAME || "",
+        accountName:
+          defaultAccount?.accountName || process.env.BANK_ACCOUNT_NAME || "",
+        accountNumber:
+          defaultAccount?.accountNumber ||
+          process.env.BANK_ACCOUNT_NUMBER ||
+          "",
+      };
+    } else if (paymentMethod === "whatsapp") {
+      paymentDetails = {
+        whatsappNumber:
+          settings?.whatsappNumber || process.env.WHATSAPP_NUMBER || "",
+      };
+    } else {
+      paymentDetails = undefined;
+    }
 
     const orderData = {
       user: req.user?._id || null,
@@ -130,7 +143,7 @@ export const createOrder = async (
       shippingFee,
       status: "Pending" as const,
       paymentMethod,
-      paymentDetails, 
+      paymentDetails,
       couponCode: pricing.couponCode || undefined,
       discount,
       notes: notes || undefined,
