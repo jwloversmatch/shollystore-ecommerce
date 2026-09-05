@@ -27,6 +27,7 @@ import {
   Loader2,
   X,
   CheckCircle,
+  Clock,
 } from "lucide-react";
 import SEO from "../components/SEO";
 import { getCloudinaryUrl } from "../utils/cloudinary";
@@ -238,9 +239,13 @@ const CartHeader = ({
 // ─── Cart item row ────────────────────────────────────────────────────────────
 const CartItem = ({ item }: { item: CartItemType }) => {
   const dispatch = useDispatch();
+  
+  // Fallback to 99 if stock is missing, so quantity controls always work
+  const maxStock = item.stock ?? 99;
+
   const handleQty = (delta: number) => {
     const next = item.qty + delta;
-    if (next >= 1 && next <= item.stock)
+    if (next >= 1 && next <= maxStock)
       dispatch(updateQuantity({ _id: item._id, qty: next }));
   };
 
@@ -299,7 +304,7 @@ const CartItem = ({ item }: { item: CartItemType }) => {
             <motion.button
               whileTap={{ scale: 0.88 }}
               onClick={() => handleQty(1)}
-              disabled={item.qty >= item.stock}
+              disabled={item.qty >= maxStock}
               className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               aria-label={`Increase quantity of ${item.name}`}
             >
@@ -346,7 +351,7 @@ const OrderSummary = ({
   handleRemoveCoupon,
   isApplying,
   finalTotal,
-  user, // 👈 now receives user prop
+  user,
 }: {
   totalPrice: number;
   totalItems: number;
@@ -360,7 +365,7 @@ const OrderSummary = ({
   handleRemoveCoupon: () => void;
   isApplying: boolean;
   finalTotal: number;
-  user: { email: string } | null; // user prop to conditionally show coupon
+  user: { email: string } | null;
 }) => (
   <motion.aside
     initial={{ opacity: 0, x: 20 }}
@@ -534,6 +539,12 @@ const OrderSummary = ({
             ₦{finalTotal.toLocaleString()}
           </span>
         </div>
+      </div>
+
+      {/* Delivery estimate */}
+      <div className="mt-5 flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <Clock className="w-3.5 h-3.5" />
+        <span>Estimated delivery: 2–5 business days</span>
       </div>
 
       <motion.button
@@ -811,7 +822,7 @@ const Cart = () => {
             handleRemoveCoupon={handleRemoveCoupon}
             isApplying={isApplying}
             finalTotal={finalTotal}
-            user={user}          // 👈 pass user prop
+            user={user}
           />
         </div>
       </div>
