@@ -17,7 +17,8 @@ import {
   X,
   Store,
   Heart,
-  Star, // ✅ imported for reviews
+  Star,
+  Truck, // ✅ imported for track order
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
@@ -50,7 +51,7 @@ const ADMIN_LINKS = [
     icon: <BadgePercent className="w-5 h-5" aria-hidden="true" />,
   },
   {
-    to: "/admin/reviews", // ✅ new link
+    to: "/admin/reviews",
     label: "Reviews",
     icon: <Star className="w-5 h-5" aria-hidden="true" />,
   },
@@ -388,6 +389,24 @@ const Navbar = () => {
               </Link>
             )}
 
+            {/* ✅ Track Order icon (desktop) for guests and users */}
+            {(!user || user.role === "user") && (
+              <Link
+                to="/track-order"
+                className="relative p-1"
+                aria-label="Track order"
+              >
+                <Truck
+                  className={`w-5 h-5 transition-colors ${
+                    isActive("/track-order")
+                      ? "text-[#e8622a]"
+                      : "text-gray-600 dark:text-gray-500 hover:text-black dark:hover:text-white"
+                  }`}
+                  aria-hidden="true"
+                />
+              </Link>
+            )}
+
             {/* ✅ Wishlist heart with badge (desktop) */}
             {user?.role === "user" && (
               <Link
@@ -537,6 +556,16 @@ const Navbar = () => {
                   label="Cart"
                   active={isActive("/cart")}
                   badge={totalQty}
+                />
+              )}
+
+              {/* ✅ Track Order bottom nav button for guests and users */}
+              {(!user || user.role === "user") && (
+                <NavBtn
+                  to="/track-order"
+                  icon={<Truck className="w-5 h-5" />}
+                  label="Track"
+                  active={isActive("/track-order")}
                 />
               )}
 
