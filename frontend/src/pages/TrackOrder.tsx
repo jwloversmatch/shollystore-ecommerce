@@ -12,15 +12,17 @@ import {
   MapPin,
   CreditCard,
   RotateCcw,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import SEO from "../components/SEO";
 import { formatPaymentMethod } from "../utils/format";
 
 const ACCENT = "#e8622a";
 const STORAGE_KEY = "sholex_track_order";
+const INITIAL_ITEM_COUNT = 2;
 
 const TrackOrder = () => {
-  // Lazy initializers – read localStorage only once, no effect needed
   const [orderId, setOrderId] = useState<string>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -61,6 +63,7 @@ const TrackOrder = () => {
   });
 
   const [emailError, setEmailError] = useState("");
+  const [showAllItems, setShowAllItems] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -74,7 +77,7 @@ const TrackOrder = () => {
     { skip: !submitted || !orderId || !email }
   );
 
-  // Scroll to result when it appears (DOM manipulation only)
+  // Scroll to result when it appears
   useEffect(() => {
     if (submitted && data?.order && !isFetching) {
       setTimeout(() => {
@@ -112,6 +115,7 @@ const TrackOrder = () => {
     setEmail("");
     setSubmitted(false);
     setEmailError("");
+    setShowAllItems(false);
     localStorage.removeItem(STORAGE_KEY);
   };
 
@@ -132,6 +136,13 @@ const TrackOrder = () => {
   const order = data?.order;
   const timelineSteps = ["Pending", "Processing", "Shipped", "Delivered"];
   const shouldShowResult = submitted && !isFetching && !!order;
+
+  // Derived values for item display
+  const totalItems = order?.orderItems?.length || 0;
+  const visibleItems = showAllItems
+    ? order?.orderItems
+    : order?.orderItems?.slice(0, INITIAL_ITEM_COUNT);
+  const hasMoreItems = totalItems > INITIAL_ITEM_COUNT;
 
   return (
     <main
@@ -344,14 +355,14 @@ const TrackOrder = () => {
                 </p>
               </div>
 
-              {/* Items */}
+              {/* Items with show more/less */}
               {order!.orderItems.length > 0 && (
                 <div className="mt-6">
                   <h3 className="font-bold text-gray-900 dark:text-white mb-3">
-                    Items
+                    Items ({order!.orderItems.length})
                   </h3>
                   <div className="space-y-2">
-                    {order!.orderItems.map((item, idx) => (
+                    {visibleItems?.map((item, idx) => (
                       <div key={idx} className="flex items-center gap-3">
                         {item.image && (
                           <img
@@ -374,6 +385,26 @@ const TrackOrder = () => {
                       </div>
                     ))}
                   </div>
+
+                  {hasMoreItems && (
+                    <button
+                      onClick={() => setShowAllItems((prev) => !prev)}
+                      className="mt-3 w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors text-gray-700 dark:text-gray-300"
+                      aria-expanded={showAllItems}
+                    >
+                      {showAllItems ? (
+                        <>
+                          <ChevronUp className="w-4 h-4" />
+                          Show less
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-4 h-4" />
+                          Show all {order!.orderItems.length} items
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               )}
 
