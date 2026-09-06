@@ -74,7 +74,6 @@ const ProductCard = ({
     ? formatPrice(compareAtPrice, { compact: true })
     : null;
 
-  // Create a product object for quick view if fullProduct not provided
   const modalProduct: ProductItem = fullProduct || {
     _id,
     name,
@@ -170,8 +169,8 @@ const ProductCard = ({
       <article
         className="group relative flex flex-col h-full rounded-2xl overflow-hidden border
           bg-white dark:bg-[#141414]
-          border-gray-200 dark:border-white/[0.06]
-          shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.3)]
+          border-gray-300 dark:border-white/[0.06]
+          shadow-md dark:shadow-[0_8px_24px_rgba(0,0,0,0.3)]
           transition-all duration-300 ease-out
           motion-safe:hover:-translate-y-1.5 motion-safe:focus-within:-translate-y-1.5
           hover:shadow-[0_0_0_1.5px_rgba(232,98,42,0.35),0_20px_45px_-15px_rgba(232,98,42,0.35)]
@@ -189,7 +188,7 @@ const ProductCard = ({
 
         {/* Visual content */}
         <div className="relative z-[1] flex flex-col flex-1 pointer-events-none">
-          {/* Image area - background lightened */}
+          {/* Image area */}
           <div className="relative w-full h-48 bg-[#fafafa] dark:bg-[#2a2a2a] flex items-center justify-center p-4 overflow-hidden">
             <img
               src={imgSrc}

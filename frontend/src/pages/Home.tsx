@@ -20,7 +20,6 @@ import HomeFeatures from "./home/HomeFeatures";
 import HomeSpecialOffer from "./home/HomeSpecialOffer";
 import HomeHowItWorks from "./home/HomeHowItWorks";
 import FeaturedProductsGrid from "../components/FeaturedProductsGrid";
-import HomeWelcomeBanner from "./home/HomeWelcomeBanner";
 import HomePromoBanners from "./home/HomePromoBanners";
 import HomeNewArrivals from "./home/HomeNewArrivals";
 import HomeTestimonials from "./home/HomeTestimonials";
@@ -167,9 +166,6 @@ const Home = () => {
           onShopNow={() => navigate("/shop")}
         />
       </div>
-
-      {/* Welcome banner for logged-in users */}
-      <HomeWelcomeBanner />
 
       {/* Promo banners */}
       <HomePromoBanners />
