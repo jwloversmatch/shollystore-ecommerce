@@ -19,15 +19,31 @@ import {
   Heart,
   Star,
   Truck,
+  Package,
+  Menu,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
 import { useState, useRef, useEffect } from "react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
 const BRAND_NAME = "SHOLEX";
+
+const CUSTOMER_LINKS = [
+  { to: "/", label: "Home" },
+  { to: "/shop", label: "Shop" },
+  { to: "/track-order", label: "Track Order" },
+  { to: "/about", label: "About" },
+  { to: "/contact", label: "Contact" },
+];
+
+const MOBILE_SECONDARY_LINKS = [
+  { to: "/about", label: "About" },
+  { to: "/contact", label: "Contact" },
+  { to: "/privacy", label: "Privacy Policy" },
+  { to: "/terms", label: "Terms of Service" },
+];
 
 const ADMIN_LINKS = [
   {
@@ -118,7 +134,7 @@ const NavBtn: React.FC<NavBtnProps> = ({ to, icon, label, active, badge }) => {
   );
 };
 
-// ─── User dropdown menu (account + wishlist + logout) ───────────────────────
+// ─── User dropdown menu ───────────────────────────────────────────────────────
 const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -246,6 +262,7 @@ const Navbar = () => {
   const { pathname, search } = useLocation();
 
   const [adminDrawer, setAdminDrawer] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // ✅ hamburger menu
   const drawerRef = useRef<HTMLDivElement>(null);
   const liveRegionRef = useRef<HTMLSpanElement>(null);
   const prevTotalQtyRef = useRef<number | null>(null);
@@ -326,7 +343,8 @@ const Navbar = () => {
           shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
         />
         <div className="relative max-w-7xl mx-auto px-6 flex justify-between items-center py-4">
-          <div className="flex items-center gap-6">
+          {/* Left: logo + customer nav (if not admin) */}
+          <div className="flex items-center gap-8">
             <Link
               to={user?.role === "admin" ? "/admin" : "/"}
               className="text-2xl font-black tracking-tight shrink-0 flex items-center gap-2 text-gray-900 dark:text-white"
@@ -340,18 +358,23 @@ const Navbar = () => {
               <span>{BRAND_NAME}</span>
             </Link>
 
-            {/* ✅ Shop link for non-admin users */}
             {(!user || user.role === "user") && (
-              <Link
-                to="/shop"
-                className={desktopLinkCls("/shop")}
-                aria-current={isActive("/shop") ? "page" : undefined}
-              >
-                Shop
-              </Link>
+              <div className="flex items-center gap-6">
+                {CUSTOMER_LINKS.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className={desktopLinkCls(link.to)}
+                    aria-current={isActive(link.to) ? "page" : undefined}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             )}
           </div>
 
+          {/* Admin links (center/right) */}
           {user?.role === "admin" && (
             <div className="flex items-center gap-5">
               {ADMIN_LINKS.map((l) => (
@@ -367,6 +390,7 @@ const Navbar = () => {
             </div>
           )}
 
+          {/* Right icons */}
           <div className="flex items-center gap-4 shrink-0">
             <ThemeToggle />
 
@@ -402,7 +426,7 @@ const Navbar = () => {
               </Link>
             )}
 
-            {/* ✅ Track Order icon (desktop) for guests and users */}
+            {/* Track Order icon (desktop) for guests and users */}
             {(!user || user.role === "user") && (
               <Link
                 to="/track-order"
@@ -420,7 +444,7 @@ const Navbar = () => {
               </Link>
             )}
 
-            {/* ✅ Wishlist heart with badge (desktop) */}
+            {/* Wishlist heart with badge (desktop only) */}
             {user?.role === "user" && (
               <Link
                 to="/account?tab=wishlist"
@@ -470,9 +494,10 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* ══════ MOBILE — all fixed elements portaled to body ══════ */}
+      {/* ══════ MOBILE — top bar + bottom nav + hamburger menu ══════ */}
       {createPortal(
         <>
+          {/* Mobile top bar */}
           <nav
             className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center px-5
               bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]"
@@ -484,77 +509,67 @@ const Navbar = () => {
             aria-label="Mobile navigation"
           >
             <div className="flex justify-between items-center w-full">
-              <div className="flex items-center gap-3">
-                <Link
-                  to={user?.role === "admin" ? "/admin" : "/"}
-                  className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white"
-                  aria-label={`${BRAND_NAME} - Home`}
-                >
-                  <Store
-                    className="w-5 h-5"
-                    style={{ color: ACCENT }}
-                    aria-hidden="true"
-                  />
-                  <span>{BRAND_NAME}</span>
-                </Link>
-
-                {/* ✅ Shop link for non-admin in mobile top bar */}
-                {(!user || user.role === "user") && (
-                  <Link
-                    to="/shop"
-                    className="text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white"
-                    aria-current={isActive("/shop") ? "page" : undefined}
-                  >
-                    Shop
-                  </Link>
-                )}
-              </div>
+              <Link
+                to={user?.role === "admin" ? "/admin" : "/"}
+                className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white"
+                aria-label={`${BRAND_NAME} - Home`}
+              >
+                <Store
+                  className="w-5 h-5"
+                  style={{ color: ACCENT }}
+                  aria-hidden="true"
+                />
+                <span>{BRAND_NAME}</span>
+              </Link>
 
               <div className="flex items-center gap-3">
                 <ThemeToggle />
-                {showCart && (
-                  <Link
-                    to="/cart"
-                    className="relative p-1.5 rounded-xl transition-colors"
-                    style={{ color: isActive("/cart") ? ACCENT : "#6b7280" }}
-                    aria-label={`Cart with ${totalQty} ${totalQty === 1 ? "item" : "items"}`}
+                {/* Hamburger menu button */}
+                {(!user || user.role === "user") && (
+                  <button
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    className="p-2 rounded-xl transition-colors"
+                    style={{ color: mobileMenuOpen ? ACCENT : "#6b7280" }}
+                    aria-label="Toggle menu"
+                    aria-expanded={mobileMenuOpen}
+                    aria-controls="mobile-secondary-menu"
                   >
-                    <ShoppingCart className="w-5 h-5" aria-hidden="true" />
-                    {totalQty > 0 && (
-                      <span
-                        className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
-                        style={{ background: ACCENT }}
-                        aria-hidden="true"
-                      >
-                        {totalQty}
-                      </span>
-                    )}
-                  </Link>
-                )}
-                {/* ✅ Wishlist heart with badge (mobile top) */}
-                {user?.role === "user" && (
-                  <Link
-                    to="/account?tab=wishlist"
-                    className="relative p-1.5 rounded-xl transition-colors"
-                    style={{ color: isWishlistActive ? ACCENT : "#6b7280" }}
-                    aria-label={`Wishlist with ${wishlistCount} ${wishlistCount === 1 ? "item" : "items"}`}
-                  >
-                    <Heart className="w-5 h-5" aria-hidden="true" />
-                    {wishlistCount > 0 && (
-                      <span
-                        className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black min-w-[15px] min-h-[15px] rounded-full flex items-center justify-center px-0.5"
-                        style={{ background: ACCENT }}
-                        aria-hidden="true"
-                      >
-                        {wishlistCount}
-                      </span>
-                    )}
-                  </Link>
+                    <Menu className="w-5 h-5" />
+                  </button>
                 )}
               </div>
             </div>
           </nav>
 
+          {/* Hamburger dropdown for secondary links */}
+          <AnimatePresence>
+            {mobileMenuOpen && (
+              <motion.div
+                id="mobile-secondary-menu"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="fixed top-[56px] left-0 right-0 z-30 md:hidden bg-white dark:bg-[#141414] border-b border-gray-200 dark:border-white/[0.08] shadow-lg"
+                style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+              >
+                <div className="px-5 py-4 space-y-1">
+                  {MOBILE_SECONDARY_LINKS.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-4 py-3 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Bottom navigation */}
           <nav
             className="md:hidden fixed bottom-0 left-0 right-0 z-40
         bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
@@ -575,6 +590,16 @@ const Navbar = () => {
                 }
               />
 
+              {/* Shop tab */}
+              {(!user || user.role === "user") && (
+                <NavBtn
+                  to="/shop"
+                  icon={<Package className="w-5 h-5" />}
+                  label="Shop"
+                  active={isActive("/shop")}
+                />
+              )}
+
               {showCart && (
                 <NavBtn
                   to="/cart"
@@ -585,7 +610,7 @@ const Navbar = () => {
                 />
               )}
 
-              {/* ✅ Track Order bottom nav button for guests and users */}
+              {/* Track Order bottom nav button for guests and users */}
               {(!user || user.role === "user") && (
                 <NavBtn
                   to="/track-order"
@@ -638,6 +663,7 @@ const Navbar = () => {
             </div>
           </nav>
 
+          {/* Admin drawer */}
           <AnimatePresence>
             {adminDrawer && (
               <>
