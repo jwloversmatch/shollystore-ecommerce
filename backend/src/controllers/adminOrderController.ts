@@ -9,6 +9,7 @@ import {
   sendAdminOrderNotification,
   sendOrderStatusUpdateEmail,
   sendOrderShippedEmail,
+  sendOrderCancelledEmail,
 } from "../services/email.service";
 
 const reduceStockForOrder = async (order: IOrder) => {
@@ -230,6 +231,21 @@ export const updateOrderStatus = async (
       name?: string;
       phone?: string;
     } | null;
+
+    // ✅ Send cancellation email when status is Cancelled
+    if (status === "Cancelled" && populatedUser?.email) {
+      sendOrderCancelledEmail(
+        populatedUser.email,
+        order._id.toString(),
+        cancellationReason || "No reason provided",
+        populatedUser.name,
+        order.totalPrice,
+        order.discount || 0,
+        order.couponCode,
+      ).catch((err) =>
+        console.error("Failed to send cancellation email:", err),
+      );
+    }
 
     if (status === "Shipped" && populatedUser?.email) {
       sendOrderShippedEmail(

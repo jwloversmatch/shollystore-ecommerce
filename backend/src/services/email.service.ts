@@ -699,3 +699,52 @@ export const sendAbandonedCartEmail = async (
     `Hi ${name || "there"}, you left items in your cart. Complete your purchase now: ${checkoutUrl}`,
   );
 };
+
+export const sendOrderCancelledEmail = async (
+  email: string,
+  orderId: string,
+  cancellationReason: string,
+  name?: string,
+  total?: number,
+  discount?: number,
+  couponCode?: string,
+) => {
+  const greeting = name
+    ? `Hi <strong>${name}</strong>, your order has been cancelled`
+    : `Your Order Has Been Cancelled`;
+
+  const reasonLine = cancellationReason
+    ? `<p><strong>Reason:</strong> ${cancellationReason}</p>`
+    : "";
+
+  const discountLine =
+    discount && couponCode
+      ? `<p style="margin:4px 0;"><strong>Discount (${couponCode})</strong> &minus; ₦${discount.toLocaleString()}</p>`
+      : "";
+  const totalLine = total
+    ? `<p><strong>Total:</strong> ₦${total.toLocaleString()}</p>`
+    : "";
+
+  const html = layout({
+    headerBg: "#fee2e2",
+    headerText: "#ffffff",
+    body: `
+      <div class="body" style="text-align:center;">
+        <h2>${greeting}</h2>
+        <p>We're sorry to inform you that your order <strong>#${orderId}</strong> has been cancelled.</p>
+        <div class="box" style="text-align:left; margin:20px 0;">
+          ${reasonLine}
+          ${discountLine}
+          ${totalLine}
+        </div>
+        <p>If you have any questions or need further assistance, please contact our support team.</p>
+      </div>`,
+  });
+
+  return sendEmail(
+    email,
+    "Order Cancelled – Sholex",
+    html,
+    `Your Sholex order #${orderId} has been cancelled. Reason: ${cancellationReason || "N/A"}`,
+  );
+};
