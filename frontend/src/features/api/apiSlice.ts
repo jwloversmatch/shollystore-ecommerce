@@ -2,7 +2,6 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { logout } from "../auth/authSlice";
 import type { Order } from "../../types/account";
 import type { ProductItem } from "../../types/home";
-// NEW: import settings types for bank accounts
 import type {
   SettingsData,
   BankAccount,
@@ -68,6 +67,7 @@ export interface Review {
   user: { _id: string; name: string; avatar?: string };
   rating: number;
   comment: string;
+  images?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -88,6 +88,7 @@ export interface AdminReview {
   };
   rating: number;
   comment: string;
+  images?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -131,7 +132,7 @@ export interface TrackOrderResponse {
     };
     shippingFee?: number;
     createdAt: string;
-    email?: string; // included only for authenticated tracking
+    email?: string;
   };
 }
 
@@ -764,12 +765,12 @@ export const apiSlice = createApi({
 
     addReview: builder.mutation<
       Review,
-      { productId: string; rating: number; comment: string }
+      { productId: string; rating: number; comment: string; images?: string[] }
     >({
-      query: ({ productId, rating, comment }) => ({
+      query: ({ productId, rating, comment, images }) => ({
         url: `/products/${productId}/reviews`,
         method: "POST",
-        body: { rating, comment },
+        body: { rating, comment, images },
       }),
       invalidatesTags: (_result, _error, { productId }) => [
         { type: "Review", id: productId },
@@ -779,7 +780,13 @@ export const apiSlice = createApi({
 
     updateReview: builder.mutation<
       Review,
-      { productId: string; reviewId: string; rating?: number; comment?: string }
+      {
+        productId: string;
+        reviewId: string;
+        rating?: number;
+        comment?: string;
+        images?: string[];
+      }
     >({
       query: ({ productId, reviewId, ...body }) => ({
         url: `/products/${productId}/reviews/${reviewId}`,
@@ -867,7 +874,6 @@ export const apiSlice = createApi({
       providesTags: ["Cart"],
     }),
 
-    // Authenticated manual tracking (by tracking code only)
     trackMyOrderByCode: builder.mutation<
       TrackOrderResponse,
       { trackingCode: string }
@@ -879,7 +885,6 @@ export const apiSlice = createApi({
       }),
     }),
 
-    // Guest manual tracking (by tracking code + email)
     trackOrderManual: builder.mutation<
       TrackOrderResponse,
       { orderId: string; email: string }

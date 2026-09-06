@@ -22,7 +22,8 @@ import {
   Heart,
   Pencil,
   Trash2,
-} from "lucide-react";
+  X,
+} from "lucide-react"; // ✅ added X for remove image button
 import {
   useGetProductBySlugQuery,
   useGetCategoryTreeQuery,
@@ -32,6 +33,7 @@ import {
   useAddReviewMutation,
   useUpdateReviewMutation,
   useDeleteReviewMutation,
+  useUploadImageMutation, // ✅ added upload hook
 } from "../features/api/apiSlice";
 import type { ProductItem } from "../types/home";
 import type { RootState } from "../store";
@@ -58,6 +60,7 @@ interface LocalVariant {
 const ACCENT = "#e8622a";
 const PLACEHOLDER = "https://via.placeholder.com/600";
 const MAX_REVIEW_LENGTH = 500;
+const MAX_REVIEW_IMAGES = 3;
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -118,6 +121,7 @@ const ProductDetail = () => {
   const [addReview, { isLoading: addingReview }] = useAddReviewMutation();
   const [updateReview, { isLoading: updatingReview }] = useUpdateReviewMutation();
   const [deleteReview] = useDeleteReviewMutation();
+  const [uploadImage] = useUploadImageMutation(); // ✅ added
 
   // Product state
   const [qty, setQty] = useState(1);
@@ -130,11 +134,13 @@ const ProductDetail = () => {
   // Review form state (add)
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
+  const [reviewImages, setReviewImages] = useState<string[]>([]); // ✅ new
 
   // Review editing state
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [editRating, setEditRating] = useState(5);
   const [editComment, setEditComment] = useState("");
+  const [editImages, setEditImages] = useState<string[]>([]); // ✅ new
 
   // Delete confirmation state
   const [deleteTarget, setDeleteTarget] = useState<{
@@ -322,6 +328,47 @@ const ProductDetail = () => {
     }
   };
 
+  // ─── Image upload helper ────────────────────────────────────────────────────
+  const handleImageUpload = async (
+    files: FileList | null,
+    isEditMode = false,
+  ) => {
+    if (!files || files.length === 0) return;
+
+    const currentImages = isEditMode ? editImages : reviewImages;
+    const remaining = MAX_REVIEW_IMAGES - currentImages.length;
+    if (remaining <= 0) return;
+
+    const filesArray = Array.from(files).slice(0, remaining);
+    const uploadedUrls: string[] = [];
+
+    for (const file of filesArray) {
+      const formData = new FormData();
+      formData.append("image", file);
+      try {
+        const res = await uploadImage(formData).unwrap();
+        if (res.url) uploadedUrls.push(res.url);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (err) {
+        toast.error("Image upload failed");
+      }
+    }
+
+    if (isEditMode) {
+      setEditImages((prev) => [...prev, ...uploadedUrls].slice(0, MAX_REVIEW_IMAGES));
+    } else {
+      setReviewImages((prev) => [...prev, ...uploadedUrls].slice(0, MAX_REVIEW_IMAGES));
+    }
+  };
+
+  const removeImage = (index: number, isEditMode = false) => {
+    if (isEditMode) {
+      setEditImages((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      setReviewImages((prev) => prev.filter((_, i) => i !== index));
+    }
+  };
+
   // ─── Review handlers ────────────────────────────────────────────────────────
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -338,10 +385,12 @@ const ProductDetail = () => {
         productId: product._id,
         rating: reviewRating,
         comment: reviewComment,
+        images: reviewImages,
       }).unwrap();
       toast.success("Review submitted!");
       setReviewComment("");
       setReviewRating(5);
+      setReviewImages([]); // ✅ clear images after submit
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "data" in err
@@ -355,16 +404,19 @@ const ProductDetail = () => {
     _id: string;
     rating: number;
     comment: string;
+    images?: string[];
   }) => {
     setEditingReviewId(review._id);
     setEditRating(review.rating);
     setEditComment(review.comment);
+    setEditImages(review.images || []); // ✅ set images for edit
   };
 
   const handleCancelEdit = () => {
     setEditingReviewId(null);
     setEditRating(5);
     setEditComment("");
+    setEditImages([]); // ✅ clear edit images
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -380,11 +432,13 @@ const ProductDetail = () => {
         reviewId: editingReviewId,
         rating: editRating,
         comment: editComment,
+        images: editImages,
       }).unwrap();
       toast.success("Review updated");
       setEditingReviewId(null);
       setEditRating(5);
       setEditComment("");
+      setEditImages([]); // ✅ clear after update
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "data" in err
@@ -1057,7 +1111,7 @@ const ProductDetail = () => {
                   isOwner &&
                   currentTime - new Date(review.createdAt).getTime() <
                     EDIT_WINDOW_MS;
-                const canDelete = canEdit; // same window for delete
+                const canDelete = canEdit;
 
                 return (
                   <div
@@ -1098,6 +1152,50 @@ const ProductDetail = () => {
                             {editComment.length}/{MAX_REVIEW_LENGTH}
                           </p>
                         </div>
+
+                        {/* Edit images */}
+                        <div>
+                          <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">
+                            Photos (up to {MAX_REVIEW_IMAGES})
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            {editImages.map((img, idx) => (
+                              <div
+                                key={idx}
+                                className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200"
+                              >
+                                <img
+                                  src={getCloudinaryUrl(img, 200)}
+                                  alt={`Preview ${idx + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeImage(idx, true)}
+                                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                                  aria-label="Remove image"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                            {editImages.length < MAX_REVIEW_IMAGES && (
+                              <label className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer text-gray-400 hover:border-[#e8622a]">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  className="hidden"
+                                  onChange={(e) =>
+                                    handleImageUpload(e.target.files, true)
+                                  }
+                                />
+                                <span className="text-2xl">+</span>
+                              </label>
+                            )}
+                          </div>
+                        </div>
+
                         <div className="flex gap-3">
                           <button
                             type="submit"
@@ -1139,6 +1237,21 @@ const ProductDetail = () => {
                         <p className="mt-2 text-gray-700 dark:text-gray-300">
                           {review.comment}
                         </p>
+
+                        {/* Display review images */}
+                        {review.images && review.images.length > 0 && (
+                          <div className="flex gap-2 mt-2">
+                            {review.images.map((img, idx) => (
+                              <img
+                                key={idx}
+                                src={getCloudinaryUrl(img, 200)}
+                                alt={`Review image ${idx + 1}`}
+                                className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                              />
+                            ))}
+                          </div>
+                        )}
+
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-xs text-gray-400">
                             {new Date(review.createdAt).toLocaleDateString()}
@@ -1211,6 +1324,48 @@ const ProductDetail = () => {
                   {reviewComment.length}/{MAX_REVIEW_LENGTH}
                 </p>
               </div>
+
+              {/* Add images */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">
+                  Photos (up to {MAX_REVIEW_IMAGES})
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {reviewImages.map((img, idx) => (
+                    <div
+                      key={idx}
+                      className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-200"
+                    >
+                      <img
+                        src={getCloudinaryUrl(img, 200)}
+                        alt={`Preview ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                        aria-label="Remove image"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {reviewImages.length < MAX_REVIEW_IMAGES && (
+                    <label className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer text-gray-400 hover:border-[#e8622a]">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => handleImageUpload(e.target.files)}
+                      />
+                      <span className="text-2xl">+</span>
+                    </label>
+                  )}
+                </div>
+              </div>
+
               <button
                 type="submit"
                 disabled={addingReview}
@@ -1246,7 +1401,6 @@ const ProductDetail = () => {
           >
             <div className="bg-[#FCFAF5] dark:bg-[#0A0A0B] px-4 pb-3 pt-2 border-t border-gray-200 dark:border-white/[0.07]">
               <div className="flex gap-2.5">
-                {/* Wishlist heart button (mobile) */}
                 <button
                   onClick={handleWishlistToggle}
                   className={`w-12 h-12 rounded-xl flex items-center justify-center border ${
