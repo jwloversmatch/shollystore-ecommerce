@@ -1,8 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useSelector } from "react-redux";
-import { RootState } from "../store";
 import {
   useGetProductsQuery,
   useGetHeroSlidesQuery,
@@ -30,17 +28,6 @@ const Home = () => {
   const { data: categories = [], isLoading: cLoad } = useGetCategoriesQuery({});
   const { data: publicSettings } = useGetPublicSettingsQuery({});
   const navigate = useNavigate();
-  const { user } = useSelector((s: RootState) => s.auth);
-
-  useEffect(() => {
-    if (user) {
-      if (user.role === "admin") {
-        navigate("/admin", { replace: true });
-      } else {
-        navigate("/shop", { replace: true });
-      }
-    }
-  }, [user, navigate]);
 
   const landingMode = publicSettings?.landingMode || false;
   const isPageLoading = !productsResp || sLoad || cLoad;
@@ -114,7 +101,6 @@ const Home = () => {
     url: "https://Sholex.vercel.app",
   };
 
-  if (user) return <HomeLoading />;
   if (isPageLoading) return <HomeLoading />;
 
   const categoryNames = categories.map((c: CategoryItem) => c.name);
@@ -173,7 +159,7 @@ const Home = () => {
           handleNext={handleNext}
           setDirection={setDirection}
           setCurrentIndex={setCurrentIndex}
-          onShopNow={() => navigate("/shop")} 
+          onShopNow={() => navigate("/shop")}
         />
       </div>
 

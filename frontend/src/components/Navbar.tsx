@@ -20,7 +20,6 @@ import {
   Star,
   Truck,
   Package,
-  Menu,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
@@ -29,6 +28,24 @@ import { useFocusTrap } from "../hooks/useFocusTrap";
 
 const ACCENT = "#e8622a";
 const BRAND_NAME = "SHOLEX";
+
+// Custom staircase/fries icon (three horizontal bars of decreasing width)
+const StairsIcon = ({ className = "" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden="true"
+  >
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <line x1="3" y1="12" x2="15" y2="12" />
+    <line x1="3" y1="18" x2="9" y2="18" />
+  </svg>
+);
 
 const CUSTOMER_LINKS = [
   { to: "/", label: "Home" },
@@ -46,36 +63,12 @@ const MOBILE_SECONDARY_LINKS = [
 ];
 
 const ADMIN_LINKS = [
-  {
-    to: "/admin",
-    label: "Dashboard",
-    icon: <LayoutDashboard className="w-5 h-5" aria-hidden="true" />,
-  },
-  {
-    to: "/admin/hero-slides",
-    label: "Hero Slides",
-    icon: <Image className="w-5 h-5" aria-hidden="true" />,
-  },
-  {
-    to: "/admin/categories",
-    label: "Categories",
-    icon: <Tag className="w-5 h-5" aria-hidden="true" />,
-  },
-  {
-    to: "/admin/coupons",
-    label: "Coupons",
-    icon: <BadgePercent className="w-5 h-5" aria-hidden="true" />,
-  },
-  {
-    to: "/admin/reviews",
-    label: "Reviews",
-    icon: <Star className="w-5 h-5" aria-hidden="true" />,
-  },
-  {
-    to: "/admin/settings",
-    label: "Settings",
-    icon: <Settings className="w-5 h-5" aria-hidden="true" />,
-  },
+  { to: "/admin", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" aria-hidden="true" /> },
+  { to: "/admin/hero-slides", label: "Hero Slides", icon: <Image className="w-5 h-5" aria-hidden="true" /> },
+  { to: "/admin/categories", label: "Categories", icon: <Tag className="w-5 h-5" aria-hidden="true" /> },
+  { to: "/admin/coupons", label: "Coupons", icon: <BadgePercent className="w-5 h-5" aria-hidden="true" /> },
+  { to: "/admin/reviews", label: "Reviews", icon: <Star className="w-5 h-5" aria-hidden="true" /> },
+  { to: "/admin/settings", label: "Settings", icon: <Settings className="w-5 h-5" aria-hidden="true" /> },
 ];
 
 // ─── Bottom-nav button ────────────────────────────────────────────────────────
@@ -262,7 +255,7 @@ const Navbar = () => {
   const { pathname, search } = useLocation();
 
   const [adminDrawer, setAdminDrawer] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // ✅ hamburger menu
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const liveRegionRef = useRef<HTMLSpanElement>(null);
   const prevTotalQtyRef = useRef<number | null>(null);
@@ -524,7 +517,7 @@ const Navbar = () => {
 
               <div className="flex items-center gap-3">
                 <ThemeToggle />
-                {/* Hamburger menu button */}
+                {/* Stairs/fries icon button */}
                 {(!user || user.role === "user") && (
                   <button
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -534,7 +527,7 @@ const Navbar = () => {
                     aria-expanded={mobileMenuOpen}
                     aria-controls="mobile-secondary-menu"
                   >
-                    <Menu className="w-5 h-5" />
+                    <StairsIcon className="w-5 h-5" />
                   </button>
                 )}
               </div>
