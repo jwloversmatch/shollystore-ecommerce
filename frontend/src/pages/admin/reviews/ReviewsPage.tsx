@@ -6,6 +6,7 @@ import {
 } from "../../../features/api/apiSlice";
 import { Search, Trash2, Star } from "lucide-react";
 import ConfirmationModal from "../../../components/ConfirmationModal";
+import { getCloudinaryUrl } from "../../../utils/cloudinary"; 
 
 const ReviewsPage = () => {
   const [page, setPage] = useState(1);
@@ -79,6 +80,21 @@ const ReviewsPage = () => {
                   </div>
                 </div>
                 <p className="text-sm mt-1">{review.comment}</p>
+
+                {/* ✅ Display review images */}
+                {review.images && review.images.length > 0 && (
+                  <div className="flex gap-2 mt-2">
+                    {review.images.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={getCloudinaryUrl(img, 100)}
+                        alt={`Review image ${idx + 1}`}
+                        className="w-14 h-14 object-cover rounded-lg border border-gray-200"
+                      />
+                    ))}
+                  </div>
+                )}
+
                 <p className="text-xs text-gray-400 mt-1">
                   Product: {review.product.name} •{" "}
                   {new Date(review.createdAt).toLocaleDateString()}
