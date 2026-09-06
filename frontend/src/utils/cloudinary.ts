@@ -11,22 +11,10 @@
  *                   If false, keeps original ratio.
  * @returns        - Optimised Cloudinary URL.
  */
-export const getCloudinaryUrl = (
-  baseUrl: string,
-  width: number,
-  square: boolean = true,
-): string => {
+export const getCloudinaryUrl = (baseUrl: string, width: number): string => {
   if (!baseUrl.includes('cloudinary.com')) return baseUrl;
 
   const parts = baseUrl.split('/upload/');
-
-  let transformation: string;
-  if (square) {
-    // Fit inside square, pad with white background, no cropping.
-    transformation = `w_${width},h_${width},c_pad,b_white,f_auto,q_auto,dpr_auto`;
-  } else {
-    transformation = `w_${width},f_auto,q_auto,dpr_auto`;
-  }
-
+  const transformation = `w_${width},f_auto,q_auto,dpr_auto`;
   return `${parts[0]}/upload/${transformation}/${parts[1]}`;
 };
