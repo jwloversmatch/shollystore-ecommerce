@@ -15,20 +15,15 @@ export const getCloudinaryUrl = (
   width: number,
   square: boolean = true,
 ): string => {
-  // Only transform Cloudinary URLs
   if (!baseUrl.includes('cloudinary.com')) return baseUrl;
 
-  // Insert transformation parameters after '/upload/'
   const parts = baseUrl.split('/upload/');
 
   let transformation: string;
-
   if (square) {
-    // Square crop: width and height equal, auto gravity, auto enhance.
-    transformation = `w_${width},h_${width},c_fill,g_auto,f_auto,q_auto,dpr_auto,e_improve:true`;
+    transformation = `w_${width},h_${width},c_fill,g_auto,f_auto,q_auto,dpr_auto`;
   } else {
-    // Keep original aspect ratio: only set width, auto format, quality, and improve.
-    transformation = `w_${width},f_auto,q_auto,dpr_auto,e_improve:true`;
+    transformation = `w_${width},f_auto,q_auto,dpr_auto`;
   }
 
   return `${parts[0]}/upload/${transformation}/${parts[1]}`;
