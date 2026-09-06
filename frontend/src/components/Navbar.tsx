@@ -18,7 +18,7 @@ import {
   Store,
   Heart,
   Star,
-  Truck, // ✅ imported for track order
+  Truck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
@@ -326,18 +326,31 @@ const Navbar = () => {
           shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
         />
         <div className="relative max-w-7xl mx-auto px-6 flex justify-between items-center py-4">
-          <Link
-            to={user?.role === "admin" ? "/admin" : "/"}
-            className="text-2xl font-black tracking-tight shrink-0 flex items-center gap-2 text-gray-900 dark:text-white"
-            aria-label={`${BRAND_NAME} - Home`}
-          >
-            <Store
-              className="w-6 h-6"
-              style={{ color: ACCENT }}
-              aria-hidden="true"
-            />
-            <span>{BRAND_NAME}</span>
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link
+              to={user?.role === "admin" ? "/admin" : "/"}
+              className="text-2xl font-black tracking-tight shrink-0 flex items-center gap-2 text-gray-900 dark:text-white"
+              aria-label={`${BRAND_NAME} - Home`}
+            >
+              <Store
+                className="w-6 h-6"
+                style={{ color: ACCENT }}
+                aria-hidden="true"
+              />
+              <span>{BRAND_NAME}</span>
+            </Link>
+
+            {/* ✅ Shop link for non-admin users */}
+            {(!user || user.role === "user") && (
+              <Link
+                to="/shop"
+                className={desktopLinkCls("/shop")}
+                aria-current={isActive("/shop") ? "page" : undefined}
+              >
+                Shop
+              </Link>
+            )}
+          </div>
 
           {user?.role === "admin" && (
             <div className="flex items-center gap-5">
@@ -471,18 +484,31 @@ const Navbar = () => {
             aria-label="Mobile navigation"
           >
             <div className="flex justify-between items-center w-full">
-              <Link
-                to={user?.role === "admin" ? "/admin" : "/"}
-                className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white"
-                aria-label={`${BRAND_NAME} - Home`}
-              >
-                <Store
-                  className="w-5 h-5"
-                  style={{ color: ACCENT }}
-                  aria-hidden="true"
-                />
-                <span>{BRAND_NAME}</span>
-              </Link>
+              <div className="flex items-center gap-3">
+                <Link
+                  to={user?.role === "admin" ? "/admin" : "/"}
+                  className="text-xl font-black tracking-tight flex items-center gap-1.5 text-gray-900 dark:text-white"
+                  aria-label={`${BRAND_NAME} - Home`}
+                >
+                  <Store
+                    className="w-5 h-5"
+                    style={{ color: ACCENT }}
+                    aria-hidden="true"
+                  />
+                  <span>{BRAND_NAME}</span>
+                </Link>
+
+                {/* ✅ Shop link for non-admin in mobile top bar */}
+                {(!user || user.role === "user") && (
+                  <Link
+                    to="/shop"
+                    className="text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white"
+                    aria-current={isActive("/shop") ? "page" : undefined}
+                  >
+                    Shop
+                  </Link>
+                )}
+              </div>
 
               <div className="flex items-center gap-3">
                 <ThemeToggle />
