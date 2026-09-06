@@ -1,9 +1,12 @@
-import { Star, Trash2, MessageSquare } from "lucide-react";
+import { useState } from "react";
+import { Star, Trash2, MessageSquare, X } from "lucide-react";
 import {
   useGetAdminReviewsQuery,
   useDeleteAdminReviewMutation,
 } from "../../../features/api/apiSlice";
 import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import { getCloudinaryUrl } from "../../../utils/cloudinary";
 
 interface Props {
   isDark: boolean;
@@ -12,6 +15,7 @@ interface Props {
 const RecentReviewsWidget = ({ isDark }: Props) => {
   const { data, isLoading } = useGetAdminReviewsQuery({ page: 1, limit: 5 });
   const [deleteReview] = useDeleteAdminReviewMutation();
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const bg = isDark ? "#141414" : "#fff";
   const border = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)";
@@ -32,6 +36,9 @@ const RecentReviewsWidget = ({ isDark }: Props) => {
       }
     }
   };
+
+  const openLightbox = (img: string) => setLightboxImage(img);
+  const closeLightbox = () => setLightboxImage(null);
 
   const reviews = data?.reviews ?? [];
 
@@ -82,6 +89,27 @@ const RecentReviewsWidget = ({ isDark }: Props) => {
               <p className="text-xs mt-1 line-clamp-2" style={{ color: textMuted }}>
                 {review.comment}
               </p>
+
+              {/* Review images */}
+              {review.images && review.images.length > 0 && (
+                <div className="flex gap-1.5 mt-2">
+                  {review.images.slice(0, 3).map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => openLightbox(img)}
+                      className="w-10 h-10 rounded-md overflow-hidden border border-gray-200 hover:opacity-80 transition-opacity"
+                      aria-label={`View review image ${idx + 1}`}
+                    >
+                      <img
+                        src={getCloudinaryUrl(img, 100)}
+                        alt={`Review image ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <p className="text-[10px] mt-1" style={{ color: textMuted }}>
                 {typeof review.product === "object" ? review.product.name : "Unknown product"}
               </p>
@@ -89,6 +117,43 @@ const RecentReviewsWidget = ({ isDark }: Props) => {
           ))}
         </div>
       )}
+
+      {/* Lightbox */}
+      <AnimatePresence>
+        {lightboxImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={closeLightbox}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Review image preview"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="relative max-w-3xl w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={closeLightbox}
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition"
+                aria-label="Close preview"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <img
+                src={getCloudinaryUrl(lightboxImage, 1200)}
+                alt="Review full size"
+                className="w-full h-auto max-h-[80vh] object-contain rounded-xl"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

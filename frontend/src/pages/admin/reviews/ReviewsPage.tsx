@@ -1,10 +1,11 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   useGetAdminReviewsQuery,
   useDeleteAdminReviewMutation,
 } from "../../../features/api/apiSlice";
-import { Search, Trash2, Star } from "lucide-react";
+import { Search, Trash2, Star, X } from "lucide-react";
 import ConfirmationModal from "../../../components/ConfirmationModal";
 import { getCloudinaryUrl } from "../../../utils/cloudinary";
 
@@ -12,6 +13,7 @@ const ReviewsPage = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const { data, isLoading } = useGetAdminReviewsQuery({
     page,
@@ -35,6 +37,9 @@ const ReviewsPage = () => {
       }
     }
   };
+
+  const openLightbox = (img: string) => setLightboxImage(img);
+  const closeLightbox = () => setLightboxImage(null);
 
   const reviews = data?.reviews ?? [];
   const pagination = data?.pagination;
@@ -81,16 +86,22 @@ const ReviewsPage = () => {
                 </div>
                 <p className="text-sm mt-1">{review.comment}</p>
 
-                {/* ✅ Display review images */}
+                {/* Display review images (clickable) */}
                 {review.images && review.images.length > 0 && (
                   <div className="flex gap-2 mt-2">
                     {review.images.map((img, idx) => (
-                      <img
+                      <button
                         key={idx}
-                        src={getCloudinaryUrl(img, 100)}
-                        alt={`Review image ${idx + 1}`}
-                        className="w-14 h-14 object-cover rounded-lg border border-gray-200"
-                      />
+                        onClick={() => openLightbox(img)}
+                        className="w-14 h-14 rounded-lg overflow-hidden border border-gray-200 hover:opacity-80 transition-opacity"
+                        aria-label={`View review image ${idx + 1}`}
+                      >
+                        <img
+                          src={getCloudinaryUrl(img, 100)}
+                          alt={`Review image ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
                     ))}
                   </div>
                 )}
@@ -140,6 +151,43 @@ const ReviewsPage = () => {
         cancelText="Cancel"
         type="danger"
       />
+
+      {/* Lightbox for review images */}
+      <AnimatePresence>
+        {lightboxImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={closeLightbox}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Review image preview"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="relative max-w-3xl w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={closeLightbox}
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition"
+                aria-label="Close preview"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <img
+                src={getCloudinaryUrl(lightboxImage, 1200)}
+                alt="Review full size"
+                className="w-full h-auto max-h-[80vh] object-contain rounded-xl"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 };
