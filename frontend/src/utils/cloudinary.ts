@@ -1,13 +1,14 @@
 /**
  * Generate an optimised Cloudinary URL.
  *
- * By default, the image is cropped to a square (ideal for product cards)
- * and auto‑enhanced. Set `square = false` to keep the original aspect ratio
- * while still applying quality, format, and sharpness optimisations.
+ * By default, the image is resized to fit inside a square canvas,
+ * padded with white background so no part is cropped.
+ * Set `square = false` to keep the original aspect ratio.
  *
  * @param baseUrl  - The original Cloudinary image URL.
  * @param width    - Desired width in pixels.
- * @param square   - If true (default), crop to square. If false, keep original ratio.
+ * @param square   - If true (default), image fits in a square with padding.
+ *                   If false, keeps original ratio.
  * @returns        - Optimised Cloudinary URL.
  */
 export const getCloudinaryUrl = (
@@ -21,7 +22,8 @@ export const getCloudinaryUrl = (
 
   let transformation: string;
   if (square) {
-    transformation = `w_${width},h_${width},c_fill,g_auto,f_auto,q_auto,dpr_auto`;
+    // Fit inside square, pad with white background, no cropping.
+    transformation = `w_${width},h_${width},c_pad,b_white,f_auto,q_auto,dpr_auto`;
   } else {
     transformation = `w_${width},f_auto,q_auto,dpr_auto`;
   }
