@@ -48,7 +48,6 @@ const StairsIcon = ({ className = "" }: { className?: string }) => (
 );
 
 const CUSTOMER_LINKS = [
-  { to: "/", label: "Home" },
   { to: "/shop", label: "Shop" },
   { to: "/track-order", label: "Track Order" },
   { to: "/about", label: "About" },
@@ -63,12 +62,36 @@ const MOBILE_SECONDARY_LINKS = [
 ];
 
 const ADMIN_LINKS = [
-  { to: "/admin", label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" aria-hidden="true" /> },
-  { to: "/admin/hero-slides", label: "Hero Slides", icon: <Image className="w-5 h-5" aria-hidden="true" /> },
-  { to: "/admin/categories", label: "Categories", icon: <Tag className="w-5 h-5" aria-hidden="true" /> },
-  { to: "/admin/coupons", label: "Coupons", icon: <BadgePercent className="w-5 h-5" aria-hidden="true" /> },
-  { to: "/admin/reviews", label: "Reviews", icon: <Star className="w-5 h-5" aria-hidden="true" /> },
-  { to: "/admin/settings", label: "Settings", icon: <Settings className="w-5 h-5" aria-hidden="true" /> },
+  {
+    to: "/admin",
+    label: "Dashboard",
+    icon: <LayoutDashboard className="w-5 h-5" aria-hidden="true" />,
+  },
+  {
+    to: "/admin/hero-slides",
+    label: "Hero Slides",
+    icon: <Image className="w-5 h-5" aria-hidden="true" />,
+  },
+  {
+    to: "/admin/categories",
+    label: "Categories",
+    icon: <Tag className="w-5 h-5" aria-hidden="true" />,
+  },
+  {
+    to: "/admin/coupons",
+    label: "Coupons",
+    icon: <BadgePercent className="w-5 h-5" aria-hidden="true" />,
+  },
+  {
+    to: "/admin/reviews",
+    label: "Reviews",
+    icon: <Star className="w-5 h-5" aria-hidden="true" />,
+  },
+  {
+    to: "/admin/settings",
+    label: "Settings",
+    icon: <Settings className="w-5 h-5" aria-hidden="true" />,
+  },
 ];
 
 // ─── Bottom-nav button ────────────────────────────────────────────────────────
@@ -263,7 +286,8 @@ const Navbar = () => {
   const totalQty = cartItems.reduce((acc, i) => acc + i.qty, 0);
   const wishlistCount = wishlistIds.length;
   const showCart = !user || user.role === "user";
-  const isWishlistActive = pathname === "/account" && search.includes("tab=wishlist");
+  const isWishlistActive =
+    pathname === "/account" && search.includes("tab=wishlist");
 
   useEffect(() => {
     if (
