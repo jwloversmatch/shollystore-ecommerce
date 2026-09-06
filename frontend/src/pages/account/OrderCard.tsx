@@ -12,8 +12,8 @@ interface OrderCardProps {
 const OrderCard = ({ order, onViewDetails, onTrackOrder }: OrderCardProps) => {
   const { icon, color, label } = getStatusInfo(order.status);
 
-  // ✅ Only show track for non‑cancelled orders
-  const canTrack = order.status !== "Cancelled";
+  // ✅ Only allow tracking for shipped/delivered orders
+  const canTrack = ["Shipped", "Delivered"].includes(order.status);
 
   return (
     <motion.div

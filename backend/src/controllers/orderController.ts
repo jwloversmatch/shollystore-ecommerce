@@ -11,7 +11,6 @@ import {
   sendOrderConfirmation,
   sendAdminOrderNotification,
   sendOrderStatusUpdateEmail,
-  sendOrderShippedEmail,
 } from "../services/email.service";
 import { AuthRequest } from "../middleware/auth";
 import { calculateOrderPricing } from "../utils/orderPricing";
@@ -95,7 +94,11 @@ export const createOrder = async (
 
     let pricing;
     try {
-      pricing = await calculateOrderPricing(orderItems, couponCode, shippingFee);
+      pricing = await calculateOrderPricing(
+        orderItems,
+        couponCode,
+        shippingFee,
+      );
     } catch (pricingError) {
       const msg =
         pricingError instanceof Error ? pricingError.message : "Invalid order";
@@ -146,7 +149,9 @@ export const createOrder = async (
         accountName:
           defaultAccount?.accountName || process.env.BANK_ACCOUNT_NAME || "",
         accountNumber:
-          defaultAccount?.accountNumber || process.env.BANK_ACCOUNT_NUMBER || "",
+          defaultAccount?.accountNumber ||
+          process.env.BANK_ACCOUNT_NUMBER ||
+          "",
       };
     } else if (paymentMethod === "whatsapp") {
       paymentDetails = {
@@ -463,9 +468,11 @@ export const trackMyOrder = async (
       return;
     }
 
-    // ✅ Reject if cancelled
-    if (order.status === "Cancelled") {
-      res.status(404).json({ success: false, message: "Order is cancelled and cannot be tracked" });
+    if (!["Shipped", "Delivered"].includes(order.status)) {
+      res.status(404).json({
+        success: false,
+        message: "Order is not available for tracking yet",
+      });
       return;
     }
 
@@ -499,9 +506,11 @@ export const trackByToken = async (
       return;
     }
 
-    // ✅ Reject if cancelled
-    if (order.status === "Cancelled") {
-      res.status(404).json({ success: false, message: "Order is cancelled and cannot be tracked" });
+    if (!["Shipped", "Delivered"].includes(order.status)) {
+      res.status(404).json({
+        success: false,
+        message: "Order is not available for tracking yet",
+      });
       return;
     }
 
@@ -523,7 +532,9 @@ export const trackOrderManual = async (
     const { orderId, email } = req.body;
 
     if (!orderId || !email) {
-      res.status(400).json({ success: false, message: "Order ID and email are required" });
+      res
+        .status(400)
+        .json({ success: false, message: "Order ID and email are required" });
       return;
     }
 
@@ -532,7 +543,12 @@ export const trackOrderManual = async (
 
     const isValidObjectId = mongoose.Types.ObjectId.isValid(cleanOrderId);
     const identifierCondition = isValidObjectId
-      ? { $or: [{ _id: new mongoose.Types.ObjectId(cleanOrderId) }, { trackingNumber: cleanOrderId }] }
+      ? {
+          $or: [
+            { _id: new mongoose.Types.ObjectId(cleanOrderId) },
+            { trackingNumber: cleanOrderId },
+          ],
+        }
       : { trackingNumber: cleanOrderId };
 
     const order = await Order.findOne({
@@ -543,13 +559,17 @@ export const trackOrderManual = async (
     }).select("-__v");
 
     if (!order) {
-      res.status(404).json({ success: false, message: "Order not found or email mismatch" });
+      res
+        .status(404)
+        .json({ success: false, message: "Order not found or email mismatch" });
       return;
     }
 
-    // ✅ Reject if cancelled
-    if (order.status === "Cancelled") {
-      res.status(404).json({ success: false, message: "Order is cancelled and cannot be tracked" });
+    if (!["Shipped", "Delivered"].includes(order.status)) {
+      res.status(404).json({
+        success: false,
+        message: "Order is not available for tracking yet",
+      });
       return;
     }
 
@@ -587,8 +607,11 @@ export const trackMyOrderByCode = async (
       return;
     }
 
-    if (order.status === "Cancelled") {
-      res.status(404).json({ success: false, message: "Order is cancelled and cannot be tracked" });
+    if (!["Shipped", "Delivered"].includes(order.status)) {
+      res.status(404).json({
+        success: false,
+        message: "Order is not available for tracking yet",
+      });
       return;
     }
 

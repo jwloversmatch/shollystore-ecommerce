@@ -61,7 +61,7 @@ interface CartItem {
 interface OrderResponse {
   _id: string;
   trackingNumber?: string;
-  trackingToken?: string; // <-- NEW
+  trackingToken?: string; // kept for future use, but no longer used in success UI
 }
 interface PersistState {
   _persist: { version: number; rehydrated: boolean };
@@ -270,7 +270,7 @@ const Checkout = () => {
         setOrderData({
           _id: result.order._id,
           trackingNumber: result.order.trackingNumber,
-          trackingToken: result.trackingToken, // <-- capture token
+          trackingToken: result.trackingToken,
         });
         if (!user) {
           setShowCreateAccountModal(true);
@@ -312,14 +312,6 @@ const Checkout = () => {
     const waLink = `https://wa.me/${whatsappNumber.replace(/\D/g, "")}`;
     const orderId = orderData?._id;
     const trackingNumber = orderData?.trackingNumber || orderId;
-    const trackingToken = orderData?.trackingToken; // <-- NEW
-
-    // Build tracking URL safely
-    const trackUrl = trackingToken
-      ? `/track-order?token=${trackingToken}`
-      : user
-        ? `/track-order?orderId=${orderId}`
-        : "/track-order";
 
     return (
       <main
@@ -449,13 +441,10 @@ const Checkout = () => {
             />
           </button>
 
-          <button
-            onClick={() => navigate(trackUrl)}
-            className="mt-3 w-full py-3 rounded-xl font-bold text-sm border border-gray-300 dark:border-white/20 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition"
-            aria-label="Track your order"
-          >
-            Track Order
-          </button>
+          {/* ✅ Informational note instead of track button */}
+          <p className="mt-4 text-xs text-gray-500 dark:text-gray-400 text-center">
+            You'll receive a tracking number once your order ships.
+          </p>
         </div>
 
         <CreateAccountModal
