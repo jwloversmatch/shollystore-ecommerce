@@ -17,10 +17,11 @@ interface RecentOrdersTableProps {
   orders: OrderItem[];
   onStatusChange: (id: string, status: string) => void;
   onViewAll: () => void;
+  onCancelOrder: (order: OrderItem) => void; 
   isDark: boolean;
 }
 
-const RecentOrdersTable = ({ orders, onStatusChange, onViewAll, isDark }: RecentOrdersTableProps) => {
+const RecentOrdersTable = ({ orders, onStatusChange, onViewAll, onCancelOrder, isDark }: RecentOrdersTableProps) => {
   const cardBg = isDark ? "#141414" : "#fff";
   const cardBorder = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)";
   const cardShadow = isDark ? "0 8px 32px rgba(0,0,0,0.35)" : "0 4px 16px rgba(0,0,0,0.06)";
@@ -64,7 +65,13 @@ const RecentOrdersTable = ({ orders, onStatusChange, onViewAll, isDark }: Recent
                       {STATUS_FLOW[order.status]?.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                     {order.status==="Pending" && (
-                      <button onClick={() => onStatusChange(order._id,"Cancelled")} className="text-[10px] font-bold px-2 py-1 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors whitespace-nowrap" aria-label={`Cancel order ${order._id.slice(-8)}`}>✕ Cancel</button>
+                      <button
+                        onClick={() => onCancelOrder(order)}
+                        className="text-[10px] font-bold px-2 py-1 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors whitespace-nowrap"
+                        aria-label={`Cancel order ${order._id.slice(-8)}`}
+                      >
+                        ✕ Cancel
+                      </button>
                     )}
                   </div>
                 </td>

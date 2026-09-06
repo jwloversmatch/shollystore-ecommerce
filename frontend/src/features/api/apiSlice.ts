@@ -272,10 +272,10 @@ export const apiSlice = createApi({
     }),
 
     updateOrderStatus: builder.mutation({
-      query: ({ id, status }) => ({
+      query: ({ id, ...body }) => ({
         url: `/admin/orders/${id}/status`,
         method: "PUT",
-        body: { status },
+        body,
       }),
       invalidatesTags: ["Order", "Product"],
     }),

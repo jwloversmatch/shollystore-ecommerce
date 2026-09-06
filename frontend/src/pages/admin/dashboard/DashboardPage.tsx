@@ -23,6 +23,7 @@ import {
   Flame,
 } from "lucide-react";
 import ConfirmationModal from "../../../components/ConfirmationModal";
+import CancellationModal from "../orders/CancellationModal"; 
 import SEO from "../../../components/SEO";
 import {
   StatsCardSkeleton,
@@ -39,7 +40,7 @@ import TopProductsList from "./TopProductsList";
 import RecentOrdersTable from "./RecentOrdersTable";
 import UserManagementTable from "./UserManagementTable";
 import LowStockWidget from "./LowStockWidget";
-import RecentReviewsWidget from "./RecentReviewsWidget"; 
+import RecentReviewsWidget from "./RecentReviewsWidget";
 
 const ACCENT = "#e8622a";
 
@@ -59,6 +60,7 @@ const DashboardPage = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [trendDays, setTrendDays] = useState(30);
+  const [cancelTarget, setCancelTarget] = useState<OrderItem | null>(null); // ✅ new
 
   const {
     data: statsData,
@@ -138,6 +140,28 @@ const DashboardPage = () => {
       console.error("Status update failed", err);
     }
   };
+
+  // ✅ Handle cancel from recent orders table
+  const handleCancelOrder = (order: OrderItem) => {
+    setCancelTarget(order);
+  };
+
+  const confirmCancellation = async (reason: string) => {
+    if (!cancelTarget) return;
+    try {
+      await updateStatus({
+        id: cancelTarget._id,
+        status: "Cancelled",
+        cancellationReason: reason,
+      }).unwrap();
+      refetchStats();
+    } catch (err) {
+      console.error("Cancellation failed", err);
+    } finally {
+      setCancelTarget(null);
+    }
+  };
+
   const handleStockUpdate = async (id: string, cur: number, delta: number) => {
     try {
       await updateStock({ id, stock: Math.max(0, cur + delta) }).unwrap();
@@ -207,6 +231,12 @@ const DashboardPage = () => {
         confirmText="Delete"
         cancelText="Cancel"
         type="danger"
+      />
+      {/* ✅ Cancellation modal */}
+      <CancellationModal
+        isOpen={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={confirmCancellation}
       />
 
       {/* Header */}
@@ -400,6 +430,7 @@ const DashboardPage = () => {
         orders={(stats.orders || []).slice(0, 5)}
         onStatusChange={handleStatusChange}
         onViewAll={() => navigate("/admin/orders")}
+        onCancelOrder={handleCancelOrder} // ✅ pass new handler
         isDark={isDark}
       />
 
