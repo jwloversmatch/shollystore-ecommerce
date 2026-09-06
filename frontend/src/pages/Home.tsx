@@ -20,6 +20,10 @@ import HomeFeatures from "./home/HomeFeatures";
 import HomeSpecialOffer from "./home/HomeSpecialOffer";
 import HomeHowItWorks from "./home/HomeHowItWorks";
 import FeaturedProductsGrid from "../components/FeaturedProductsGrid";
+import HomeWelcomeBanner from "./home/HomeWelcomeBanner";
+import HomePromoBanners from "./home/HomePromoBanners";
+import HomeNewArrivals from "./home/HomeNewArrivals";
+import HomeTestimonials from "./home/HomeTestimonials";
 import { ArrowRight } from "lucide-react";
 
 const Home = () => {
@@ -119,7 +123,7 @@ const Home = () => {
       <StructuredData data={organizationSchema} />
       <StructuredData data={websiteSchema} />
 
-      {/* Ambient background orbs – hidden from screen readers */}
+      {/* Ambient background orbs */}
       <div
         className="fixed inset-0 -z-10 overflow-hidden pointer-events-none"
         aria-hidden="true"
@@ -138,6 +142,7 @@ const Home = () => {
         />
       </div>
 
+      {/* Hero carousel */}
       <div
         onMouseEnter={() => setIsCarouselPaused(true)}
         onMouseLeave={() => setIsCarouselPaused(false)}
@@ -162,6 +167,12 @@ const Home = () => {
           onShopNow={() => navigate("/shop")}
         />
       </div>
+
+      {/* Welcome banner for logged-in users */}
+      <HomeWelcomeBanner />
+
+      {/* Promo banners */}
+      <HomePromoBanners />
 
       {/* Enter Shop CTA */}
       <section
@@ -204,7 +215,8 @@ const Home = () => {
       <HomeMarquee categoryNames={categoryNames} />
       <HomeFeatures />
       <HomeHowItWorks />
-      {/* Featured Products section */}
+
+      {/* Featured Products */}
       <section
         className="bg-[#FCFAF5] dark:bg-[#111111] py-14 md:py-18"
         aria-labelledby="featured-heading"
@@ -228,6 +240,13 @@ const Home = () => {
         </div>
       </section>
 
+      {/* New Arrivals */}
+      <HomeNewArrivals />
+
+      {/* Testimonials */}
+      <HomeTestimonials />
+
+      {/* Special Offer */}
       <HomeSpecialOffer
         specialOfferTitle={specialOfferTitle}
         specialOfferText={specialOfferText}
