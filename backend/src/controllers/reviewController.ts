@@ -292,13 +292,26 @@ export const deleteReviewAdmin = async (req: Request, res: Response) => {
 export const getFeaturedReviews = async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 5;
-    const reviews = await Review.find()
-      .populate("product", "name slug")
-      .populate("user", "name avatar")
-      .sort({ createdAt: -1 })
-      .limit(limit);
 
-    res.json({ reviews });
+    const reviews = await Review.aggregate([
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: "$user",
+          review: { $first: "$$ROOT" },
+        },
+      },
+      { $replaceRoot: { newRoot: "$review" } },
+      { $sort: { createdAt: -1 } },
+      { $limit: limit },
+    ]);
+
+    const populatedReviews = await Review.populate(reviews, [
+      { path: "product", select: "name slug" },
+      { path: "user", select: "name avatar" },
+    ]);
+
+    res.json({ reviews: populatedReviews });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

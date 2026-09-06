@@ -200,7 +200,6 @@ OrderSchema.index({ status: 1, createdAt: -1 });
 OrderSchema.index({ createdAt: -1 });
 OrderSchema.index({ "orderItems.product": 1 });
 OrderSchema.index({ paymentMethod: 1 });
-OrderSchema.index({ trackingNumber: 1 });
 OrderSchema.index({ paymentEventId: 1 });
 OrderSchema.index({ trackingToken: 1 });
 
