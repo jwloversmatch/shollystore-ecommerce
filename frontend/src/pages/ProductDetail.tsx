@@ -33,7 +33,7 @@ import {
   useAddReviewMutation,
   useUpdateReviewMutation,
   useDeleteReviewMutation,
-  useUploadReviewImageMutation, // ✅ changed from useUploadImageMutation
+  useUploadReviewImageMutation,
 } from "../features/api/apiSlice";
 import type { ProductItem } from "../types/home";
 import type { RootState } from "../store";
@@ -121,7 +121,7 @@ const ProductDetail = () => {
   const [addReview, { isLoading: addingReview }] = useAddReviewMutation();
   const [updateReview, { isLoading: updatingReview }] = useUpdateReviewMutation();
   const [deleteReview] = useDeleteReviewMutation();
-  const [uploadReviewImage] = useUploadReviewImageMutation(); // ✅ changed
+  const [uploadReviewImage] = useUploadReviewImageMutation();
 
   // Product state
   const [qty, setQty] = useState(1);
@@ -147,6 +147,9 @@ const ProductDetail = () => {
     reviewId: string;
     productId: string;
   } | null>(null);
+
+  // Lightbox state
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   // Current time (lazy initializer avoids effect)
   const [currentTime] = useState(() => Date.now());
@@ -346,7 +349,7 @@ const ProductDetail = () => {
       const formData = new FormData();
       formData.append("image", file);
       try {
-        const res = await uploadReviewImage(formData).unwrap(); // ✅ changed
+        const res = await uploadReviewImage(formData).unwrap();
         if (res.url) uploadedUrls.push(res.url);
       } catch {
         toast.error("Image upload failed");
@@ -470,6 +473,10 @@ const ProductDetail = () => {
       setDeleteTarget(null);
     }
   };
+
+  // ─── Lightbox handlers ──────────────────────────────────────────────────────
+  const openLightbox = (img: string) => setLightboxImage(img);
+  const closeLightbox = () => setLightboxImage(null);
 
   // ══════ LOADING ═══════════════════════════════
   if (isLoading) {
@@ -1237,16 +1244,22 @@ const ProductDetail = () => {
                           {review.comment}
                         </p>
 
-                        {/* Display review images */}
+                        {/* Display review images (clickable) */}
                         {review.images && review.images.length > 0 && (
                           <div className="flex gap-2 mt-2">
                             {review.images.map((img, idx) => (
-                              <img
+                              <button
                                 key={idx}
-                                src={getCloudinaryUrl(img, 200)}
-                                alt={`Review image ${idx + 1}`}
-                                className="w-16 h-16 object-cover rounded-lg border border-gray-200"
-                              />
+                                onClick={() => openLightbox(img)}
+                                className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 hover:opacity-80 transition-opacity"
+                                aria-label={`View review image ${idx + 1}`}
+                              >
+                                <img
+                                  src={getCloudinaryUrl(img, 200)}
+                                  alt={`Review image ${idx + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </button>
                             ))}
                           </div>
                         )}
@@ -1487,6 +1500,43 @@ const ProductDetail = () => {
         cancelText="Cancel"
         type="danger"
       />
+
+      {/* Lightbox for review images */}
+      <AnimatePresence>
+        {lightboxImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={closeLightbox}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Review image preview"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="relative max-w-3xl w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={closeLightbox}
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition"
+                aria-label="Close preview"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <img
+                src={getCloudinaryUrl(lightboxImage, 1200)}
+                alt="Review full size"
+                className="w-full h-auto max-h-[80vh] object-contain rounded-xl"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 };
