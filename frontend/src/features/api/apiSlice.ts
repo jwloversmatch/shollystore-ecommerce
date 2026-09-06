@@ -319,9 +319,19 @@ export const apiSlice = createApi({
     }),
 
     // ─── Upload ─────────────────────────────────────────────────────────────
+    // Admin upload
     uploadImage: builder.mutation({
       query: (formData) => ({
         url: "/upload",
+        method: "POST",
+        body: formData,
+      }),
+    }),
+
+    // User upload for review images (no admin required)
+    uploadReviewImage: builder.mutation({
+      query: (formData) => ({
+        url: "/upload/review-image",
         method: "POST",
         body: formData,
       }),
@@ -874,6 +884,7 @@ export const apiSlice = createApi({
       providesTags: ["Cart"],
     }),
 
+    // Authenticated manual tracking (by tracking code only)
     trackMyOrderByCode: builder.mutation<
       TrackOrderResponse,
       { trackingCode: string }
@@ -885,6 +896,7 @@ export const apiSlice = createApi({
       }),
     }),
 
+    // Guest manual tracking (by tracking code + email)
     trackOrderManual: builder.mutation<
       TrackOrderResponse,
       { orderId: string; email: string }
@@ -921,6 +933,7 @@ export const {
   useUpdateProductMutation,
   useDeleteProductMutation,
   useUploadImageMutation,
+  useUploadReviewImageMutation, 
   useLoginMutation,
   useRegisterMutation,
   useVerifyEmailQuery,

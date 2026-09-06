@@ -4,7 +4,11 @@ import { protect } from '../middleware/auth';
 import { isAdmin } from '../middleware/isAdmin';
 
 const router = express.Router();
-// Only admins can upload images
+
+// Admin-only upload (for product images, etc.)
 router.post('/', protect, isAdmin, uploadImage);
 
-export default router; 
+// User upload for reviews, avatars, etc.
+router.post('/review-image', protect, uploadImage);
+
+export default router;

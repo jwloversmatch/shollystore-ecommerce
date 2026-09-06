@@ -23,7 +23,7 @@ import {
   Pencil,
   Trash2,
   X,
-} from "lucide-react"; // ✅ added X for remove image button
+} from "lucide-react";
 import {
   useGetProductBySlugQuery,
   useGetCategoryTreeQuery,
@@ -33,7 +33,7 @@ import {
   useAddReviewMutation,
   useUpdateReviewMutation,
   useDeleteReviewMutation,
-  useUploadImageMutation, // ✅ added upload hook
+  useUploadReviewImageMutation, // ✅ changed from useUploadImageMutation
 } from "../features/api/apiSlice";
 import type { ProductItem } from "../types/home";
 import type { RootState } from "../store";
@@ -121,7 +121,7 @@ const ProductDetail = () => {
   const [addReview, { isLoading: addingReview }] = useAddReviewMutation();
   const [updateReview, { isLoading: updatingReview }] = useUpdateReviewMutation();
   const [deleteReview] = useDeleteReviewMutation();
-  const [uploadImage] = useUploadImageMutation(); // ✅ added
+  const [uploadReviewImage] = useUploadReviewImageMutation(); // ✅ changed
 
   // Product state
   const [qty, setQty] = useState(1);
@@ -134,13 +134,13 @@ const ProductDetail = () => {
   // Review form state (add)
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
-  const [reviewImages, setReviewImages] = useState<string[]>([]); // ✅ new
+  const [reviewImages, setReviewImages] = useState<string[]>([]);
 
   // Review editing state
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [editRating, setEditRating] = useState(5);
   const [editComment, setEditComment] = useState("");
-  const [editImages, setEditImages] = useState<string[]>([]); // ✅ new
+  const [editImages, setEditImages] = useState<string[]>([]);
 
   // Delete confirmation state
   const [deleteTarget, setDeleteTarget] = useState<{
@@ -346,10 +346,9 @@ const ProductDetail = () => {
       const formData = new FormData();
       formData.append("image", file);
       try {
-        const res = await uploadImage(formData).unwrap();
+        const res = await uploadReviewImage(formData).unwrap(); // ✅ changed
         if (res.url) uploadedUrls.push(res.url);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (err) {
+      } catch {
         toast.error("Image upload failed");
       }
     }
@@ -390,7 +389,7 @@ const ProductDetail = () => {
       toast.success("Review submitted!");
       setReviewComment("");
       setReviewRating(5);
-      setReviewImages([]); // ✅ clear images after submit
+      setReviewImages([]);
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "data" in err
@@ -409,14 +408,14 @@ const ProductDetail = () => {
     setEditingReviewId(review._id);
     setEditRating(review.rating);
     setEditComment(review.comment);
-    setEditImages(review.images || []); // ✅ set images for edit
+    setEditImages(review.images || []);
   };
 
   const handleCancelEdit = () => {
     setEditingReviewId(null);
     setEditRating(5);
     setEditComment("");
-    setEditImages([]); // ✅ clear edit images
+    setEditImages([]);
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -438,7 +437,7 @@ const ProductDetail = () => {
       setEditingReviewId(null);
       setEditRating(5);
       setEditComment("");
-      setEditImages([]); // ✅ clear after update
+      setEditImages([]);
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "data" in err
