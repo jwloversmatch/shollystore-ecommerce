@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Calendar, Eye, Ticket, Truck } from "lucide-react";
+import { Calendar, Eye, Ticket, Truck, RotateCcw } from "lucide-react";
 import type { Order } from "../../types/account";
 import { getStatusInfo } from "../../utils/statusHelpers";
 
@@ -7,9 +7,10 @@ interface OrderCardProps {
   order: Order;
   onViewDetails: (order: Order) => void;
   onTrackOrder: (order: Order) => void;
+  onReorder: (order: Order) => void; // ✅ new
 }
 
-const OrderCard = ({ order, onViewDetails, onTrackOrder }: OrderCardProps) => {
+const OrderCard = ({ order, onViewDetails, onTrackOrder, onReorder }: OrderCardProps) => {
   const { icon, color, label } = getStatusInfo(order.status);
 
   const canTrack = ["Paid", "Shipped", "Delivered"].includes(order.status);
@@ -83,7 +84,7 @@ const OrderCard = ({ order, onViewDetails, onTrackOrder }: OrderCardProps) => {
           })}
         </p>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={() => onViewDetails(order)}
             className="flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-[#e8622a] dark:hover:text-[#e8622a] transition-colors"
@@ -102,6 +103,15 @@ const OrderCard = ({ order, onViewDetails, onTrackOrder }: OrderCardProps) => {
               Track
             </button>
           )}
+
+          {/* Reorder button – always visible on desktop & mobile */}
+          <button
+            onClick={() => onReorder(order)}
+            className="flex items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-[#e8622a] dark:hover:text-[#e8622a] transition-colors"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Reorder
+          </button>
         </div>
       </div>
     </motion.div>
