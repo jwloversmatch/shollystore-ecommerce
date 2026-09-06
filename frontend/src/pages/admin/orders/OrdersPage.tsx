@@ -16,6 +16,7 @@ import OrderStats from "./OrderStats";
 import OrderFilters from "./OrderFilters";
 import OrdersTable from "./OrdersTable";
 import OrderDetailModal from "./OrderDetailModal";
+import CancellationModal from "./CancellationModal"; 
 
 export interface OrderItem {
   _id: string;
@@ -63,6 +64,7 @@ const OrdersPage = () => {
   });
   const [updateStatus] = useUpdateOrderStatusMutation();
   const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<OrderItem | null>(null);  
   const orderModalRef = useRef<HTMLDivElement>(null);
 
   const bg = isDark ? "#0A0A0B" : "#FCFAF5";
@@ -75,21 +77,27 @@ const OrdersPage = () => {
   const inputBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)";
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
-    let cancellationReason;
-    if (newStatus === "Cancelled") {
-      cancellationReason = window.prompt("Reason for cancellation:");
-      if (!cancellationReason) return;
-    }
     try {
-      await updateStatus({
-        id: orderId,
-        status: newStatus,
-        ...(cancellationReason && { cancellationReason }),
-      }).unwrap();
+      await updateStatus({ id: orderId, status: newStatus }).unwrap();
       refetch();
     } catch (error) {
       console.error("Failed to update status:", error);
     }
+  };
+
+  const handleCancelOrder = (order: OrderItem) => {
+    setCancelTarget(order);
+  };
+
+  const confirmCancellation = async (reason: string) => {
+    if (!cancelTarget) return;
+    await updateStatus({
+      id: cancelTarget._id,
+      status: "Cancelled",
+      cancellationReason: reason,
+    }).unwrap();
+    refetch();
+    setCancelTarget(null);
   };
 
   const handleClearFilters = () => {
@@ -193,7 +201,6 @@ const OrdersPage = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* CSV Export Button */}
           <button
             onClick={handleExportCSV}
             className="flex items-center gap-2 px-4 py-2 rounded-xl shadow-sm border transition text-sm font-medium"
@@ -223,10 +230,8 @@ const OrdersPage = () => {
         </div>
       </header>
 
-      {/* Stats Cards */}
       <OrderStats orders={orders} isDark={isDark} />
 
-      {/* Filters Panel */}
       <AnimatePresence>
         {showFilters && (
           <OrderFilters
@@ -246,7 +251,6 @@ const OrdersPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Orders Table */}
       <OrdersTable
         orders={orders}
         page={page}
@@ -254,10 +258,10 @@ const OrdersPage = () => {
         onPageChange={setPage}
         onStatusChange={handleStatusChange}
         onViewOrder={setSelectedOrder}
+        onCancelOrder={handleCancelOrder}  
         isDark={isDark}
       />
 
-      {/* Order Detail Modal */}
       <AnimatePresence>
         {selectedOrder && (
           <OrderDetailModal
@@ -269,6 +273,13 @@ const OrdersPage = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* Cancellation modal */}
+      <CancellationModal
+        isOpen={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={confirmCancellation}
+      />
     </main>
   );
 };

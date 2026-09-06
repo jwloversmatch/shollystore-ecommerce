@@ -12,10 +12,11 @@ interface OrdersTableProps {
   onPageChange: (p: number) => void;
   onStatusChange: (id: string, status: string) => void;
   onViewOrder: (order: OrderItem) => void;
+  onCancelOrder: (order: OrderItem) => void; 
   isDark: boolean;
 }
 
-const OrdersTable = ({ orders, page, totalPages, onPageChange, onStatusChange, onViewOrder, isDark }: OrdersTableProps) => {
+const OrdersTable = ({ orders, page, totalPages, onPageChange, onStatusChange, onViewOrder, onCancelOrder, isDark }: OrdersTableProps) => {
   const cardBg = isDark ? "#141414" : "rgba(255,255,255,0.8)";
   const cardBorder = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)";
   const textPrimary = isDark ? "#fff" : "#1f2937";
@@ -68,7 +69,15 @@ const OrdersTable = ({ orders, page, totalPages, onPageChange, onStatusChange, o
                     <div className="flex items-center gap-2">
                       <label htmlFor={`status-${order._id}`} className="sr-only">Status for order {order._id.slice(-8)}</label>
                       <select id={`status-${order._id}`} value={order.status} onChange={e => onStatusChange(order._id, e.target.value)} disabled={isLocked} className="px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold border-0 cursor-pointer outline-none transition-all" style={{ background: s.bg, color: s.text, opacity: isLocked ? 0.5 : 1, cursor: isLocked ? "not-allowed" : "pointer" }}>{ALL_STATUSES.map(st => <option key={st} value={st} disabled={!STATUS_FLOW[order.status]?.includes(st)}>{st}</option>)}</select>
-                      {order.status === "Pending" && <button onClick={() => onStatusChange(order._id, "Cancelled")} className="text-[10px] font-bold px-2 py-1 rounded-lg border transition-colors whitespace-nowrap" style={{ background: isDark ? "rgba(239,68,68,0.1)" : "#fef2f2", color: "#f87171", borderColor: isDark ? "rgba(239,68,68,0.2)" : "#fecaca" }}>✕ Cancel</button>}
+                      {order.status === "Pending" && (
+                        <button
+                          onClick={() => onCancelOrder(order)} 
+                          className="text-[10px] font-bold px-2 py-1 rounded-lg border transition-colors whitespace-nowrap"
+                          style={{ background: isDark ? "rgba(239,68,68,0.1)" : "#fef2f2", color: "#f87171", borderColor: isDark ? "rgba(239,68,68,0.2)" : "#fecaca" }}
+                        >
+                          ✕ Cancel
+                        </button>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 sm:px-6 py-3">
