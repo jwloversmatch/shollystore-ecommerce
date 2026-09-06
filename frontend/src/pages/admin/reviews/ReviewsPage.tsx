@@ -6,7 +6,7 @@ import {
 } from "../../../features/api/apiSlice";
 import { Search, Trash2, Star } from "lucide-react";
 import ConfirmationModal from "../../../components/ConfirmationModal";
-import { getCloudinaryUrl } from "../../../utils/cloudinary"; 
+import { getCloudinaryUrl } from "../../../utils/cloudinary";
 
 const ReviewsPage = () => {
   const [page, setPage] = useState(1);

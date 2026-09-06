@@ -28,11 +28,20 @@ const updateProductRatingStats = async (productId: string) => {
   });
 };
 
+// Helper to sanitize images array (max 3)
+const sanitizeImages = (images: unknown): string[] => {
+  if (!Array.isArray(images)) return [];
+  return images
+    .filter((url) => typeof url === "string" && url.trim().length > 0)
+    .slice(0, 3)
+    .map((url) => url.trim());
+};
+
 // POST /api/products/:productId/reviews
 export const createReview = async (req: Request, res: Response) => {
   try {
     const productId = String(req.params.productId);
-    const { rating, comment } = req.body;
+    const { rating, comment, images } = req.body; 
     const userId = (req as any).user._id;
 
     if (!rating || rating < 1 || rating > 5) {
@@ -64,11 +73,14 @@ export const createReview = async (req: Request, res: Response) => {
         .json({ message: "You have already reviewed this product" });
     }
 
+    const cleanImages = sanitizeImages(images); 
+
     const review = await Review.create({
       product: productId,
       user: userId,
       rating,
       comment: cleanComment,
+      images: cleanImages, 
     });
 
     await updateProductRatingStats(productId);
@@ -114,7 +126,7 @@ export const updateReview = async (req: Request, res: Response) => {
   try {
     const productId = String(req.params.productId);
     const reviewId = String(req.params.reviewId);
-    const { rating, comment } = req.body;
+    const { rating, comment, images } = req.body; 
     const userId = (req as any).user._id;
 
     const review = await Review.findOne({
@@ -160,6 +172,10 @@ export const updateReview = async (req: Request, res: Response) => {
       review.comment = cleanComment;
     }
 
+    if (images !== undefined) {
+      review.images = sanitizeImages(images); 
+    }
+
     await review.save();
 
     await updateProductRatingStats(productId);
@@ -176,7 +192,6 @@ export const deleteReview = async (req: Request, res: Response) => {
     const reviewId = String(req.params.reviewId);
     const userId = (req as any).user._id;
 
-    // ✅ Find the review first to check time window
     const review = await Review.findOne({
       _id: reviewId,
       product: productId,
@@ -189,7 +204,6 @@ export const deleteReview = async (req: Request, res: Response) => {
         .json({ message: "Review not found or not authorized" });
     }
 
-    // ✅ Enforce same 15-minute deletion window
     const now = Date.now();
     const createdAt = new Date(review.createdAt).getTime();
     const deletionWindowMs = 15 * 60 * 1000;
