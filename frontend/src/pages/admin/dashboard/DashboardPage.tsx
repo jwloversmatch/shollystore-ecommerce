@@ -23,7 +23,7 @@ import {
   Flame,
 } from "lucide-react";
 import ConfirmationModal from "../../../components/ConfirmationModal";
-import CancellationModal from "../orders/CancellationModal"; 
+import CancellationModal from "../orders/CancellationModal";
 import SEO from "../../../components/SEO";
 import {
   StatsCardSkeleton,

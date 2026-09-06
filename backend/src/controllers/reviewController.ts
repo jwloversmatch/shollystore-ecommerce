@@ -176,17 +176,31 @@ export const deleteReview = async (req: Request, res: Response) => {
     const reviewId = String(req.params.reviewId);
     const userId = (req as any).user._id;
 
-    const review = await Review.findOneAndDelete({
+    // ✅ Find the review first to check time window
+    const review = await Review.findOne({
       _id: reviewId,
       product: productId,
       user: userId,
     });
+
     if (!review) {
       return res
         .status(404)
         .json({ message: "Review not found or not authorized" });
     }
 
+    // ✅ Enforce same 15-minute deletion window
+    const now = Date.now();
+    const createdAt = new Date(review.createdAt).getTime();
+    const deletionWindowMs = 15 * 60 * 1000;
+    if (now - createdAt > deletionWindowMs) {
+      return res.status(403).json({
+        message:
+          "Review can no longer be deleted. The 15-minute deletion window has passed. Please contact support if you need it removed.",
+      });
+    }
+
+    await Review.deleteOne({ _id: reviewId });
     await updateProductRatingStats(productId);
     res.json({ message: "Review deleted" });
   } catch (error: any) {

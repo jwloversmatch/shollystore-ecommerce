@@ -1057,6 +1057,8 @@ const ProductDetail = () => {
                   isOwner &&
                   currentTime - new Date(review.createdAt).getTime() <
                     EDIT_WINDOW_MS;
+                const canDelete = canEdit; // same window for delete
+
                 return (
                   <div
                     key={review._id}
@@ -1151,12 +1153,14 @@ const ProductDetail = () => {
                                   <Pencil className="w-3 h-3" /> Edit
                                 </button>
                               )}
-                              <button
-                                onClick={() => handleDeleteClick(review._id)}
-                                className="text-xs font-bold text-red-500 hover:text-red-600 flex items-center gap-1"
-                              >
-                                <Trash2 className="w-3 h-3" /> Delete
-                              </button>
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDeleteClick(review._id)}
+                                  className="text-xs font-bold text-red-500 hover:text-red-600 flex items-center gap-1"
+                                >
+                                  <Trash2 className="w-3 h-3" /> Delete
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
