@@ -468,7 +468,8 @@ export const trackMyOrder = async (
       return;
     }
 
-    if (!["Shipped", "Delivered"].includes(order.status)) {
+    // ✅ Trackable: Paid, Shipped, Delivered
+    if (!["Paid", "Shipped", "Delivered"].includes(order.status)) {
       res.status(404).json({
         success: false,
         message: "Order is not available for tracking yet",
@@ -506,7 +507,8 @@ export const trackByToken = async (
       return;
     }
 
-    if (!["Shipped", "Delivered"].includes(order.status)) {
+    // ✅ Trackable: Paid, Shipped, Delivered
+    if (!["Paid", "Shipped", "Delivered"].includes(order.status)) {
       res.status(404).json({
         success: false,
         message: "Order is not available for tracking yet",
@@ -565,7 +567,8 @@ export const trackOrderManual = async (
       return;
     }
 
-    if (!["Shipped", "Delivered"].includes(order.status)) {
+    // ✅ Trackable: Paid, Shipped, Delivered
+    if (!["Paid", "Shipped", "Delivered"].includes(order.status)) {
       res.status(404).json({
         success: false,
         message: "Order is not available for tracking yet",
@@ -607,7 +610,8 @@ export const trackMyOrderByCode = async (
       return;
     }
 
-    if (!["Shipped", "Delivered"].includes(order.status)) {
+    // ✅ Trackable: Paid, Shipped, Delivered
+    if (!["Paid", "Shipped", "Delivered"].includes(order.status)) {
       res.status(404).json({
         success: false,
         message: "Order is not available for tracking yet",

@@ -12,8 +12,7 @@ interface OrderCardProps {
 const OrderCard = ({ order, onViewDetails, onTrackOrder }: OrderCardProps) => {
   const { icon, color, label } = getStatusInfo(order.status);
 
-  // ✅ Only allow tracking for shipped/delivered orders
-  const canTrack = ["Shipped", "Delivered"].includes(order.status);
+  const canTrack = ["Paid", "Shipped", "Delivered"].includes(order.status);
 
   return (
     <motion.div
@@ -38,20 +37,28 @@ const OrderCard = ({ order, onViewDetails, onTrackOrder }: OrderCardProps) => {
       <div className="p-4 sm:p-5 pr-16 sm:pr-5">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6">
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wider">Order #</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wider">
+              Order #
+            </p>
             <p className="font-medium text-gray-700 dark:text-gray-300 text-sm mt-0.5">
               {order._id.slice(-8).toUpperCase()}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wider">Status</p>
-            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold mt-1 ${color}`}>
+            <p className="text-xs text-gray-500 uppercase tracking-wider">
+              Status
+            </p>
+            <span
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold mt-1 ${color}`}
+            >
               {icon}
               {label}
             </span>
           </div>
           <div className="col-span-2 sm:col-span-1">
-            <p className="text-xs text-gray-500 uppercase tracking-wider">Total</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wider">
+              Total
+            </p>
             <p className="font-bold text-gray-900 dark:text-white text-sm mt-0.5">
               ₦{order.totalPrice.toLocaleString()}
               {order.couponCode && (
