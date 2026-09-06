@@ -53,9 +53,6 @@ const TrackOrder = () => {
   const [manualEmail, setManualEmail] = useState("");
   const [emailError, setEmailError] = useState("");
 
-  // Mutation hooks expose `isLoading`, not `isFetching` — `isFetching` only
-  // exists on query-hook results (it tracks background refetches, which
-  // mutations don't have since they're one-shot triggered actions).
   const [
     trackMyOrderByCode,
     {
@@ -84,7 +81,6 @@ const TrackOrder = () => {
   const tokenQuery = useTrackByTokenQuery(token, { skip: !isTokenMode });
   const authQuery = useTrackMyOrderQuery(orderIdParam, { skip: !isAuthMode });
 
-  // Explicitly typed variable for active query result
   let activeQueryResult: TrackingQueryResult | null = null;
   if (isTokenMode) {
     activeQueryResult = tokenQuery as unknown as TrackingQueryResult;
@@ -97,13 +93,11 @@ const TrackOrder = () => {
   const queryIsError = activeQueryResult?.isError ?? false;
   const queryError = activeQueryResult?.error;
 
-  // Manual mode result
   const manualData = user ? authManualData : guestManualData;
   const manualIsFetching = user ? authManualFetching : guestManualFetching;
   const manualIsError = user ? authManualError : guestManualError;
   const manualErrorObj = user ? authManualErrorObj : guestManualErrorObj;
 
-  // Final values used in render
   const finalData: TrackOrderResponse | undefined = isManualMode
     ? manualData
     : queryData;
@@ -184,7 +178,8 @@ const TrackOrder = () => {
   }
 
   const order = finalData?.order;
-  const timelineSteps = ["Pending", "Processing", "Shipped", "Delivered"];
+  // ✅ Updated timeline to reflect actual statuses: Pending -> Paid -> Shipped -> Delivered
+  const timelineSteps = ["Pending", "Paid", "Shipped", "Delivered"];
   const shouldShowResult = !finalIsFetching && !!order;
 
   const totalItems = order?.orderItems?.length || 0;
@@ -353,7 +348,13 @@ const TrackOrder = () => {
                         )}
                       </div>
                       <span
-                        className={`mt-2 text-xs font-bold ${isCurrent ? "text-emerald-500" : isCompleted ? "text-gray-700 dark:text-gray-300" : "text-gray-400"}`}
+                        className={`mt-2 text-xs font-bold ${
+                          isCurrent
+                            ? "text-emerald-500"
+                            : isCompleted
+                              ? "text-gray-700 dark:text-gray-300"
+                              : "text-gray-400"
+                        }`}
                       >
                         {step}
                       </span>
