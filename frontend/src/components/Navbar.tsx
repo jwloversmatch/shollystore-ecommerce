@@ -19,7 +19,7 @@ import {
   Heart,
   Star,
   Truck,
-  Package,
+  ShoppingBag
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
@@ -611,7 +611,7 @@ const Navbar = () => {
               {(!user || user.role === "user") && (
                 <NavBtn
                   to="/shop"
-                  icon={<Package className="w-5 h-5" />}
+                  icon={<ShoppingBag className="w-5 h-5" />}
                   label="Shop"
                   active={isActive("/shop")}
                 />
