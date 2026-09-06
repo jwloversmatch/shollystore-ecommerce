@@ -10,6 +10,7 @@ import {
   createReview,
   updateReview,
   deleteReview,
+  getFeaturedReviews,
 } from "../controllers/reviewController";
 import { protect } from "../middleware/auth";
 import { reviewLimiter } from "../middleware/rateLimiter";
@@ -31,6 +32,8 @@ router
   .route("/:productId/reviews/:reviewId")
   .put(protect, reviewLimiter, updateReview)
   .delete(protect, reviewLimiter, deleteReview);
+
+router.get("/reviews/featured", getFeaturedReviews);
 
 router.get("/:slug", getProductBySlug);
 

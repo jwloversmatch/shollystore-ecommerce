@@ -287,3 +287,19 @@ export const deleteReviewAdmin = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// GET /api/reviews/featured
+export const getFeaturedReviews = async (req: Request, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 5;
+    const reviews = await Review.find()
+      .populate("product", "name slug")
+      .populate("user", "name avatar")
+      .sort({ createdAt: -1 })
+      .limit(limit);
+
+    res.json({ reviews });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

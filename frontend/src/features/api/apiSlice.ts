@@ -72,6 +72,24 @@ export interface Review {
   updatedAt: string;
 }
 
+// Featured reviews (with populated product)
+export interface FeaturedReview {
+  _id: string;
+  product: {
+    name: string;
+    slug?: string;
+  };
+  user: {
+    name: string;
+    avatar?: string;
+  };
+  rating: number;
+  comment: string;
+  images?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AdminReview {
   _id: string;
   product: {
@@ -907,6 +925,14 @@ export const apiSlice = createApi({
         body: data,
       }),
     }),
+
+    getFeaturedReviews: builder.query<
+      { reviews: FeaturedReview[] },
+      { limit?: number } | void
+    >({
+      query: ({ limit = 5 } = {}) => `/reviews/featured?limit=${limit}`,
+      providesTags: ["Review"],
+    }),
   }),
 });
 
@@ -933,7 +959,7 @@ export const {
   useUpdateProductMutation,
   useDeleteProductMutation,
   useUploadImageMutation,
-  useUploadReviewImageMutation, 
+  useUploadReviewImageMutation,
   useLoginMutation,
   useRegisterMutation,
   useVerifyEmailQuery,
@@ -994,4 +1020,5 @@ export const {
   useSaveCartMutation,
   useGetCartQuery,
   useGetProductsByIdsQuery,
+  useGetFeaturedReviewsQuery,
 } = apiSlice;

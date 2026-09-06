@@ -40,14 +40,6 @@ const Home = () => {
     [productsResp],
   );
 
-  // Find first product that has reviews to use for testimonials
-  const testimonialProduct = useMemo(() => {
-    return displayProducts.find((p) => (p.numberOfReviews || 0) > 0) || null;
-  }, [displayProducts]);
-
-  const testimonialProductId = testimonialProduct?._id || undefined;
-  const testimonialProductName = testimonialProduct?.name || undefined;
-
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [modalProduct, setModalProduct] = useState<ProductItem | null>(null);
@@ -247,13 +239,8 @@ const Home = () => {
       {/* New Arrivals */}
       <HomeNewArrivals />
 
-      {/* Testimonials – only show if we found a product with reviews */}
-      {testimonialProductId && (
-        <HomeTestimonials
-          productId={testimonialProductId}
-          productName={testimonialProductName}
-        />
-      )}
+      {/* Testimonials */}
+      <HomeTestimonials />
 
       {/* Special Offer */}
       <HomeSpecialOffer

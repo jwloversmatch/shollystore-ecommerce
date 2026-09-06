@@ -1,18 +1,10 @@
 import { motion } from "framer-motion";
-import { useGetProductReviewsQuery } from "../../features/api/apiSlice";
+import { useGetFeaturedReviewsQuery } from "../../features/api/apiSlice";
 import { StarRating } from "../../components/StarRating";
 import { Quote } from "lucide-react";
 
-interface Props {
-  productId: string;
-  productName?: string;
-}
-
-const HomeTestimonials = ({ productId, productName }: Props) => {
-  const { data, isLoading, isError } = useGetProductReviewsQuery(
-    { productId, limit: 3 },
-    { skip: !productId },
-  );
+const HomeTestimonials = () => {
+  const { data, isLoading, isError } = useGetFeaturedReviewsQuery({ limit: 3 });
 
   if (isLoading || isError || !data?.reviews?.length) return null;
 
@@ -45,13 +37,11 @@ const HomeTestimonials = ({ productId, productName }: Props) => {
               transition={{ duration: 0.45, delay: idx * 0.1 }}
               className="relative rounded-2xl p-6 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/[0.08] shadow-md dark:shadow-[0_8px_24px_rgba(0,0,0,0.35)] hover:shadow-lg transition-shadow"
             >
-              {/* Quote icon */}
               <Quote
                 className="w-8 h-8 text-[#e8622a] opacity-20 absolute top-5 right-5"
                 aria-hidden="true"
               />
 
-              {/* Avatar + name + rating */}
               <div className="flex items-center gap-3 mb-3">
                 {review.user.avatar ? (
                   <img
@@ -73,19 +63,15 @@ const HomeTestimonials = ({ productId, productName }: Props) => {
                 </div>
               </div>
 
-              {/* Review comment */}
               <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-4">
                 “{review.comment}”
               </p>
 
-              {/* Product name (optional) */}
-              {productName && (
-                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/[0.06]">
-                  <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
-                    {productName}
-                  </p>
-                </div>
-              )}
+              <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/[0.06]">
+                <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                  {review.product.name}
+                </p>
+              </div>
             </motion.div>
           ))}
         </div>
