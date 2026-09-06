@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
+import crypto from "crypto";
 import { Order, IOrder } from "../models/Order";
 import { Product } from "../models/Product";
 import { User } from "../models/User";
@@ -7,9 +8,9 @@ import { Coupon } from "../models/Coupon";
 import {
   sendAdminOrderNotification,
   sendOrderStatusUpdateEmail,
+  sendOrderShippedEmail,
 } from "../services/email.service";
 
-// Helper to reduce stock (handles variants)
 const reduceStockForOrder = async (order: IOrder) => {
   for (const item of order.orderItems) {
     const product = await Product.findById(item.product);
@@ -30,12 +31,12 @@ const reduceStockForOrder = async (order: IOrder) => {
         }
         product.stock = Math.max(0, product.stock - item.qty);
         await product.save();
-        await product.checkLowStockAndNotify(); // ✅ low stock check
+        await product.checkLowStockAndNotify();
       }
     } else {
       product.stock = Math.max(0, product.stock - item.qty);
       await product.save();
-      await product.checkLowStockAndNotify(); // ✅ low stock check
+      await product.checkLowStockAndNotify();
     }
   }
 };
@@ -63,6 +64,13 @@ const formatPaymentMethod = (method?: string): string => {
     map[method] ||
     method.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
   );
+};
+
+// ─── Tracking token generation for shipping emails ───────────────────────────
+const generateTrackingToken = (): { raw: string; hashed: string } => {
+  const raw = crypto.randomBytes(32).toString("hex");
+  const hashed = crypto.createHash("sha256").update(raw).digest("hex");
+  return { raw, hashed };
 };
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -171,7 +179,6 @@ export const updateOrderStatus = async (
       return;
     }
 
-    // Reduce stock only if moving from Pending to a non-Cancelled status
     if (
       order.status === "Pending" &&
       status !== "Pending" &&
@@ -180,7 +187,19 @@ export const updateOrderStatus = async (
       await reduceStockForOrder(order);
     }
 
-    await Order.updateOne({ _id: order._id }, { $set: { status } });
+    const updateData: any = { status };
+
+    if (status === "Shipped") {
+      const { raw: rawToken, hashed: hashedToken } = generateTrackingToken();
+      updateData.trackingToken = hashedToken;
+      updateData.trackingTokenExpiresAt = new Date(
+        Date.now() + 30 * 24 * 60 * 60 * 1000,
+      );
+
+      (order as any)._trackingTokenRaw = rawToken;
+    }
+
+    await Order.updateOne({ _id: order._id }, { $set: updateData });
 
     if (status === "Paid" && order.status !== "Paid" && order.couponCode) {
       await Coupon.updateOne(
@@ -195,30 +214,44 @@ export const updateOrderStatus = async (
       console.error("Failed to send admin order notification:", err),
     );
 
-    if (["Shipped", "Delivered"].includes(status)) {
-      const populatedUser = order.user as unknown as {
-        email?: string;
-        name?: string;
-        phone?: string;
-      } | null;
-      if (populatedUser?.email) {
-        const originalSubtotal = order.orderItems.reduce(
-          (sum, item) => sum + item.price * item.qty,
-          0,
-        );
-        sendOrderStatusUpdateEmail(
-          populatedUser.email,
+    const populatedUser = order.user as unknown as {
+      email?: string;
+      name?: string;
+      phone?: string;
+    } | null;
+
+    if (status === "Shipped" && populatedUser?.email) {
+      sendOrderShippedEmail(
+        populatedUser.email,
+        (order._id as mongoose.Types.ObjectId).toString(),
+        order.trackingNumber ||
           (order._id as mongoose.Types.ObjectId).toString(),
-          status,
-          order.totalPrice,
-          populatedUser.name,
-          order.discount || 0,
-          order.couponCode,
-          originalSubtotal,
-        ).catch((err) =>
-          console.error("Failed to send order status update email:", err),
-        );
-      }
+        (order as any)._trackingTokenRaw,
+        populatedUser.name,
+        order.totalPrice,
+        order.discount || 0,
+        order.couponCode,
+      ).catch((err) => console.error("Failed to send shipping email:", err));
+    } else if (
+      ["Shipped", "Delivered"].includes(status) &&
+      populatedUser?.email
+    ) {
+      const originalSubtotal = order.orderItems.reduce(
+        (sum, item) => sum + item.price * item.qty,
+        0,
+      );
+      sendOrderStatusUpdateEmail(
+        populatedUser.email,
+        (order._id as mongoose.Types.ObjectId).toString(),
+        status,
+        order.totalPrice,
+        populatedUser.name,
+        order.discount || 0,
+        order.couponCode,
+        originalSubtotal,
+      ).catch((err) =>
+        console.error("Failed to send order status update email:", err),
+      );
     }
 
     res.json({ success: true, order });
@@ -276,7 +309,7 @@ export const getSalesAnalytics = async (
       { $unwind: "$categoryInfo" },
       {
         $project: {
-          _id: "$categoryInfo.name", 
+          _id: "$categoryInfo.name",
           totalSales: 1,
           revenue: 1,
         },
@@ -393,7 +426,6 @@ export const getRevenueTrend = async (
       { $sort: { _id: 1 } },
     ]);
 
-    // Fill in missing days with zero values
     const result: { date: string; revenue: number; orders: number }[] = [];
     const currentDate = new Date(startDate);
     const today = new Date();
@@ -490,13 +522,13 @@ export const exportOrdersCSV = async (
           `"${order.user?.email || "N/A"}"`,
           `"${order.user?.phone || "N/A"}"`,
           `"${formatAmount(order.totalPrice)}"`,
-          `"${order.status}"`,                  
-          `"${formatPaymentMethod(order.paymentMethod)}"`, 
+          `"${order.status}"`,
+          `"${formatPaymentMethod(order.paymentMethod)}"`,
           `"${new Date(order.createdAt).toLocaleDateString("en-NG")}"`,
           `"${items}"`,
           `"${shipping}"`,
           `"${order.couponCode || "N/A"}"`,
-          `"${formatAmount(order.discount || 0)}"`, 
+          `"${formatAmount(order.discount || 0)}"`,
         ].join(",");
       })
       .join("\n");
@@ -508,7 +540,6 @@ export const exportOrdersCSV = async (
       "Content-Disposition",
       `attachment; filename=orders-export-${new Date().toISOString().split("T")[0]}.csv`,
     );
-    // Add BOM for Excel UTF-8 support
     res.send("\ufeff" + csv);
   } catch (error: any) {
     res.status(500).json({ message: error.message });

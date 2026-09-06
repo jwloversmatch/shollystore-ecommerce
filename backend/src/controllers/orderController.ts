@@ -11,6 +11,7 @@ import {
   sendOrderConfirmation,
   sendAdminOrderNotification,
   sendOrderStatusUpdateEmail,
+  sendOrderShippedEmail,
 } from "../services/email.service";
 import { AuthRequest } from "../middleware/auth";
 import { calculateOrderPricing } from "../utils/orderPricing";
@@ -94,11 +95,7 @@ export const createOrder = async (
 
     let pricing;
     try {
-      pricing = await calculateOrderPricing(
-        orderItems,
-        couponCode,
-        shippingFee,
-      );
+      pricing = await calculateOrderPricing(orderItems, couponCode, shippingFee);
     } catch (pricingError) {
       const msg =
         pricingError instanceof Error ? pricingError.message : "Invalid order";
@@ -149,9 +146,7 @@ export const createOrder = async (
         accountName:
           defaultAccount?.accountName || process.env.BANK_ACCOUNT_NAME || "",
         accountNumber:
-          defaultAccount?.accountNumber ||
-          process.env.BANK_ACCOUNT_NUMBER ||
-          "",
+          defaultAccount?.accountNumber || process.env.BANK_ACCOUNT_NUMBER || "",
       };
     } else if (paymentMethod === "whatsapp") {
       paymentDetails = {
@@ -195,6 +190,7 @@ export const createOrder = async (
       0,
     );
 
+    // Send order confirmation email WITHOUT tracking details
     sendOrderConfirmation(
       customerEmail,
       createdOrder.trackingNumber || createdOrder._id.toString(),
@@ -206,7 +202,6 @@ export const createOrder = async (
       paymentMethod,
       createdOrder.paymentDetails,
       shippingFee,
-      rawToken,
     ).catch((err) => console.error("Failed to send order confirmation:", err));
 
     sendAdminOrderNotification(createdOrder, "created").catch((err) =>
@@ -276,7 +271,6 @@ export const paystackWebhook = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  // ... unchanged from your previous version ...
   try {
     const signature = req.headers["x-paystack-signature"] as string;
     const rawBody = req.body;

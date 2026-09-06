@@ -224,9 +224,13 @@ export const sendEmailChangeVerification = async (
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ORDER EMAILS (Updated sendOrderConfirmation)
+// ORDER EMAILS
 // ═══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * Order confirmation email (immediately after order creation)
+ * Does NOT include tracking number.
+ */
 export const sendOrderConfirmation = async (
   email: string,
   orderId: string,
@@ -238,7 +242,6 @@ export const sendOrderConfirmation = async (
   paymentMethod?: string,
   paymentDetails?: any,
   shippingFee?: number,
-  trackingToken?: string,
 ) => {
   const greeting = name
     ? `Thank you, <strong>${name}</strong>! 🎉`
@@ -274,15 +277,6 @@ export const sendOrderConfirmation = async (
       <p style="margin:16px 0;"><strong>Please complete payment via WhatsApp:</strong> ${paymentDetails.whatsappNumber || "N/A"}</p>`;
   }
 
-  const trackUrl = trackingToken
-    ? `${CLIENT_URL}/track-order?token=${encodeURIComponent(trackingToken)}`
-    : `${CLIENT_URL}/track-order?orderId=${encodeURIComponent(orderId)}`;
-
-  const trackButton = `
-    <p style="margin-top:24px;text-align:center;">
-      <a href="${trackUrl}" class="btn" style="background:#e8622a;color:#fff;box-shadow:0 4px 12px rgba(232,98,42,.3);">Track Your Order</a>
-    </p>`;
-
   const html = layout({
     headerBg: "#dff2e6",
     body: `
@@ -290,15 +284,14 @@ export const sendOrderConfirmation = async (
         <h2>${greeting}</h2>
         <p>Thank you for your purchase! We're preparing your order and will ship it soon.</p>
         <div class="box">
-          <p><strong>Tracking Number:</strong> <span style="font-family:monospace;">${orderId}</span></p>
+          <p><strong>Order #</strong> ${orderId}</p>
           ${subtotalLine}
           ${discountLine}
           ${shippingFeeLine}
           <p><strong>Total</strong> <span style="font-size:24px;font-weight:700;color:#e8622a;">₦${total.toLocaleString()}</span></p>
         </div>
         ${paymentSection}
-        ${trackButton}
-        <p>You'll receive a shipping notification once your order is on its way.</p>
+        <p>You'll receive a shipping notification with tracking details once your order is on its way.</p>
       </div>`,
   });
 
@@ -310,9 +303,15 @@ export const sendOrderConfirmation = async (
   );
 };
 
+/**
+ * Shipping confirmation email (when status becomes Shipped)
+ * Includes tracking number and tracking link.
+ */
 export const sendOrderShippedEmail = async (
   email: string,
   orderId: string,
+  trackingNumber: string,
+  trackingToken?: string,
   name?: string,
   total?: number,
   discount?: number,
@@ -330,6 +329,10 @@ export const sendOrderShippedEmail = async (
     ? `<p><strong>Total:</strong> ₦${total.toLocaleString()}</p>`
     : "";
 
+  const trackUrl = trackingToken
+    ? `${CLIENT_URL}/track-order?token=${encodeURIComponent(trackingToken)}`
+    : `${CLIENT_URL}/track-order?orderId=${encodeURIComponent(orderId)}`;
+
   const html = layout({
     headerBg: "#60a5fa",
     headerText: "#ffffff",
@@ -337,9 +340,13 @@ export const sendOrderShippedEmail = async (
       <div class="body" style="text-align:center;">
         <h2>${greeting}</h2>
         <p>Great news! Your order <strong>#${orderId}</strong> is on its way.</p>
-        ${discountLine}
-        ${totalLine}
-        <p>You'll receive a delivery confirmation once it arrives.</p>
+        <div class="box" style="text-align:left; margin:20px 0;">
+          <p><strong>Tracking Number:</strong> <span style="font-family:monospace;">${trackingNumber}</span></p>
+          ${discountLine}
+          ${totalLine}
+        </div>
+        <a href="${trackUrl}" class="btn" style="background:#e8622a;color:#fff;box-shadow:0 4px 12px rgba(232,98,42,.3);">Track Your Order</a>
+        <p style="margin-top:24px;font-size:14px;color:#718096;">You can also use the tracking number above to track on our website.</p>
       </div>`,
   });
 
@@ -347,7 +354,7 @@ export const sendOrderShippedEmail = async (
     email,
     "Your Order Has Been Shipped – Sholex",
     html,
-    `Your Sholex order #${orderId} has shipped!`,
+    `Your Sholex order #${orderId} has shipped! Tracking number: ${trackingNumber}`,
   );
 };
 
