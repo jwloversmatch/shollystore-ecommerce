@@ -33,6 +33,8 @@ export interface Order {
   email?: string;
   guestEmail?: string;
   trackingToken?: string;
+  cancellationReason?: string; 
+  cancelledAt?: string;
 }
 
 export interface IAddress {

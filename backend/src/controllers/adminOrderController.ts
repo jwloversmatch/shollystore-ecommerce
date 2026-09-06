@@ -168,7 +168,7 @@ export const updateOrderStatus = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, cancellationReason } = req.body;
 
     const order = (await Order.findById(id).populate(
       "user",
@@ -179,6 +179,13 @@ export const updateOrderStatus = async (
       return;
     }
 
+    // Validate cancellation reason if status is Cancelled
+    if (status === "Cancelled" && !cancellationReason) {
+      res.status(400).json({ message: "Cancellation reason is required" });
+      return;
+    }
+
+    // Reduce stock only if moving from Pending to a non-Cancelled status
     if (
       order.status === "Pending" &&
       status !== "Pending" &&
@@ -189,13 +196,17 @@ export const updateOrderStatus = async (
 
     const updateData: any = { status };
 
+    if (status === "Cancelled") {
+      updateData.cancellationReason = cancellationReason;
+      updateData.cancelledAt = new Date();
+    }
+
     if (status === "Shipped") {
       const { raw: rawToken, hashed: hashedToken } = generateTrackingToken();
       updateData.trackingToken = hashedToken;
       updateData.trackingTokenExpiresAt = new Date(
         Date.now() + 30 * 24 * 60 * 60 * 1000,
       );
-
       (order as any)._trackingTokenRaw = rawToken;
     }
 

@@ -2,9 +2,15 @@ import { useState, useMemo, useRef } from "react";
 import { useFocusTrap } from "../../../hooks/useFocusTrap";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { useGetAllOrdersQuery, useUpdateOrderStatusMutation } from "../../../features/api/apiSlice";
+import {
+  useGetAllOrdersQuery,
+  useUpdateOrderStatusMutation,
+} from "../../../features/api/apiSlice";
 import { ArrowLeft, Filter, Download } from "lucide-react";
-import { StatsCardSkeleton, OrderRowSkeleton } from "../../../components/Skeletons";
+import {
+  StatsCardSkeleton,
+  OrderRowSkeleton,
+} from "../../../components/Skeletons";
 import { useTheme } from "../../../context/ThemeContext";
 import OrderStats from "./OrderStats";
 import OrderFilters from "./OrderFilters";
@@ -14,11 +20,23 @@ import OrderDetailModal from "./OrderDetailModal";
 export interface OrderItem {
   _id: string;
   user: { email: string; name?: string; phone?: string };
-  name?: string; phone?: string;
-  totalPrice: number; status: string; createdAt: string; paymentMethod?: string;
+  name?: string;
+  phone?: string;
+  totalPrice: number;
+  status: string;
+  createdAt: string;
+  paymentMethod?: string;
   orderItems: Array<{ name: string; qty: number; price: number }>;
-  shippingAddress?: { address: string; city: string; postalCode?: string; country?: string };
-  couponCode?: string; discount?: number;
+  shippingAddress?: {
+    address: string;
+    city: string;
+    postalCode?: string;
+    country?: string;
+  };
+  couponCode?: string;
+  discount?: number;
+  cancellationReason?: string;
+  cancelledAt?: string;
 }
 
 const OrdersPage = () => {
@@ -57,8 +75,17 @@ const OrdersPage = () => {
   const inputBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)";
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
+    let cancellationReason;
+    if (newStatus === "Cancelled") {
+      cancellationReason = window.prompt("Reason for cancellation:");
+      if (!cancellationReason) return;
+    }
     try {
-      await updateStatus({ id: orderId, status: newStatus }).unwrap();
+      await updateStatus({
+        id: orderId,
+        status: newStatus,
+        ...(cancellationReason && { cancellationReason }),
+      }).unwrap();
       refetch();
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -119,7 +146,10 @@ const OrdersPage = () => {
             <StatsCardSkeleton key={i} dark={isDark} />
           ))}
         </div>
-        <div className="rounded-2xl border" style={{ background: cardBg, borderColor: cardBorder }}>
+        <div
+          className="rounded-2xl border"
+          style={{ background: cardBg, borderColor: cardBorder }}
+        >
           {Array.from({ length: 5 }).map((_, i) => (
             <OrderRowSkeleton key={i} dark={isDark} />
           ))}
@@ -141,13 +171,20 @@ const OrdersPage = () => {
           <button
             onClick={() => navigate("/admin")}
             className="p-2 rounded-xl border transition-colors"
-            style={{ background: inputBg, borderColor: inputBorder, color: textSecondary }}
+            style={{
+              background: inputBg,
+              borderColor: inputBorder,
+              color: textSecondary,
+            }}
             aria-label="Back to admin dashboard"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold" style={{ color: textPrimary }}>
+            <h1
+              className="text-2xl md:text-3xl font-bold"
+              style={{ color: textPrimary }}
+            >
               All Orders
             </h1>
             <p className="text-xs sm:text-sm mt-1" style={{ color: textMuted }}>
@@ -160,7 +197,11 @@ const OrdersPage = () => {
           <button
             onClick={handleExportCSV}
             className="flex items-center gap-2 px-4 py-2 rounded-xl shadow-sm border transition text-sm font-medium"
-            style={{ background: inputBg, borderColor: inputBorder, color: "#10b981" }}
+            style={{
+              background: inputBg,
+              borderColor: inputBorder,
+              color: "#10b981",
+            }}
           >
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline">Export CSV</span>
@@ -168,7 +209,11 @@ const OrdersPage = () => {
           <button
             onClick={() => setShowFilters(!showFilters)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl shadow-sm border transition text-sm font-medium"
-            style={{ background: inputBg, borderColor: inputBorder, color: textSecondary }}
+            style={{
+              background: inputBg,
+              borderColor: inputBorder,
+              color: textSecondary,
+            }}
             aria-expanded={showFilters}
             aria-controls="filters-panel"
           >

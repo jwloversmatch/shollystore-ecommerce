@@ -52,7 +52,7 @@ export interface IOrder extends Document {
   taxAmount?: number;
   taxRate?: number;
   shippingFee?: number;
-  status: "Pending" | "Paid" | "Shipped" | "Delivered";
+  status: "Pending" | "Paid" | "Shipped" | "Delivered" | "Cancelled";
   paymentResult?: { id: string; status: string; update_time: string };
   paymentMethod?: "paystack" | "bank_transfer" | "whatsapp";
   paymentDetails?: {
@@ -73,8 +73,11 @@ export interface IOrder extends Document {
   giftMessage?: string;
   customFields?: Map<string, any>;
   // ─── NEW fields for token-based tracking ──────────────────────────────────
-  trackingToken?: string;          
-  trackingTokenExpiresAt?: Date;   
+  trackingToken?: string;
+  trackingTokenExpiresAt?: Date;
+  // ─── Cancellation fields ──────────────────────────────────────────────────
+  cancellationReason?: string;
+  cancelledAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -146,7 +149,7 @@ const OrderSchema: Schema = new Schema(
 
     status: {
       type: String,
-      enum: ["Pending", "Paid", "Shipped", "Delivered"],
+      enum: ["Pending", "Paid", "Shipped", "Delivered", "Cancelled"],
       default: "Pending",
     },
     paymentResult: { id: String, status: String, update_time: String },
@@ -182,6 +185,10 @@ const OrderSchema: Schema = new Schema(
     // ─── Token-based tracking fields ─────────────────────────────────────
     trackingToken: { type: String, index: true },
     trackingTokenExpiresAt: { type: Date },
+
+    // ─── Cancellation fields ─────────────────────────────────────────────
+    cancellationReason: { type: String },
+    cancelledAt: { type: Date },
   },
   { timestamps: true },
 );
@@ -195,6 +202,6 @@ OrderSchema.index({ "orderItems.product": 1 });
 OrderSchema.index({ paymentMethod: 1 });
 OrderSchema.index({ trackingNumber: 1 });
 OrderSchema.index({ paymentEventId: 1 });
-OrderSchema.index({ trackingToken: 1 }); 
+OrderSchema.index({ trackingToken: 1 });
 
 export const Order = mongoose.model<IOrder>("Order", OrderSchema);

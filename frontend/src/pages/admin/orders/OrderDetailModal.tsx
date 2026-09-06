@@ -1,4 +1,4 @@
-import { X, Calendar, CreditCard, Phone, MapPin, Package, Ticket } from "lucide-react";
+import { X, Calendar, CreditCard, Phone, MapPin, Package, Ticket, AlertCircle } from "lucide-react";
 import type { OrderItem } from "./OrdersPage";
 
 const PAYMENT_LABELS: Record<string, string> = { paystack: "Paystack", bank_transfer: "Bank Transfer", whatsapp: "WhatsApp" };
@@ -50,6 +50,19 @@ const OrderDetailModal = ({ order, onClose, onStatusChange, modalRef, isDark }: 
               <span className="text-sm flex items-center gap-1" style={{ color: textMuted }}><Calendar className="w-4 h-4" />{new Date(order.createdAt).toLocaleDateString("en-NG", { year: "numeric", month: "long", day: "numeric" })}</span>
               {order.paymentMethod && <span className="text-sm flex items-center gap-1" style={{ color: textMuted }}><CreditCard className="w-4 h-4" />{PAYMENT_LABELS[order.paymentMethod] || order.paymentMethod}</span>}
             </div>
+
+            {/* Cancellation reason display */}
+            {order.status === "Cancelled" && order.cancellationReason && (
+              <div className="rounded-xl p-4 border" style={{ background: isDark ? "rgba(239,68,68,0.1)" : "#fee2e2", borderColor: isDark ? "rgba(239,68,68,0.2)" : "#fecaca" }}>
+                <p className="text-xs uppercase tracking-wider mb-1 font-semibold flex items-center gap-1" style={{ color: isDark ? "#f87171" : "#991b1b" }}>
+                  <AlertCircle className="w-3.5 h-3.5" /> Cancellation Reason
+                </p>
+                <p className="text-sm font-medium" style={{ color: isDark ? "#fca5a5" : "#b91c1c" }}>
+                  {order.cancellationReason}
+                </p>
+              </div>
+            )}
+
             <div className="rounded-xl p-4" style={{ background: inputBg }}>
               <p className="text-xs uppercase tracking-wider mb-1" style={{ color: textMuted }}>Customer</p>
               <p className="font-medium" style={{ color: textPrimary }}>{order.user?.name || order.name || "N/A"}</p>

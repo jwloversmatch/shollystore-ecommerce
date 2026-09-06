@@ -16,6 +16,7 @@ const AccountOrders = ({ orders, loading, error, onViewOrder }: AccountOrdersPro
   const navigate = useNavigate();
 
   const handleTrack = (order: Order) => {
+    if (order.status === "Cancelled") return; 
     navigate(`/track-order?orderId=${order._id}`);
   };
 

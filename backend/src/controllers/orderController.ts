@@ -463,6 +463,12 @@ export const trackMyOrder = async (
       return;
     }
 
+    // ✅ Reject if cancelled
+    if (order.status === "Cancelled") {
+      res.status(404).json({ success: false, message: "Order is cancelled and cannot be tracked" });
+      return;
+    }
+
     res.json({
       success: true,
       order: sanitizeOrderForTracking(order, true),
@@ -490,6 +496,12 @@ export const trackByToken = async (
       res
         .status(404)
         .json({ success: false, message: "Invalid or expired tracking link" });
+      return;
+    }
+
+    // ✅ Reject if cancelled
+    if (order.status === "Cancelled") {
+      res.status(404).json({ success: false, message: "Order is cancelled and cannot be tracked" });
       return;
     }
 
@@ -535,6 +547,12 @@ export const trackOrderManual = async (
       return;
     }
 
+    // ✅ Reject if cancelled
+    if (order.status === "Cancelled") {
+      res.status(404).json({ success: false, message: "Order is cancelled and cannot be tracked" });
+      return;
+    }
+
     res.json({
       success: true,
       order: sanitizeOrderForTracking(order, false),
@@ -566,6 +584,11 @@ export const trackMyOrderByCode = async (
 
     if (!order) {
       res.status(404).json({ success: false, message: "Order not found" });
+      return;
+    }
+
+    if (order.status === "Cancelled") {
+      res.status(404).json({ success: false, message: "Order is cancelled and cannot be tracked" });
       return;
     }
 

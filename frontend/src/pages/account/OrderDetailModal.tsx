@@ -1,10 +1,9 @@
 import { useRef } from "react";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { motion } from "framer-motion";
-import { X, Calendar, CreditCard, MapPin, Ticket } from "lucide-react";
+import { X, Calendar, CreditCard, MapPin, Ticket, AlertCircle } from "lucide-react";
 import type { Order } from "../../types/account";
 import { getStatusInfo, paymentLabels } from "../../utils/statusHelpers";
-
 
 interface OrderDetailModalProps {
   order: Order | null;
@@ -14,7 +13,7 @@ interface OrderDetailModalProps {
 const OrderDetailModal = ({ order, onClose }: OrderDetailModalProps) => {
   const dialogRef = useRef<HTMLDivElement>(null);
 
-useFocusTrap(dialogRef, !!order, onClose);
+  useFocusTrap(dialogRef, !!order, onClose);
 
   if (!order) return null;
 
@@ -86,6 +85,19 @@ useFocusTrap(dialogRef, !!order, onClose);
                 </span>
               )}
             </div>
+
+            {/* Cancellation reason */}
+            {order.status === "Cancelled" && order.cancellationReason && (
+              <div className="rounded-xl p-4 border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10">
+                <p className="text-xs font-semibold text-red-600 dark:text-red-400 flex items-center gap-1 uppercase tracking-wider mb-1">
+                  <AlertCircle className="w-3.5 h-3.5" /> Cancellation Reason
+                </p>
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  {order.cancellationReason}
+                </p>
+              </div>
+            )}
+
             {order.shippingAddress && (
               <div className="rounded-xl p-4 border bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/5">
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
