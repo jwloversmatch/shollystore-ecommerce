@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import type { RootState } from "../store";
 import {
@@ -19,6 +19,7 @@ import {
   RotateCcw,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
   AlertCircle,
   Search,
 } from "lucide-react";
@@ -40,6 +41,7 @@ interface TrackingQueryResult {
 }
 
 const TrackOrder = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
   const orderIdParam = searchParams.get("orderId") || "";
@@ -196,6 +198,16 @@ const TrackOrder = () => {
     >
       <SEO title="Track Order" description="Check the status of your order." />
       <div className="max-w-2xl mx-auto">
+        {/* Back button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-1.5 mb-4 text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          aria-label="Go back"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Back
+        </button>
+
         <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-6">
           Track Your Order
         </h1>
