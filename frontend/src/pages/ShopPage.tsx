@@ -56,6 +56,58 @@ const SORT_OPTIONS = [
   { label: "Name: Z-A", value: "name_desc" },
 ];
 
+// ─── Helper: Smart pagination page list ──────────────────────────────────
+/**
+ * Returns an array containing page numbers and 'ellipsis' markers.
+ * Always shows first and last pages, plus a window around the current page.
+ */
+const getVisiblePages = (
+  currentPage: number,
+  totalPages: number,
+  siblingCount = 1,
+): (number | "ellipsis")[] => {
+  const totalNumbers = siblingCount * 2 + 3; // current + siblings + first + last
+  const totalBlocks = totalNumbers + 2; // +2 for potential ellipsis
+
+  // If total pages is small, show all pages without ellipsis
+  if (totalPages <= totalBlocks) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const leftSiblingIndex = Math.max(currentPage - siblingCount, 1);
+  const rightSiblingIndex = Math.min(currentPage + siblingCount, totalPages);
+
+  const shouldShowLeftEllipsis = leftSiblingIndex > 2;
+  const shouldShowRightEllipsis = rightSiblingIndex < totalPages - 2;
+
+  const pages: (number | "ellipsis")[] = [];
+
+  // Always show first page
+  pages.push(1);
+
+  // Left ellipsis
+  if (shouldShowLeftEllipsis) {
+    pages.push("ellipsis");
+  }
+
+  // Pages from leftSiblingIndex to rightSiblingIndex
+  for (let i = leftSiblingIndex; i <= rightSiblingIndex; i++) {
+    pages.push(i);
+  }
+
+  // Right ellipsis
+  if (shouldShowRightEllipsis) {
+    pages.push("ellipsis");
+  }
+
+  // Always show last page (only if > 1)
+  if (totalPages > 1) {
+    pages.push(totalPages);
+  }
+
+  return pages;
+};
+
 // Shop-specific Open Graph image (replace with your actual image URL)
 const SHOP_OG_IMAGE = `${SITE_CONFIG.url}/shop-banner.jpg`;
 
@@ -226,6 +278,12 @@ const ShopPage = () => {
   }, [data?.products, sortBy]);
 
   const pagination = data?.pagination ?? { page: 1, pages: 1, total: 0 };
+
+  // Generate visible page numbers with ellipsis
+  const visiblePages = useMemo(
+    () => getVisiblePages(page, pagination.pages),
+    [page, pagination.pages],
+  );
 
   // Trigger fallback queries when main results are empty
   useEffect(() => {
@@ -754,7 +812,7 @@ const ShopPage = () => {
 
             {pagination.pages > 1 && (
               <nav
-                className="flex justify-center items-center gap-3 mt-10"
+                className="flex justify-center items-center gap-3 mt-10 flex-wrap"
                 aria-label="Pagination"
               >
                 <button
@@ -765,27 +823,41 @@ const ShopPage = () => {
                 >
                   <ChevronLeft className="w-5 h-5" aria-hidden="true" />
                 </button>
-                {Array.from({ length: pagination.pages }, (_, i) => i + 1).map(
-                  (pageNum) => (
+
+                {visiblePages.map((pageItem, idx) => {
+                  if (pageItem === "ellipsis") {
+                    return (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="px-2 text-gray-500 dark:text-gray-400 select-none"
+                        aria-hidden="true"
+                      >
+                        …
+                      </span>
+                    );
+                  }
+
+                  return (
                     <button
-                      key={pageNum}
-                      onClick={() => handlePageChange(pageNum)}
-                      className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${pageNum === page ? "text-white shadow-lg" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"}`}
+                      key={pageItem}
+                      onClick={() => handlePageChange(pageItem)}
+                      className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${pageItem === page ? "text-white shadow-lg" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"}`}
                       style={
-                        pageNum === page
+                        pageItem === page
                           ? {
                               background: ACCENT,
                               boxShadow: `0 4px 12px ${ACCENT}44`,
                             }
                           : {}
                       }
-                      aria-current={pageNum === page ? "page" : undefined}
-                      aria-label={`Page ${pageNum}`}
+                      aria-current={pageItem === page ? "page" : undefined}
+                      aria-label={`Page ${pageItem}`}
                     >
-                      {pageNum}
+                      {pageItem}
                     </button>
-                  ),
-                )}
+                  );
+                })}
+
                 <button
                   onClick={() =>
                     handlePageChange(Math.min(pagination.pages, page + 1))
