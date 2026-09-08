@@ -23,6 +23,7 @@ export const Categories = lazy(() => import("../pages/admin/categories/"));
 export const Coupons = lazy(() => import("../pages/admin/Coupons"));
 export const Settings = lazy(() => import("../pages/admin/settings/"));
 export const Reviews = lazy(() => import("../pages/admin/reviews/ReviewsPage"));
+export const LegalPages = lazy(() => import("../pages/admin/LegalPages"));
 
 export const NotFound = lazy(() => import("../pages/NotFound"));
 export const Footer = lazy(() => import("../pages/Footer"));

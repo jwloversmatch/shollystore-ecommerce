@@ -154,6 +154,18 @@ export interface TrackOrderResponse {
   };
 }
 
+// ─── Legal page types ──────────────────────────────────────────────────────
+export type LegalPageSlug = "privacy" | "terms" | "returns";
+
+export interface LegalPage {
+  _id: string;
+  slug: LegalPageSlug;
+  title: string;
+  content: string;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
 // ─── Base query with token from localStorage ─────────────────────────────────
 const baseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
@@ -194,6 +206,7 @@ export const apiSlice = createApi({
     "Wishlist",
     "Review",
     "Cart",
+    "LegalPage",
   ],
   endpoints: (builder) => ({
     // ══════════════════════════════════════════════════════════════════
@@ -933,6 +946,36 @@ export const apiSlice = createApi({
       query: ({ limit = 5 } = {}) => `/reviews/featured?limit=${limit}`,
       providesTags: ["Review"],
     }),
+
+    getLegalPage: builder.query<{ success: boolean; page: LegalPage }, string>({
+      query: (slug) => `/legal/${slug}`,
+      providesTags: (_result, _error, slug) => [
+        { type: "LegalPage", id: slug },
+      ],
+    }),
+
+    // ─── Legal Pages (admin) ──────────────────────────────────────────────
+    getAllLegalPages: builder.query<
+      { success: boolean; pages: LegalPage[] },
+      void
+    >({
+      query: () => "/admin/legal",
+      providesTags: ["LegalPage"],
+    }),
+
+    updateLegalPage: builder.mutation<
+      { success: boolean; page: LegalPage },
+      { slug: LegalPageSlug; title?: string; content: string }
+    >({
+      query: ({ slug, ...body }) => ({
+        url: `/admin/legal/${slug}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { slug }) => [
+        { type: "LegalPage", id: slug },
+      ],
+    }),
   }),
 });
 
@@ -1021,4 +1064,7 @@ export const {
   useGetCartQuery,
   useGetProductsByIdsQuery,
   useGetFeaturedReviewsQuery,
+  useGetLegalPageQuery,          
+  useGetAllLegalPagesQuery,      
+  useUpdateLegalPageMutation,
 } = apiSlice;

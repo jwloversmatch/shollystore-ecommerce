@@ -20,7 +20,9 @@ import pushRoutes from "./pushRoutes";
 import contactRoutes from "./contactRoutes";
 import wishlistRoutes from "./wishlistRoutes";
 import adminReviewRoutes from "./adminReviewRoutes";
-import reviewRoutes from "./reviewRoutes"; 
+import reviewRoutes from "./reviewRoutes";
+import legalRoutes from "./legalRoutes";               
+import adminLegalRoutes from "./adminLegalRoutes";     
 import { getSitemap, getRobotsTxt } from "./seoRoutes";
 import cartRoutes from "./cartRoutes";
 import { processAbandonedCarts } from "../controllers/cartController";
@@ -43,7 +45,8 @@ export const mountRoutes = (app: Application) => {
   app.use("/api/wishlist", wishlistRoutes);
   app.use("/api/settings/public", publicSettingsRoutes);
   app.use("/api/cart", cartRoutes);
-  app.use("/api/reviews", reviewRoutes); 
+  app.use("/api/reviews", reviewRoutes);
+  app.use("/api/legal", legalRoutes);                  
   app.get("/api/cron/abandoned-cart", processAbandonedCarts);
   app.get("/api/cron/process-emails", processEmailQueue);
 
@@ -58,5 +61,6 @@ export const mountRoutes = (app: Application) => {
   app.use("/api/admin/categories", adminCategoryRoutes);
   app.use("/api/admin/marketing", adminMarketingRoutes);
   app.use("/api/admin/coupons", couponRoutes);
+  app.use("/api/admin/legal", adminLegalRoutes);       
   app.use("/api/upload", uploadRoutes);
 };

@@ -23,7 +23,8 @@ import {
   Home, Cart, Checkout, Login, Register, ForgotPassword, ResetPassword,
   VerifyEmail, Account, ProductDetail, ShopPage, TrackOrder,
   Dashboard, Products, Orders, HeroSlides, Categories, Coupons, Settings,
-  NotFound, Footer, PrivacyPolicy, TermsOfUse, About, Contact, Reviews, ReturnPolicy 
+  NotFound, Footer, PrivacyPolicy, TermsOfUse, About, Contact, Reviews,
+  ReturnPolicy, LegalPages
 } from "./routes/lazyPages";
 
 const ACCENT = "#e8622a";
@@ -101,6 +102,7 @@ function AppContent() {
               <Route path="/admin/categories" element={<Categories />} />
               <Route path="/admin/coupons" element={<Coupons />} />
               <Route path="/admin/reviews" element={<Reviews />} />
+              <Route path="/admin/legal" element={<LegalPages />} />
             </Route>
 
             {/* Legal pages */}

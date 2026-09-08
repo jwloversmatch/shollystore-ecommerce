@@ -19,7 +19,8 @@ import {
   Heart,
   Star,
   Truck,
-  ShoppingBag
+  ShoppingBag,
+  FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
@@ -91,6 +92,11 @@ const ADMIN_LINKS = [
     to: "/admin/settings",
     label: "Settings",
     icon: <Settings className="w-5 h-5" aria-hidden="true" />,
+  },
+  {
+    to: "/admin/legal",
+    label: "Legal Pages",
+    icon: <FileText className="w-5 h-5" aria-hidden="true" />,
   },
 ];
 

@@ -31,5 +31,4 @@ export const lazyLoad = (
   return WrappedComponent;
 };
 
-// Export the LoadingSpinner separately if needed elsewhere
 export { LoadingSpinner };
