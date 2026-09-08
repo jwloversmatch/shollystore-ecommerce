@@ -360,6 +360,12 @@ const Footer = () => {
             >
               Terms of Service
             </Link>
+            <Link
+              to="/returns"
+              className="hover:text-[#e8622a] transition-colors"
+            >
+              Return Policy
+            </Link>
           </div>
         </motion.div>
       </div>
