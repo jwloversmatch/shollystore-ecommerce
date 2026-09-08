@@ -60,6 +60,7 @@ const MOBILE_SECONDARY_LINKS = [
   { to: "/contact", label: "Contact" },
   { to: "/privacy", label: "Privacy Policy" },
   { to: "/terms", label: "Terms of Service" },
+  { to: "/returns", label: "Return Policy" },
 ];
 
 const ADMIN_LINKS = [
@@ -557,7 +558,11 @@ const Navbar = () => {
                     aria-expanded={mobileMenuOpen}
                     aria-controls="mobile-secondary-menu"
                   >
-                    <StairsIcon className="w-5 h-5" />
+                    {mobileMenuOpen ? (
+                      <X className="w-5 h-5" />
+                    ) : (
+                      <StairsIcon className="w-5 h-5" />
+                    )}
                   </button>
                 )}
               </div>
