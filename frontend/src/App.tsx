@@ -108,7 +108,7 @@ function AppContent() {
             <Route path="/terms" element={<TermsOfUse />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/return" element={<ReturnPolicy />} />
+            <Route path="/returns" element={<ReturnPolicy />} />
 
             {/* 404 fallback */}
             <Route path="/404" element={<NotFound />} />
