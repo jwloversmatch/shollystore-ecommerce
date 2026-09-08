@@ -17,6 +17,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./context/ThemeContext";
 import CartSync from "./components/CartSync";
 import WishlistSync from "./components/WishlistSync";
+import PWAInstallPrompt from "./components/PWAInstallPrompt"; // <-- added import
 // import StoreAssistant from "./components/StoreAssistant"; // Future feature - store assistant
 
 import {
@@ -65,6 +66,7 @@ function AppContent() {
   return (
     <>
       {!hideNavbar && <Navbar />}
+      <PWAInstallPrompt /> {/* <-- added component */}
       <CartSync />
       <WishlistSync />
 
