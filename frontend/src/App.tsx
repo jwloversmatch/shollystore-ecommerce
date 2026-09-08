@@ -59,7 +59,7 @@ function AppContent() {
   }, [location.pathname]);
 
   const hideNavbar = ["/cart", "/checkout", "/404"].includes(location.pathname);
-  const showFooter = ["/", "/shop", "/privacy", "/terms", "/about", "/contact", "returns"].includes(location.pathname);
+  const showFooter = ["/", "/shop", "/privacy", "/terms", "/about", "/contact", "/returns"].includes(location.pathname);
 
   return (
     <>
