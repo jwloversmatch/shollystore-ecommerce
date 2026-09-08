@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
@@ -9,8 +9,9 @@ import {
   LegalPage,
   LegalPageSlug,
 } from "../../features/api/apiSlice";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
 import {
   ArrowLeft,
   FileText,
@@ -24,28 +25,6 @@ import { useTheme } from "../../context/ThemeContext";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 const ACCENT = "#e8622a";
-
-// Quill toolbar configuration
-const quillModules = {
-  toolbar: [
-    [{ header: [1, 2, 3, false] }],
-    ["bold", "italic", "underline", "strike"],
-    [{ list: "ordered" }, { list: "bullet" }],
-    ["link"],
-    ["clean"],
-  ],
-};
-
-const quillFormats = [
-  "header",
-  "bold",
-  "italic",
-  "underline",
-  "strike",
-  "list",
-  "bullet",
-  "link",
-];
 
 interface LegalPageFormValues {
   title: string;
@@ -68,9 +47,35 @@ const LegalPages = () => {
   const { register, handleSubmit, reset, setValue } =
     useForm<LegalPageFormValues>();
 
-  const pages = data?.pages || [];
+  // ✅ Memoized pages to avoid re-running effect on every render
+  const pages = useMemo(() => data?.pages || [], [data]);
 
-  // Theme styles
+  // ─── Tiptap Editor ───────────────────────────────────────────
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Link.configure({
+        openOnClick: false,
+      }),
+    ],
+    content: "",
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML();
+      setValue("content", html, { shouldValidate: true });
+    },
+  });
+
+  // When drawer opens with a page, set editor content
+  useEffect(() => {
+    if (editor && editingSlug) {
+      const page = pages.find((p) => p.slug === editingSlug);
+      if (page) {
+        editor.commands.setContent(page.content);
+      }
+    }
+  }, [editor, editingSlug, pages]);
+
+  // Theme styles (same as before)
   const bg = isDark ? "#0A0A0B" : "#FCFAF5";
   const cardBg = isDark ? "#141414" : "#fff";
   const cardBorder = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)";
@@ -329,17 +334,9 @@ const LegalPages = () => {
                   >
                     Content
                   </label>
-                  <ReactQuill
-                    theme="snow"
-                    value={editingSlug ? pages.find((p) => p.slug === editingSlug)?.content : ""}
-                    onChange={(value) => {
-                      if (editingSlug) {
-                        setValue("content", value, { shouldValidate: true });
-                      }
-                    }}
-                    modules={quillModules}
-                    formats={quillFormats}
-                    className="bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-white rounded-xl overflow-hidden"
+                  <EditorContent
+                    editor={editor}
+                    className="min-h-[200px] prose prose-sm max-w-none"
                   />
                 </div>
                 <div
