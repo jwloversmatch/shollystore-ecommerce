@@ -42,10 +42,6 @@ self.addEventListener('activate', (event) => {
 });
 
 clientsClaim();
-// self.skipWaiting() is intentionally NOT called here anymore — the new
-// worker now waits until the person accepts an update prompt (see the
-// SKIP_WAITING message handler below) instead of force-reloading every
-// open tab the instant a new build deploys.
 
 const navigationHandler = createHandlerBoundToURL('/index.html');
 const navigationRoute = new NavigationRoute(navigationHandler, {
@@ -56,12 +52,13 @@ const navigationRoute = new NavigationRoute(navigationHandler, {
 });
 registerRoute(navigationRoute);
 
+// Images: Use StaleWhileRevalidate to ensure fresh product photos while keeping speed.
 registerRoute(
   ({ request }) => request.destination === 'image',
-  new CacheFirst({
+  new StaleWhileRevalidate({
     cacheName: 'images',
     plugins: [
-      new ExpirationPlugin({ maxEntries: 60, maxAgeSeconds: 30 * 24 * 60 * 60, purgeOnQuotaError: true }),
+      new ExpirationPlugin({ maxEntries: 150, maxAgeSeconds: 30 * 24 * 60 * 60, purgeOnQuotaError: true }),
       new CacheableResponsePlugin({ statuses: [0, 200] }),
     ],
   })
@@ -91,16 +88,22 @@ registerRoute(
 
 // Sensitive / user-specific — never cache. Registered BEFORE the generic
 // /api/ rule below since Workbox uses first-match-wins.
+// Added: /api/cart, /api/wishlist, /api/admin/
 registerRoute(
   ({ url }) =>
     url.pathname.startsWith('/api/orders/verify/') ||
     url.pathname.startsWith('/api/auth/') ||
-    url.pathname === '/api/orders/my-orders',
+    url.pathname === '/api/orders/my-orders' ||
+    url.pathname.startsWith('/api/cart') ||
+    url.pathname.startsWith('/api/wishlist') ||
+    url.pathname.startsWith('/api/admin/'),
   new NetworkOnly()
 );
 
+// Generic API caching: only cache GET requests.
 registerRoute(
-  ({ url }) => url.pathname.startsWith('/api/'),
+  ({ url, request }) =>
+    url.pathname.startsWith('/api/') && request.method === 'GET',
   new NetworkFirst({
     cacheName: 'api-cache',
     networkTimeoutSeconds: 3,

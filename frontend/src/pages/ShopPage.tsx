@@ -15,7 +15,6 @@ import ShopPagination from "../components/shop/ShopPagination";
 import { SITE_CONFIG } from "../config/site";
 import type { ProductItem } from "../types/home";
 
-// Shop-specific Open Graph image (replace with your actual image URL)
 const SHOP_OG_IMAGE = `${SITE_CONFIG.url}/shop-banner.jpg`;
 
 const ShopPage = () => {
