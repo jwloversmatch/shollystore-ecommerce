@@ -23,6 +23,7 @@ import adminReviewRoutes from "./adminReviewRoutes";
 import reviewRoutes from "./reviewRoutes";
 import legalRoutes from "./legalRoutes";               
 import adminLegalRoutes from "./adminLegalRoutes";     
+import newsletterRoutes from "./newsletterRoutes";  
 import { getSitemap, getRobotsTxt } from "./seoRoutes";
 import cartRoutes from "./cartRoutes";
 import { processAbandonedCarts } from "../controllers/cartController";
@@ -46,7 +47,8 @@ export const mountRoutes = (app: Application) => {
   app.use("/api/settings/public", publicSettingsRoutes);
   app.use("/api/cart", cartRoutes);
   app.use("/api/reviews", reviewRoutes);
-  app.use("/api/legal", legalRoutes);                  
+  app.use("/api/legal", legalRoutes);
+  app.use("/api/newsletter", newsletterRoutes);  
   app.get("/api/cron/abandoned-cart", processAbandonedCarts);
   app.get("/api/cron/process-emails", processEmailQueue);
 

@@ -748,3 +748,22 @@ export const sendOrderCancelledEmail = async (
     `Your Sholex order #${orderId} has been cancelled. Reason: ${cancellationReason || "N/A"}`,
   );
 };
+
+export const sendNewsletterWelcomeEmail = async (email: string) => {
+  const html = layout({
+    headerBg: "#dff2e6",
+    body: `
+      <div class="body" style="text-align:center;">
+        <h2>Welcome to the Sholex Newsletter! 🎉</h2>
+        <p>You're now subscribed to receive exclusive deals, new arrivals, and discounts.</p>
+        <p>We'll keep you updated with the best offers.</p>
+      </div>`,
+  });
+
+  return sendEmail(
+    email,
+    "Welcome to Sholex Newsletter 🎉",
+    html,
+    "Welcome to Sholex Newsletter! You'll receive exclusive deals and updates."
+  );
+};
