@@ -26,6 +26,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
 import { useState, useRef, useEffect } from "react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import { useTranslation } from "react-i18next";
 
 const ACCENT = "#e8622a";
 const BRAND_NAME = "SHOLEX";
@@ -49,54 +50,54 @@ const StairsIcon = ({ className = "" }: { className?: string }) => (
 );
 
 const CUSTOMER_LINKS = [
-  { to: "/shop", label: "Shop" },
-  { to: "/track-order", label: "Track Order" },
-  { to: "/about", label: "About" },
-  { to: "/contact", label: "Contact" },
+  { to: "/shop", labelKey: "nav.shop" },
+  { to: "/track-order", labelKey: "nav.trackOrder" },
+  { to: "/about", labelKey: "nav.about" },
+  { to: "/contact", labelKey: "nav.contact" },
 ];
 
 const MOBILE_SECONDARY_LINKS = [
-  { to: "/about", label: "About" },
-  { to: "/contact", label: "Contact" },
-  { to: "/privacy", label: "Privacy Policy" },
-  { to: "/terms", label: "Terms of Service" },
-  { to: "/returns", label: "Return Policy" },
+  { to: "/about", labelKey: "nav.about" },
+  { to: "/contact", labelKey: "nav.contact" },
+  { to: "/privacy", labelKey: "nav.privacy" },
+  { to: "/terms", labelKey: "nav.terms" },
+  { to: "/returns", labelKey: "nav.returns" },
 ];
 
 const ADMIN_LINKS = [
   {
     to: "/admin",
-    label: "Dashboard",
+    labelKey: "admin.dashboard",
     icon: <LayoutDashboard className="w-5 h-5" aria-hidden="true" />,
   },
   {
     to: "/admin/hero-slides",
-    label: "Hero Slides",
+    labelKey: "admin.heroSlides",
     icon: <Image className="w-5 h-5" aria-hidden="true" />,
   },
   {
     to: "/admin/categories",
-    label: "Categories",
+    labelKey: "admin.categories",
     icon: <Tag className="w-5 h-5" aria-hidden="true" />,
   },
   {
     to: "/admin/coupons",
-    label: "Coupons",
+    labelKey: "admin.coupons",
     icon: <BadgePercent className="w-5 h-5" aria-hidden="true" />,
   },
   {
     to: "/admin/reviews",
-    label: "Reviews",
+    labelKey: "admin.reviews",
     icon: <Star className="w-5 h-5" aria-hidden="true" />,
   },
   {
     to: "/admin/settings",
-    label: "Settings",
+    labelKey: "admin.settings",
     icon: <Settings className="w-5 h-5" aria-hidden="true" />,
   },
   {
     to: "/admin/legal",
-    label: "Legal Pages",
+    labelKey: "admin.legalPages",
     icon: <FileText className="w-5 h-5" aria-hidden="true" />,
   },
 ];
@@ -159,6 +160,7 @@ const NavBtn: React.FC<NavBtnProps> = ({ to, icon, label, active, badge }) => {
 
 // ─── User dropdown menu ───────────────────────────────────────────────────────
 const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
@@ -238,7 +240,7 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
                   role="menuitem"
                 >
                   <User className="w-4 h-4" aria-hidden="true" />
-                  Account
+                  {t("userMenu.account")}
                 </Link>
                 <Link
                   to="/account?tab=wishlist"
@@ -247,7 +249,7 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
                   role="menuitem"
                 >
                   <Heart className="w-4 h-4" aria-hidden="true" />
-                  Wishlist
+                  {t("userMenu.wishlist")}
                   {wishlistCount > 0 && (
                     <span
                       className="ml-auto text-[10px] font-black rounded-full px-2 py-0.5"
@@ -266,7 +268,7 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
               role="menuitem"
             >
               <LogOut className="w-4 h-4" aria-hidden="true" />
-              Logout
+              {t("userMenu.logout")}
             </button>
           </motion.div>
         )}
@@ -277,6 +279,7 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 const Navbar = () => {
+  const { t, i18n } = useTranslation();
   const { user } = useSelector((s: RootState) => s.auth);
   const { cartItems } = useSelector((s: RootState) => s.cart);
   const wishlistIds = useSelector((s: RootState) => s.wishlist.ids);
@@ -336,6 +339,10 @@ const Navbar = () => {
         : "text-gray-600 dark:text-gray-500 hover:text-black dark:hover:text-white"
     }`;
 
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+  };
+
   useFocusTrap(drawerRef, adminDrawer, () => setAdminDrawer(false));
 
   return (
@@ -351,7 +358,7 @@ const Navbar = () => {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-[#e8622a] focus:text-white focus:rounded-xl focus:font-bold"
       >
-        Skip to main content
+        {t("nav.skipToContent")}
       </a>
 
       {/* ══════ DESKTOP — fixed top bar ═══════ */}
@@ -391,7 +398,7 @@ const Navbar = () => {
                     className={desktopLinkCls(link.to)}
                     aria-current={isActive(link.to) ? "page" : undefined}
                   >
-                    {link.label}
+                    {t(link.labelKey)}
                   </Link>
                 ))}
               </div>
@@ -408,7 +415,7 @@ const Navbar = () => {
                   className={desktopLinkCls(l.to)}
                   aria-current={isActive(l.to) ? "page" : undefined}
                 >
-                  {l.icon} {l.label}
+                  {l.icon} {t(l.labelKey)}
                 </Link>
               ))}
             </div>
@@ -418,11 +425,22 @@ const Navbar = () => {
           <div className="flex items-center gap-4 shrink-0">
             <ThemeToggle />
 
+            {/* Language Switcher */}
+            <select
+              value={i18n.language}
+              onChange={(e) => changeLanguage(e.target.value)}
+              className="px-2 py-1 rounded-lg bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/10 text-xs text-gray-700 dark:text-gray-300"
+              aria-label="Select language"
+            >
+              <option value="en">EN</option>
+              <option value="pcm">PCM</option>
+            </select>
+
             {showCart && (
               <Link
                 to="/cart"
                 className="relative p-1"
-                aria-label={`Cart with ${totalQty} ${totalQty === 1 ? "item" : "items"}`}
+                aria-label={`${t("nav.cart")} ${totalQty} ${totalQty === 1 ? t("common.item") : t("common.items")}`}
               >
                 <ShoppingCart
                   className={`w-5 h-5 transition-colors ${
@@ -455,7 +473,7 @@ const Navbar = () => {
               <Link
                 to="/track-order"
                 className="relative p-1"
-                aria-label="Track order"
+                aria-label={t("nav.trackOrder")}
               >
                 <Truck
                   className={`w-5 h-5 transition-colors ${
@@ -473,7 +491,7 @@ const Navbar = () => {
               <Link
                 to="/account?tab=wishlist"
                 className="relative p-1"
-                aria-label={`Wishlist with ${wishlistCount} ${wishlistCount === 1 ? "item" : "items"}`}
+                aria-label={`${t("nav.wishlist")} ${wishlistCount}`}
               >
                 <Heart
                   className={`w-5 h-5 transition-colors ${
@@ -510,7 +528,7 @@ const Navbar = () => {
                     boxShadow: `0 4px 14px ${ACCENT}55`,
                   }}
                 >
-                  <User className="w-4 h-4" aria-hidden="true" /> Login
+                  <User className="w-4 h-4" aria-hidden="true" /> {t("nav.login")}
                 </Link>
               </motion.div>
             )}
@@ -548,6 +566,16 @@ const Navbar = () => {
 
               <div className="flex items-center gap-3">
                 <ThemeToggle />
+                {/* Language Switcher (mobile) */}
+                <select
+                  value={i18n.language}
+                  onChange={(e) => changeLanguage(e.target.value)}
+                  className="px-2 py-1 rounded-lg bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/10 text-xs text-gray-700 dark:text-gray-300"
+                  aria-label="Select language"
+                >
+                  <option value="en">EN</option>
+                  <option value="pcm">PCM</option>
+                </select>
                 {/* Stairs/fries icon button */}
                 {(!user || user.role === "user") && (
                   <button
@@ -589,7 +617,7 @@ const Navbar = () => {
                       onClick={() => setMobileMenuOpen(false)}
                       className="block px-4 py-3 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
                     >
-                      {link.label}
+                      {t(link.labelKey)}
                     </Link>
                   ))}
                 </div>
@@ -610,7 +638,7 @@ const Navbar = () => {
               <NavBtn
                 to={user?.role === "admin" ? "/admin" : "/"}
                 icon={<Home className="w-5 h-5" />}
-                label="Home"
+                label={t("nav.home")}
                 active={
                   user?.role === "admin"
                     ? pathname === "/admin"
@@ -623,7 +651,7 @@ const Navbar = () => {
                 <NavBtn
                   to="/shop"
                   icon={<ShoppingBag className="w-5 h-5" />}
-                  label="Shop"
+                  label={t("nav.shop")}
                   active={isActive("/shop")}
                 />
               )}
@@ -632,7 +660,7 @@ const Navbar = () => {
                 <NavBtn
                   to="/cart"
                   icon={<ShoppingCart className="w-5 h-5" />}
-                  label="Cart"
+                  label={t("nav.cart")}
                   active={isActive("/cart")}
                   badge={totalQty}
                 />
@@ -643,7 +671,7 @@ const Navbar = () => {
                 <NavBtn
                   to="/track-order"
                   icon={<Truck className="w-5 h-5" />}
-                  label="Track"
+                  label={t("nav.trackOrder")}
                   active={isActive("/track-order")}
                 />
               )}
@@ -652,7 +680,7 @@ const Navbar = () => {
                 <NavBtn
                   to="/admin/coupons"
                   icon={<BadgePercent className="w-5 h-5" />}
-                  label="Coupons"
+                  label={t("nav.coupons")}
                   active={isActive("/admin/coupons")}
                 />
               )}
@@ -667,7 +695,7 @@ const Navbar = () => {
                 <NavBtn
                   to="/login"
                   icon={<User className="w-5 h-5" />}
-                  label="Login"
+                  label={t("nav.login")}
                   active={isActive("/login")}
                 />
               )}
@@ -684,7 +712,7 @@ const Navbar = () => {
                 >
                   <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
                   <span className="text-[9px] font-extrabold uppercase tracking-wide">
-                    More
+                    {t("nav.more")}
                   </span>
                 </button>
               )}
@@ -736,13 +764,13 @@ const Navbar = () => {
                         className="text-xs font-extrabold uppercase tracking-widest"
                         style={{ color: ACCENT }}
                       >
-                        Admin
+                        {t("admin.label")}
                       </p>
                       <h2
                         id="admin-drawer-title"
                         className="text-xl font-black text-gray-900 dark:text-white"
                       >
-                        Menu
+                        {t("admin.menu")}
                       </h2>
                     </div>
                     <motion.button
@@ -777,7 +805,9 @@ const Navbar = () => {
                             aria-current={active ? "page" : undefined}
                           >
                             {l.icon}
-                            <span className="text-sm font-bold">{l.label}</span>
+                            <span className="text-sm font-bold">
+                              {t(l.labelKey)}
+                            </span>
                           </Link>
                         </motion.div>
                       );
@@ -790,7 +820,8 @@ const Navbar = () => {
                       whileTap={{ scale: 0.97 }}
                       className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold text-red-400 border border-red-500/20 transition-colors bg-red-50 dark:bg-red-500/6"
                     >
-                      <LogOut className="w-4 h-4" aria-hidden="true" /> Sign Out
+                      <LogOut className="w-4 h-4" aria-hidden="true" />{" "}
+                      {t("userMenu.signOut")}
                     </motion.button>
                   </div>
                 </motion.div>

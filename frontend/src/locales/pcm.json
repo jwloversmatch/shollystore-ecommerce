@@ -1,0 +1,99 @@
+{
+  "nav": {
+    "home": "Home",
+    "shop": "Shop",
+    "trackOrder": "Track Order",
+    "about": "About",
+    "contact": "Contact",
+    "cart": "Cart",
+    "wishlist": "Wishlist",
+    "login": "Login",
+    "skipToContent": "Skip go main content",
+    "more": "More",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "returns": "Return Policy",
+    "coupons": "Coupons"
+  },
+  "userMenu": {
+    "account": "Account",
+    "wishlist": "Wishlist",
+    "logout": "Logout",
+    "signOut": "Sign Out"
+  },
+  "admin": {
+    "dashboard": "Dashboard",
+    "heroSlides": "Hero Slides",
+    "categories": "Categories",
+    "coupons": "Coupons",
+    "reviews": "Reviews",
+    "settings": "Settings",
+    "legalPages": "Legal Pages",
+    "label": "Admin",
+    "menu": "Menu"
+  },
+  "footer": {
+    "brandDescription": "Your one‑stop shop for beta things – fashion, drinks, and plenty more. We dey deliver fast.",
+    "quickLinks": {
+      "title": "Quick Links",
+      "home": "Home",
+      "shop": "Shop",
+      "about": "About Us",
+      "contact": "Contact"
+    },
+    "contactUs": "Contact Us",
+    "newsletter": {
+      "title": "Make We Dey Talk",
+      "description": "Subscribe make you no miss our beta deals and new things.",
+      "emailLabel": "Email address",
+      "placeholder": "Your email",
+      "subscribe": "Subscribe",
+      "subscribing": "Dey subscribe...",
+      "success": "Thank you! We don add you to our list.",
+      "already": "You don subscribe before! 🎉",
+      "error": "Wahala dey. Try again."
+    },
+    "payment": {
+      "title": "We Dey Accept",
+      "bankTransfer": "Bank Transfer",
+      "whatsappPay": "WhatsApp Pay"
+    },
+    "rights": "All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "returns": "Return Policy",
+    "unsubscribe": "Unsubscribe"
+  },
+  "product": {
+    "addToCart": "Put for Cart",
+    "outOfStock": "E don finish",
+    "wishlist": "Wishlist",
+    "soldOut": "E don sell finish",
+    "outOfStockToast": "E don finish!",
+    "outOfStockOverlay": "E don finish",
+    "addedToCart": "{{name}} don enter cart!",
+    "loginForWishlist": "Abeg login to add items to your wishlist",
+    "removedFromWishlist": "E don comot from wishlist",
+    "addedToWishlist": "E don enter wishlist",
+    "wishlistUpdateError": "Wahala dey, try again",
+    "quickView": "Quick view",
+    "itemsInStock": "{{count}} items dey stock",
+    "itemsLeft": "{{count}} remain",
+    "availableVariants": "Available variants",
+    "originalPrice": "Original price: {{price}}",
+    "discount": "{{percent}}% discount",
+    "price": "Price: {{price}}",
+    "isOutOfStock": "{{name}} don finish",
+    "addedToCartAria": "{{name}} don enter cart",
+    "addToCartAria": "Put {{name}} for cart for {{price}}",
+    "removeFromWishlist": "Comot from wishlist",
+    "addToWishlist": "Put for wishlist",
+    "viewProduct": "View {{name}} — {{price}}{{stockStatus}}"
+  },
+  "common": {
+    "loading": "Dey load...",
+    "error": "Wahala dey",
+    "item": "item",
+    "items": "items"
+  }
+}

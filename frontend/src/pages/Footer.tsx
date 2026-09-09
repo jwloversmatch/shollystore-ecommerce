@@ -14,6 +14,7 @@ import { FaFacebook, FaInstagram, FaTwitter, FaYoutube } from "react-icons/fa";
 import PaystackLogo from "../components/PaystackLogo";
 import WhatsAppLogo from "../components/WhatsAppLogo";
 import { useSubscribeToNewsletterMutation } from "../features/api/apiSlice";
+import { useTranslation } from "react-i18next";
 
 const footerVariants = {
   hidden: { opacity: 0 },
@@ -59,38 +60,21 @@ const contactInfo = {
 };
 
 const socialLinks = [
-  {
-    platform: "Facebook",
-    url: "https://facebook.com/Sholex",
-    icon: FaFacebook,
-  },
-  {
-    platform: "Instagram",
-    url: "https://instagram.com/Sholex",
-    icon: FaInstagram,
-  },
-  {
-    platform: "Twitter",
-    url: "https://twitter.com/Sholex",
-    icon: FaTwitter,
-  },
-  {
-    platform: "YouTube",
-    url: "https://youtube.com/@Sholex",
-    icon: FaYoutube,
-  },
+  { platform: "Facebook", url: "https://facebook.com/Sholex", icon: FaFacebook },
+  { platform: "Instagram", url: "https://instagram.com/Sholex", icon: FaInstagram },
+  { platform: "Twitter", url: "https://twitter.com/Sholex", icon: FaTwitter },
+  { platform: "YouTube", url: "https://youtube.com/@Sholex", icon: FaYoutube },
 ];
 
 const quickLinks = [
-  { name: "Home", path: "/" },
-  { name: "Shop", path: "/shop" },
-  { name: "About Us", path: "/about" },
-  { name: "Contact", path: "/contact" },
+  { name: "Home", path: "/", labelKey: "footer.quickLinks.home" },
+  { name: "Shop", path: "/shop", labelKey: "footer.quickLinks.shop" },
+  { name: "About Us", path: "/about", labelKey: "footer.quickLinks.about" },
+  { name: "Contact", path: "/contact", labelKey: "footer.quickLinks.contact" },
 ];
 
 type SubscribeStatus = "idle" | "loading" | "success" | "error" | "already";
 
-// Specific error shape for the newsletter subscription
 interface NewsletterError {
   status?: number;
   data?: {
@@ -99,6 +83,7 @@ interface NewsletterError {
 }
 
 const Footer = () => {
+  const { t, i18n } = useTranslation();
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<SubscribeStatus>("idle");
@@ -126,6 +111,10 @@ const Footer = () => {
       }
       setTimeout(() => setStatus("idle"), 4000);
     }
+  };
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
   };
 
   return (
@@ -168,8 +157,7 @@ const Footer = () => {
               Sholex
             </Link>
             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
-              Your one‑stop destination for quality products – from fashion to
-              beverages, delivered fast and reliably.
+              {t("footer.brandDescription")}
             </p>
             <div className="flex gap-3 pt-2" aria-label="Social media links">
               {socialLinks.map(({ platform, url, icon: Icon }) => (
@@ -186,7 +174,7 @@ const Footer = () => {
           {/* Quick Links */}
           <motion.div variants={columnVariants}>
             <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
-              Quick Links
+              {t("footer.quickLinks.title")}
             </h4>
             <ul className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
               {quickLinks.map((item) => (
@@ -200,7 +188,7 @@ const Footer = () => {
                     to={item.path}
                     className="block hover:text-[#e8622a] transition-colors duration-200"
                   >
-                    {item.name}
+                    {t(item.labelKey)}
                   </Link>
                 </motion.li>
               ))}
@@ -210,7 +198,7 @@ const Footer = () => {
           {/* Contact Info */}
           <motion.div variants={columnVariants}>
             <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
-              Contact Us
+              {t("footer.contactUs")}
             </h4>
             <ul className="space-y-3 text-sm text-gray-500 dark:text-gray-400">
               <li className="flex items-center gap-3">
@@ -251,10 +239,10 @@ const Footer = () => {
           {/* Newsletter */}
           <motion.div variants={columnVariants} className="md:col-span-2">
             <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
-              Stay in the Loop
+              {t("footer.newsletter.title")}
             </h4>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Subscribe for exclusive deals, new arrivals, and discounts.
+              {t("footer.newsletter.description")}
             </p>
             <form
               onSubmit={handleSubscribe}
@@ -262,14 +250,14 @@ const Footer = () => {
               aria-label="Newsletter subscription"
             >
               <label htmlFor="newsletter-email" className="sr-only">
-                Email address
+                {t("footer.newsletter.emailLabel")}
               </label>
               <input
                 id="newsletter-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Your email"
+                placeholder={t("footer.newsletter.placeholder")}
                 required
                 disabled={status === "loading"}
                 className="flex-1 min-w-[160px] px-5 py-3.5 text-base bg-white dark:bg-white border border-gray-300 dark:border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#e8622a] placeholder:text-gray-500 text-gray-800 disabled:opacity-60"
@@ -283,15 +271,15 @@ const Footer = () => {
                 }}
                 whileTap={{ scale: 0.98 }}
                 className="px-8 py-3.5 text-base bg-[#e8622a] text-white rounded-xl font-medium hover:bg-[#c9511f] transition-colors whitespace-nowrap shrink-0 disabled:opacity-70 flex items-center justify-center gap-2"
-                aria-label="Subscribe to newsletter"
+                aria-label={t("footer.newsletter.subscribe")}
               >
                 {status === "loading" ? (
                   <>
                     <Loader2 size={18} className="animate-spin" />
-                    Subscribing...
+                    {t("footer.newsletter.subscribing")}
                   </>
                 ) : (
-                  "Subscribe"
+                  t("footer.newsletter.subscribe")
                 )}
               </motion.button>
             </form>
@@ -305,7 +293,7 @@ const Footer = () => {
                 role="status"
               >
                 <CheckCircle2 size={16} />
-                Thanks for subscribing! Check your inbox.
+                {t("footer.newsletter.success")}
               </motion.p>
             )}
             {status === "already" && (
@@ -316,7 +304,7 @@ const Footer = () => {
                 role="status"
               >
                 <CheckCircle2 size={16} />
-                You're already subscribed! 🎉
+                {t("footer.newsletter.already")}
               </motion.p>
             )}
             {status === "error" && (
@@ -327,7 +315,7 @@ const Footer = () => {
                 role="alert"
               >
                 <XCircle size={16} />
-                Something went wrong. Please try again.
+                {t("footer.newsletter.error")}
               </motion.p>
             )}
           </motion.div>
@@ -339,7 +327,7 @@ const Footer = () => {
           className="mt-10 pt-6 border-t border-gray-200 dark:border-white/10"
         >
           <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-            We Accept
+            {t("footer.payment.title")}
           </h5>
           <div className="flex flex-wrap gap-3 items-center">
             {/* Paystack */}
@@ -350,13 +338,13 @@ const Footer = () => {
             {/* Bank Transfer */}
             <span className="flex items-center gap-2 px-4 py-2 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-white/20">
               <Building2 className="w-4 h-4" />
-              Bank Transfer
+              {t("footer.payment.bankTransfer")}
             </span>
 
             {/* WhatsApp Pay */}
             <span className="flex items-center gap-2 px-4 py-2 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-white/20">
               <WhatsAppLogo className="w-4 h-4 text-[#25D366]" />
-              WhatsApp Pay
+              {t("footer.payment.whatsappPay")}
             </span>
           </div>
         </motion.div>
@@ -367,33 +355,43 @@ const Footer = () => {
           className="mt-8 pt-6 border-t border-gray-200 dark:border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500 dark:text-gray-400"
         >
           <span>
-            &copy; {currentYear} {BRAND_NAME}. All rights reserved.
+            &copy; {currentYear} {BRAND_NAME}. {t("footer.rights")}
           </span>
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+          <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2">
             <Link
               to="/privacy"
               className="hover:text-[#e8622a] transition-colors"
             >
-              Privacy Policy
+              {t("footer.privacy")}
             </Link>
             <Link
               to="/terms"
               className="hover:text-[#e8622a] transition-colors"
             >
-              Terms of Service
+              {t("footer.terms")}
             </Link>
             <Link
               to="/returns"
               className="hover:text-[#e8622a] transition-colors"
             >
-              Return Policy
+              {t("footer.returns")}
             </Link>
             <Link
               to="/unsubscribe"
               className="hover:text-[#e8622a] transition-colors"
             >
-              Unsubscribe
+              {t("footer.unsubscribe")}
             </Link>
+
+            {/* Language Switcher */}
+            <select
+              value={i18n.language}
+              onChange={(e) => changeLanguage(e.target.value)}
+              className="ml-2 px-2 py-1 rounded-lg bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/10 text-xs text-gray-700 dark:text-gray-300"
+            >
+              <option value="en">English</option>
+              <option value="pcm">Pidgin</option>
+            </select>
           </div>
         </motion.div>
       </div>

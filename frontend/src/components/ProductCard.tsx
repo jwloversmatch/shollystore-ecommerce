@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart, Check, Heart, Eye } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import { addToCart } from "../features/cart/cartSlice";
 import { toggleWishlist } from "../features/wishlist/wishlistSlice";
 import {
@@ -53,6 +54,7 @@ const ProductCard = ({
   fullProduct,
 }: ProductProps) => {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const [imgError, setImgError] = useState(false);
   const [added, setAdded] = useState(false);
 
@@ -102,41 +104,41 @@ const ProductCard = ({
     (e: React.MouseEvent) => {
       e.stopPropagation();
       if (isOutOfStock) {
-        toast.error("Out of stock!");
+        toast.error(t("product.outOfStockToast"));
         return;
       }
       dispatch(
         addToCart({ _id, name, image, price, qty: 1, stock: stock ?? 999 }),
       );
-      toast.success(`${name} added!`, { icon: "🛒" });
+      toast.success(t("product.addedToCart", { name }), { icon: "🛒" });
       setAdded(true);
       setTimeout(() => setAdded(false), 1800);
     },
-    [dispatch, _id, name, image, price, stock, isOutOfStock],
+    [dispatch, _id, name, image, price, stock, isOutOfStock, t],
   );
 
   const handleWishlistToggle = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
       if (!user) {
-        toast.error("Please login to add items to your wishlist");
+        toast.error(t("product.loginForWishlist"));
         return;
       }
       try {
         if (isWishlisted) {
           await removeFromWishlist(_id).unwrap();
           dispatch(toggleWishlist(_id));
-          toast.success("Removed from wishlist");
+          toast.success(t("product.removedFromWishlist"));
         } else {
           await addToWishlist(_id).unwrap();
           dispatch(toggleWishlist(_id));
-          toast.success("Added to wishlist");
+          toast.success(t("product.addedToWishlist"));
         }
       } catch {
-        toast.error("Failed to update wishlist");
+        toast.error(t("product.wishlistUpdateError"));
       }
     },
-    [dispatch, isWishlisted, _id, addToWishlist, removeFromWishlist, user],
+    [dispatch, isWishlisted, _id, addToWishlist, removeFromWishlist, user, t],
   );
 
   const handleQuickView = (e: React.MouseEvent) => {
@@ -178,17 +180,18 @@ const ProductCard = ({
           dark:hover:shadow-[0_0_0_1.5px_rgba(232,98,42,0.5),0_24px_50px_-15px_rgba(232,98,42,0.5)]
           dark:focus-within:shadow-[0_0_0_1.5px_rgba(232,98,42,0.5),0_24px_50px_-15px_rgba(232,98,42,0.5)]"
       >
-        {/* Full-card button for navigation */}
         <button
           type="button"
           onClick={onClick}
-          aria-label={`View ${name} — ${priceDisplay.full}${isOutOfStock ? ' (Out of stock)' : ''}`}
+          aria-label={t("product.viewProduct", {
+            name,
+            price: priceDisplay.full,
+            stockStatus: isOutOfStock ? t("product.soldOut") : "",
+          })}
           className="absolute inset-0 z-0 rounded-2xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e8622a] focus-visible:ring-offset-2"
         />
 
-        {/* Visual content */}
         <div className="relative z-[1] flex flex-col flex-1 pointer-events-none">
-          {/* Image area */}
           <div className="relative w-full h-48 bg-[#fafafa] dark:bg-[#2a2a2a] flex items-center justify-center p-4 overflow-hidden">
             <img
               src={imgSrc}
@@ -202,7 +205,6 @@ const ProductCard = ({
               className="max-w-full max-h-full object-contain transition-transform duration-500 ease-out motion-safe:group-hover:scale-105 motion-safe:group-focus-within:scale-105"
             />
 
-            {/* Stock badge */}
             {stock !== undefined && (
               <div
                 className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
@@ -211,26 +213,24 @@ const ProductCard = ({
                     : "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
                 }`}
                 role="status"
-                aria-label={isOutOfStock ? "Sold out" : `${stock} items in stock`}
+                aria-label={isOutOfStock ? t("product.soldOut") : t("product.itemsInStock", { count: stock })}
               >
-                {isOutOfStock ? "Sold Out" : `${stock} left`}
+                {isOutOfStock ? t("product.soldOut") : t("product.itemsLeft", { count: stock })}
               </div>
             )}
 
-            {/* Quick view button */}
             {onQuickView && (
               <button
                 onClick={handleQuickView}
                 className={`absolute top-3 left-3 z-10 w-8 h-8 rounded-full flex items-center justify-center pointer-events-auto transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 ${
                   isOutOfStock ? "bg-black/40 text-white" : "bg-white/80 dark:bg-black/40 text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
-                aria-label="Quick view"
+                aria-label={t("product.quickView")}
               >
                 <Eye className="w-4 h-4" aria-hidden="true" />
               </button>
             )}
 
-            {/* Wishlist heart button (top right) */}
             <button
               onClick={handleWishlistToggle}
               className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-colors pointer-events-auto ${
@@ -238,7 +238,7 @@ const ProductCard = ({
                   ? "bg-red-50 dark:bg-red-500/20 text-red-500"
                   : "bg-white/80 dark:bg-black/40 text-gray-400 hover:text-red-400"
               }`}
-              aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+              aria-label={isWishlisted ? t("product.removeFromWishlist") : t("product.addToWishlist")}
             >
               <Heart
                 className="w-4 h-4"
@@ -247,17 +247,15 @@ const ProductCard = ({
               />
             </button>
 
-            {/* Out of stock overlay */}
             {isOutOfStock && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center" aria-hidden="true">
                 <span className="text-white font-bold text-sm bg-black/60 px-4 py-2 rounded-full">
-                  Out of Stock
+                  {t("product.outOfStockOverlay")}
                 </span>
               </div>
             )}
           </div>
 
-          {/* Info section */}
           <div className="flex flex-col flex-1 p-4">
             <span
               className="text-[10px] font-extrabold uppercase tracking-[0.2em] mb-1.5 truncate"
@@ -270,7 +268,6 @@ const ProductCard = ({
               {name}
             </h3>
 
-            {/* Rating display */}
             {averageRating !== undefined && numberOfReviews !== undefined && (
               <div className="flex items-center gap-1.5 mb-2">
                 <StarRating rating={averageRating} size={12} />
@@ -280,9 +277,8 @@ const ProductCard = ({
               </div>
             )}
 
-            {/* Variant pills */}
             {variants && variants.length > 0 && (
-              <div className="flex items-center gap-1 mb-2 flex-nowrap overflow-hidden" aria-label="Available variants">
+              <div className="flex items-center gap-1 mb-2 flex-nowrap overflow-hidden" aria-label={t("product.availableVariants")}>
                 {variants.slice(0, 3).map((v, idx) => {
                   const label = v.size || v.color || v.sku;
                   if (!label) return null;
@@ -303,14 +299,13 @@ const ProductCard = ({
               </div>
             )}
 
-            {/* Bottom aligned price row */}
             <div className="mt-auto space-y-1.5">
               {hasSale && (
                 <div className="flex items-center gap-1.5 flex-nowrap">
                   {compareAtPrice && compareAtPrice > price && (
                     <span
                       className="text-xs text-gray-500 line-through truncate min-w-0"
-                      aria-label={`Original price: ${compareAtPriceDisplay?.full ?? ''}`}
+                      aria-label={t("product.originalPrice", { price: compareAtPriceDisplay?.full ?? '' })}
                     >
                       <span className="sm:hidden">
                         {compareAtPriceDisplay?.short}
@@ -323,7 +318,7 @@ const ProductCard = ({
                   {discountPercent && discountPercent > 0 && (
                     <span
                       className="shrink-0 px-1.5 py-0.5 text-[10px] font-extrabold rounded-full bg-red-500/20 text-red-500 border border-red-500/30"
-                      aria-label={`${discountPercent}% discount`}
+                      aria-label={t("product.discount", { percent: discountPercent })}
                     >
                       -{discountPercent}%
                     </span>
@@ -334,7 +329,7 @@ const ProductCard = ({
               <div className="flex items-end justify-between gap-2">
                 <div
                   className="flex items-baseline gap-0.5"
-                  aria-label={`Price: ${priceDisplay.full}`}
+                  aria-label={t("product.price", { price: priceDisplay.full })}
                 >
                   <span className="text-gray-500 dark:text-gray-400 text-xs pb-0.5">₦</span>
                   <span className="font-black text-xl leading-none text-gray-900 dark:text-white">
@@ -360,10 +355,10 @@ const ProductCard = ({
                   }`}
                   aria-label={
                     isOutOfStock
-                      ? `${name} is out of stock`
+                      ? t("product.isOutOfStock", { name })
                       : added
-                        ? `${name} added to cart`
-                        : `Add ${name} to cart for ${priceDisplay.full}`
+                        ? t("product.addedToCartAria", { name })
+                        : t("product.addToCartAria", { name, price: priceDisplay.full })
                   }
                 >
                   <AnimatePresence>

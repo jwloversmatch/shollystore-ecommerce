@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { store, persistor } from './store';
 import App from './App';
 import './index.css';
+import './i18n';
 
 function promptForUpdate(registration: ServiceWorkerRegistration) {
   toast(
