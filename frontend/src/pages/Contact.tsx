@@ -19,6 +19,7 @@ import {
   FaTwitter,
   FaYoutube,
 } from 'react-icons/fa';
+import { useSendContactMessageMutation } from '../features/api/apiSlice';
 
 const contactInfo = {
   address: 'Lagos, Nigeria',
@@ -69,6 +70,9 @@ const Contact = () => {
   const [status, setStatus] = useState<FormStatus>('idle');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
+  const [sendContact, { isLoading: isSending }] =
+    useSendContactMessageMutation();
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
@@ -77,17 +81,8 @@ const Contact = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus('loading');
-
     try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) throw new Error('Failed to send message');
-
+      await sendContact(formData).unwrap();
       setStatus('success');
       setFormData({ name: '', email: '', subject: '', message: '' });
       setTimeout(() => setStatus('idle'), 5000);
@@ -245,7 +240,7 @@ const Contact = () => {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    disabled={status === 'loading'}
+                    disabled={isSending}
                     className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8622a] disabled:opacity-60"
                     placeholder="John Doe"
                   />
@@ -265,7 +260,7 @@ const Contact = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    disabled={status === 'loading'}
+                    disabled={isSending}
                     className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8622a] disabled:opacity-60"
                     placeholder="you@example.com"
                   />
@@ -284,7 +279,7 @@ const Contact = () => {
                     name="subject"
                     value={formData.subject}
                     onChange={handleChange}
-                    disabled={status === 'loading'}
+                    disabled={isSending}
                     className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8622a] disabled:opacity-60"
                     placeholder="Order inquiry, feedback, etc."
                   />
@@ -304,7 +299,7 @@ const Contact = () => {
                     onChange={handleChange}
                     required
                     rows={5}
-                    disabled={status === 'loading'}
+                    disabled={isSending}
                     className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8622a] disabled:opacity-60 resize-none"
                     placeholder="Tell us how we can help..."
                   />
@@ -312,12 +307,12 @@ const Contact = () => {
 
                 <motion.button
                   type="submit"
-                  disabled={status === 'loading'}
+                  disabled={isSending}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-[#e8622a] text-white rounded-xl font-semibold shadow-lg hover:bg-[#c9511f] transition-colors disabled:opacity-70"
                 >
-                  {status === 'loading' ? (
+                  {isSending ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
                       Sending...

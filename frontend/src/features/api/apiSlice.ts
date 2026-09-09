@@ -999,6 +999,18 @@ export const apiSlice = createApi({
         body: { email },
       }),
     }),
+
+    // ─── Contact ─────────────────────────────────────────────────────────
+    sendContactMessage: builder.mutation<
+      { success: boolean; message: string },
+      { name: string; email: string; subject?: string; message: string }
+    >({
+      query: (body) => ({
+        url: "/contact",
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
@@ -1092,4 +1104,5 @@ export const {
   useUpdateLegalPageMutation,
   useSubscribeToNewsletterMutation,
   useUnsubscribeFromNewsletterMutation,
+  useSendContactMessageMutation,
 } = apiSlice;
