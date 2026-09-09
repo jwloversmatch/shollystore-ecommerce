@@ -87,6 +87,14 @@ export const unsubscribeFromNewsletter = async (
       return;
     }
 
+    if (!subscriber.isActive) {
+      res.status(409).json({
+        success: false,
+        message: "You are already unsubscribed",
+      });
+      return;
+    }
+
     subscriber.isActive = false;
     subscriber.unsubscribedAt = new Date();
     await subscriber.save();
