@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { useUnsubscribeFromNewsletterMutation } from "../features/api/apiSlice";
-import { Mail, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Mail, Loader2, CheckCircle2, XCircle, X } from "lucide-react";
 import SEO from "../components/SEO";
 
 type UnsubStatus = "idle" | "loading" | "success" | "error";
 
 const Unsubscribe = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<UnsubStatus>("idle");
   const [message, setMessage] = useState("");
@@ -22,10 +24,11 @@ const Unsubscribe = () => {
       setStatus("success");
       setMessage(res.message || "You have been unsubscribed successfully.");
       setEmail("");
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
+    } catch {
       setStatus("error");
-      setMessage("Failed to unsubscribe. Please check the email and try again.");
+      setMessage(
+        "Failed to unsubscribe. Please check the email and try again.",
+      );
     }
   };
 
@@ -39,13 +42,23 @@ const Unsubscribe = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full rounded-2xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 p-6 shadow-lg"
+          className="max-w-md w-full rounded-2xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 p-6 shadow-lg relative"
         >
+          {/* Close/back button */}
+          <button
+            onClick={() => navigate(-1)}
+            className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            aria-label="Go back"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
           <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-4">
             Unsubscribe
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            Enter the email address you used to subscribe and we'll remove you from our newsletter.
+            Enter the email address you used to subscribe and we'll remove you
+            from our newsletter.
           </p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <input

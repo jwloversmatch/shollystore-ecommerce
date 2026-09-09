@@ -369,7 +369,7 @@ const Footer = () => {
           <span>
             &copy; {currentYear} {BRAND_NAME}. All rights reserved.
           </span>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
             <Link
               to="/privacy"
               className="hover:text-[#e8622a] transition-colors"
