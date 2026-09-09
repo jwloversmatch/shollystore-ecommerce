@@ -88,7 +88,15 @@ const quickLinks = [
   { name: "Contact", path: "/contact" },
 ];
 
-type SubscribeStatus = "idle" | "loading" | "success" | "error";
+type SubscribeStatus = "idle" | "loading" | "success" | "error" | "already";
+
+// Specific error shape for the newsletter subscription
+interface NewsletterError {
+  status?: number;
+  data?: {
+    message?: string;
+  };
+}
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -106,8 +114,16 @@ const Footer = () => {
       setStatus("success");
       setEmail("");
       setTimeout(() => setStatus("idle"), 4000);
-    } catch {
-      setStatus("error");
+    } catch (err) {
+      const error = err as NewsletterError;
+      if (
+        error?.status === 409 ||
+        error?.data?.message === "This email is already subscribed"
+      ) {
+        setStatus("already");
+      } else {
+        setStatus("error");
+      }
       setTimeout(() => setStatus("idle"), 4000);
     }
   };
@@ -290,6 +306,17 @@ const Footer = () => {
               >
                 <CheckCircle2 size={16} />
                 Thanks for subscribing! Check your inbox.
+              </motion.p>
+            )}
+            {status === "already" && (
+              <motion.p
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-3 text-sm text-blue-600 dark:text-blue-400 flex items-center gap-2"
+                role="status"
+              >
+                <CheckCircle2 size={16} />
+                You're already subscribed! 🎉
               </motion.p>
             )}
             {status === "error" && (
