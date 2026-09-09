@@ -388,6 +388,12 @@ const Footer = () => {
             >
               Return Policy
             </Link>
+            <Link
+              to="/unsubscribe"
+              className="hover:text-[#e8622a] transition-colors"
+            >
+              Unsubscribe
+            </Link>
           </div>
         </motion.div>
       </div>

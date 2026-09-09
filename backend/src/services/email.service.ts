@@ -767,3 +767,23 @@ export const sendNewsletterWelcomeEmail = async (email: string) => {
     "Welcome to Sholex Newsletter! You'll receive exclusive deals and updates."
   );
 };
+
+export const sendNewsletterUnsubscribeEmail = async (email: string) => {
+  const html = layout({
+    headerBg: "#fef3c7",
+    body: `
+      <div class="body" style="text-align:center;">
+        <h2>You've Been Unsubscribed 👋</h2>
+        <p>We're sorry to see you go! You will no longer receive marketing emails from Sholex.</p>
+        <p>If this was a mistake, you can subscribe again anytime from our website.</p>
+        <a href="${CLIENT_URL}/" class="btn" style="background:#e8622a;color:#fff;box-shadow:0 4px 12px rgba(232,98,42,.3);">Return to Store</a>
+      </div>`,
+  });
+
+  return sendEmail(
+    email,
+    "Unsubscribed from Sholex Newsletter",
+    html,
+    "You have been unsubscribed from Sholex newsletter."
+  );
+};

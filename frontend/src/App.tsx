@@ -17,15 +17,39 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./context/ThemeContext";
 import CartSync from "./components/CartSync";
 import WishlistSync from "./components/WishlistSync";
-import PWAInstallPrompt from "./components/PWAInstallPrompt"; // <-- added import
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
 // import StoreAssistant from "./components/StoreAssistant"; // Future feature - store assistant
 
 import {
-  Home, Cart, Checkout, Login, Register, ForgotPassword, ResetPassword,
-  VerifyEmail, Account, ProductDetail, ShopPage, TrackOrder,
-  Dashboard, Products, Orders, HeroSlides, Categories, Coupons, Settings,
-  NotFound, Footer, PrivacyPolicy, TermsOfUse, About, Contact, Reviews,
-  ReturnPolicy, LegalPages
+  Home,
+  Cart,
+  Checkout,
+  Login,
+  Register,
+  ForgotPassword,
+  ResetPassword,
+  VerifyEmail,
+  Account,
+  ProductDetail,
+  ShopPage,
+  TrackOrder,
+  Dashboard,
+  Products,
+  Orders,
+  HeroSlides,
+  Categories,
+  Coupons,
+  Settings,
+  NotFound,
+  Footer,
+  PrivacyPolicy,
+  TermsOfUse,
+  About,
+  Contact,
+  Reviews,
+  ReturnPolicy,
+  LegalPages,
+  Unsubscribe,
 } from "./routes/lazyPages";
 
 const ACCENT = "#e8622a";
@@ -61,7 +85,16 @@ function AppContent() {
   }, [location.pathname]);
 
   const hideNavbar = ["/cart", "/checkout", "/404"].includes(location.pathname);
-  const showFooter = ["/", "/shop", "/privacy", "/terms", "/about", "/contact", "/returns"].includes(location.pathname);
+  const showFooter = [
+    "/",
+    "/shop",
+    "/privacy",
+    "/terms",
+    "/about",
+    "/contact",
+    "/returns",
+    "/unsubscribe",
+  ].includes(location.pathname);
 
   return (
     <>
@@ -69,10 +102,8 @@ function AppContent() {
       <PWAInstallPrompt /> {/* <-- added component */}
       <CartSync />
       <WishlistSync />
-
       {/* Future feature: Store Assistant – visible on all pages */}
       {/* <StoreAssistant /> */}
-
       <Suspense fallback={<LoadingFallback />}>
         <ErrorBoundary>
           <Routes key={location.pathname}>
@@ -86,7 +117,7 @@ function AppContent() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/products/:slug" element={<ProductDetail />} />
-            <Route path="/shop" element={<ShopPage />} /> 
+            <Route path="/shop" element={<ShopPage />} />
             <Route path="/track-order" element={<TrackOrder />} />
 
             {/* Authenticated routes */}
@@ -113,6 +144,7 @@ function AppContent() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/returns" element={<ReturnPolicy />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
 
             {/* 404 fallback */}
             <Route path="/404" element={<NotFound />} />
@@ -120,7 +152,6 @@ function AppContent() {
           </Routes>
         </ErrorBoundary>
       </Suspense>
-
       {showFooter && <Footer />}
     </>
   );

@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import NewsletterSubscriber from "../models/NewsletterSubscriber";
-import { sendNewsletterWelcomeEmail } from "../services/email.service";
+import {
+  sendNewsletterWelcomeEmail,
+  sendNewsletterUnsubscribeEmail,
+} from "../services/email.service";
 
 export const subscribeToNewsletter = async (
   req: Request,
@@ -39,10 +42,8 @@ export const subscribeToNewsletter = async (
       }
     }
 
-    // Create new subscriber
     await NewsletterSubscriber.create({ email: normalizedEmail });
 
-    // Send welcome email using the dedicated function
     await sendNewsletterWelcomeEmail(normalizedEmail);
 
     res.status(201).json({
@@ -89,6 +90,12 @@ export const unsubscribeFromNewsletter = async (
     subscriber.isActive = false;
     subscriber.unsubscribedAt = new Date();
     await subscriber.save();
+
+    try {
+      await sendNewsletterUnsubscribeEmail(subscriber.email);
+    } catch (emailError) {
+      console.error("Failed to send unsubscribe confirmation:", emailError);
+    }
 
     res.json({ success: true, message: "Successfully unsubscribed" });
   } catch (error) {

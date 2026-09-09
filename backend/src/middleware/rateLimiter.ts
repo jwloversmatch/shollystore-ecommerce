@@ -98,3 +98,16 @@ export const reviewLimiter = rateLimit({
   keyGenerator: (req) => (req as any).user?._id || req.ip,
   message: { success: false, message: 'Too many review submissions. Please try again later.' },
 });
+
+/** Newsletter subscription — moderate */
+export const newsletterLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, 
+  max: 10, 
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: shouldSkipRateLimit,
+  message: {
+    success: false,
+    message: 'Too many subscription attempts. Please try again later.',
+  },
+});

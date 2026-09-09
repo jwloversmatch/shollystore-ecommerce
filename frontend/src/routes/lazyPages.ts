@@ -33,3 +33,4 @@ export const TermsOfUse = lazy(() => import('../pages/TermsOfUse'));
 export const About = lazy(() => import('../pages/About'));
 export const Contact = lazy(() => import('../pages/Contact'));
 export const ReturnPolicy = lazy(()=> import('../pages/ReturnPolicy'))
+export const Unsubscribe = lazy(()=> import('../pages/Unsubscribe'))
