@@ -976,6 +976,29 @@ export const apiSlice = createApi({
         { type: "LegalPage", id: slug },
       ],
     }),
+
+    // ─── Newsletter ───────────────────────────────────────────────────────
+    subscribeToNewsletter: builder.mutation<
+      { success: boolean; message: string },
+      string
+    >({
+      query: (email) => ({
+        url: "/newsletter/subscribe",
+        method: "POST",
+        body: { email },
+      }),
+    }),
+
+    unsubscribeFromNewsletter: builder.mutation<
+      { success: boolean; message: string },
+      string
+    >({
+      query: (email) => ({
+        url: "/newsletter/unsubscribe",
+        method: "POST",
+        body: { email },
+      }),
+    }),
   }),
 });
 
@@ -1064,7 +1087,9 @@ export const {
   useGetCartQuery,
   useGetProductsByIdsQuery,
   useGetFeaturedReviewsQuery,
-  useGetLegalPageQuery,          
-  useGetAllLegalPagesQuery,      
+  useGetLegalPageQuery,
+  useGetAllLegalPagesQuery,
   useUpdateLegalPageMutation,
+  useSubscribeToNewsletterMutation,
+  useUnsubscribeFromNewsletterMutation,
 } = apiSlice;

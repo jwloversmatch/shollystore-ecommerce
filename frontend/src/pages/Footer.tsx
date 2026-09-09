@@ -13,6 +13,7 @@ import {
 import { FaFacebook, FaInstagram, FaTwitter, FaYoutube } from "react-icons/fa";
 import PaystackLogo from "../components/PaystackLogo";
 import WhatsAppLogo from "../components/WhatsAppLogo";
+import { useSubscribeToNewsletterMutation } from "../features/api/apiSlice";
 
 const footerVariants = {
   hidden: { opacity: 0 },
@@ -93,6 +94,7 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<SubscribeStatus>("idle");
+  const [subscribe] = useSubscribeToNewsletterMutation();
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,14 +102,7 @@ const Footer = () => {
 
     setStatus("loading");
     try {
-      const res = await fetch("/api/newsletter/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!res.ok) throw new Error("Subscription failed");
-
+      await subscribe(email.trim()).unwrap();
       setStatus("success");
       setEmail("");
       setTimeout(() => setStatus("idle"), 4000);
