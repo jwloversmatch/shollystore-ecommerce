@@ -221,7 +221,7 @@ const ProductDetail = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen px-4 md:px-8 max-w-7xl mx-auto bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(96px+env(safe-area-inset-top,0px))] pb-[calc(64px+env(safe-area-inset-bottom,0px))]"
+      className="min-h-screen px-4 md:px-8 max-w-7xl mx-auto bg-[#FCFAF5] dark:bg-[#0F1011] focus:outline-none pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(96px+env(safe-area-inset-top,0px))] pb-[calc(64px+env(safe-area-inset-bottom,0px))]"
     >
       <SEO
         title={product.name}
@@ -303,7 +303,7 @@ const ProductDetail = () => {
           )}
 
           <div
-            className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.07]"
+            className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-[#1F2123] border border-gray-200 dark:border-white/[0.07]"
             role="status"
             aria-label={
               variant.isOutOfStock

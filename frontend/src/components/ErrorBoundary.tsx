@@ -45,7 +45,7 @@ class ErrorBoundaryBase extends Component<Props, State> {
         <main
           id="main-content"
           tabIndex={-1}
-          className="min-h-screen flex flex-col items-center justify-center px-4 bg-gray-50 dark:bg-[#0A0A0B] text-gray-900 dark:text-white"
+          className="min-h-screen flex flex-col items-center justify-center px-4 bg-gray-50 dark:bg-[#0F1011] text-gray-900 dark:text-white"
           role="alert"
         >
           <h1 className="text-2xl font-bold mb-3">Something went wrong</h1>

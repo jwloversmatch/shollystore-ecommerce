@@ -54,7 +54,7 @@ const buildInputCls = (
 ) =>
   [
     "w-full py-3.5 rounded-xl text-sm",
-    "bg-gray-100 dark:bg-[#1c1c1c]",
+    "bg-gray-100 dark:bg-[#1F2123]",
     "text-gray-900 dark:text-white",
     "placeholder-gray-500 dark:placeholder-gray-600",
     "outline-none transition-all duration-200",
@@ -144,7 +144,7 @@ const Register = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+        className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0F1011] focus:outline-none"
         style={{ paddingTop: "calc(56px + env(safe-area-inset-top, 0px))" }}
       >
         <SEO
@@ -153,7 +153,7 @@ const Register = () => {
         />
         <AmbientBg />
 
-        <div className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 text-center bg-[#FCFAF5] dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07] shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.65)]">
+        <div className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 text-center bg-[#FCFAF5] dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.07] shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.65)]">
           <div
             className="absolute top-0 inset-x-0 h-px rounded-t-3xl"
             style={{
@@ -191,7 +191,7 @@ const Register = () => {
           <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-2">
             We've sent a verification link to
           </p>
-          <div className="inline-block px-4 py-2 rounded-xl border mb-6 text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.1]">
+          <div className="inline-block px-4 py-2 rounded-xl border mb-6 text-sm font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-[#1F2123] border-gray-200 dark:border-white/[0.1]">
             {sentEmail}
           </div>
           <p className="text-gray-500 dark:text-gray-400 text-xs mb-8 leading-relaxed">
@@ -231,7 +231,7 @@ const Register = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+      className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0F1011] focus:outline-none"
       style={{ paddingTop: "calc(56px + env(safe-area-inset-top, 0px))" }}
     >
       <SEO
@@ -241,7 +241,7 @@ const Register = () => {
       <AmbientBg />
 
       <div
-        className="relative z-10 w-full max-w-5xl rounded-3xl overflow-hidden grid md:grid-cols-[1fr_1.15fr] bg-[#FCFAF5] dark:bg-[#111111] border border-gray-200 dark:border-white/[0.07] shadow-lg dark:shadow-[0_40px_100px_rgba(0,0,0,0.7)]"
+        className="relative z-10 w-full max-w-5xl rounded-3xl overflow-hidden grid md:grid-cols-[1fr_1.15fr] bg-[#FCFAF5] dark:bg-[#121314] border border-gray-200 dark:border-white/[0.07] shadow-lg dark:shadow-[0_40px_100px_rgba(0,0,0,0.7)]"
         style={{ minHeight: 600 }}
       >
         {/* LEFT PANEL — decorative, hidden from screen readers */}
@@ -345,7 +345,7 @@ const Register = () => {
         </div>
 
         {/* RIGHT PANEL — form */}
-        <div className="flex flex-col justify-center p-6 sm:p-8 md:p-10 lg:p-12 bg-[#FCFAF5] dark:bg-[#141414]">
+        <div className="flex flex-col justify-center p-6 sm:p-8 md:p-10 lg:p-12 bg-[#FCFAF5] dark:bg-[#17181A]">
           {/* Mobile logo */}
           <div className="md:hidden flex items-center gap-2 mb-7">
             <div

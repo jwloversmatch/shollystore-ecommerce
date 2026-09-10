@@ -46,7 +46,7 @@ const CancellationModal = ({ isOpen, onClose, onConfirm }: CancellationModalProp
             aria-modal="true"
             aria-labelledby="cancel-modal-title"
           >
-            <div ref={dialogRef} className="bg-[#FCFAF5] dark:bg-[#141414] rounded-2xl shadow-2xl max-w-md w-full p-6 border border-gray-200 dark:border-white/[0.07]">
+            <div ref={dialogRef} className="bg-[#FCFAF5] dark:bg-[#17181A] rounded-2xl shadow-2xl max-w-md w-full p-6 border border-gray-200 dark:border-white/[0.07]">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-full bg-red-100 dark:bg-red-500/10">
@@ -70,14 +70,14 @@ const CancellationModal = ({ isOpen, onClose, onConfirm }: CancellationModalProp
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Enter cancellation reason..."
                 rows={4}
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-[#1F2123] text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-red-500/50"
               />
               <div className="flex justify-end gap-3 mt-4">
                 <button
                   onClick={onClose}
                   className="px-4 py-2 text-sm font-medium rounded-lg transition
                     text-gray-600 dark:text-gray-400
-                    bg-gray-200 dark:bg-[#1c1c1c] hover:bg-gray-300 dark:hover:bg-[#2a2a2a]
+                    bg-gray-200 dark:bg-[#1F2123] hover:bg-gray-300 dark:hover:bg-[#2a2a2a]
                     border border-gray-300 dark:border-white/[0.08]"
                 >
                   Cancel

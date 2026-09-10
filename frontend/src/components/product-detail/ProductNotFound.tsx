@@ -6,12 +6,12 @@ import { ACCENT } from "./constants";
 const ProductNotFound = () => {
   const navigate = useNavigate();
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+    <main className="min-h-screen flex items-center justify-center px-4 bg-[#FCFAF5] dark:bg-[#0F1011]">
       <motion.div
         initial={{ opacity: 0, scale: 0.92 }}
         animate={{ opacity: 1, scale: 1 }}
         className="relative w-full max-w-sm text-center rounded-3xl p-10
-          bg-[#FCFAF5] dark:bg-[#141414]
+          bg-[#FCFAF5] dark:bg-[#17181A]
           border border-gray-200 dark:border-white/[0.07]
           shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.6)]"
       >

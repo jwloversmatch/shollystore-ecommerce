@@ -218,11 +218,11 @@ const AdminTopbar = ({
                 exit={{ opacity: 0, y: -6, scale: 0.96 }}
                 transition={{ duration: 0.15 }}
                 className="absolute right-0 mt-2 w-64 rounded-2xl shadow-xl border overflow-hidden
-                  bg-white dark:bg-[#141414]
+                  bg-white dark:bg-[#17181A]
                   border-gray-200 dark:border-white/[0.08]"
                 role="menu"
               >
-                <div className="px-4 py-3 border-b border-gray-100 dark:border-white/[0.06]">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-white/[0.08]">
                   <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
                     {user?.name || "Admin"}
                   </p>

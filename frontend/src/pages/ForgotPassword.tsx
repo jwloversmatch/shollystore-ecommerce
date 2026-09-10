@@ -70,7 +70,7 @@ const ForgotPassword = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+        className="min-h-screen flex items-center justify-center px-4 py-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0F1011] focus:outline-none"
       >
         <SEO title="Check Your Email" description="Password reset link sent" />
         <AmbientBg />
@@ -80,7 +80,7 @@ const ForgotPassword = () => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.55, ease: "easeOut" }}
           className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 text-center
-            bg-[#FCFAF5] dark:bg-[#141414]
+            bg-[#FCFAF5] dark:bg-[#17181A]
             border border-gray-200 dark:border-white/[0.07]
             shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.65)]"
         >
@@ -160,7 +160,7 @@ const ForgotPassword = () => {
             transition={{ delay: 0.35 }}
             className="inline-block px-4 py-2 rounded-xl border mb-6 text-sm font-bold
               text-gray-900 dark:text-white
-              bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.1]"
+              bg-gray-100 dark:bg-[#1F2123] border-gray-200 dark:border-white/[0.1]"
           >
             {email}
           </motion.div>
@@ -192,7 +192,7 @@ const ForgotPassword = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+      className="min-h-screen flex items-center justify-center px-4 py-10 sm:py-14 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0F1011] focus:outline-none"
     >
       <SEO
         title="Forgot Password"
@@ -205,7 +205,7 @@ const ForgotPassword = () => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.55, ease: "easeOut" }}
         className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10
-          bg-[#FCFAF5] dark:bg-[#141414]
+          bg-[#FCFAF5] dark:bg-[#17181A]
           border border-gray-200 dark:border-white/[0.07]
           shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.65)]"
       >
@@ -259,7 +259,7 @@ const ForgotPassword = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm
-                  bg-gray-100 dark:bg-[#1c1c1c]
+                  bg-gray-100 dark:bg-[#1F2123]
                   text-gray-900 dark:text-white
                   placeholder-gray-500 dark:placeholder-gray-600
                   outline-none transition-all duration-200

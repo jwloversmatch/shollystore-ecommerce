@@ -20,8 +20,8 @@ const QuantityStepper = ({
     <div
       className={`flex items-center rounded-xl overflow-hidden shrink-0 border ${
         isDesktop
-          ? "bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.09]"
-          : "bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.1]"
+          ? "bg-gray-100 dark:bg-[#1F2123] border-gray-200 dark:border-white/[0.09]"
+          : "bg-white dark:bg-[#17181A] border-gray-200 dark:border-white/[0.1]"
       }`}
       aria-label="Quantity selector"
     >

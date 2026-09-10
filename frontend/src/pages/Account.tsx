@@ -268,7 +268,7 @@ const Account = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen p-4 md:p-6 max-w-6xl mx-auto space-y-8 focus:outline-none bg-[#FCFAF5] dark:bg-[#0A0A0B]"
+      className="min-h-screen p-4 md:p-6 max-w-6xl mx-auto space-y-8 focus:outline-none bg-[#FCFAF5] dark:bg-[#0F1011]"
       style={{
         // Increased top padding to clear the fixed navbar (desktop + mobile)
         paddingTop: "calc(96px + env(safe-area-inset-top, 0px))",

@@ -36,7 +36,7 @@ const AccountWishlist = () => {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-2xl h-48 bg-gray-200 dark:bg-[#141414] animate-pulse"
+            className="rounded-2xl h-48 bg-gray-200 dark:bg-[#17181A] animate-pulse"
           />
         ))}
       </div>
@@ -73,7 +73,7 @@ const AccountWishlist = () => {
           key={product._id}
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl overflow-hidden border bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.06] shadow-sm"
+          className="rounded-2xl overflow-hidden border bg-white dark:bg-[#17181A] border-gray-200 dark:border-white/[0.08] shadow-sm"
         >
           <Link
             to={`/products/${product.slug || product._id}`}

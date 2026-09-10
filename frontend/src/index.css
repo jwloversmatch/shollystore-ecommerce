@@ -43,15 +43,69 @@
 /* ── Base styles ──────────────────────────────────────────────────────────── */
 body {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  @apply bg-[#FCFAF5] text-gray-900 dark:bg-[#0A0A0B] dark:text-white;
-  text-rendering: optimizeSpeed;
+  @apply bg-[#FCFAF5] text-gray-900 dark:bg-[#0F1011] dark:text-white;
+  /* optimizeLegibility keeps kerning + ligatures on, which noticeably
+     softens text on dark backgrounds where every pixel of harshness shows. */
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 img {
   max-width: 100%;
   height: auto;
   display: block;
+}
+
+/* ── Dark mode softeners ──────────────────────────────────────────────────── */
+/* Off-white primary text instead of pure #fff — the single biggest
+   reduction in eye strain without touching any component. */
+.dark body,
+.dark #main-content {
+  color: #E7E9EA;
+}
+
+/* Soften pure-white text in dark mode, EXCEPT on elements that sit on a
+   colored surface (buttons, badges). Those keep their #fff for contrast. */
+.dark .text-white:not([class*="bg-"]):not([style*="background"]) {
+  color: #E7E9EA;
+}
+
+/* Form controls — give them a slightly lighter surface than cards so they
+   read as interactive. Applies only in dark mode. */
+.dark input,
+.dark textarea,
+.dark select {
+  color: #E7E9EA;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #7A8087;
+}
+
+/* Scrollbar — subtle, warm, matches the palette. Chrome/Edge only;
+   Firefox uses scrollbar-color further down. */
+.dark ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: #0F1011;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #26282B;
+  border-radius: 8px;
+  border: 2px solid #0F1011;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #33363A;
+}
+
+/* Firefox */
+.dark * {
+  scrollbar-color: #26282B #0F1011;
+  scrollbar-width: thin;
 }
 
 /* ── Animations ───────────────────────────────────────────────────────────── */

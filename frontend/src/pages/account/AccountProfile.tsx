@@ -150,7 +150,7 @@ const DeleteAccountCard = ({
 
   return (
     <>
-      <div className="bg-white dark:bg-[#141414] rounded-2xl p-6 border border-red-200 dark:border-red-500/20 shadow-sm">
+      <div className="bg-white dark:bg-[#17181A] rounded-2xl p-6 border border-red-200 dark:border-red-500/20 shadow-sm">
         <h3 className="text-lg font-bold text-red-600 dark:text-red-400 mb-2">
           Delete Account
         </h3>
@@ -178,7 +178,7 @@ const DeleteAccountCard = ({
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={isDeleting}
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-60"
+              className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1F2123] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-60"
               placeholder="Your password"
             />
             <div className="flex gap-3">

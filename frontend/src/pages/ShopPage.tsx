@@ -35,7 +35,7 @@ const ShopPage = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] pb-28 md:pb-16 focus:outline-none"
+      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0F1011] pb-28 md:pb-16 focus:outline-none"
       style={{
         paddingTop: "calc(96px + env(safe-area-inset-top, 0px))",
         paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))",

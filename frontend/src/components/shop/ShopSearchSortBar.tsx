@@ -29,7 +29,7 @@ const ShopSearchSortBar = ({
   onSortChange,
   sortOptions,
 }: ShopSearchSortBarProps) => (
-  <div className="px-4 md:px-6 py-3 mb-6 sm:mt-3 md:mt-4 bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]">
+  <div className="px-4 md:px-6 py-3 mb-6 sm:mt-3 md:mt-4 bg-[#FCFAF5] dark:bg-[#0F1011] border-b border-gray-200 dark:border-white/[0.08]">
     <div className="max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <ProductSearchBox
@@ -58,7 +58,7 @@ const ShopSearchSortBar = ({
               id="shop-sort"
               value={sortBy}
               onChange={(e) => onSortChange(e.target.value)}
-              className="appearance-none pl-9 pr-8 py-2.5 rounded-xl text-sm font-bold bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white outline-none cursor-pointer focus:border-[#e8622a]/50 transition-colors"
+              className="appearance-none pl-9 pr-8 py-2.5 rounded-xl text-sm font-bold bg-gray-100 dark:bg-[#1F2123] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white outline-none cursor-pointer focus:border-[#e8622a]/50 transition-colors"
             >
               {sortOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>

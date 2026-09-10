@@ -18,7 +18,7 @@ const SavedAddressesCard = ({
   onDelete,
   onSetDefault,
 }: SavedAddressesCardProps) => (
-  <div className="rounded-2xl shadow-sm border p-6 sm:p-8 bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.07]">
+  <div className="rounded-2xl shadow-sm border p-6 sm:p-8 bg-white dark:bg-[#17181A] border-gray-200 dark:border-white/[0.07]">
     <div className="flex justify-between items-center mb-6">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
         <MapPin className="w-5 h-5" style={{ color: ACCENT }} />
@@ -41,7 +41,7 @@ const SavedAddressesCard = ({
         {addresses.map((addr) => (
           <div
             key={addr._id}
-            className="flex items-center justify-between p-4 rounded-xl border bg-gray-50 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.06]"
+            className="flex items-center justify-between p-4 rounded-xl border bg-gray-50 dark:bg-[#1F2123] border-gray-200 dark:border-white/[0.08]"
           >
             <div className="flex items-start gap-3">
               <div className="mt-0.5">

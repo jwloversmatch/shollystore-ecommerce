@@ -47,7 +47,7 @@ const AddressModal = ({
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
       >
         <div
-          className="rounded-2xl shadow-2xl p-6 max-w-md w-full border bg-white dark:bg-[#141414] border-gray-200 dark:border-white/10"
+          className="rounded-2xl shadow-2xl p-6 max-w-md w-full border bg-white dark:bg-[#17181A] border-gray-200 dark:border-white/10"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex justify-between items-center mb-4">
@@ -67,7 +67,7 @@ const AddressModal = ({
               <select
                 value={addressForm.label}
                 onChange={(e) => onChange({ ...addressForm, label: e.target.value })}
-                className="w-full rounded-xl px-4 py-2.5 outline-none text-sm bg-gray-50 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
+                className="w-full rounded-xl px-4 py-2.5 outline-none text-sm bg-gray-50 dark:bg-[#1F2123] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
               >
                 <option value="Home">Home</option>
                 <option value="Office">Office</option>
@@ -80,7 +80,7 @@ const AddressModal = ({
                 type="text"
                 value={addressForm.address}
                 onChange={(e) => onChange({ ...addressForm, address: e.target.value })}
-                className="w-full rounded-xl px-4 py-2.5 outline-none placeholder-gray-500 text-sm bg-gray-50 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
+                className="w-full rounded-xl px-4 py-2.5 outline-none placeholder-gray-500 text-sm bg-gray-50 dark:bg-[#1F2123] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
                 placeholder="Street address"
               />
             </div>
@@ -90,7 +90,7 @@ const AddressModal = ({
                 type="text"
                 value={addressForm.city}
                 onChange={(e) => onChange({ ...addressForm, city: e.target.value })}
-                className="w-full rounded-xl px-4 py-2.5 outline-none placeholder-gray-500 text-sm bg-gray-50 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
+                className="w-full rounded-xl px-4 py-2.5 outline-none placeholder-gray-500 text-sm bg-gray-50 dark:bg-[#1F2123] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white"
                 placeholder="City"
               />
             </div>

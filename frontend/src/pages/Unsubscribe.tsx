@@ -38,11 +38,11 @@ const Unsubscribe = () => {
         title="Unsubscribe"
         description="Unsubscribe from Sholex newsletter."
       />
-      <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0A0A0B] px-4">
+      <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0F1011] px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full rounded-2xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 p-6 shadow-lg relative"
+          className="max-w-md w-full rounded-2xl bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/10 p-6 shadow-lg relative"
         >
           {/* Close/back button */}
           <button
@@ -68,7 +68,7 @@ const Unsubscribe = () => {
               placeholder="you@example.com"
               required
               disabled={status === "loading"}
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white outline-none focus:border-[#e8622a]/60"
+              className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1F2123] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white outline-none focus:border-[#e8622a]/60"
             />
             <button
               type="submit"

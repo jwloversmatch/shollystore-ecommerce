@@ -9,14 +9,14 @@ interface ProductMetaGridProps {
 
 const ProductMetaGrid = ({ items }: ProductMetaGridProps) => (
   <div
-    className="grid grid-cols-2 gap-2.5 pt-3 border-t border-gray-200 dark:border-white/[0.06]"
+    className="grid grid-cols-2 gap-2.5 pt-3 border-t border-gray-200 dark:border-white/[0.08]"
     role="list"
     aria-label="Product details"
   >
     {items.map((item) => (
       <div
         key={item.label}
-        className="p-3 rounded-xl bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.07]"
+        className="p-3 rounded-xl bg-gray-100 dark:bg-[#1F2123] border border-gray-200 dark:border-white/[0.07]"
         role="listitem"
       >
         <p className="text-[9px] font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">

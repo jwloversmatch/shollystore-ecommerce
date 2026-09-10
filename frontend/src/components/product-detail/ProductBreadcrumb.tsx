@@ -25,7 +25,7 @@ const ProductBreadcrumb = ({ categoryNode, onGoBack }: ProductBreadcrumbProps) =
       onClick={onGoBack}
       className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold
         text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors shrink-0
-        bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.08]"
+        bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.08]"
       aria-label="Go back to previous page"
     >
       <ArrowLeft className="w-4 h-4" aria-hidden="true" />

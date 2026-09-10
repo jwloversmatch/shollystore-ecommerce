@@ -20,7 +20,7 @@ const OrderCard = ({ order, onViewDetails, onTrackOrder, onReorder }: OrderCardP
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="relative rounded-xl shadow-sm border transition-all overflow-hidden bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.06]"
+      className="relative rounded-xl shadow-sm border transition-all overflow-hidden bg-white dark:bg-[#17181A] border-gray-200 dark:border-white/[0.08]"
       style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.25)" }}
     >
       {/* Mobile: Track icon button top right (only if canTrack) */}
@@ -74,7 +74,7 @@ const OrderCard = ({ order, onViewDetails, onTrackOrder, onReorder }: OrderCardP
       </div>
 
       {/* Footer: date + actions */}
-      <div className="px-4 sm:px-5 pb-4 pt-2 flex items-center justify-between border-t border-gray-100 dark:border-white/[0.06]">
+      <div className="px-4 sm:px-5 pb-4 pt-2 flex items-center justify-between border-t border-gray-100 dark:border-white/[0.08]">
         <p className="text-xs text-gray-500 flex items-center gap-1">
           <Calendar className="w-3.5 h-3.5" />
           {new Date(order.createdAt).toLocaleDateString("en-NG", {

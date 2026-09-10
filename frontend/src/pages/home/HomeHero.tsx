@@ -410,7 +410,7 @@ const HomeHero = ({
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5 + i * 0.1 }}
-                  className="w-9 h-9 rounded-full border-2 border-white dark:border-[#0A0A0B] bg-gray-100 dark:bg-[#1c1c1c] flex items-center justify-center text-sm"
+                  className="w-9 h-9 rounded-full border-2 border-white dark:border-[#0A0A0B] bg-gray-100 dark:bg-[#1F2123] flex items-center justify-center text-sm"
                   aria-hidden="true"
                 >
                   {emoji}

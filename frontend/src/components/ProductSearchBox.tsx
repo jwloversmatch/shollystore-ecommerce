@@ -124,7 +124,7 @@ const ProductSearchBox = ({
         onBlur={() => setIsOpen(false)}
         onKeyDown={handleKeyDown}
         autoComplete="off"
-        className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-600 outline-none text-sm focus:border-[#e8622a]/50 transition-colors"
+        className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-gray-100 dark:bg-[#1F2123] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-600 outline-none text-sm focus:border-[#e8622a]/50 transition-colors"
       />
       {value && (
         <button
@@ -144,7 +144,7 @@ const ProductSearchBox = ({
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15 }}
             className="absolute z-30 mt-2 w-full rounded-xl border overflow-hidden
-              bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.08]
+              bg-white dark:bg-[#17181A] border-gray-200 dark:border-white/[0.08]
               shadow-lg dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
           >
             {showLoading ? (
@@ -177,7 +177,7 @@ const ProductSearchBox = ({
                     <img
                       src={getCloudinaryUrl(product.images?.[0] || PLACEHOLDER, 80)}
                       alt=""
-                      className="w-9 h-9 rounded-lg object-cover shrink-0 bg-gray-100 dark:bg-[#1c1c1c]"
+                      className="w-9 h-9 rounded-lg object-cover shrink-0 bg-gray-100 dark:bg-[#1F2123]"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold truncate text-gray-900 dark:text-white">

@@ -67,7 +67,7 @@ const HomeTestimonials = () => {
                 “{review.comment}”
               </p>
 
-              <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/[0.06]">
+              <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/[0.08]">
                 <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
                   {review.product.name}
                 </p>

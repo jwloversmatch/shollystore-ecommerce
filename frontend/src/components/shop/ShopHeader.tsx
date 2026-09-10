@@ -36,7 +36,7 @@ const ShopHeader = ({
     {showResetButton && (
       <button
         onClick={onReset}
-        className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors bg-white dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.08]"
+        className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors bg-white dark:bg-[#1F2123] border border-gray-200 dark:border-white/[0.08]"
         aria-label="Show all categories"
       >
         <Home className="w-4 h-4" aria-hidden="true" /> All Categories

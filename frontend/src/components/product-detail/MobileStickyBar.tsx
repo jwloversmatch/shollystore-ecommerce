@@ -42,14 +42,14 @@ const MobileStickyBar = ({
           bottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
         }}
       >
-        <div className="bg-[#FCFAF5] dark:bg-[#0A0A0B] px-4 pb-3 pt-2 border-t border-gray-200 dark:border-white/[0.07]">
+        <div className="bg-[#FCFAF5] dark:bg-[#0F1011] px-4 pb-3 pt-2 border-t border-gray-200 dark:border-white/[0.07]">
           <div className="flex gap-2.5">
             <button
               onClick={onWishlistToggle}
               className={`w-12 h-12 rounded-xl flex items-center justify-center border ${
                 isWishlisted
                   ? "text-red-500 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20"
-                  : "text-gray-400 bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.1]"
+                  : "text-gray-400 bg-white dark:bg-[#17181A] border-gray-200 dark:border-white/[0.1]"
               }`}
               aria-label={
                 isWishlisted ? "Remove from wishlist" : "Add to wishlist"

@@ -128,7 +128,7 @@ const QuickViewModal = ({ product, isOpen, onClose }: QuickViewModalProps) => {
         >
           <motion.div
             ref={modalRef}
-            className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl bg-white dark:bg-[#141414]"
+            className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl bg-white dark:bg-[#17181A]"
             initial={{ scale: 0.95, y: 20, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.95, y: 20, opacity: 0 }}
@@ -225,7 +225,7 @@ const QuickViewModal = ({ product, isOpen, onClose }: QuickViewModalProps) => {
                             <button
                               key={idx}
                               onClick={() => setSelectedSize(size === selectedSize ? null : size as string)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${selectedSize === size ? "bg-[#e8622a] text-white border-[#e8622a]" : "bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300"}`}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${selectedSize === size ? "bg-[#e8622a] text-white border-[#e8622a]" : "bg-gray-100 dark:bg-[#1F2123] border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300"}`}
                               aria-pressed={selectedSize === size}
                             >
                               {size}
@@ -299,7 +299,7 @@ const QuickViewModal = ({ product, isOpen, onClose }: QuickViewModalProps) => {
                     className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
                       isWishlisted
                         ? "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-500"
-                        : "bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/10 text-gray-400"
+                        : "bg-gray-100 dark:bg-[#1F2123] border-gray-200 dark:border-white/10 text-gray-400"
                     }`}
                     aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
                   >

@@ -23,7 +23,7 @@ const HomeProductGrid = ({
   categoryList,
   setModalProduct,
 }: HomeProductGridProps) => (
-  <section id="products-grid" className="bg-[#FCFAF5] dark:bg-[#111111] py-14 md:py-18">
+  <section id="products-grid" className="bg-[#FCFAF5] dark:bg-[#121314] py-14 md:py-18">
     <div className="max-w-7xl mx-auto px-4 md:px-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div>
@@ -48,7 +48,7 @@ const HomeProductGrid = ({
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-600 rounded-xl outline-none text-sm focus:border-[#e8622a]/50 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-[#1F2123] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-600 rounded-xl outline-none text-sm focus:border-[#e8622a]/50 transition-colors"
             />
           </div>
           {/* Category pills */}

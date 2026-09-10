@@ -50,7 +50,7 @@ const CreateAccountModal = ({
             aria-modal="true"
             aria-labelledby="create-account-title"
           >
-            <div className="relative w-full max-w-md rounded-2xl p-6 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.08] shadow-2xl">
+            <div className="relative w-full max-w-md rounded-2xl p-6 bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.08] shadow-2xl">
               <button
                 onClick={onClose}
                 className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition"
@@ -77,7 +77,7 @@ const CreateAccountModal = ({
                     type="email"
                     value={guestEmail}
                     disabled
-                    className="w-full pl-11 pr-4 py-3 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.08] text-gray-900 dark:text-white font-medium"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl text-sm bg-gray-100 dark:bg-[#1F2123] border border-gray-200 dark:border-white/[0.08] text-gray-900 dark:text-white font-medium"
                     aria-label="Email (already filled)"
                   />
                 </div>
@@ -88,7 +88,7 @@ const CreateAccountModal = ({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Create a password"
-                    className="w-full pl-11 pr-12 py-3 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12 outline-none"
+                    className="w-full pl-11 pr-12 py-3 rounded-xl text-sm bg-gray-100 dark:bg-[#1F2123] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12 outline-none"
                     aria-label="Password"
                   />
                   <button

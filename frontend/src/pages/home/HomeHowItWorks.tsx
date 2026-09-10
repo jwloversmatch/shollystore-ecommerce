@@ -22,7 +22,7 @@ const steps = [
 
 const HomeHowItWorks = () => (
   <section
-    className="py-14 md:py-18 bg-white dark:bg-[#141414] border-y border-gray-200 dark:border-white/[0.06]"
+    className="py-14 md:py-18 bg-white dark:bg-[#17181A] border-y border-gray-200 dark:border-white/[0.08]"
     aria-labelledby="how-it-works-heading"
   >
     <div className="max-w-7xl mx-auto px-4 md:px-6">
@@ -49,7 +49,7 @@ const HomeHowItWorks = () => (
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
             transition={{ delay: i * 0.1, duration: 0.5 }}
-            className="flex flex-col items-center text-center p-6 rounded-2xl bg-gray-50 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.06]"
+            className="flex flex-col items-center text-center p-6 rounded-2xl bg-gray-50 dark:bg-[#1F2123] border border-gray-200 dark:border-white/[0.08]"
           >
             <div
               className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"

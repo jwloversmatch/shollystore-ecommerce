@@ -114,7 +114,7 @@ const Home = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] relative overflow-x-hidden focus:outline-none pt-14 md:pt-20"
+      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0F1011] relative overflow-x-hidden focus:outline-none pt-14 md:pt-20"
     >
       <SEO
         title={heroTitle.replace("|", "").trim()}
@@ -171,7 +171,7 @@ const Home = () => {
 
         {/* Enter Shop CTA — CSS transitions instead of framer-motion */}
         <section
-          className="py-10 bg-[#FCFAF5] dark:bg-[#0A0A0B]"
+          className="py-10 bg-[#FCFAF5] dark:bg-[#0F1011]"
           aria-labelledby="cta-heading"
         >
           <div className="max-w-7xl mx-auto px-4 md:px-6 text-center">
@@ -208,7 +208,7 @@ const Home = () => {
 
         {/* Featured Products */}
         <section
-          className="bg-[#FCFAF5] dark:bg-[#111111] py-14 md:py-18"
+          className="bg-[#FCFAF5] dark:bg-[#121314] py-14 md:py-18"
           aria-labelledby="featured-heading"
         >
           <div className="max-w-7xl mx-auto px-4 md:px-6">

@@ -64,7 +64,7 @@ const ReviewForm = ({
         required
         rows={4}
         maxLength={maxLength}
-        className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-white resize-none"
+        className="w-full px-4 py-2 rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-[#1F2123] text-gray-900 dark:text-white resize-none"
       />
       <p className="text-xs text-gray-400 mt-1">
         {comment.length}/{maxLength}
@@ -90,7 +90,7 @@ const ReviewForm = ({
         <button
           type="button"
           onClick={onCancel}
-          className="px-6 py-2.5 rounded-xl font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.08]"
+          className="px-6 py-2.5 rounded-xl font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-[#1F2123] border border-gray-200 dark:border-white/[0.08]"
         >
           Cancel
         </button>

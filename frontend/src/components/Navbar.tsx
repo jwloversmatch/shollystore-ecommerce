@@ -154,7 +154,7 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
         className={`flex items-center justify-center rounded-full border transition-colors ${
           mobile
             ? "w-10 h-10 bg-transparent border-transparent"
-            : "w-10 h-10 bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/10 hover:border-[#e8622a]/50"
+            : "w-10 h-10 bg-gray-100 dark:bg-[#1F2123] border-gray-200 dark:border-white/10 hover:border-[#e8622a]/50"
         }`}
       >
         <User
@@ -170,7 +170,7 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: mobile ? 10 : -5, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className={`absolute z-50 w-48 rounded-xl shadow-xl border overflow-hidden bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.08] ${
+            className={`absolute z-50 w-48 rounded-xl shadow-xl border overflow-hidden bg-white dark:bg-[#17181A] border-gray-200 dark:border-white/[0.08] ${
               mobile ? "bottom-full mb-2 right-0" : "top-full mt-2 right-0"
             }`}
             role="menu"
@@ -306,7 +306,7 @@ const Navbar = () => {
       >
         <div
           className="absolute inset-0 
-          bg-[#FCFAF5]/95 dark:bg-[#111]/95 
+          bg-[#FCFAF5]/95 dark:bg-[#121314]/95 
           backdrop-blur-xl 
           border-b border-gray-200 dark:border-white/[0.08] 
           shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
@@ -464,7 +464,7 @@ const Navbar = () => {
         <>
           <nav
             className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center px-5
-              bg-[#FCFAF5] dark:bg-[#0A0A0B] border-b border-gray-200 dark:border-white/[0.06]"
+              bg-[#FCFAF5] dark:bg-[#0F1011] border-b border-gray-200 dark:border-white/[0.08]"
             style={{
               paddingTop: "env(safe-area-inset-top, 0px)",
               height: "calc(56px + env(safe-area-inset-top, 0px))",
@@ -525,7 +525,7 @@ const Navbar = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="fixed top-[56px] left-0 right-0 z-30 md:hidden bg-white dark:bg-[#141414] border-b border-gray-200 dark:border-white/[0.08] shadow-lg"
+                className="fixed top-[56px] left-0 right-0 z-30 md:hidden bg-white dark:bg-[#17181A] border-b border-gray-200 dark:border-white/[0.08] shadow-lg"
                 style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
               >
                 <div className="px-5 py-4 space-y-1">
@@ -546,7 +546,7 @@ const Navbar = () => {
 
           <nav
             className="md:hidden fixed bottom-0 left-0 right-0 z-40
-        bg-[#FCFAF5] dark:bg-[#111111] border-t border-gray-200 dark:border-white/[0.07]"
+        bg-[#FCFAF5] dark:bg-[#121314] border-t border-gray-200 dark:border-white/[0.07]"
             aria-label="Bottom navigation"
           >
             <div

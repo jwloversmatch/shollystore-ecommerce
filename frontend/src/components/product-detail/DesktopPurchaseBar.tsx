@@ -53,7 +53,7 @@ const DesktopPurchaseBar = ({
         className={`w-12 h-12 rounded-xl flex items-center justify-center border transition-colors ${
           isWishlisted
             ? "text-red-500 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20"
-            : "text-gray-400 bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.09] hover:text-red-400"
+            : "text-gray-400 bg-gray-100 dark:bg-[#1F2123] border-gray-200 dark:border-white/[0.09] hover:text-red-400"
         }`}
         aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
       >

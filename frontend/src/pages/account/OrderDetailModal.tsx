@@ -47,12 +47,12 @@ const OrderDetailModal = ({ order, onClose }: OrderDetailModalProps) => {
       >
         <div
           ref={dialogRef}
-          className="rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto border bg-white dark:bg-[#141414] border-gray-200 dark:border-white/10"
+          className="rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto border bg-white dark:bg-[#17181A] border-gray-200 dark:border-white/10"
           style={{
             boxShadow: "0 24px 80px rgba(0,0,0,0.7)",
           }}
         >
-          <div className="sticky top-0 backdrop-blur-md p-4 sm:p-6 border-b flex justify-between items-center z-10 bg-[#FCFAF5]/90 dark:bg-[#141414]/90 border-gray-200 dark:border-white/10">
+          <div className="sticky top-0 backdrop-blur-md p-4 sm:p-6 border-b flex justify-between items-center z-10 bg-[#FCFAF5]/90 dark:bg-[#17181A]/90 border-gray-200 dark:border-white/10">
             <h2 id="order-detail-modal-title" className="text-xl font-bold text-gray-900 dark:text-white">
               Order #{order._id.slice(-8).toUpperCase()}
             </h2>

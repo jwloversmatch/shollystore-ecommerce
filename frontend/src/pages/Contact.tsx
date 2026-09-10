@@ -103,7 +103,7 @@ const Contact = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] pb-16 focus:outline-none"
+        className="min-h-screen bg-[#FCFAF5] dark:bg-[#0F1011] pb-16 focus:outline-none"
         style={{ paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))' }}
       >
         {/* ─── Hero ─── */}
@@ -140,7 +140,7 @@ const Contact = () => {
               className="space-y-6"
             >
               {/* Contact cards */}
-              <div className="bg-white dark:bg-[#141414] rounded-2xl p-6 border border-gray-200 dark:border-white/[0.06] shadow-sm">
+              <div className="bg-white dark:bg-[#17181A] rounded-2xl p-6 border border-gray-200 dark:border-white/[0.08] shadow-sm">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <MessageSquare className="w-5 h-5 text-[#e8622a]" />
                   Contact Information
@@ -180,7 +180,7 @@ const Contact = () => {
               </div>
 
               {/* Social links */}
-              <div className="bg-white dark:bg-[#141414] rounded-2xl p-6 border border-gray-200 dark:border-white/[0.06] shadow-sm">
+              <div className="bg-white dark:bg-[#17181A] rounded-2xl p-6 border border-gray-200 dark:border-white/[0.08] shadow-sm">
                 <h3 className="font-bold text-gray-900 dark:text-white mb-4">
                   Follow Us
                 </h3>
@@ -203,7 +203,7 @@ const Contact = () => {
               </div>
 
               {/* FAQ quick links */}
-              <div className="bg-white dark:bg-[#141414] rounded-2xl p-6 border border-gray-200 dark:border-white/[0.06] shadow-sm">
+              <div className="bg-white dark:bg-[#17181A] rounded-2xl p-6 border border-gray-200 dark:border-white/[0.08] shadow-sm">
                 <h3 className="font-bold text-gray-900 dark:text-white mb-2">
                   Quick Answers
                 </h3>
@@ -219,7 +219,7 @@ const Contact = () => {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="bg-white dark:bg-[#141414] rounded-2xl p-8 border border-gray-200 dark:border-white/[0.06] shadow-sm"
+              className="bg-white dark:bg-[#17181A] rounded-2xl p-8 border border-gray-200 dark:border-white/[0.08] shadow-sm"
             >
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                 Send a Message
@@ -241,7 +241,7 @@ const Contact = () => {
                     onChange={handleChange}
                     required
                     disabled={isSending}
-                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8622a] disabled:opacity-60"
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1F2123] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8622a] disabled:opacity-60"
                     placeholder="John Doe"
                   />
                 </div>
@@ -261,7 +261,7 @@ const Contact = () => {
                     onChange={handleChange}
                     required
                     disabled={isSending}
-                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8622a] disabled:opacity-60"
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1F2123] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8622a] disabled:opacity-60"
                     placeholder="you@example.com"
                   />
                 </div>
@@ -280,7 +280,7 @@ const Contact = () => {
                     value={formData.subject}
                     onChange={handleChange}
                     disabled={isSending}
-                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8622a] disabled:opacity-60"
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1F2123] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8622a] disabled:opacity-60"
                     placeholder="Order inquiry, feedback, etc."
                   />
                 </div>
@@ -300,7 +300,7 @@ const Contact = () => {
                     required
                     rows={5}
                     disabled={isSending}
-                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8622a] disabled:opacity-60 resize-none"
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#1F2123] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#e8622a] disabled:opacity-60 resize-none"
                     placeholder="Tell us how we can help..."
                   />
                 </div>
@@ -366,7 +366,7 @@ const Contact = () => {
               {faqs.map((faq, idx) => (
                 <div
                   key={idx}
-                  className="bg-white dark:bg-[#141414] rounded-2xl border border-gray-200 dark:border-white/[0.06] shadow-sm overflow-hidden"
+                  className="bg-white dark:bg-[#17181A] rounded-2xl border border-gray-200 dark:border-white/[0.08] shadow-sm overflow-hidden"
                 >
                   <button
                     onClick={() => setOpenFaq(openFaq === idx ? null : idx)}

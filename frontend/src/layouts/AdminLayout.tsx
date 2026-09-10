@@ -47,7 +47,7 @@ const AdminLayout = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+    <div className="min-h-screen bg-[#FCFAF5] dark:bg-[#0F1011]">
       <AdminSidebar
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((c) => !c)}

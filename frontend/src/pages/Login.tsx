@@ -41,7 +41,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const buildInputCls = (hasError: boolean, extraPr = "pr-4") =>
   [
     "w-full pl-11 py-3.5 rounded-xl text-sm",
-    "bg-gray-100 dark:bg-[#1c1c1c]",
+    "bg-gray-100 dark:bg-[#1F2123]",
     "text-gray-900 dark:text-white",
     "placeholder-gray-500 dark:placeholder-gray-600",
     "outline-none transition-all duration-200",
@@ -94,7 +94,7 @@ const Login = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen flex items-center justify-center px-4 pb-6 md:pb-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none pt-[calc(56px+env(safe-area-inset-top,0px))] md:pt-[calc(88px+env(safe-area-inset-top,0px))] lg:pt-[calc(96px+env(safe-area-inset-top,0px))]"
+      className="min-h-screen flex items-center justify-center px-4 pb-6 md:pb-10 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0F1011] focus:outline-none pt-[calc(56px+env(safe-area-inset-top,0px))] md:pt-[calc(88px+env(safe-area-inset-top,0px))] lg:pt-[calc(96px+env(safe-area-inset-top,0px))]"
     >
       <SEO
         title="Sign In"
@@ -136,7 +136,7 @@ const Login = () => {
       />
       {/* Main card */}
       <div
-        className="relative z-10 w-full max-w-5xl rounded-3xl overflow-hidden grid md:grid-cols-[1fr_1.1fr] bg-[#FCFAF5] dark:bg-[#111111] border border-gray-200 dark:border-white/[0.07] shadow-lg dark:shadow-[0_40px_100px_rgba(0,0,0,0.7)] md:min-h-[620px]"
+        className="relative z-10 w-full max-w-5xl rounded-3xl overflow-hidden grid md:grid-cols-[1fr_1.1fr] bg-[#FCFAF5] dark:bg-[#121314] border border-gray-200 dark:border-white/[0.07] shadow-lg dark:shadow-[0_40px_100px_rgba(0,0,0,0.7)] md:min-h-[620px]"
       >
         {/* Left panel – decorative, hidden from screen readers */}
         <div
@@ -277,7 +277,7 @@ const Login = () => {
         </div>
 
         {/* Right panel – form */}
-        <div className="flex flex-col justify-center p-6 sm:p-8 md:p-10 lg:p-12 bg-[#FCFAF5] dark:bg-[#141414]">
+        <div className="flex flex-col justify-center p-6 sm:p-8 md:p-10 lg:p-12 bg-[#FCFAF5] dark:bg-[#17181A]">
           {/* Mobile logo */}
           <div className="md:hidden flex items-center gap-2 mb-8">
             <div
@@ -500,7 +500,7 @@ const Login = () => {
           <div className="mt-4 flex gap-3">
             <Link
               to="/"
-              className="flex-1 py-3 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.08] hover:border-gray-300 dark:hover:border-white/[0.12] hover:text-gray-900 dark:hover:text-white transition-all text-center"
+              className="flex-1 py-3 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-[#1F2123] border border-gray-200 dark:border-white/[0.08] hover:border-gray-300 dark:hover:border-white/[0.12] hover:text-gray-900 dark:hover:text-white transition-all text-center"
             >
               Guest Browsing
             </Link>

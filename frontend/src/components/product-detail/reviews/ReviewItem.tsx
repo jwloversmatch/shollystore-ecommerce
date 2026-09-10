@@ -66,7 +66,7 @@ const ReviewItem = ({
   maxReviewImages,
 }: ReviewItemProps) => {
   return (
-    <div className="border-b border-gray-200 dark:border-white/[0.06] pb-4">
+    <div className="border-b border-gray-200 dark:border-white/[0.08] pb-4">
       {isEditing ? (
         <ReviewForm
           formClassName="space-y-4"

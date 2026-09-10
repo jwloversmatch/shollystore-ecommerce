@@ -13,7 +13,7 @@ const AccountHeader = ({ user }: AccountHeaderProps) => (
     initial={{ opacity: 0, x: -30 }}
     animate={{ opacity: 1, x: 0 }}
     transition={{ duration: 0.5 }}
-    className="flex items-center gap-6 rounded-2xl p-6 shadow-sm border bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.07]"
+    className="flex items-center gap-6 rounded-2xl p-6 shadow-sm border bg-white dark:bg-[#17181A] border-gray-200 dark:border-white/[0.07]"
     style={{
       boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
     }}

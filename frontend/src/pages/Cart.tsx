@@ -44,17 +44,17 @@ interface PersistState {
 const DarkCartSkeleton = () => (
   <div
     className="animate-pulse flex items-center gap-4 p-5 rounded-2xl
-    bg-gray-100 dark:bg-[#141414] border border-gray-200 dark:border-white/[0.06]"
+    bg-gray-100 dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.08]"
     role="status"
     aria-label="Loading cart item"
   >
     <span className="sr-only">Loading...</span>
-    <div className="w-20 h-20 rounded-xl shrink-0 bg-gray-200 dark:bg-[#1c1c1c]" />
+    <div className="w-20 h-20 rounded-xl shrink-0 bg-gray-200 dark:bg-[#1F2123]" />
     <div className="flex-1 space-y-3">
-      <div className="h-4 w-2/3 rounded-lg bg-gray-200 dark:bg-[#1c1c1c]" />
-      <div className="h-3 w-1/3 rounded-lg bg-gray-200 dark:bg-[#1c1c1c]" />
+      <div className="h-4 w-2/3 rounded-lg bg-gray-200 dark:bg-[#1F2123]" />
+      <div className="h-3 w-1/3 rounded-lg bg-gray-200 dark:bg-[#1F2123]" />
     </div>
-    <div className="h-9 w-24 rounded-xl shrink-0 bg-gray-200 dark:bg-[#1c1c1c]" />
+    <div className="h-9 w-24 rounded-xl shrink-0 bg-gray-200 dark:bg-[#1F2123]" />
   </div>
 );
 
@@ -100,7 +100,7 @@ const EmptyCart = () => {
       id="main-content"
       tabIndex={-1}
       className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden
-      bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+      bg-[#FCFAF5] dark:bg-[#0F1011] focus:outline-none"
     >
       <SEO
         title={t("cart.seoTitle")}
@@ -112,7 +112,7 @@ const EmptyCart = () => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.55, ease: "easeOut" }}
         className="relative z-10 w-full max-w-sm text-center rounded-3xl p-10
-          bg-[#FCFAF5] dark:bg-[#141414]
+          bg-[#FCFAF5] dark:bg-[#17181A]
           border border-gray-200 dark:border-white/[0.07]
           shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.6)]"
       >
@@ -201,7 +201,7 @@ const CartHeader = ({
           onClick={() => navigate("/shop")}
           className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl shrink-0 transition-colors
             text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white
-            bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]"
+            bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.07]"
           aria-label={t("cart.continueShopping")}
         >
           <ArrowLeft className="w-4 h-4" aria-hidden="true" />
@@ -262,7 +262,7 @@ const CartItem = ({ item }: { item: CartItemType }) => {
       exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.18 } }}
       transition={{ type: "spring", stiffness: 300, damping: 26 }}
       className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 md:p-5 rounded-2xl transition-all
-        bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]
+        bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.07]
         hover:border-gray-300 dark:hover:border-white/[0.12]"
       aria-label={`${item.name}, ${t("cart.quantity")} ${item.qty}, ${t("cart.price")} ₦${(item.price * item.qty).toLocaleString()}`}
       whileHover={{ borderColor: "rgba(255,255,255,0.12)" }}
@@ -285,7 +285,7 @@ const CartItem = ({ item }: { item: CartItemType }) => {
         <div className="flex items-center justify-between mt-3 gap-3 flex-wrap">
           <div
             className="flex items-center rounded-xl overflow-hidden
-            bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.08]"
+            bg-gray-100 dark:bg-[#1F2123] border border-gray-200 dark:border-white/[0.08]"
             aria-label={`${t("cart.quantitySelector")} ${item.name}`}
           >
             <motion.button
@@ -381,7 +381,7 @@ const OrderSummary = ({
     >
       <div
         className="relative rounded-2xl p-6 md:p-7 lg:sticky lg:top-24
-        bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]
+        bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.07]
         shadow-lg dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)]"
       >
         <div
@@ -423,7 +423,7 @@ const OrderSummary = ({
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                   disabled={!!appliedCoupon}
                   placeholder={t("cart.enterCode")}
-                  className="w-full px-4 py-3 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] outline-none placeholder-gray-500 dark:placeholder-gray-600 text-gray-900 dark:text-white focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-mono tracking-widest"
+                  className="w-full px-4 py-3 rounded-xl text-sm bg-gray-100 dark:bg-[#1F2123] border border-gray-300 dark:border-white/[0.08] outline-none placeholder-gray-500 dark:placeholder-gray-600 text-gray-900 dark:text-white focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-mono tracking-widest"
                 />
               </div>
               {!appliedCoupon ? (
@@ -563,7 +563,7 @@ const OrderSummary = ({
             <div
               key={i}
               className="w-9 h-6 rounded-md flex items-center justify-center text-sm
-              bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.06]"
+              bg-gray-100 dark:bg-[#1F2123] border border-gray-200 dark:border-white/[0.08]"
               aria-hidden="true"
             >
               {icon}
@@ -624,7 +624,7 @@ const ClearCartModal = ({
             <div
               ref={dialogRef}
               className="relative w-full max-w-sm rounded-2xl p-7
-              bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.08]
+              bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.08]
               shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.6)]"
               onClick={(e) => e.stopPropagation()}
             >
@@ -660,7 +660,7 @@ const ClearCartModal = ({
                   onClick={onClose}
                   className="flex-1 py-3.5 rounded-xl text-sm font-bold
                     text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors
-                    bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/[0.08]"
+                    bg-gray-100 dark:bg-[#1F2123] border border-gray-200 dark:border-white/[0.08]"
                 >
                   {t("cart.cancel")}
                 </motion.button>
@@ -744,7 +744,7 @@ const Cart = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="min-h-screen pt-20 pb-24 px-4 md:px-8 bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+        className="min-h-screen pt-20 pb-24 px-4 md:px-8 bg-[#FCFAF5] dark:bg-[#0F1011] focus:outline-none"
       >
         <SEO
           title={t("cart.seoTitle")}
@@ -766,7 +766,7 @@ const Cart = () => {
       id="main-content"
       tabIndex={-1}
       className="min-h-screen pt-20 md:pt-24 pb-28 md:pb-16 px-4 md:px-6 relative overflow-x-hidden
-      bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+      bg-[#FCFAF5] dark:bg-[#0F1011] focus:outline-none"
     >
       <SEO
         title={t("cart.seoTitle")}

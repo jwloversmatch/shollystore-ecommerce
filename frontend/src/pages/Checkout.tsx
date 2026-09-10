@@ -75,7 +75,7 @@ type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
 const buildInputCls = (hasError: boolean) =>
   [
-    "w-full pl-11 pr-4 py-3.5 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-600 outline-none transition-all duration-200",
+    "w-full pl-11 pr-4 py-3.5 rounded-xl text-sm bg-gray-100 dark:bg-[#1F2123] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-600 outline-none transition-all duration-200",
     hasError
       ? "border border-red-500/50 ring-2 ring-red-500/10"
       : "border border-gray-300 dark:border-white/[0.08] focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15",
@@ -286,7 +286,7 @@ const Checkout = () => {
 
   if (!isRehydrated) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+      <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0F1011]">
         <SEO title="Checkout" description="Complete your order securely." />
         <p className="text-gray-500 dark:text-gray-400">Loading...</p>
       </main>
@@ -317,14 +317,14 @@ const Checkout = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+        className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden bg-[#FCFAF5] dark:bg-[#0F1011] focus:outline-none"
       >
         <SEO
           title="Order Placed"
           description="Your order has been placed successfully."
         />
         <AmbientBg />
-        <div className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 bg-[#FCFAF5] dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07] shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.65)]">
+        <div className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 bg-[#FCFAF5] dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.07] shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.65)]">
           <div className="flex justify-center mb-6">
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center"
@@ -351,7 +351,7 @@ const Checkout = () => {
           </h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm text-center mb-6">
             Reference:{" "}
-            <span className="font-bold text-gray-900 dark:text-white font-mono text-xs px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-[#1c1c1c]">
+            <span className="font-bold text-gray-900 dark:text-white font-mono text-xs px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-[#1F2123]">
               #{trackingNumber}
             </span>
           </p>
@@ -463,7 +463,7 @@ const Checkout = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+        className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0F1011] focus:outline-none"
       >
         <SEO title="Checkout" description="Complete your order securely." />
         <div className="text-center p-8">
@@ -487,7 +487,7 @@ const Checkout = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen px-4 py-8 pb-28 md:pb-10 md:py-10 relative overflow-x-hidden bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none"
+      className="min-h-screen px-4 py-8 pb-28 md:pb-10 md:py-10 relative overflow-x-hidden bg-[#FCFAF5] dark:bg-[#0F1011] focus:outline-none"
     >
       <SEO
         title="Checkout"
@@ -521,7 +521,7 @@ const Checkout = () => {
           </div>
           <button
             onClick={() => navigate("/cart")}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.08]"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.08]"
             aria-label="Back to cart"
           >
             <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Back to Cart
@@ -536,7 +536,7 @@ const Checkout = () => {
               aria-label="Checkout form"
             >
               {!user && isRehydrated && (
-                <fieldset className="rounded-2xl p-5 md:p-6 space-y-4 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]">
+                <fieldset className="rounded-2xl p-5 md:p-6 space-y-4 bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.07]">
                   <legend className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-4">
                     Contact Information
                   </legend>
@@ -558,7 +558,7 @@ const Checkout = () => {
                         value={guestEmail}
                         onChange={(e) => setGuestEmail(e.target.value)}
                         required
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 outline-none"
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm bg-gray-100 dark:bg-[#1F2123] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 outline-none"
                         placeholder="you@example.com"
                       />
                     </div>
@@ -580,7 +580,7 @@ const Checkout = () => {
                         id="guest-name"
                         value={guestName}
                         onChange={(e) => setGuestName(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 outline-none"
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm bg-gray-100 dark:bg-[#1F2123] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 outline-none"
                         placeholder="John Doe"
                       />
                     </div>
@@ -602,7 +602,7 @@ const Checkout = () => {
                         id="guest-phone"
                         value={guestPhone}
                         onChange={(e) => setGuestPhone(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm bg-gray-100 dark:bg-[#1c1c1c] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 outline-none"
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm bg-gray-100 dark:bg-[#1F2123] border border-gray-300 dark:border-white/[0.08] text-gray-900 dark:text-white placeholder-gray-500 focus:border-[#e8622a]/70 focus:ring-2 focus:ring-[#e8622a]/15 outline-none"
                         placeholder="+2348012345678"
                       />
                     </div>
@@ -611,7 +611,7 @@ const Checkout = () => {
               )}
 
               {savedAddresses.length > 0 && (
-                <fieldset className="rounded-2xl p-5 md:p-6 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]">
+                <fieldset className="rounded-2xl p-5 md:p-6 bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.07]">
                   <legend className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-4">
                     Delivery Address
                   </legend>
@@ -622,7 +622,7 @@ const Checkout = () => {
                       return (
                         <label
                           key={addr._id}
-                          className={`flex items-center gap-3.5 p-3.5 rounded-xl border cursor-pointer transition-all ${FOCUS_RING} ${active ? "bg-[#e8622a]/10 border-[#e8622a] shadow-[0_0_0_1px_#e8622a]" : "bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.07]"}`}
+                          className={`flex items-center gap-3.5 p-3.5 rounded-xl border cursor-pointer transition-all ${FOCUS_RING} ${active ? "bg-[#e8622a]/10 border-[#e8622a] shadow-[0_0_0_1px_#e8622a]" : "bg-gray-100 dark:bg-[#1F2123] border-gray-200 dark:border-white/[0.07]"}`}
                         >
                           <input
                             type="radio"
@@ -678,7 +678,7 @@ const Checkout = () => {
                       );
                     })}
                     <label
-                      className={`flex items-center gap-3.5 p-3.5 rounded-xl border cursor-pointer transition-all ${FOCUS_RING} ${isNewAddress ? "bg-[#e8622a]/10 border-[#e8622a] shadow-[0_0_0_1px_#e8622a]" : "bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.07]"}`}
+                      className={`flex items-center gap-3.5 p-3.5 rounded-xl border cursor-pointer transition-all ${FOCUS_RING} ${isNewAddress ? "bg-[#e8622a]/10 border-[#e8622a] shadow-[0_0_0_1px_#e8622a]" : "bg-gray-100 dark:bg-[#1F2123] border-gray-200 dark:border-white/[0.07]"}`}
                     >
                       <input
                         type="radio"
@@ -709,7 +709,7 @@ const Checkout = () => {
               )}
               <AnimatePresence>
                 {isNewAddress && (
-                  <div className="rounded-2xl p-5 md:p-6 space-y-4 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]">
+                  <div className="rounded-2xl p-5 md:p-6 space-y-4 bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.07]">
                     <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
                       New Address
                     </p>
@@ -790,7 +790,7 @@ const Checkout = () => {
                   </div>
                 )}
               </AnimatePresence>
-              <fieldset className="rounded-2xl p-5 md:p-6 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]">
+              <fieldset className="rounded-2xl p-5 md:p-6 bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.07]">
                 <legend className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 mb-4">
                   Payment Method
                 </legend>
@@ -800,7 +800,7 @@ const Checkout = () => {
                     return (
                       <label
                         key={pm.id}
-                        className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${FOCUS_RING} ${active ? `bg-${pm.color}/10 border-${pm.color} shadow-[0_0_0_1px_${pm.color}]` : "bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/[0.07]"}`}
+                        className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${FOCUS_RING} ${active ? `bg-${pm.color}/10 border-${pm.color} shadow-[0_0_0_1px_${pm.color}]` : "bg-gray-100 dark:bg-[#1F2123] border-gray-200 dark:border-white/[0.07]"}`}
                       >
                         <input
                           type="radio"
@@ -883,7 +883,7 @@ const Checkout = () => {
             </form>
           </div>
           <aside className="lg:sticky lg:top-24" aria-label="Order summary">
-            <div className="relative rounded-2xl p-5 md:p-6 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07] shadow-lg dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
+            <div className="relative rounded-2xl p-5 md:p-6 bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.07] shadow-lg dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
               <div
                 className="absolute top-0 inset-x-0 h-px rounded-t-2xl"
                 style={{

@@ -25,7 +25,7 @@ const ProductImageGallery = ({
     >
       <div
         className="relative rounded-2xl md:rounded-3xl overflow-hidden
-        bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/[0.07]"
+        bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/[0.07]"
       >
         <div
           className="flex items-center justify-center p-4 md:p-8"

@@ -194,7 +194,7 @@ const TrackOrder = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen px-4 py-8 bg-[#FCFAF5] dark:bg-[#0A0A0B] focus:outline-none pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(96px+env(safe-area-inset-top,0px))]"
+      className="min-h-screen px-4 py-8 bg-[#FCFAF5] dark:bg-[#0F1011] focus:outline-none pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(96px+env(safe-area-inset-top,0px))]"
     >
       <SEO title="Track Order" description="Check the status of your order." />
       <div className="max-w-2xl mx-auto">
@@ -236,7 +236,7 @@ const TrackOrder = () => {
                     value={trackingCode}
                     onChange={(e) => setTrackingCode(e.target.value)}
                     required
-                    className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white outline-none focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12"
+                    className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white outline-none focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12"
                     placeholder="e.g., SHO-2026-AB12CD"
                   />
                 </div>
@@ -258,7 +258,7 @@ const TrackOrder = () => {
                         if (emailError) setEmailError("");
                       }}
                       required
-                      className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white outline-none focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12"
+                      className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white outline-none focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12"
                       placeholder="you@example.com"
                     />
                     {emailError && (
@@ -318,7 +318,7 @@ const TrackOrder = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="mt-6 rounded-2xl p-6 bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 shadow-lg"
+              className="mt-6 rounded-2xl p-6 bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/10 shadow-lg"
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-black text-gray-900 dark:text-white">

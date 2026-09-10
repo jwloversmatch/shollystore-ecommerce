@@ -106,7 +106,7 @@ const PushNotificationManager = () => {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="rounded-2xl border p-6 md:p-7 bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.07]"
+      className="rounded-2xl border p-6 md:p-7 bg-white dark:bg-[#17181A] border-gray-200 dark:border-white/[0.07]"
       style={{
         boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
       }}

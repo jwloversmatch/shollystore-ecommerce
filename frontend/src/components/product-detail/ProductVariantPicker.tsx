@@ -59,7 +59,7 @@ const ProductVariantPicker = ({
                 className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${
                   selectedSize === size
                     ? "bg-[#e8622a] text-white border-[#e8622a]"
-                    : "bg-gray-100 dark:bg-[#1c1c1c] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/[0.08]"
+                    : "bg-gray-100 dark:bg-[#1F2123] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/[0.08]"
                 }`}
               >
                 {size}

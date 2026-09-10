@@ -13,7 +13,7 @@ const HomeSpecialOffer = ({
   specialOfferText,
   onShopNow,
 }: HomeSpecialOfferProps) => (
-  <section className="bg-[#FCFAF5] dark:bg-[#0A0A0B] py-14 md:py-20 px-4 md:px-6" aria-labelledby="special-offer-heading">
+  <section className="bg-[#FCFAF5] dark:bg-[#0F1011] py-14 md:py-20 px-4 md:px-6" aria-labelledby="special-offer-heading">
     <div className="max-w-7xl mx-auto">
       <motion.div
         initial={{ opacity: 0, y: 40 }}

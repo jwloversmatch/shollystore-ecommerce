@@ -88,7 +88,7 @@ const AccountOrders = ({ orders, loading, error, onViewOrder }: AccountOrdersPro
 
   if (orders.length === 0) {
     return (
-      <div className="rounded-2xl shadow-sm border p-10 text-center bg-white dark:bg-[#141414] border-gray-200 dark:border-white/[0.07]">
+      <div className="rounded-2xl shadow-sm border p-10 text-center bg-white dark:bg-[#17181A] border-gray-200 dark:border-white/[0.07]">
         <ShoppingBag className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           No orders yet

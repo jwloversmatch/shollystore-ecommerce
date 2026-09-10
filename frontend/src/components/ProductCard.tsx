@@ -172,8 +172,8 @@ const ProductCard = ({
     >
       <article
         className="group relative flex flex-col h-full rounded-2xl overflow-hidden border
-          bg-white dark:bg-[#141414]
-          border-gray-300 dark:border-white/[0.06]
+          bg-white dark:bg-[#17181A]
+          border-gray-300 dark:border-white/[0.08]
           shadow-md dark:shadow-[0_8px_24px_rgba(0,0,0,0.3)]
           transition-all duration-300 ease-out
           motion-safe:hover:-translate-y-1.5 motion-safe:focus-within:-translate-y-1.5

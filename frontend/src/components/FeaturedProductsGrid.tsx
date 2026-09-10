@@ -20,7 +20,7 @@ const FeaturedProductsGrid = () => {
           ? Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
-                className="h-64 rounded-2xl animate-pulse bg-gray-100 dark:bg-[#141414]"
+                className="h-64 rounded-2xl animate-pulse bg-gray-100 dark:bg-[#17181A]"
               />
             ))
           : products.map((product, i) => (

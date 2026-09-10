@@ -58,7 +58,7 @@ const ACCENT = "#e8622a";
 
 const LoadingFallback = () => (
   <div
-    className="min-h-screen flex justify-center items-center bg-gray-50 dark:bg-[#0A0A0B]"
+    className="min-h-screen flex justify-center items-center bg-gray-50 dark:bg-[#0F1011]"
     role="status"
     aria-label="Loading"
   >

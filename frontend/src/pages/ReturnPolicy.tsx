@@ -13,7 +13,7 @@ const ReturnPolicy = () => {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0A0A0B]">
+      <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0F1011]">
         <Loader2 className="w-10 h-10 animate-spin text-[#e8622a]" />
       </main>
     );
@@ -21,7 +21,7 @@ const ReturnPolicy = () => {
 
   if (isError || !page) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0A0A0B] px-4">
+      <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] dark:bg-[#0F1011] px-4">
         <div className="text-red-500 text-center">
           <AlertCircle className="w-10 h-10 mx-auto mb-4" />
           <p className="text-lg font-semibold">
@@ -47,7 +47,7 @@ const ReturnPolicy = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] pb-16"
+        className="min-h-screen bg-[#FCFAF5] dark:bg-[#0F1011] pb-16"
         style={{ paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))' }}
       >
         <div className="max-w-4xl mx-auto px-4 md:px-6 py-12">

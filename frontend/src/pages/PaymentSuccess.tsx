@@ -46,7 +46,7 @@ const PaymentSuccess = () => {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4 py-16 relative overflow-hidden
-        bg-[#FCFAF5] dark:bg-[#0A0A0B]"
+        bg-[#FCFAF5] dark:bg-[#0F1011]"
     >
       <SEO title="Payment Status" description="Verify your payment status." />
 
@@ -92,7 +92,7 @@ const PaymentSuccess = () => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.55, ease: 'easeOut' }}
         className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10
-          bg-[#FCFAF5] dark:bg-[#141414]
+          bg-[#FCFAF5] dark:bg-[#17181A]
           border border-gray-200 dark:border-white/[0.07]
           shadow-lg dark:shadow-[0_40px_90px_rgba(0,0,0,0.65)]"
       >

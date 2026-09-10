@@ -154,16 +154,16 @@ const UserManagementPage = () => {
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="h-8 w-48 rounded-lg bg-gray-200 dark:bg-[#1c1c1c] animate-pulse" />
+        <div className="h-8 w-48 rounded-lg bg-gray-200 dark:bg-[#1F2123] animate-pulse" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="h-24 rounded-2xl bg-gray-200 dark:bg-[#1c1c1c] animate-pulse"
+              className="h-24 rounded-2xl bg-gray-200 dark:bg-[#1F2123] animate-pulse"
             />
           ))}
         </div>
-        <div className="h-96 rounded-2xl bg-gray-200 dark:bg-[#1c1c1c] animate-pulse" />
+        <div className="h-96 rounded-2xl bg-gray-200 dark:bg-[#1F2123] animate-pulse" />
       </div>
     );
   }
@@ -585,7 +585,7 @@ const UserManagementPage = () => {
       </div>
 
       {isUpdating && (
-        <div className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 shadow-lg">
+        <div className="fixed bottom-6 right-6 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/10 shadow-lg">
           <Loader2 className="w-4 h-4 animate-spin text-[#e8622a]" />
           <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
             Updating role…

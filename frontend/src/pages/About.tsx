@@ -76,7 +76,7 @@ const About = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B] pb-16 focus:outline-none"
+        className="min-h-screen bg-[#FCFAF5] dark:bg-[#0F1011] pb-16 focus:outline-none"
         style={{ paddingTop: 'calc(56px + env(safe-area-inset-top, 0px))' }}
       >
         {/* ─── Hero Section ─── */}
@@ -142,7 +142,7 @@ const About = () => {
                 <motion.div
                   key={idx}
                   variants={itemVariants}
-                  className="bg-white dark:bg-[#141414] rounded-2xl p-6 text-center border border-gray-200 dark:border-white/[0.06] shadow-sm"
+                  className="bg-white dark:bg-[#17181A] rounded-2xl p-6 text-center border border-gray-200 dark:border-white/[0.08] shadow-sm"
                 >
                   <stat.icon className="w-8 h-8 text-[#e8622a] mx-auto mb-3" />
                   <div className="text-3xl font-black text-gray-900 dark:text-white">
@@ -198,7 +198,7 @@ const About = () => {
         </section>
 
         {/* ─── Core Values ─── */}
-        <section className="py-16 bg-gray-50 dark:bg-[#111]">
+        <section className="py-16 bg-gray-50 dark:bg-[#121314]">
           <div className="max-w-7xl mx-auto px-4 md:px-6">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
@@ -219,7 +219,7 @@ const About = () => {
                 <motion.div
                   key={idx}
                   variants={itemVariants}
-                  className="bg-white dark:bg-[#1c1c1c] rounded-2xl p-8 border border-gray-200 dark:border-white/[0.06] shadow-sm"
+                  className="bg-white dark:bg-[#1F2123] rounded-2xl p-8 border border-gray-200 dark:border-white/[0.08] shadow-sm"
                 >
                   <value.icon className="w-10 h-10 text-[#e8622a] mb-4" />
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">

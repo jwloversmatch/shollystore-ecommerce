@@ -36,7 +36,7 @@ const PWAInstallPrompt = () => {
         role="dialog"
         aria-label="Install instructions"
       >
-        <div className="flex items-start gap-3 p-4 rounded-2xl bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 shadow-xl">
+        <div className="flex items-start gap-3 p-4 rounded-2xl bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/10 shadow-xl">
           <Share className="w-5 h-5 text-[#e8622a] shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="text-sm font-bold text-gray-900 dark:text-white mb-1">

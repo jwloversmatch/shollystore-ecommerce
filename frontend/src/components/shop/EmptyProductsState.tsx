@@ -49,7 +49,7 @@ const EmptyProductsState = ({
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="h-48 rounded-2xl bg-gray-200 dark:bg-[#1c1c1c] animate-pulse"
+            className="h-48 rounded-2xl bg-gray-200 dark:bg-[#1F2123] animate-pulse"
           />
         ))}
       </div>

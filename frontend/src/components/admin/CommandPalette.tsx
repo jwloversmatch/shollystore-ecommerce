@@ -161,11 +161,11 @@ const CommandPalette = ({ isOpen, onClose }: CommandPaletteProps) => {
             <div
               ref={panelRef}
               className="w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl
-                bg-white dark:bg-[#141414]
+                bg-white dark:bg-[#17181A]
                 border border-gray-200 dark:border-white/[0.08]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center gap-3 px-4 border-b border-gray-100 dark:border-white/[0.06]">
+              <div className="flex items-center gap-3 px-4 border-b border-gray-100 dark:border-white/[0.08]">
                 <Search className="w-4 h-4 text-gray-400 shrink-0" aria-hidden="true" />
                 <input
                   ref={inputRef}
@@ -233,7 +233,7 @@ const CommandPalette = ({ isOpen, onClose }: CommandPaletteProps) => {
               </div>
 
               <div className="flex items-center justify-between px-4 py-2.5
-                border-t border-gray-100 dark:border-white/[0.06]
+                border-t border-gray-100 dark:border-white/[0.08]
                 text-[10px] font-bold text-gray-400">
                 <div className="flex items-center gap-3">
                   <span className="flex items-center gap-1">

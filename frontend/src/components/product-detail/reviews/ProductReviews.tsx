@@ -201,7 +201,7 @@ const ProductReviews = ({
 
   return (
     <section aria-label="Customer reviews" className="mt-10">
-      <div className="border-t border-gray-200 dark:border-white/[0.06] pt-8">
+      <div className="border-t border-gray-200 dark:border-white/[0.08] pt-8">
         <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">
           Customer Reviews
         </h2>

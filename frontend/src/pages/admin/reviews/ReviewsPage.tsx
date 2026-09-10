@@ -58,7 +58,7 @@ const ReviewsPage = () => {
             setSearch(e.target.value);
             setPage(1);
           }}
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-white"
+          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-[#1F2123] text-gray-900 dark:text-white"
         />
       </div>
       {isLoading ? (
