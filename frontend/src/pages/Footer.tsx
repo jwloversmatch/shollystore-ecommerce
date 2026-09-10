@@ -123,9 +123,9 @@ const Footer = () => {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: "-20px" }}
-      className="relative mt-12 border-t border-gray-200 dark:border-white/10 shadow-2xl overflow-hidden
+      className="relative mt-8 border-t border-gray-200 dark:border-white/10 shadow-2xl overflow-hidden
         bg-white dark:bg-gray-900/90 backdrop-blur-xl
-        pb-[calc(80px_+_env(safe-area-inset-bottom,0px))] md:pb-6"
+        pb-[calc(64px_+_env(safe-area-inset-bottom,0px))] md:pb-0"
       aria-label="Site footer"
     >
       {/* Subtle background glow – hidden from screen readers */}
@@ -145,8 +145,8 @@ const Footer = () => {
         />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+      <div className="max-w-7xl mx-auto px-6 pt-8 pb-3 md:pt-10 md:pb-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Column */}
           <motion.div variants={columnVariants} className="space-y-4">
             <Link
@@ -173,7 +173,7 @@ const Footer = () => {
 
           {/* Quick Links */}
           <motion.div variants={columnVariants}>
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
               {t("footer.quickLinks.title")}
             </h4>
             <ul className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
@@ -197,10 +197,10 @@ const Footer = () => {
 
           {/* Contact Info */}
           <motion.div variants={columnVariants}>
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
               {t("footer.contactUs")}
             </h4>
-            <ul className="space-y-3 text-sm text-gray-500 dark:text-gray-400">
+            <ul className="space-y-2.5 text-sm text-gray-500 dark:text-gray-400">
               <li className="flex items-center gap-3">
                 <MapPin
                   size={18}
@@ -238,7 +238,7 @@ const Footer = () => {
 
           {/* Newsletter */}
           <motion.div variants={columnVariants} className="md:col-span-2">
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
               {t("footer.newsletter.title")}
             </h4>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
@@ -324,7 +324,7 @@ const Footer = () => {
         {/* Payment Methods */}
         <motion.div
           variants={columnVariants}
-          className="mt-10 pt-6 border-t border-gray-200 dark:border-white/10"
+          className="mt-7 pt-5 border-t border-gray-200 dark:border-white/10"
         >
           <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
             {t("footer.payment.title")}
@@ -352,7 +352,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <motion.div
           variants={columnVariants}
-          className="mt-8 pt-6 border-t border-gray-200 dark:border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500 dark:text-gray-400"
+          className="mt-6 pt-4 border-t border-gray-200 dark:border-white/10 flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-gray-500 dark:text-gray-400"
         >
           <span>
             &copy; {currentYear} {BRAND_NAME}. {t("footer.rights")}
