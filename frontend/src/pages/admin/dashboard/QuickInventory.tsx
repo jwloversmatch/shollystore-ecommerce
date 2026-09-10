@@ -1,6 +1,7 @@
 import { Package, ArrowRight, Minus, Plus, Trash2 } from "lucide-react";
 import { getCloudinaryUrl } from "../../../utils/cloudinary";
 import type { ProductItem } from "../../../types/home";
+import { PLACEHOLDER_IMAGE } from "../../../utils/placeholder";
 
 const ACCENT = "#e8622a";
 
@@ -37,7 +38,12 @@ const QuickInventory = ({ products, onStockUpdate, onDelete, onViewAll, isDark }
         {products.map(p => (
           <div key={p._id} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: inputBg, border: `1px solid ${inputBorder}` }}>
             <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border" style={{ borderColor: inputBorder }}>
-              <img src={getCloudinaryUrl(p.images?.[0] || "https://via.placeholder.com/40", 80)} alt={p.name} className="w-full h-full object-cover" onError={e => { e.currentTarget.src="https://via.placeholder.com/40"; }} />
+              <img
+  src={getCloudinaryUrl(p.images?.[0], 80)}
+  alt={p.name}
+  className="w-full h-full object-cover"
+  onError={(e) => { e.currentTarget.src = PLACEHOLDER_IMAGE; }}
+/>
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm truncate" style={{ color: textPrimary }}>{p.name}</p>

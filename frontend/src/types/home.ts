@@ -64,7 +64,7 @@ export interface CategoryItem {
   parent?: string | null;
 }
 
-export const PLACEHOLDER = "https://via.placeholder.com/600x600?text=No+Image";
+export { PLACEHOLDER_IMAGE as PLACEHOLDER } from "../utils/placeholder";
 export const ACCENT = "#e8622a";
 
 // Animation variants (shared across many home sections)

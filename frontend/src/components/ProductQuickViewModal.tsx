@@ -13,6 +13,7 @@ import type { ProductItem } from "../types/home";
 import { getCloudinaryUrl } from "../utils/cloudinary";
 import { StarRating } from "./StarRating";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import { PLACEHOLDER_IMAGE as PLACEHOLDER } from "../utils/placeholder";
 import {
   X,
   ShoppingCart,
@@ -24,7 +25,6 @@ import {
 } from "lucide-react";
 
 const ACCENT = "#e8622a";
-const PLACEHOLDER = "https://via.placeholder.com/600";
 
 interface QuickViewModalProps {
   product: ProductItem | null;

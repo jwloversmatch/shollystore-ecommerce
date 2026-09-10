@@ -26,6 +26,7 @@ import toast from "react-hot-toast";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import { getCloudinaryUrl } from "../../utils/cloudinary";
 import { useTheme } from "../../context/ThemeContext";
+import { PLACEHOLDER_IMAGE } from "../../utils/placeholder";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const ACCENT = "#e8622a";
@@ -40,7 +41,6 @@ interface HeroSlide {
   isActive: boolean;
 }
 
-const PLACEHOLDER_IMAGE = "https://via.placeholder.com/150";
 
 const HeroSlides = () => {
   const navigate = useNavigate();
@@ -384,6 +384,7 @@ const HeroSlides = () => {
                       src={getCloudinaryUrl(
                         slide.imageUrl || PLACEHOLDER_IMAGE,
                         150,
+                        { height: 150 },
                       )}
                       alt={slide.title}
                       loading="lazy"
@@ -628,7 +629,9 @@ const HeroSlides = () => {
                           src={
                             file
                               ? URL.createObjectURL(file)
-                              : getCloudinaryUrl(formData.imageUrl, 150)
+                              : getCloudinaryUrl(formData.imageUrl, 150, {
+                                  height: 150,
+                                })
                           }
                           alt="Preview"
                           className="w-14 h-14 rounded-lg object-cover border"

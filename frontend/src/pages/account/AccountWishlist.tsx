@@ -10,8 +10,8 @@ import { toggleWishlist } from "../../features/wishlist/wishlistSlice";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import { getCloudinaryUrl } from "../../utils/cloudinary";
+import { PLACEHOLDER_IMAGE as PLACEHOLDER } from "../../utils/placeholder";
 
-const PLACEHOLDER = "https://via.placeholder.com/300x300?text=No+Image";
 
 const AccountWishlist = () => {
   const dispatch = useDispatch();

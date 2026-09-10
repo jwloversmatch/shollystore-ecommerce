@@ -1,9 +1,9 @@
 import { Edit2, Trash2, Mail, Minus, Plus, Package } from "lucide-react";
 import { getCloudinaryUrl } from "../../../utils/cloudinary";
 import type { ProductItem } from "../../../types/home";
+import { PLACEHOLDER_IMAGE as PLACEHOLDER } from "../../../utils/placeholder";
 
 const ACCENT = "#e8622a";
-const PLACEHOLDER = "/placeholder.png";
 
 const getCategoryName = (cat: ProductItem["category"]): string => {
   if (!cat) return "";

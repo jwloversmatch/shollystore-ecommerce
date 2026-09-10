@@ -1,2 +1,2 @@
 export const ACCENT = "#e8622a";
-export const PLACEHOLDER = "https://via.placeholder.com/600";
+export { PLACEHOLDER_IMAGE as PLACEHOLDER } from "../../utils/placeholder";

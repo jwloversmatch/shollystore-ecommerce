@@ -269,10 +269,7 @@ const CartItem = ({ item }: { item: CartItemType }) => {
     >
       <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden shrink-0">
         <img
-          src={getCloudinaryUrl(
-            item.image || "https://via.placeholder.com/100",
-            200,
-          )}
+          src={getCloudinaryUrl(item.image, 200, { height: 200 })}
           alt={item.name}
           loading="lazy"
           className="w-full h-full object-cover"

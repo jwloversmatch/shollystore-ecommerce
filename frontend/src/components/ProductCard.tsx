@@ -15,6 +15,7 @@ import { formatPrice } from "../utils/format";
 import type { RootState } from "../store";
 import type { IVariant, ProductItem } from "../types/home";
 import { StarRating } from "./StarRating";
+import { PLACEHOLDER_IMAGE } from "../utils/placeholder";
 
 interface ProductProps {
   _id: string;
@@ -34,7 +35,6 @@ interface ProductProps {
   fullProduct?: ProductItem;
 }
 
-const FALLBACK = "/placeholder.png";
 
 const ProductCard = ({
   _id,
@@ -150,7 +150,7 @@ const ProductCard = ({
 
   // When image fails, use the local fallback (getCloudinaryUrl returns it unchanged
   // because it isn't a Cloudinary URL).
-  const imgSrc = getCloudinaryUrl(imgError ? FALLBACK : image, 400);
+  const imgSrc = getCloudinaryUrl(imgError ? PLACEHOLDER_IMAGE : image, 400);
   const srcSet = !imgError
     ? `${getCloudinaryUrl(image, 400)} 400w, ${getCloudinaryUrl(image, 800)} 800w`
     : undefined;
