@@ -45,7 +45,8 @@ const ReviewsPage = () => {
   const pagination = data?.pagination;
 
   return (
-    <main className="p-4 md:p-6 max-w-7xl mx-auto space-y-5 pb-28 md:pb-10 pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(96px+env(safe-area-inset-top,0px))]">
+    <div className="max-w-7xl mx-auto space-y-5">
+      {" "}
       <h1 className="text-2xl font-bold">Reviews</h1>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -60,7 +61,6 @@ const ReviewsPage = () => {
           className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-white"
         />
       </div>
-
       {isLoading ? (
         <p>Loading...</p>
       ) : (
@@ -123,7 +123,6 @@ const ReviewsPage = () => {
           {reviews.length === 0 && <p>No reviews found.</p>}
         </div>
       )}
-
       {pagination && pagination.pages > 1 && (
         <div className="flex justify-center gap-2 mt-4">
           <button disabled={page === 1} onClick={() => setPage(page - 1)}>
@@ -140,7 +139,6 @@ const ReviewsPage = () => {
           </button>
         </div>
       )}
-
       <ConfirmationModal
         isOpen={!!deleteId}
         onClose={() => setDeleteId(null)}
@@ -151,7 +149,6 @@ const ReviewsPage = () => {
         cancelText="Cancel"
         type="danger"
       />
-
       {/* Lightbox for review images */}
       <AnimatePresence>
         {lightboxImage && (
@@ -188,7 +185,7 @@ const ReviewsPage = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </main>
+    </div>
   );
 };
 

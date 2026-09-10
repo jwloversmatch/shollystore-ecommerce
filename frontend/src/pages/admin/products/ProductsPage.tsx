@@ -174,12 +174,7 @@ const ProductsPage = () => {
 
   if (isLoading) {
     return (
-      <main
-        id="main-content"
-        tabIndex={-1}
-        className="p-4 md:p-6 max-w-7xl mx-auto space-y-5 pb-28 md:pb-10 focus:outline-none pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(96px+env(safe-area-inset-top,0px))]"
-        style={{ background: bg }}
-      >
+      <div className="max-w-7xl mx-auto space-y-5">
         <div
           className="rounded-2xl overflow-hidden"
           style={{ background: cardBg, border: `1px solid ${cardBorder}` }}
@@ -188,17 +183,12 @@ const ProductsPage = () => {
             <ProductRowSkeleton key={i} dark={isDark} />
           ))}
         </div>
-      </main>
+      </div>>
     );
   }
 
   return (
-    <main
-      id="main-content"
-      tabIndex={-1}
-      className="p-4 md:p-6 max-w-7xl mx-auto space-y-5 pb-28 md:pb-10 focus:outline-none pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(96px+env(safe-area-inset-top,0px))]"
-      style={{ background: bg }}
-    >
+    <div className="max-w-7xl mx-auto space-y-5">
       <ConfirmationModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -396,7 +386,7 @@ const ProductsPage = () => {
           />
         )}
       </AnimatePresence>
-    </main>
+    </div>>
   );
 };
 

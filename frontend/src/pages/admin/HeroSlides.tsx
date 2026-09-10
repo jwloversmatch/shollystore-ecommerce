@@ -191,12 +191,7 @@ const HeroSlides = () => {
   // ══════ LOADING ═════════════════════════════════════════════════════════════
   if (isLoading) {
     return (
-      <main
-        id="main-content"
-        tabIndex={-1}
-        className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto space-y-6 focus:outline-none pt-[calc(56px_+_env(safe-area-inset-top,0px))] md:pt-[calc(80px_+_env(safe-area-inset-top,0px))] lg:pt-[calc(88px_+_env(safe-area-inset-top,0px))]"
-        style={{ background: bg }}
-      >
+      <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
@@ -259,18 +254,13 @@ const HeroSlides = () => {
             </table>
           </div>
         </div>
-      </main>
+      </div>>
     );
   }
 
   // ══════ MAIN PAGE ════════════════════════════════════════════════════════════
   return (
-    <main
-      id="main-content"
-      tabIndex={-1}
-      className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto space-y-6 focus:outline-none pt-[calc(56px_+_env(safe-area-inset-top,0px))] md:pt-[calc(80px_+_env(safe-area-inset-top,0px))] lg:pt-[calc(88px_+_env(safe-area-inset-top,0px))]"
-      style={{ background: bg }}
-    >
+    <div className="max-w-7xl mx-auto space-y-6">
       <ConfirmationModal
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
@@ -743,7 +733,7 @@ const HeroSlides = () => {
           </>
         )}
       </AnimatePresence>
-    </main>
+    </div>>
   );
 };
 

@@ -143,12 +143,7 @@ const OrdersPage = () => {
 
   if (isLoading) {
     return (
-      <main
-        id="main-content"
-        tabIndex={-1}
-        className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 focus:outline-none pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(96px+env(safe-area-inset-top,0px))]"
-        style={{ background: bg }}
-      >
+      <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <StatsCardSkeleton key={i} dark={isDark} />
@@ -162,17 +157,12 @@ const OrdersPage = () => {
             <OrderRowSkeleton key={i} dark={isDark} />
           ))}
         </div>
-      </main>
+      </div>>
     );
   }
 
   return (
-    <main
-      id="main-content"
-      tabIndex={-1}
-      className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 md:space-y-8 focus:outline-none pt-[calc(80px+env(safe-area-inset-top,0px))] md:pt-[calc(96px+env(safe-area-inset-top,0px))]"
-      style={{ background: bg }}
-    >
+    <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
       {/* Header */}
       <header className="flex flex-row items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
@@ -280,7 +270,7 @@ const OrdersPage = () => {
         onClose={() => setCancelTarget(null)}
         onConfirm={confirmCancellation}
       />
-    </main>
+    </div>>
   );
 };
 

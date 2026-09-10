@@ -159,12 +159,7 @@ const SettingsPage = () => {
 
   if (isLoading) {
     return (
-      <main
-        id="main-content"
-        tabIndex={-1}
-        className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto space-y-5 pb-28 md:pb-10 focus:outline-none pt-[calc(56px_+_env(safe-area-inset-top,0px))] md:pt-[calc(80px_+_env(safe-area-inset-top,0px))] lg:pt-[calc(88px_+_env(safe-area-inset-top,0px))]"
-        style={{ background: bg }}
-      >
+      <div className="max-w-4xl mx-auto space-y-5">
         <div className="space-y-5">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="rounded-2xl p-6" style={{ background: isDark ? "#141414" : "#fff", border: `1px solid ${isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)"}` }}>
@@ -175,17 +170,12 @@ const SettingsPage = () => {
             </div>
           ))}
         </div>
-      </main>
+      </div>>
     );
   }
 
   return (
-    <main
-      id="main-content"
-      tabIndex={-1}
-      className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto space-y-5 pb-28 md:pb-10 focus:outline-none pt-[calc(56px_+_env(safe-area-inset-top,0px))] md:pt-[calc(80px_+_env(safe-area-inset-top,0px))] lg:pt-[calc(88px_+_env(safe-area-inset-top,0px))]"
-      style={{ background: bg }}
-    >
+    <div className="max-w-4xl mx-auto space-y-5">
       {/* Page header */}
       <SettingsHeader isDark={isDark} />
 
@@ -280,7 +270,7 @@ const SettingsPage = () => {
 
       {/* Audit Log */}
       <AuditLog changeLogs={changeLogs} isDark={isDark} />
-    </main>
+    </div>>
   );
 };
 

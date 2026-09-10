@@ -141,12 +141,7 @@ const CategoriesPage = () => {
 
   if (isLoading) {
     return (
-      <main
-        id="main-content"
-        tabIndex={-1}
-        className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto pb-28 md:pb-10 space-y-5 focus:outline-none pt-[calc(56px_+_env(safe-area-inset-top,0px))] md:pt-[calc(80px_+_env(safe-area-inset-top,0px))] lg:pt-[calc(88px_+_env(safe-area-inset-top,0px))]"
-        style={{ background: bg }}
-      >
+      <div className="max-w-4xl mx-auto space-y-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl animate-pulse" style={{ background: cardBg }} />
@@ -160,17 +155,12 @@ const CategoriesPage = () => {
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => <CategoryRowSkeleton key={i} isDark={isDark} />)}
         </div>
-      </main>
+      </div>>
     );
   }
 
   return (
-    <main
-      id="main-content"
-      tabIndex={-1}
-      className="min-h-screen p-4 md:p-6 max-w-4xl mx-auto pb-28 md:pb-10 space-y-5 focus:outline-none pt-[calc(56px_+_env(safe-area-inset-top,0px))] md:pt-[calc(80px_+_env(safe-area-inset-top,0px))] lg:pt-[calc(88px_+_env(safe-area-inset-top,0px))]"
-      style={{ background: bg }}
-    >
+    <div className="max-w-4xl mx-auto space-y-5">
       <ConfirmationModal isOpen={deleteModal} onClose={() => setDeleteModal(false)} onConfirm={confirmDelete} title="Delete Category" message="Are you sure you want to delete this category? This action cannot be undone." confirmText="Delete" cancelText="Cancel" type="danger" />
 
       {/* Header */}
@@ -218,7 +208,7 @@ const CategoriesPage = () => {
         setEditingParent={setEditingParent}
         isDark={isDark}
       />
-    </main>
+    </div>>
   );
 };
 

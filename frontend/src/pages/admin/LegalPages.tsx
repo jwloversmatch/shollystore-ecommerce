@@ -76,7 +76,6 @@ const LegalPages = () => {
   }, [editor, editingSlug, pages]);
 
   // Theme styles (same as before)
-  const bg = isDark ? "#0A0A0B" : "#FCFAF5";
   const cardBg = isDark ? "#141414" : "#fff";
   const cardBorder = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)";
   const cardShadow = isDark
@@ -125,12 +124,7 @@ const LegalPages = () => {
 
   if (isLoading) {
     return (
-      <main
-        id="main-content"
-        tabIndex={-1}
-        className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto space-y-6 focus:outline-none pt-[calc(56px_+_env(safe-area-inset-top,0px))] md:pt-[calc(80px_+_env(safe-area-inset-top,0px))] lg:pt-[calc(88px_+_env(safe-area-inset-top,0px))]"
-        style={{ background: bg }}
-      >
+      <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
           <div className="h-6 w-32 rounded bg-gradient-to-r from-neutral-800 via-neutral-700 to-neutral-800 bg-[length:200%_100%] animate-pulse" />
@@ -143,33 +137,23 @@ const LegalPages = () => {
             />
           ))}
         </div>
-      </main>
+      </div>
     );
   }
 
   if (isError) {
     return (
-      <main
-        id="main-content"
-        tabIndex={-1}
-        className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto focus:outline-none flex items-center justify-center"
-        style={{ background: bg }}
-      >
+      <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center text-red-500">
           <AlertCircle className="w-10 h-10 mx-auto mb-4" />
           Failed to load legal pages.
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main
-      id="main-content"
-      tabIndex={-1}
-      className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto space-y-6 focus:outline-none pt-[calc(56px_+_env(safe-area-inset-top,0px))] md:pt-[calc(80px_+_env(safe-area-inset-top,0px))] lg:pt-[calc(88px_+_env(safe-area-inset-top,0px))]"
-      style={{ background: bg }}
-    >
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -377,7 +361,7 @@ const LegalPages = () => {
           </>
         )}
       </AnimatePresence>
-    </main>
+    </div>
   );
 };
 
