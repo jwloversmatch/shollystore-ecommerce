@@ -70,7 +70,6 @@ const HeroSlides = () => {
   const [slideToDelete, setSlideToDelete] = useState<string | null>(null);
 
   // Theme styles
-  const bg = isDark ? "#0A0A0B" : "#FCFAF5";
   const cardBg = isDark ? "#141414" : "#fff";
   const cardBorder = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)";
   const cardShadow = isDark
@@ -254,7 +253,7 @@ const HeroSlides = () => {
             </table>
           </div>
         </div>
-      </div>>
+      </div>
     );
   }
 
@@ -733,7 +732,7 @@ const HeroSlides = () => {
           </>
         )}
       </AnimatePresence>
-    </div>>
+    </div>
   );
 };
 

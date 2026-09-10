@@ -62,7 +62,7 @@ for (const [rel, newCls] of Object.entries(targets)) {
     src =
       src.slice(0, closeIdx) +
       "</div>" +
-      src.slice(closeIdx + "</div>".length);
+      src.slice(closeIdx + "</main>".length);
   }
 
   if (src !== original) {

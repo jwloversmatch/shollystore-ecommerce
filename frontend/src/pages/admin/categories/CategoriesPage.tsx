@@ -63,7 +63,6 @@ const CategoriesPage = () => {
   const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
 
   // Theme styles
-  const bg = isDark ? "#0A0A0B" : "#FCFAF5";
   const cardBg = isDark ? "#141414" : "#fff";
 
   const toggleExpand = (id: string) => {
@@ -155,7 +154,7 @@ const CategoriesPage = () => {
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => <CategoryRowSkeleton key={i} isDark={isDark} />)}
         </div>
-      </div>>
+      </div>
     );
   }
 
@@ -208,7 +207,7 @@ const CategoriesPage = () => {
         setEditingParent={setEditingParent}
         isDark={isDark}
       />
-    </div>>
+    </div>
   );
 };
 

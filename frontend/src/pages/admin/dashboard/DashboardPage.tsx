@@ -186,7 +186,6 @@ const DashboardPage = () => {
     refetchUsers();
   };
 
-  const bg = isDark ? "#0A0A0B" : "#FCFAF5";
   const cardBg = isDark ? "#141414" : "#fff";
   const cardShadow = isDark
     ? "0 8px 32px rgba(0,0,0,0.35)"
@@ -202,7 +201,7 @@ const DashboardPage = () => {
       <div className="max-w-7xl mx-auto space-y-5 md:space-y-6">
         <SEO title="Admin Dashboard" description="Manage your store." />
         <DashboardSkeleton />
-      </div>>
+      </div>
     );
   }
 
@@ -430,7 +429,7 @@ const DashboardPage = () => {
         onRoleUpdate={handleRoleUpdate}
         isDark={isDark}
       />
-    </div>>
+    </div>
   );
 };
 

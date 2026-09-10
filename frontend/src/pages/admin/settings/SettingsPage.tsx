@@ -154,8 +154,6 @@ const SettingsPage = () => {
     }
   };
 
-  // ---- Theme styles ----
-  const bg = isDark ? "#0A0A0B" : "#FCFAF5";
 
   if (isLoading) {
     return (
@@ -170,7 +168,7 @@ const SettingsPage = () => {
             </div>
           ))}
         </div>
-      </div>>
+      </div>
     );
   }
 
@@ -270,7 +268,7 @@ const SettingsPage = () => {
 
       {/* Audit Log */}
       <AuditLog changeLogs={changeLogs} isDark={isDark} />
-    </div>>
+    </div>
   );
 };
 

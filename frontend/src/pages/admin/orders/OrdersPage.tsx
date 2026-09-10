@@ -67,7 +67,6 @@ const OrdersPage = () => {
   const [cancelTarget, setCancelTarget] = useState<OrderItem | null>(null);  
   const orderModalRef = useRef<HTMLDivElement>(null);
 
-  const bg = isDark ? "#0A0A0B" : "#FCFAF5";
   const cardBg = isDark ? "#141414" : "rgba(255,255,255,0.8)";
   const cardBorder = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)";
   const textPrimary = isDark ? "#fff" : "#1f2937";
@@ -157,7 +156,7 @@ const OrdersPage = () => {
             <OrderRowSkeleton key={i} dark={isDark} />
           ))}
         </div>
-      </div>>
+      </div>
     );
   }
 
@@ -270,7 +269,7 @@ const OrdersPage = () => {
         onClose={() => setCancelTarget(null)}
         onConfirm={confirmCancellation}
       />
-    </div>>
+    </div>
   );
 };
 
