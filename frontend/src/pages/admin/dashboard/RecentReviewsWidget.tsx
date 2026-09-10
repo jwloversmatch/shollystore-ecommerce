@@ -38,16 +38,24 @@ const RecentReviewsWidget = ({ isDark }: Props) => {
 
   const openLightbox = (img: string) => setLightboxImage(img);
   const closeLightbox = () => setLightboxImage(null);
-
+  const bg = isDark ? "#141414" : "#fff";
   const reviews = data?.reviews ?? [];
 
   return (
-    <div className="rounded-2xl p-5" style={{ background: bg, border: `1px solid ${border}` }}>
+    <div
+      className="rounded-2xl p-5"
+      style={{ background: bg, border: `1px solid ${border}` }}
+    >
       <div className="flex items-center gap-2 mb-4">
         <MessageSquare className="w-5 h-5" style={{ color: accent }} />
-        <h2 className="text-lg font-bold" style={{ color: textPrimary }}>Recent Reviews</h2>
+        <h2 className="text-lg font-bold" style={{ color: textPrimary }}>
+          Recent Reviews
+        </h2>
         {!isLoading && reviews.length > 0 && (
-          <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(232,98,42,0.12)", color: accent }}>
+          <span
+            className="text-xs font-bold px-2 py-0.5 rounded-full"
+            style={{ background: "rgba(232,98,42,0.12)", color: accent }}
+          >
             {reviews.length} new
           </span>
         )}
@@ -60,10 +68,17 @@ const RecentReviewsWidget = ({ isDark }: Props) => {
       ) : (
         <div className="space-y-3 max-h-80 overflow-y-auto">
           {reviews.map((review) => (
-            <div key={review._id} className="border rounded-xl p-3" style={{ borderColor: border }}>
+            <div
+              key={review._id}
+              className="border rounded-xl p-3"
+              style={{ borderColor: border }}
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-sm" style={{ color: textPrimary }}>
+                  <span
+                    className="font-semibold text-sm"
+                    style={{ color: textPrimary }}
+                  >
                     {review.user.name}
                   </span>
                   <div className="flex">
@@ -85,7 +100,10 @@ const RecentReviewsWidget = ({ isDark }: Props) => {
                   <Trash2 size={14} />
                 </button>
               </div>
-              <p className="text-xs mt-1 line-clamp-2" style={{ color: textMuted }}>
+              <p
+                className="text-xs mt-1 line-clamp-2"
+                style={{ color: textMuted }}
+              >
                 {review.comment}
               </p>
 
@@ -110,7 +128,9 @@ const RecentReviewsWidget = ({ isDark }: Props) => {
               )}
 
               <p className="text-[10px] mt-1" style={{ color: textMuted }}>
-                {typeof review.product === "object" ? review.product.name : "Unknown product"}
+                {typeof review.product === "object"
+                  ? review.product.name
+                  : "Unknown product"}
               </p>
             </div>
           ))}
