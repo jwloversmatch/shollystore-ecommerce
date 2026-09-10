@@ -50,6 +50,7 @@ import {
   ReturnPolicy,
   LegalPages,
   Unsubscribe,
+  AdminLayout,
 } from "./routes/lazyPages";
 
 const ACCENT = "#e8622a";
@@ -73,37 +74,47 @@ const LoadingFallback = () => (
 function AppContent() {
   const location = useLocation();
   const isFirstRender = useRef(true);
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
+    // AdminLayout handles its own focus/scroll on route change.
+    if (isAdminRoute) return;
+
     const main = document.getElementById("main-content");
     main?.focus({ preventScroll: true });
     window.scrollTo(0, 0);
-  }, [location.pathname]);
+  }, [location.pathname, isAdminRoute]);
 
-  const hideNavbar = ["/cart", "/checkout", "/404"].includes(location.pathname);
-  const showFooter = [
-    "/",
-    "/shop",
-    "/privacy",
-    "/terms",
-    "/about",
-    "/contact",
-    "/returns",
-    "/unsubscribe",
-  ].includes(location.pathname);
+  const hideNavbar =
+    isAdminRoute ||
+    ["/cart", "/checkout", "/404"].includes(location.pathname);
+
+  const showFooter =
+    !isAdminRoute &&
+    [
+      "/",
+      "/shop",
+      "/privacy",
+      "/terms",
+      "/about",
+      "/contact",
+      "/returns",
+      "/unsubscribe",
+    ].includes(location.pathname);
 
   return (
     <>
       {!hideNavbar && <Navbar />}
-      <PWAInstallPrompt /> {/* <-- added component */}
+      <PWAInstallPrompt />
       <CartSync />
       <WishlistSync />
       {/* Future feature: Store Assistant – visible on all pages */}
       {/* <StoreAssistant /> */}
+
       <Suspense fallback={<LoadingFallback />}>
         <ErrorBoundary>
           <Routes key={location.pathname}>
@@ -125,17 +136,19 @@ function AppContent() {
               <Route path="/account" element={<Account />} />
             </Route>
 
-            {/* Admin routes */}
+            {/* Admin routes — wrapped in AdminRoute (auth guard) + AdminLayout (shell) */}
             <Route element={<AdminRoute />}>
-              <Route path="/admin" element={<Dashboard />} />
-              <Route path="/admin/products" element={<Products />} />
-              <Route path="/admin/settings" element={<Settings />} />
-              <Route path="/admin/orders" element={<Orders />} />
-              <Route path="/admin/hero-slides" element={<HeroSlides />} />
-              <Route path="/admin/categories" element={<Categories />} />
-              <Route path="/admin/coupons" element={<Coupons />} />
-              <Route path="/admin/reviews" element={<Reviews />} />
-              <Route path="/admin/legal" element={<LegalPages />} />
+              <Route element={<AdminLayout />}>
+                <Route path="/admin" element={<Dashboard />} />
+                <Route path="/admin/products" element={<Products />} />
+                <Route path="/admin/settings" element={<Settings />} />
+                <Route path="/admin/orders" element={<Orders />} />
+                <Route path="/admin/hero-slides" element={<HeroSlides />} />
+                <Route path="/admin/categories" element={<Categories />} />
+                <Route path="/admin/coupons" element={<Coupons />} />
+                <Route path="/admin/reviews" element={<Reviews />} />
+                <Route path="/admin/legal" element={<LegalPages />} />
+              </Route>
             </Route>
 
             {/* Legal pages */}
@@ -152,6 +165,7 @@ function AppContent() {
           </Routes>
         </ErrorBoundary>
       </Suspense>
+
       {showFooter && <Footer />}
     </>
   );

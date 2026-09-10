@@ -20,10 +20,15 @@
     "account": "Account",
     "wishlist": "Wishlist",
     "logout": "Logout",
-    "signOut": "Sign Out"
+    "signOut": "Sign Out",
+    "viewStore": "View Store",
+    "adminDashboard": "Admin Dashboard"
   },
   "admin": {
     "dashboard": "Dashboard",
+    "products": "Products",
+    "orders": "Orders",
+    "users": "Users",
     "heroSlides": "Hero Slides",
     "categories": "Categories",
     "coupons": "Coupons",
@@ -31,7 +36,18 @@
     "settings": "Settings",
     "legalPages": "Legal Pages",
     "label": "Admin",
-    "menu": "Menu"
+    "menu": "Menu",
+    "collapseSidebar": "Collapse",
+    "expandSidebar": "Expand",
+    "openAdminMenu": "Open admin menu",
+    "closeAdminMenu": "Close admin menu",
+    "accountMenu": "Account menu",
+    "groups": {
+      "main": "Main",
+      "catalog": "Catalog",
+      "sales": "Sales",
+      "customers": "Customers"
+    }
   },
   "footer": {
     "brandDescription": "Your one‑stop destination for quality products – from fashion to beverages, delivered fast and reliably.",

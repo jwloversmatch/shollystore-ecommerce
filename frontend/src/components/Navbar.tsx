@@ -8,26 +8,16 @@ import {
   User,
   LogOut,
   LayoutDashboard,
-  Settings,
-  Image,
-  Tag,
-  BadgePercent,
   Home,
-  MoreHorizontal,
   X,
   Store,
   Heart,
-  Star,
   Truck,
   ShoppingBag,
-  FileText,
-  ChevronDown,
-  ExternalLink,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
 import { useState, useRef, useEffect } from "react";
-import { useFocusTrap } from "../hooks/useFocusTrap";
 import { useTranslation } from "react-i18next";
 
 const ACCENT = "#e8622a";
@@ -64,44 +54,6 @@ const MOBILE_SECONDARY_LINKS = [
   { to: "/privacy", labelKey: "nav.privacy" },
   { to: "/terms", labelKey: "nav.terms" },
   { to: "/returns", labelKey: "nav.returns" },
-];
-
-const ADMIN_LINKS = [
-  {
-    to: "/admin",
-    labelKey: "admin.dashboard",
-    icon: <LayoutDashboard className="w-4 h-4" aria-hidden="true" />,
-  },
-  {
-    to: "/admin/hero-slides",
-    labelKey: "admin.heroSlides",
-    icon: <Image className="w-4 h-4" aria-hidden="true" />,
-  },
-  {
-    to: "/admin/categories",
-    labelKey: "admin.categories",
-    icon: <Tag className="w-4 h-4" aria-hidden="true" />,
-  },
-  {
-    to: "/admin/coupons",
-    labelKey: "admin.coupons",
-    icon: <BadgePercent className="w-4 h-4" aria-hidden="true" />,
-  },
-  {
-    to: "/admin/reviews",
-    labelKey: "admin.reviews",
-    icon: <Star className="w-4 h-4" aria-hidden="true" />,
-  },
-  {
-    to: "/admin/settings",
-    labelKey: "admin.settings",
-    icon: <Settings className="w-4 h-4" aria-hidden="true" />,
-  },
-  {
-    to: "/admin/legal",
-    labelKey: "admin.legalPages",
-    icon: <FileText className="w-4 h-4" aria-hidden="true" />,
-  },
 ];
 
 // ─── Bottom-nav button ────────────────────────────────────────────────────────
@@ -160,91 +112,6 @@ const NavBtn: React.FC<NavBtnProps> = ({ to, icon, label, active, badge }) => {
   );
 };
 
-// ─── Admin dropdown menu ──────────────────────────────────────────────────────
-const AdminMenu = () => {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const { pathname } = useLocation();
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const isActive = (path: string) => {
-    if (path === "/admin") return pathname === "/admin";
-    return pathname.startsWith(path);
-  };
-
-  return (
-    <div ref={menuRef} className="relative">
-      <motion.button
-        onClick={() => setOpen(!open)}
-        whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.97 }}
-        aria-label="Admin menu"
-        aria-haspopup="true"
-        aria-expanded={open}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold
-          text-gray-700 dark:text-gray-300
-          bg-gray-100 dark:bg-white/5
-          border border-gray-200 dark:border-white/10
-          hover:border-[#e8622a]/50 transition-colors"
-      >
-        <LayoutDashboard className="w-4 h-4" aria-hidden="true" />
-        <span>{t("admin.label")}</span>
-        <ChevronDown
-          className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`}
-          aria-hidden="true"
-        />
-      </motion.button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -5, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -5, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute z-50 w-56 top-full mt-2 left-0 rounded-xl shadow-xl border overflow-hidden
-              bg-white dark:bg-[#141414]
-              border-gray-200 dark:border-white/[0.08]"
-            role="menu"
-            aria-label="Admin menu"
-          >
-            {ADMIN_LINKS.map((l) => {
-              const active = isActive(l.to);
-              return (
-                <Link
-                  key={l.to}
-                  to={l.to}
-                  onClick={() => setOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 text-sm font-bold transition-colors ${
-                    active
-                      ? "text-[#e8622a] bg-[#e8622a]/5"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
-                  }`}
-                  role="menuitem"
-                  aria-current={active ? "page" : undefined}
-                >
-                  {l.icon}
-                  {t(l.labelKey)}
-                </Link>
-              );
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
-
 // ─── User dropdown menu ───────────────────────────────────────────────────────
 const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
   const { t } = useTranslation();
@@ -290,7 +157,10 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
             : "w-10 h-10 bg-gray-100 dark:bg-[#1c1c1c] border-gray-200 dark:border-white/10 hover:border-[#e8622a]/50"
         }`}
       >
-        <User className="w-5 h-5 text-gray-600 dark:text-gray-400" aria-hidden="true" />
+        <User
+          className="w-5 h-5 text-gray-600 dark:text-gray-400"
+          aria-hidden="true"
+        />
       </motion.button>
 
       <AnimatePresence>
@@ -306,6 +176,19 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
             role="menu"
             aria-label="User menu"
           >
+            {/* Admin Dashboard link (admins only) */}
+            {user?.role === "admin" && (
+              <Link
+                to="/admin"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-[#e8622a] hover:bg-[#e8622a]/5 transition-colors"
+                role="menuitem"
+              >
+                <LayoutDashboard className="w-4 h-4" aria-hidden="true" />
+                {t("userMenu.adminDashboard")}
+              </Link>
+            )}
+
             {user?.role === "user" && (
               <>
                 <Link
@@ -337,19 +220,6 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
               </>
             )}
 
-            {/* View Store link for admins */}
-            {user?.role === "admin" && (
-              <Link
-                to="/"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-                role="menuitem"
-              >
-                <ExternalLink className="w-4 h-4" aria-hidden="true" />
-                {t("userMenu.viewStore")}
-              </Link>
-            )}
-
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
@@ -371,13 +241,9 @@ const Navbar = () => {
   const { user } = useSelector((s: RootState) => s.auth);
   const { cartItems } = useSelector((s: RootState) => s.cart);
   const wishlistIds = useSelector((s: RootState) => s.wishlist.ids);
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { pathname, search } = useLocation();
 
-  const [adminDrawer, setAdminDrawer] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const drawerRef = useRef<HTMLDivElement>(null);
   const liveRegionRef = useRef<HTMLSpanElement>(null);
   const prevTotalQtyRef = useRef<number | null>(null);
 
@@ -402,18 +268,9 @@ const Navbar = () => {
 
   const isActive = (path: string) => {
     if (path === "/") return pathname === "/";
-    if (path === "/admin") return pathname === "/admin";
     return pathname.startsWith(path);
   };
 
-  const handleLogout = () => {
-    dispatch(logout());
-    navigator.serviceWorker.controller?.postMessage({
-      type: "CLEAR_API_CACHE",
-    });
-    navigate("/");
-    setAdminDrawer(false);
-  };
 
   const desktopLinkCls = (path: string) =>
     `flex items-center gap-1.5 text-sm font-bold transition-colors duration-150 ${
@@ -425,8 +282,6 @@ const Navbar = () => {
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
   };
-
-  useFocusTrap(drawerRef, adminDrawer, () => setAdminDrawer(false));
 
   return (
     <>
@@ -457,8 +312,8 @@ const Navbar = () => {
           shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
         />
         <div className="relative max-w-7xl mx-auto px-6 flex justify-between items-center py-4">
-          {/* Left: logo + nav */}
-          <div className="flex items-center gap-6">
+          {/* Left: logo + customer nav */}
+          <div className="flex items-center gap-8">
             <Link
               to="/"
               className="text-2xl font-black tracking-tight shrink-0 flex items-center gap-2 text-gray-900 dark:text-white"
@@ -472,10 +327,6 @@ const Navbar = () => {
               <span>{BRAND_NAME}</span>
             </Link>
 
-            {/* Admin dropdown (if admin) */}
-            {user?.role === "admin" && <AdminMenu />}
-
-            {/* Customer links (if not admin) */}
             {(!user || user.role === "user") && (
               <div className="flex items-center gap-6">
                 {CUSTOMER_LINKS.map((link) => (
@@ -511,7 +362,9 @@ const Navbar = () => {
               <Link
                 to="/cart"
                 className="relative p-1"
-                aria-label={`${t("nav.cart")} ${totalQty} ${totalQty === 1 ? t("common.item") : t("common.items")}`}
+                aria-label={`${t("nav.cart")} ${totalQty} ${
+                  totalQty === 1 ? t("common.item") : t("common.items")
+                }`}
               >
                 <ShoppingCart
                   className={`w-5 h-5 transition-colors ${
@@ -735,19 +588,19 @@ const Navbar = () => {
                 />
               )}
 
-              {user?.role === "admin" && (
-                <NavBtn
-                  to="/admin/coupons"
-                  icon={<BadgePercent className="w-5 h-5" />}
-                  label={t("nav.coupons")}
-                  active={isActive("/admin/coupons")}
-                />
-              )}
-
               {user?.role === "user" && (
                 <div className="flex flex-col items-center justify-center">
                   <UserMenu mobile />
                 </div>
+              )}
+
+              {user?.role === "admin" && (
+                <NavBtn
+                  to="/admin"
+                  icon={<LayoutDashboard className="w-5 h-5" />}
+                  label={t("admin.label")}
+                  active={false}
+                />
               )}
 
               {!user && (
@@ -758,143 +611,8 @@ const Navbar = () => {
                   active={isActive("/login")}
                 />
               )}
-
-              {user?.role === "admin" && (
-                <button
-                  onClick={() => setAdminDrawer(true)}
-                  className="flex flex-col items-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-colors duration-150"
-                  style={{ color: adminDrawer ? ACCENT : "#6b7280" }}
-                  aria-label="More admin options"
-                  aria-haspopup="dialog"
-                  aria-expanded={adminDrawer}
-                  aria-controls="admin-drawer-sheet"
-                >
-                  <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
-                  <span className="text-[9px] font-extrabold uppercase tracking-wide">
-                    {t("nav.more")}
-                  </span>
-                </button>
-              )}
             </div>
           </nav>
-
-          {/* Admin drawer (unchanged) */}
-          <AnimatePresence>
-            {adminDrawer && (
-              <>
-                <motion.div
-                  key="scrim"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[60] md:hidden bg-black/70 dark:bg-black/70"
-                  onClick={() => setAdminDrawer(false)}
-                  aria-hidden="true"
-                />
-
-                <motion.div
-                  key="sheet"
-                  ref={drawerRef}
-                  id="admin-drawer-sheet"
-                  initial={{ y: "100%" }}
-                  animate={{ y: 0 }}
-                  exit={{ y: "100%" }}
-                  transition={{ type: "spring", stiffness: 320, damping: 32 }}
-                  className="fixed bottom-0 inset-x-0 z-[70] rounded-t-3xl md:hidden
-                    bg-[#FCFAF5] dark:bg-[#141414] border-t border-gray-200 dark:border-white/[0.09]"
-                  style={{
-                    paddingBottom: "env(safe-area-inset-bottom, 24px)",
-                    boxSizing: "border-box",
-                  }}
-                  role="dialog"
-                  aria-modal="true"
-                  aria-labelledby="admin-drawer-title"
-                >
-                  <div
-                    className="flex justify-center pt-3 pb-1"
-                    aria-hidden="true"
-                  >
-                    <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-white/15" />
-                  </div>
-
-                  <div className="flex justify-between items-center px-6 py-4">
-                    <div>
-                      <p
-                        className="text-xs font-extrabold uppercase tracking-widest"
-                        style={{ color: ACCENT }}
-                      >
-                        {t("admin.label")}
-                      </p>
-                      <h2
-                        id="admin-drawer-title"
-                        className="text-xl font-black text-gray-900 dark:text-white"
-                      >
-                        {t("admin.menu")}
-                      </h2>
-                    </div>
-                    <motion.button
-                      onClick={() => setAdminDrawer(false)}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-200 dark:bg-white/7"
-                      aria-label="Close admin menu"
-                    >
-                      <X className="w-4 h-4" aria-hidden="true" />
-                    </motion.button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 px-5 pb-2">
-                    {ADMIN_LINKS.map((l, i) => {
-                      const active = isActive(l.to);
-                      return (
-                        <motion.div
-                          key={l.to}
-                          initial={{ opacity: 0, y: 16 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                        >
-                          <Link
-                            to={l.to}
-                            onClick={() => setAdminDrawer(false)}
-                            className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
-                              active
-                                ? "bg-[#e8622a]/15 border-[#e8622a]/40 text-[#e8622a]"
-                                : "bg-gray-200 dark:bg-[#1c1c1c] border-gray-300 dark:border-white/6 text-gray-700 dark:text-[#9ca3af]"
-                            }`}
-                            aria-current={active ? "page" : undefined}
-                          >
-                            {l.icon}
-                            <span className="text-sm font-bold">
-                              {t(l.labelKey)}
-                            </span>
-                          </Link>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="px-5 pt-3 pb-2 space-y-2">
-                    <Link
-                      to="/"
-                      onClick={() => setAdminDrawer(false)}
-                      className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-white/10 transition-colors bg-gray-50 dark:bg-white/5"
-                    >
-                      <ExternalLink className="w-4 h-4" aria-hidden="true" />
-                      {t("userMenu.viewStore")}
-                    </Link>
-                    <motion.button
-                      onClick={handleLogout}
-                      whileTap={{ scale: 0.97 }}
-                      className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold text-red-400 border border-red-500/20 transition-colors bg-red-50 dark:bg-red-500/6"
-                    >
-                      <LogOut className="w-4 h-4" aria-hidden="true" />{" "}
-                      {t("userMenu.signOut")}
-                    </motion.button>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
         </>,
         document.body,
       )}
