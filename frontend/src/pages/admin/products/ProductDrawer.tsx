@@ -74,7 +74,7 @@ interface ProductDrawerProps {
   product: ProductItem | null;
   onClose: () => void;
   isDark: boolean;
-  onSaved?: () => void; // ✅ new callback for parent refresh
+  onSaved?: () => void;
 }
 
 const ProductDrawer = ({ product, onClose, isDark, onSaved }: ProductDrawerProps) => {
@@ -145,7 +145,6 @@ const ProductDrawer = ({ product, onClose, isDark, onSaved }: ProductDrawerProps
     }
   });
 
-  // Reset form only when product changes (react-hook-form reset is not setState)
   useEffect(() => {
     if (product) {
       reset({
@@ -233,8 +232,7 @@ const ProductDrawer = ({ product, onClose, isDark, onSaved }: ProductDrawerProps
       const imageUrls: string[] = [...existingImages];
       if (files.length > 0) {
         setUploading(true);
-        // try/finally: previously, if any single upload threw, setUploading(false)
-        // was skipped entirely and the drawer stayed frozen on its spinner forever.
+
         try {
           for (const file of files) {
             const fd = new FormData();
@@ -289,7 +287,7 @@ const ProductDrawer = ({ product, onClose, isDark, onSaved }: ProductDrawerProps
         await createProduct({ ...payload, notifyCustomers }).unwrap();
         toast.success("Product created successfully");
       }
-      onSaved?.(); // ✅ notify parent to refresh
+      onSaved?.();
       onClose();
     } catch (err) {
       const e = err as { data?: { message: string } };

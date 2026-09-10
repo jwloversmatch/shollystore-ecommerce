@@ -34,7 +34,7 @@ interface ProductProps {
   fullProduct?: ProductItem;
 }
 
-const FALLBACK = "https://via.placeholder.com/300x300?text=No+Image";
+const FALLBACK = "/placeholder.png";
 
 const ProductCard = ({
   _id,
@@ -148,6 +148,8 @@ const ProductCard = ({
     }
   };
 
+  // When image fails, use the local fallback (getCloudinaryUrl returns it unchanged
+  // because it isn't a Cloudinary URL).
   const imgSrc = getCloudinaryUrl(imgError ? FALLBACK : image, 400);
   const srcSet = !imgError
     ? `${getCloudinaryUrl(image, 400)} 400w, ${getCloudinaryUrl(image, 800)} 800w`

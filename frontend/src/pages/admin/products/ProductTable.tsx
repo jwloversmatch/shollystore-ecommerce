@@ -3,7 +3,7 @@ import { getCloudinaryUrl } from "../../../utils/cloudinary";
 import type { ProductItem } from "../../../types/home";
 
 const ACCENT = "#e8622a";
-const PLACEHOLDER = "https://via.placeholder.com/150";
+const PLACEHOLDER = "/placeholder.png";
 
 const getCategoryName = (cat: ProductItem["category"]): string => {
   if (!cat) return "";
