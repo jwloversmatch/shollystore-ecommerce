@@ -60,16 +60,8 @@ const contactInfo = {
 };
 
 const socialLinks = [
-  {
-    platform: "Facebook",
-    url: "https://facebook.com/Sholex",
-    icon: FaFacebook,
-  },
-  {
-    platform: "Instagram",
-    url: "https://instagram.com/Sholex",
-    icon: FaInstagram,
-  },
+  { platform: "Facebook", url: "https://facebook.com/Sholex", icon: FaFacebook },
+  { platform: "Instagram", url: "https://instagram.com/Sholex", icon: FaInstagram },
   { platform: "Twitter", url: "https://twitter.com/Sholex", icon: FaTwitter },
   { platform: "YouTube", url: "https://youtube.com/@Sholex", icon: FaYoutube },
 ];
