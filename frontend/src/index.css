@@ -73,9 +73,50 @@ img {
   will-change: transform;
 }
 
+/* ── Home: ambient background orbs (replaces framer-motion) ───────────────── */
+@keyframes orb-drift-1 {
+  0%   { transform: translate(-15%, -8%); }
+  50%  { transform: translate(15%, 8%); }
+  100% { transform: translate(-15%, -8%); }
+}
+@keyframes orb-drift-2 {
+  0%   { transform: translate(15%, 8%); }
+  50%  { transform: translate(-15%, -8%); }
+  100% { transform: translate(15%, 8%); }
+}
+.animate-orb-1 {
+  animation: orb-drift-1 30s linear infinite;
+  will-change: transform;
+}
+.animate-orb-2 {
+  animation: orb-drift-2 38s linear infinite;
+  will-change: transform;
+}
+
+/* ── Home: CTA fade-up (replaces framer-motion whileInView) ──────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out both;
+}
+
+/* Modern browsers: trigger fade only when the section enters the viewport */
+@supports (animation-timeline: view()) {
+  .animate-fade-up {
+    animation-timeline: view();
+    animation-range: entry 0% cover 30%;
+  }
+}
+
+/* ── Respect reduced motion for all animations ────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .animate-spin-ring,
-  .animate-pulse-dot {
+  .animate-pulse-dot,
+  .animate-orb-1,
+  .animate-orb-2,
+  .animate-fade-up {
     animation: none;
   }
 }

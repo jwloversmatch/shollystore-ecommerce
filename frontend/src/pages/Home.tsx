@@ -1,6 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
   useGetProductsQuery,
   useGetHeroSlidesQuery,
@@ -9,20 +8,23 @@ import {
 } from "../features/api/apiSlice";
 import SEO from "../components/SEO";
 import StructuredData from "../components/StructuredData";
-import ProductQuickViewModal from "../components/ProductQuickViewModal";
 import type { ProductItem, CategoryItem } from "../types/home";
 import { ACCENT } from "../types/home";
 
 import HomeLoading from "./home/HomeLoading";
 import HomeHero from "./home/HomeHero";
-import HomeMarquee from "./home/HomeMarquee";
-import HomeFeatures from "./home/HomeFeatures";
-import HomeSpecialOffer from "./home/HomeSpecialOffer";
-import HomeHowItWorks from "./home/HomeHowItWorks";
-import FeaturedProductsGrid from "../components/FeaturedProductsGrid";
-import HomePromoBanners from "./home/HomePromoBanners";
-import HomeNewArrivals from "./home/HomeNewArrivals";
-import HomeTestimonials from "./home/HomeTestimonials";
+
+// Lazy-load below-the-fold and on-demand components
+const HomeMarquee = lazy(() => import("./home/HomeMarquee"));
+const HomeFeatures = lazy(() => import("./home/HomeFeatures"));
+const HomeSpecialOffer = lazy(() => import("./home/HomeSpecialOffer"));
+const HomeHowItWorks = lazy(() => import("./home/HomeHowItWorks"));
+const FeaturedProductsGrid = lazy(() => import("../components/FeaturedProductsGrid"));
+const HomePromoBanners = lazy(() => import("./home/HomePromoBanners"));
+const HomeNewArrivals = lazy(() => import("./home/HomeNewArrivals"));
+const HomeTestimonials = lazy(() => import("./home/HomeTestimonials"));
+const ProductQuickViewModal = lazy(() => import("../components/ProductQuickViewModal"));
+
 import { ArrowRight } from "lucide-react";
 
 const Home = () => {
@@ -122,26 +124,22 @@ const Home = () => {
       <StructuredData data={organizationSchema} />
       <StructuredData data={websiteSchema} />
 
-      {/* Ambient background orbs */}
+      {/* Ambient background orbs — CSS-only, no JS, no framer-motion */}
       <div
         className="fixed inset-0 -z-10 overflow-hidden pointer-events-none"
         aria-hidden="true"
       >
-        <motion.div
-          animate={{ x: ["-15%", "15%", "-15%"], y: ["-8%", "8%", "-8%"] }}
-          transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
-          className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full blur-[120px] opacity-[0.07]"
+        <div
+          className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full blur-[120px] opacity-[0.07] animate-orb-1"
           style={{ background: ACCENT }}
         />
-        <motion.div
-          animate={{ x: ["15%", "-15%", "15%"], y: ["8%", "-8%", "8%"] }}
-          transition={{ repeat: Infinity, duration: 38, ease: "linear" }}
-          className="absolute bottom-0 -right-32 w-[500px] h-[500px] rounded-full blur-[120px] opacity-[0.05]"
+        <div
+          className="absolute bottom-0 -right-32 w-[500px] h-[500px] rounded-full blur-[120px] opacity-[0.05] animate-orb-2"
           style={{ background: "#10b981" }}
         />
       </div>
 
-      {/* Hero carousel */}
+      {/* Hero carousel — loaded eagerly (above the fold) */}
       <div
         onMouseEnter={() => setIsCarouselPaused(true)}
         onMouseLeave={() => setIsCarouselPaused(false)}
@@ -167,93 +165,95 @@ const Home = () => {
         />
       </div>
 
-      {/* Promo banners */}
-      <HomePromoBanners />
+      <Suspense fallback={null}>
+        {/* Promo banners */}
+        <HomePromoBanners />
 
-      {/* Enter Shop CTA */}
-      <section
-        className="py-10 bg-[#FCFAF5] dark:bg-[#0A0A0B]"
-        aria-labelledby="cta-heading"
-      >
-        <div className="max-w-7xl mx-auto px-4 md:px-6 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2
-              id="cta-heading"
-              className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-3"
-            >
-              Ready to explore?
-            </h2>
-            <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8">
-              Browse our full catalog of products across all categories.
-            </p>
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: `0 18px 44px ${ACCENT}55` }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => navigate("/shop")}
-              className="inline-flex items-center gap-2 px-10 py-4 rounded-full font-black text-lg text-white"
-              style={{
-                background: ACCENT,
-                boxShadow: `0 8px 24px ${ACCENT}44`,
-              }}
-              aria-label="Browse the full product catalog"
-            >
-              Enter Shop <ArrowRight className="w-5 h-5" aria-hidden="true" />
-            </motion.button>
-          </motion.div>
-        </div>
-      </section>
-
-      <HomeMarquee categoryNames={categoryNames} />
-      <HomeFeatures />
-      <HomeHowItWorks />
-
-      {/* Featured Products */}
-      <section
-        className="bg-[#FCFAF5] dark:bg-[#111111] py-14 md:py-18"
-        aria-labelledby="featured-heading"
-      >
-        <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <div className="mb-8">
-            <p
-              className="text-xs font-black uppercase tracking-[0.2em] mb-2"
-              style={{ color: ACCENT }}
-            >
-              Featured
-            </p>
-            <h2
-              id="featured-heading"
-              className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white"
-            >
-              Best Sellers
-            </h2>
+        {/* Enter Shop CTA — CSS transitions instead of framer-motion */}
+        <section
+          className="py-10 bg-[#FCFAF5] dark:bg-[#0A0A0B]"
+          aria-labelledby="cta-heading"
+        >
+          <div className="max-w-7xl mx-auto px-4 md:px-6 text-center">
+            <div className="animate-fade-up">
+              <h2
+                id="cta-heading"
+                className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-3"
+              >
+                Ready to explore?
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8">
+                Browse our full catalog of products across all categories.
+              </p>
+              <button
+                onClick={() => navigate("/shop")}
+                className="inline-flex items-center gap-2 px-10 py-4 rounded-full font-black text-lg text-white
+                  transition-transform duration-200 ease-out
+                  hover:scale-105 active:scale-[0.97]"
+                style={{
+                  background: ACCENT,
+                  boxShadow: `0 8px 24px ${ACCENT}44`,
+                }}
+                aria-label="Browse the full product catalog"
+              >
+                Enter Shop <ArrowRight className="w-5 h-5" aria-hidden="true" />
+              </button>
+            </div>
           </div>
-          <FeaturedProductsGrid />
-        </div>
-      </section>
+        </section>
 
-      {/* New Arrivals */}
-      <HomeNewArrivals />
+        <HomeMarquee categoryNames={categoryNames} />
+        <HomeFeatures />
+        <HomeHowItWorks />
 
-      {/* Testimonials */}
-      <HomeTestimonials />
+        {/* Featured Products */}
+        <section
+          className="bg-[#FCFAF5] dark:bg-[#111111] py-14 md:py-18"
+          aria-labelledby="featured-heading"
+        >
+          <div className="max-w-7xl mx-auto px-4 md:px-6">
+            <div className="mb-8">
+              <p
+                className="text-xs font-black uppercase tracking-[0.2em] mb-2"
+                style={{ color: ACCENT }}
+              >
+                Featured
+              </p>
+              <h2
+                id="featured-heading"
+                className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white"
+              >
+                Best Sellers
+              </h2>
+            </div>
+            <FeaturedProductsGrid />
+          </div>
+        </section>
 
-      {/* Special Offer */}
-      <HomeSpecialOffer
-        specialOfferTitle={specialOfferTitle}
-        specialOfferText={specialOfferText}
-        onShopNow={() => navigate("/shop")}
-      />
+        {/* New Arrivals */}
+        <HomeNewArrivals />
 
-      <ProductQuickViewModal
-        product={modalProduct}
-        isOpen={!!modalProduct}
-        onClose={() => setModalProduct(null)}
-      />
+        {/* Testimonials */}
+        <HomeTestimonials />
+
+        {/* Special Offer */}
+        <HomeSpecialOffer
+          specialOfferTitle={specialOfferTitle}
+          specialOfferText={specialOfferText}
+          onShopNow={() => navigate("/shop")}
+        />
+      </Suspense>
+
+      {/* Quick View Modal — only loaded when a product is selected */}
+      {modalProduct && (
+        <Suspense fallback={null}>
+          <ProductQuickViewModal
+            product={modalProduct}
+            isOpen={!!modalProduct}
+            onClose={() => setModalProduct(null)}
+          />
+        </Suspense>
+      )}
     </main>
   );
 };
