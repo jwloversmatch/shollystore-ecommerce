@@ -60,8 +60,16 @@ const contactInfo = {
 };
 
 const socialLinks = [
-  { platform: "Facebook", url: "https://facebook.com/Sholex", icon: FaFacebook },
-  { platform: "Instagram", url: "https://instagram.com/Sholex", icon: FaInstagram },
+  {
+    platform: "Facebook",
+    url: "https://facebook.com/Sholex",
+    icon: FaFacebook,
+  },
+  {
+    platform: "Instagram",
+    url: "https://instagram.com/Sholex",
+    icon: FaInstagram,
+  },
   { platform: "Twitter", url: "https://twitter.com/Sholex", icon: FaTwitter },
   { platform: "YouTube", url: "https://youtube.com/@Sholex", icon: FaYoutube },
 ];
@@ -387,6 +395,7 @@ const Footer = () => {
             <select
               value={i18n.language}
               onChange={(e) => changeLanguage(e.target.value)}
+              aria-label={t("footer.language")}
               className="ml-2 px-2 py-1 rounded-lg bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/10 text-xs text-gray-700 dark:text-gray-300"
             >
               <option value="en">English</option>

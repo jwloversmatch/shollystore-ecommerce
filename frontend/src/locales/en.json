@@ -13,7 +13,8 @@
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
     "returns": "Return Policy",
-    "coupons": "Coupons"
+    "coupons": "Coupons",
+    "language": "Select language"
   },
   "userMenu": {
     "account": "Account",
@@ -62,7 +63,8 @@
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
     "returns": "Return Policy",
-    "unsubscribe": "Unsubscribe"
+    "unsubscribe": "Unsubscribe",
+    "language": "Select language"
   },
   "product": {
     "addToCart": "Add to Cart",

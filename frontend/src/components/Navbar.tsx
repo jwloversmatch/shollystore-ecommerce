@@ -429,8 +429,8 @@ const Navbar = () => {
             <select
               value={i18n.language}
               onChange={(e) => changeLanguage(e.target.value)}
+              aria-label={t("nav.language")}
               className="px-2 py-1 rounded-lg bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/10 text-xs text-gray-700 dark:text-gray-300"
-              aria-label="Select language"
             >
               <option value="en">EN</option>
               <option value="pcm">PCM</option>
@@ -528,7 +528,8 @@ const Navbar = () => {
                     boxShadow: `0 4px 14px ${ACCENT}55`,
                   }}
                 >
-                  <User className="w-4 h-4" aria-hidden="true" /> {t("nav.login")}
+                  <User className="w-4 h-4" aria-hidden="true" />{" "}
+                  {t("nav.login")}
                 </Link>
               </motion.div>
             )}
@@ -570,8 +571,8 @@ const Navbar = () => {
                 <select
                   value={i18n.language}
                   onChange={(e) => changeLanguage(e.target.value)}
+                  aria-label={t("nav.language")}
                   className="px-2 py-1 rounded-lg bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/10 text-xs text-gray-700 dark:text-gray-300"
-                  aria-label="Select language"
                 >
                   <option value="en">EN</option>
                   <option value="pcm">PCM</option>
