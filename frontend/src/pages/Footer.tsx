@@ -146,6 +146,9 @@ const Footer = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 pt-8 pb-3 md:pt-10 md:pb-3">
+        {/* Hidden heading for accessibility — establishes the footer's h2 landmark */}
+        <h2 className="sr-only">{t("footer.brandDescription") ? "Footer" : "Footer"}</h2>
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Column */}
           <motion.div variants={columnVariants} className="space-y-4">
@@ -173,9 +176,9 @@ const Footer = () => {
 
           {/* Quick Links */}
           <motion.div variants={columnVariants}>
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
               {t("footer.quickLinks.title")}
-            </h4>
+            </h3>
             <ul className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
               {quickLinks.map((item) => (
                 <motion.li
@@ -197,9 +200,9 @@ const Footer = () => {
 
           {/* Contact Info */}
           <motion.div variants={columnVariants}>
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
               {t("footer.contactUs")}
-            </h4>
+            </h3>
             <ul className="space-y-2.5 text-sm text-gray-500 dark:text-gray-400">
               <li className="flex items-center gap-3">
                 <MapPin
@@ -238,9 +241,9 @@ const Footer = () => {
 
           {/* Newsletter */}
           <motion.div variants={columnVariants} className="md:col-span-2">
-            <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
               {t("footer.newsletter.title")}
-            </h4>
+            </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               {t("footer.newsletter.description")}
             </p>
@@ -326,9 +329,9 @@ const Footer = () => {
           variants={columnVariants}
           className="mt-7 pt-5 border-t border-gray-200 dark:border-white/10"
         >
-          <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
             {t("footer.payment.title")}
-          </h5>
+          </h3>
           <div className="flex flex-wrap gap-3 items-center">
             {/* Paystack */}
             <span className="flex items-center justify-center px-3 py-2 bg-white dark:bg-white/10 rounded-lg border border-gray-200 dark:border-white/20">
