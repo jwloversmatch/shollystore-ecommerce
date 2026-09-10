@@ -17,7 +17,6 @@ const RecentReviewsWidget = ({ isDark }: Props) => {
   const [deleteReview] = useDeleteAdminReviewMutation();
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
-  const bg = isDark ? "#141414" : "#fff";
   const border = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)";
   const textPrimary = isDark ? "#fff" : "#111827";
   const textMuted = isDark ? "#6b7280" : "#9ca3af";

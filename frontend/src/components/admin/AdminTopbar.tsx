@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,10 +11,24 @@ import {
   ChevronDown,
   Store,
   User as UserIcon,
+  LayoutDashboard,
 } from "lucide-react";
 import type { RootState } from "../../store";
 import { logout } from "../../features/auth/authSlice";
 import ThemeToggle from "../ThemeToggle";
+
+const ROUTE_TITLES: Record<string, string> = {
+  "/admin": "Dashboard",
+  "/admin/products": "Products",
+  "/admin/categories": "Categories",
+  "/admin/hero-slides": "Hero Slides",
+  "/admin/orders": "Orders",
+  "/admin/coupons": "Coupons",
+  "/admin/reviews": "Reviews",
+  "/admin/users": "Users",
+  "/admin/settings": "Settings",
+  "/admin/legal": "Legal Pages",
+};
 
 interface AdminTopbarProps {
   sidebarCollapsed: boolean;
@@ -28,6 +43,7 @@ const AdminTopbar = ({
   const { user } = useSelector((s: RootState) => s.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
@@ -54,7 +70,22 @@ const AdminTopbar = ({
     i18n.changeLanguage(lng);
   };
 
-  const initial = user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "A";
+  const initial =
+    user?.name?.[0]?.toUpperCase() ||
+    user?.email?.[0]?.toUpperCase() ||
+    "A";
+
+  // Resolve title — longest prefix match so nested routes work
+  const matchedPath = Object.keys(ROUTE_TITLES)
+    .filter((p) =>
+      p === "/admin"
+        ? location.pathname === "/admin"
+        : location.pathname.startsWith(p),
+    )
+    .sort((a, b) => b.length - a.length)[0];
+
+  const pageTitle = matchedPath ? ROUTE_TITLES[matchedPath] : "Admin";
+  const isDashboard = location.pathname === "/admin";
 
   return (
     <header
@@ -74,10 +105,30 @@ const AdminTopbar = ({
         <Menu className="w-5 h-5" aria-hidden="true" />
       </button>
 
-      {/* Title (mobile only, gives context) */}
-      <span className="lg:hidden text-sm font-bold text-gray-700 dark:text-gray-300 truncate">
-        {t("admin.label")}
-      </span>
+      {/* Breadcrumb — visible on md+; on mobile shows just the title */}
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="hidden md:flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600">
+          <LayoutDashboard className="w-3.5 h-3.5" aria-hidden="true" />
+          Admin
+        </span>
+        <span
+          className="hidden md:inline text-gray-300 dark:text-white/20 select-none"
+          aria-hidden="true"
+        >
+          /
+        </span>
+        <h1 className="text-sm md:text-base font-black text-gray-900 dark:text-white truncate">
+          {pageTitle}
+        </h1>
+        {/* Mobile-only decorative dot for context */}
+        {!isDashboard && (
+          <span
+            className="md:hidden w-1.5 h-1.5 rounded-full shrink-0"
+            style={{ background: "#e8622a" }}
+            aria-hidden="true"
+          />
+        )}
+      </div>
 
       {/* Spacer */}
       <div className="flex-1" />

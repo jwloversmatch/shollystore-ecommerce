@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import AdminSidebar from "../components/admin/AdminSidebar";
 import AdminTopbar from "../components/admin/AdminTopbar";
 
@@ -15,24 +16,18 @@ const AdminLayout = () => {
 
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Adjust state during render when the route changes — React's official
-  // pattern for "reset derived state on prop change". Avoids the
-  // react-hooks/set-state-in-effect lint error and skips an extra render.
+  // Adjust state during render on route change (React's official pattern)
   const [prevPathname, setPrevPathname] = useState(location.pathname);
   if (prevPathname !== location.pathname) {
     setPrevPathname(location.pathname);
     if (mobileOpen) setMobileOpen(false);
   }
 
-  // Persist collapse preference
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, String(sidebarCollapsed));
   }, [sidebarCollapsed]);
 
-  // Focus main on route change (matches app convention)
   useEffect(() => {
-    const main = document.getElementById("main-content");
-    main?.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
@@ -58,12 +53,37 @@ const AdminLayout = () => {
         <main
           id="main-content"
           tabIndex={-1}
-          className="px-4 md:px-6 lg:px-8 py-6 focus:outline-none"
+          className="px-4 md:px-6 lg:px-8 pt-6 focus:outline-none"
           style={{
             paddingBottom: "calc(32px + env(safe-area-inset-bottom, 0px))",
           }}
         >
-          <Outlet />
+          {/* Inner Suspense: only the page area shows a loader, the shell stays.
+              Route fade: key on pathname so each navigation re-runs the animation. */}
+          <Suspense
+            fallback={
+              <div className="flex justify-center items-center py-24">
+                <div
+                  className="w-10 h-10 rounded-full border-4 animate-spin"
+                  style={{
+                    borderColor: "#e8622a30",
+                    borderTopColor: "#e8622a",
+                  }}
+                  role="status"
+                  aria-label="Loading"
+                />
+              </div>
+            }
+          >
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <Outlet />
+            </motion.div>
+          </Suspense>
         </main>
       </div>
     </div>
