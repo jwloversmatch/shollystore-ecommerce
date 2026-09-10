@@ -24,6 +24,7 @@ export const Coupons = lazy(() => import("../pages/admin/Coupons"));
 export const Settings = lazy(() => import("../pages/admin/settings/"));
 export const Reviews = lazy(() => import("../pages/admin/reviews/ReviewsPage"));
 export const LegalPages = lazy(() => import("../pages/admin/LegalPages"));
+export const UsersPage = lazy(() => import("../pages/admin/users/UsersPage"));
 
 // Admin shell (sidebar + topbar)
 export const AdminLayout = lazy(() => import("../layouts/AdminLayout"));

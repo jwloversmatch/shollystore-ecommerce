@@ -51,6 +51,7 @@ import {
   LegalPages,
   Unsubscribe,
   AdminLayout,
+  UsersPage,
 } from "./routes/lazyPages";
 
 const ACCENT = "#e8622a";
@@ -148,6 +149,7 @@ function AppContent() {
                 <Route path="/admin/coupons" element={<Coupons />} />
                 <Route path="/admin/reviews" element={<Reviews />} />
                 <Route path="/admin/legal" element={<LegalPages />} />
+                <Route path="/admin/users" element={<UsersPage />} />
               </Route>
             </Route>
 
