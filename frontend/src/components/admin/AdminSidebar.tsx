@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,11 +16,13 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const ACCENT = "#e8622a";
+const GROUPS_STORAGE_KEY = "sholex:admin:sidebar-collapsed-groups";
 
 interface NavItem {
   to: string;
@@ -36,14 +39,7 @@ interface NavGroup {
 const NAV_GROUPS: NavGroup[] = [
   {
     labelKey: "admin.groups.main",
-    items: [
-      {
-        to: "/admin",
-        labelKey: "admin.dashboard",
-        icon: LayoutDashboard,
-        end: true,
-      },
-    ],
+    items: [{ to: "/admin", labelKey: "admin.dashboard", icon: LayoutDashboard, end: true }],
   },
   {
     labelKey: "admin.groups.catalog",
@@ -89,6 +85,24 @@ const AdminSidebar = ({
 }: AdminSidebarProps) => {
   const { t } = useTranslation();
 
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(
+    () => {
+      if (typeof window === "undefined") return {};
+      try {
+        return JSON.parse(localStorage.getItem(GROUPS_STORAGE_KEY) || "{}");
+      } catch {
+        return {};
+      }
+    },
+  );
+
+  useEffect(() => {
+    localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(collapsedGroups));
+  }, [collapsedGroups]);
+
+  const toggleGroup = (labelKey: string) =>
+    setCollapsedGroups((prev) => ({ ...prev, [labelKey]: !prev[labelKey] }));
+
   const navLinkClass = (isActive: boolean) =>
     `group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-150
       ${
@@ -100,7 +114,6 @@ const AdminSidebar = ({
 
   return (
     <>
-      {/* Mobile backdrop */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -134,7 +147,6 @@ const AdminSidebar = ({
           <Link
             to="/admin"
             className="flex items-center gap-2 font-black tracking-tight text-lg text-gray-900 dark:text-white"
-            aria-label="Sholex Admin — Dashboard"
             onClick={onMobileClose}
           >
             <span
@@ -154,7 +166,6 @@ const AdminSidebar = ({
             </span>
           </Link>
 
-          {/* Mobile close */}
           <button
             onClick={onMobileClose}
             className="lg:hidden p-2 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
@@ -165,71 +176,84 @@ const AdminSidebar = ({
         </div>
 
         {/* Nav body */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-2 space-y-6">
-          {NAV_GROUPS.map((group) => (
-            <div key={group.labelKey}>
-              {/* Group label — hidden when collapsed on desktop, always shown on mobile */}
-              {!collapsed ? (
-                <p className="px-3 mb-2 text-[10px] font-extrabold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-600">
-                  {t(group.labelKey)}
-                </p>
-              ) : (
-                <p className="hidden lg:block px-3 mb-2 text-center text-[10px] font-extrabold uppercase tracking-widest text-gray-400 dark:text-gray-600">
-                  ·
-                </p>
-              )}
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-2 space-y-4">
+          {NAV_GROUPS.map((group) => {
+            const isGroupCollapsed = collapsedGroups[group.labelKey] ?? false;
+            return (
+              <div key={group.labelKey}>
+                {/* Group header — clickable toggle in expanded mode, dot in rail mode */}
+                {!collapsed ? (
+                  <button
+                    onClick={() => toggleGroup(group.labelKey)}
+                    className="w-full flex items-center justify-between px-3 mb-1.5
+                      text-[10px] font-extrabold uppercase tracking-[0.15em]
+                      text-gray-400 dark:text-gray-600
+                      hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
+                    aria-expanded={!isGroupCollapsed}
+                  >
+                    <span>{t(group.labelKey)}</span>
+                    <ChevronDown
+                      className={`w-3 h-3 transition-transform ${
+                        isGroupCollapsed ? "-rotate-90" : ""
+                      }`}
+                      aria-hidden="true"
+                    />
+                  </button>
+                ) : (
+                  <p
+                    className="hidden lg:block px-3 mb-2 text-center text-[10px] font-extrabold text-gray-400 dark:text-gray-600"
+                    aria-hidden="true"
+                  >
+                    ·
+                  </p>
+                )}
 
-              <ul className="space-y-1">
-                {group.items.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <li key={item.to}>
-                      <NavLink
-                        to={item.to}
-                        end={item.end}
-                        onClick={onMobileClose}
-                        className={({ isActive }) => navLinkClass(isActive)}
-                        title={collapsed ? t(item.labelKey) : undefined}
-                      >
-                        {({ isActive }) => (
-                          <>
-                            <Icon
-                              className="w-5 h-5 shrink-0"
-                              aria-hidden="true"
-                            />
-                            <span
-                              className={`truncate ${
-                                collapsed ? "lg:hidden" : ""
-                              }`}
-                            >
-                              {t(item.labelKey)}
-                            </span>
-
-                            {/* Active indicator strip */}
-                            {isActive && (
-                              <motion.span
-                                layoutId="admin-sidebar-active"
-                                className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full ${
-                                  collapsed ? "lg:left-0" : ""
-                                }`}
-                                style={{ background: ACCENT }}
-                                transition={{
-                                  type: "spring",
-                                  stiffness: 400,
-                                  damping: 30,
-                                }}
-                                aria-hidden="true"
-                              />
+                {/* Items */}
+                {!isGroupCollapsed && (
+                  <ul className="space-y-1">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <li key={item.to}>
+                          <NavLink
+                            to={item.to}
+                            end={item.end}
+                            onClick={onMobileClose}
+                            className={({ isActive }) => navLinkClass(isActive)}
+                            title={collapsed ? t(item.labelKey) : undefined}
+                          >
+                            {({ isActive }) => (
+                              <>
+                                <Icon className="w-5 h-5 shrink-0" aria-hidden="true" />
+                                <span
+                                  className={`truncate ${collapsed ? "lg:hidden" : ""}`}
+                                >
+                                  {t(item.labelKey)}
+                                </span>
+                                {isActive && (
+                                  <motion.span
+                                    layoutId="admin-sidebar-active"
+                                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full"
+                                    style={{ background: ACCENT }}
+                                    transition={{
+                                      type: "spring",
+                                      stiffness: 400,
+                                      damping: 30,
+                                    }}
+                                    aria-hidden="true"
+                                  />
+                                )}
+                              </>
                             )}
-                          </>
-                        )}
-                      </NavLink>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+                          </NavLink>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
         </nav>
 
         {/* Bottom section */}
@@ -269,7 +293,6 @@ const AdminSidebar = ({
             );
           })}
 
-          {/* View store */}
           <Link
             to="/"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold
@@ -284,7 +307,6 @@ const AdminSidebar = ({
             </span>
           </Link>
 
-          {/* Collapse toggle — desktop only */}
           <button
             onClick={onToggleCollapsed}
             className={`hidden lg:flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold
@@ -299,9 +321,7 @@ const AdminSidebar = ({
             ) : (
               <>
                 <ChevronLeft className="w-5 h-5 shrink-0" aria-hidden="true" />
-                <span className="truncate">
-                  {t("admin.collapseSidebar")}
-                </span>
+                <span className="truncate">{t("admin.collapseSidebar")}</span>
               </>
             )}
           </button>

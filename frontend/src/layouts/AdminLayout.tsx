@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import AdminSidebar from "../components/admin/AdminSidebar";
 import AdminTopbar from "../components/admin/AdminTopbar";
+import CommandPalette from "../components/admin/CommandPalette";
 
 const STORAGE_KEY = "sholex:admin:sidebar-collapsed";
 
@@ -15,8 +16,9 @@ const AdminLayout = () => {
   });
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
-  // Adjust state during render on route change (React's official pattern)
+  // Reset drawer on route change (React's official pattern)
   const [prevPathname, setPrevPathname] = useState(location.pathname);
   if (prevPathname !== location.pathname) {
     setPrevPathname(location.pathname);
@@ -30,6 +32,19 @@ const AdminLayout = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
+
+  // Global ⌘K / Ctrl+K listener
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const isMod = e.metaKey || e.ctrlKey;
+      if (isMod && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#FCFAF5] dark:bg-[#0A0A0B]">
@@ -48,6 +63,7 @@ const AdminLayout = () => {
         <AdminTopbar
           sidebarCollapsed={sidebarCollapsed}
           onMobileMenuClick={() => setMobileOpen(true)}
+          onOpenPalette={() => setPaletteOpen(true)}
         />
 
         <main
@@ -58,8 +74,6 @@ const AdminLayout = () => {
             paddingBottom: "calc(32px + env(safe-area-inset-bottom, 0px))",
           }}
         >
-          {/* Inner Suspense: only the page area shows a loader, the shell stays.
-              Route fade: key on pathname so each navigation re-runs the animation. */}
           <Suspense
             fallback={
               <div className="flex justify-center items-center py-24">
@@ -86,6 +100,8 @@ const AdminLayout = () => {
           </Suspense>
         </main>
       </div>
+
+      <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
 };

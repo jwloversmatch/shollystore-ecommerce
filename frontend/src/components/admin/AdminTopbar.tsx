@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,6 +11,7 @@ import {
   Store,
   User as UserIcon,
   LayoutDashboard,
+  Search,
 } from "lucide-react";
 import type { RootState } from "../../store";
 import { logout } from "../../features/auth/authSlice";
@@ -33,11 +33,13 @@ const ROUTE_TITLES: Record<string, string> = {
 interface AdminTopbarProps {
   sidebarCollapsed: boolean;
   onMobileMenuClick: () => void;
+  onOpenPalette: () => void;
 }
 
 const AdminTopbar = ({
   sidebarCollapsed,
   onMobileMenuClick,
+  onOpenPalette,
 }: AdminTopbarProps) => {
   const { t, i18n } = useTranslation();
   const { user } = useSelector((s: RootState) => s.auth);
@@ -50,10 +52,7 @@ const AdminTopbar = ({
 
   useEffect(() => {
     const handler = (event: MouseEvent) => {
-      if (
-        accountRef.current &&
-        !accountRef.current.contains(event.target as Node)
-      ) {
+      if (accountRef.current && !accountRef.current.contains(event.target as Node)) {
         setAccountOpen(false);
       }
     };
@@ -66,16 +65,11 @@ const AdminTopbar = ({
     navigate("/");
   };
 
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
-  };
+  const changeLanguage = (lng: string) => i18n.changeLanguage(lng);
 
   const initial =
-    user?.name?.[0]?.toUpperCase() ||
-    user?.email?.[0]?.toUpperCase() ||
-    "A";
+    user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "A";
 
-  // Resolve title — longest prefix match so nested routes work
   const matchedPath = Object.keys(ROUTE_TITLES)
     .filter((p) =>
       p === "/admin"
@@ -105,7 +99,7 @@ const AdminTopbar = ({
         <Menu className="w-5 h-5" aria-hidden="true" />
       </button>
 
-      {/* Breadcrumb — visible on md+; on mobile shows just the title */}
+      {/* Breadcrumb */}
       <div className="flex items-center gap-2 min-w-0">
         <span className="hidden md:flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600">
           <LayoutDashboard className="w-3.5 h-3.5" aria-hidden="true" />
@@ -120,7 +114,6 @@ const AdminTopbar = ({
         <h1 className="text-sm md:text-base font-black text-gray-900 dark:text-white truncate">
           {pageTitle}
         </h1>
-        {/* Mobile-only decorative dot for context */}
         {!isDashboard && (
           <span
             className="md:hidden w-1.5 h-1.5 rounded-full shrink-0"
@@ -130,11 +123,39 @@ const AdminTopbar = ({
         )}
       </div>
 
-      {/* Spacer */}
       <div className="flex-1" />
 
       {/* Right cluster */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Search trigger — desktop-only in wide layout */}
+        <button
+          onClick={onOpenPalette}
+          className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold
+            text-gray-500 dark:text-gray-400
+            bg-gray-100 dark:bg-white/[0.06]
+            border border-gray-200 dark:border-white/10
+            hover:border-[#e8622a]/50 transition-colors min-w-[200px] lg:min-w-[240px]"
+          aria-label="Search (⌘K)"
+        >
+          <Search className="w-3.5 h-3.5" aria-hidden="true" />
+          <span className="flex-1 text-left">Search…</span>
+          <kbd className="text-[10px] font-black px-1.5 py-0.5 rounded
+            bg-white dark:bg-white/[0.06]
+            border border-gray-200 dark:border-white/10">
+            ⌘K
+          </kbd>
+        </button>
+
+        {/* Search icon — mobile only */}
+        <button
+          onClick={onOpenPalette}
+          className="md:hidden p-2 rounded-lg text-gray-600 dark:text-gray-400
+            hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+          aria-label="Search"
+        >
+          <Search className="w-4 h-4" aria-hidden="true" />
+        </button>
+
         {/* Language switcher */}
         <select
           value={i18n.language}
@@ -151,7 +172,6 @@ const AdminTopbar = ({
 
         <ThemeToggle />
 
-        {/* Store shortcut */}
         <Link
           to="/"
           className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold
@@ -201,7 +221,6 @@ const AdminTopbar = ({
                   bg-white dark:bg-[#141414]
                   border-gray-200 dark:border-white/[0.08]"
                 role="menu"
-                aria-label="Account menu"
               >
                 <div className="px-4 py-3 border-b border-gray-100 dark:border-white/[0.06]">
                   <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
