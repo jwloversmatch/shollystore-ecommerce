@@ -5,6 +5,7 @@ import {
   Routes,
   Route,
   useLocation,
+  Navigate,
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { HelmetProvider } from "react-helmet-async";
@@ -39,19 +40,23 @@ import {
   HeroSlides,
   Categories,
   Coupons,
-  Settings,
+  Reviews,
+  LegalPages,
+  UsersPage,
+  SettingsLayout,
+  GeneralSettings,
+  PaymentsSettings,
+  NotificationsSettings,
+  ActivitySettings,
   NotFound,
   Footer,
   PrivacyPolicy,
   TermsOfUse,
   About,
   Contact,
-  Reviews,
   ReturnPolicy,
-  LegalPages,
   Unsubscribe,
   AdminLayout,
-  UsersPage,
 } from "./routes/lazyPages";
 
 const ACCENT = "#e8622a";
@@ -142,7 +147,6 @@ function AppContent() {
               <Route element={<AdminLayout />}>
                 <Route path="/admin" element={<Dashboard />} />
                 <Route path="/admin/products" element={<Products />} />
-                <Route path="/admin/settings" element={<Settings />} />
                 <Route path="/admin/orders" element={<Orders />} />
                 <Route path="/admin/hero-slides" element={<HeroSlides />} />
                 <Route path="/admin/categories" element={<Categories />} />
@@ -150,6 +154,18 @@ function AppContent() {
                 <Route path="/admin/reviews" element={<Reviews />} />
                 <Route path="/admin/legal" element={<LegalPages />} />
                 <Route path="/admin/users" element={<UsersPage />} />
+
+                {/* Settings — nested routes with a shared rail */}
+                <Route path="/admin/settings" element={<SettingsLayout />}>
+                  <Route index element={<Navigate to="general" replace />} />
+                  <Route path="general" element={<GeneralSettings />} />
+                  <Route path="payments" element={<PaymentsSettings />} />
+                  <Route
+                    path="notifications"
+                    element={<NotificationsSettings />}
+                  />
+                  <Route path="activity" element={<ActivitySettings />} />
+                </Route>
               </Route>
             </Route>
 

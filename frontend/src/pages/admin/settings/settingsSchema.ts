@@ -13,7 +13,7 @@ export const settingsSchema = z.object({
 
 export type SettingsFormData = z.infer<typeof settingsSchema>;
 
-// ─── Bank account types (now managed separately) ────────────────────────────
+// ─── Bank account types ─────────────────────────────────────────────────────
 export interface BankAccount {
   _id: string;
   label: string;
@@ -24,7 +24,10 @@ export interface BankAccount {
   isActive: boolean;
 }
 
-export type BankAccountInput = Omit<BankAccount, "_id" | "isDefault" | "isActive">;
+export type BankAccountInput = Omit<
+  BankAccount,
+  "_id" | "isDefault" | "isActive"
+>;
 
 // ─── Settings data as returned from the API ─────────────────────────────────
 export interface SettingsData {
@@ -37,4 +40,14 @@ export interface SettingsData {
   specialOfferTitle?: string;
   specialOfferText?: string;
   landingMode?: boolean;
+}
+
+// ─── Activity log entry (used by AuditLog) ──────────────────────────────────
+export interface ChangeLogItem {
+  _id: string;
+  field: string;
+  oldValue: string;
+  newValue: string;
+  adminEmail: string;
+  changedAt: string;
 }

@@ -21,10 +21,16 @@ export const Orders = lazy(() => import("../pages/admin/orders/"));
 export const HeroSlides = lazy(() => import("../pages/admin/HeroSlides"));
 export const Categories = lazy(() => import("../pages/admin/categories/"));
 export const Coupons = lazy(() => import("../pages/admin/Coupons"));
-export const Settings = lazy(() => import("../pages/admin/settings/"));
 export const Reviews = lazy(() => import("../pages/admin/reviews/ReviewsPage"));
 export const LegalPages = lazy(() => import("../pages/admin/LegalPages"));
 export const UsersPage = lazy(() => import("../pages/admin/users/UsersPage"));
+
+// Admin settings (nested routes)
+export const SettingsLayout = lazy(() => import("../pages/admin/settings/SettingsLayout"));
+export const GeneralSettings = lazy(() => import("../pages/admin/settings/general/GeneralSettings"));
+export const PaymentsSettings = lazy(() => import("../pages/admin/settings/payments/PaymentsSettings"));
+export const NotificationsSettings = lazy(() => import("../pages/admin/settings/notifications/NotificationsSettings"));
+export const ActivitySettings = lazy(() => import("../pages/admin/settings/activity/ActivitySettings"));
 
 // Admin shell (sidebar + topbar)
 export const AdminLayout = lazy(() => import("../layouts/AdminLayout"));

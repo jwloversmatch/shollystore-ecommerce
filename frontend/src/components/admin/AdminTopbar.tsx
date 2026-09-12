@@ -28,6 +28,10 @@ const ROUTE_TITLES: Record<string, string> = {
   "/admin/users": "Users",
   "/admin/settings": "Settings",
   "/admin/legal": "Legal Pages",
+  "/admin/settings/general": "Settings · General",
+  "/admin/settings/payments": "Settings · Payments",
+  "/admin/settings/notifications": "Settings · Notifications",
+  "/admin/settings/activity": "Settings · Activity",
 };
 
 interface AdminTopbarProps {
@@ -52,7 +56,10 @@ const AdminTopbar = ({
 
   useEffect(() => {
     const handler = (event: MouseEvent) => {
-      if (accountRef.current && !accountRef.current.contains(event.target as Node)) {
+      if (
+        accountRef.current &&
+        !accountRef.current.contains(event.target as Node)
+      ) {
         setAccountOpen(false);
       }
     };
@@ -139,9 +146,11 @@ const AdminTopbar = ({
         >
           <Search className="w-3.5 h-3.5" aria-hidden="true" />
           <span className="flex-1 text-left">Search…</span>
-          <kbd className="text-[10px] font-black px-1.5 py-0.5 rounded
+          <kbd
+            className="text-[10px] font-black px-1.5 py-0.5 rounded
             bg-white dark:bg-white/[0.06]
-            border border-gray-200 dark:border-white/10">
+            border border-gray-200 dark:border-white/10"
+          >
             ⌘K
           </kbd>
         </button>
