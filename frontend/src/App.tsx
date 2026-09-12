@@ -57,6 +57,7 @@ import {
   ReturnPolicy,
   Unsubscribe,
   AdminLayout,
+  SecuritySettings,
 } from "./routes/lazyPages";
 
 const ACCENT = "#e8622a";
@@ -96,8 +97,7 @@ function AppContent() {
   }, [location.pathname, isAdminRoute]);
 
   const hideNavbar =
-    isAdminRoute ||
-    ["/cart", "/checkout", "/404"].includes(location.pathname);
+    isAdminRoute || ["/cart", "/checkout", "/404"].includes(location.pathname);
 
   const showFooter =
     !isAdminRoute &&
@@ -164,6 +164,7 @@ function AppContent() {
                     path="notifications"
                     element={<NotificationsSettings />}
                   />
+                  <Route path="security" element={<SecuritySettings />} />
                   <Route path="activity" element={<ActivitySettings />} />
                 </Route>
               </Route>

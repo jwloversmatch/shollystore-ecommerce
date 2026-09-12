@@ -31,6 +31,7 @@ export const GeneralSettings = lazy(() => import("../pages/admin/settings/genera
 export const PaymentsSettings = lazy(() => import("../pages/admin/settings/payments/PaymentsSettings"));
 export const NotificationsSettings = lazy(() => import("../pages/admin/settings/notifications/NotificationsSettings"));
 export const ActivitySettings = lazy(() => import("../pages/admin/settings/activity/ActivitySettings"));
+export const SecuritySettings = lazy(() => import("../pages/admin/settings/security/SecuritySettings"));
 
 // Admin shell (sidebar + topbar)
 export const AdminLayout = lazy(() => import("../layouts/AdminLayout"));

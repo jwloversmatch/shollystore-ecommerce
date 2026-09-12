@@ -3,6 +3,7 @@ import {
   Home,
   CreditCard,
   Bell,
+  Lock,
   History,
   ChevronLeft,
   Settings as SettingsIcon,
@@ -12,6 +13,7 @@ const SECTIONS = [
   { to: "/admin/settings/general",       label: "General",       icon: Home },
   { to: "/admin/settings/payments",      label: "Payments",      icon: CreditCard },
   { to: "/admin/settings/notifications", label: "Notifications", icon: Bell },
+   { to: "/admin/settings/security",      label: "Security",      icon: Lock },
   { to: "/admin/settings/activity",      label: "Activity Log",  icon: History },
 ];
 

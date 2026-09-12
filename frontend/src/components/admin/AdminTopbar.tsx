@@ -32,6 +32,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/admin/settings/payments": "Settings · Payments",
   "/admin/settings/notifications": "Settings · Notifications",
   "/admin/settings/activity": "Settings · Activity",
+  "/admin/settings/security": "Settings · Security",
 };
 
 interface AdminTopbarProps {
