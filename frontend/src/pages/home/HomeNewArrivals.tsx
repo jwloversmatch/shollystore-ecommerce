@@ -1,11 +1,17 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useGetProductsQuery } from "../../features/api/apiSlice";
 import ProductCard from "../../components/ProductCard";
-import { useNavigate } from "react-router-dom";
+import ProductQuickViewModal from "../../components/ProductQuickViewModal";
 import { PLACEHOLDER } from "../../types/home";
+import type { ProductItem } from "../../types/home";
 
 const HomeNewArrivals = () => {
   const { data, isLoading } = useGetProductsQuery({ limit: 8 });
   const navigate = useNavigate();
+  const [quickViewProduct, setQuickViewProduct] = useState<ProductItem | null>(
+    null,
+  );
 
   if (isLoading || !data?.products?.length) return null;
 
@@ -26,17 +32,26 @@ const HomeNewArrivals = () => {
             category={
               typeof product.category === "string"
                 ? product.category
-                : product.category?.name ?? "General"
+                : (product.category?.name ?? "General")
             }
             stock={product.stock}
             compareAtPrice={product.compareAtPrice}
             discountPercent={product.discount?.percentage}
+            variants={product.variants}
             onClick={() => navigate(`/products/${product.slug || product._id}`)}
             averageRating={product.averageRating}
             numberOfReviews={product.numberOfReviews}
+            onQuickView={setQuickViewProduct}
+            fullProduct={product}
           />
         ))}
       </div>
+
+      <ProductQuickViewModal
+        product={quickViewProduct}
+        isOpen={!!quickViewProduct}
+        onClose={() => setQuickViewProduct(null)}
+      />
     </section>
   );
 };

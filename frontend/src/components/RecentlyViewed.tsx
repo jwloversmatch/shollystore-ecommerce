@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGetProductsByIdsQuery } from "../features/api/apiSlice";
 import ProductCard from "./ProductCard";
+import ProductQuickViewModal from "./ProductQuickViewModal";
 import type { ProductItem } from "../types/home";
 import { PLACEHOLDER } from "../types/home";
 
@@ -15,6 +16,9 @@ const RecentlyViewed = ({
   currentProductId,
 }: RecentlyViewedProps) => {
   const navigate = useNavigate();
+  const [quickViewProduct, setQuickViewProduct] = useState<ProductItem | null>(
+    null,
+  );
 
   const filteredIds = useMemo(
     () =>
@@ -35,10 +39,7 @@ const RecentlyViewed = ({
       .filter(Boolean) as ProductItem[];
   }, [data, filteredIds]);
 
-  if (isLoading) {
-    return null;
-  }
-
+  if (isLoading) return null;
   if (filteredIds.length === 0 || products.length === 0) return null;
 
   return (
@@ -68,12 +69,21 @@ const RecentlyViewed = ({
             stock={product.stock}
             compareAtPrice={product.compareAtPrice}
             discountPercent={product.discount?.percentage}
+            variants={product.variants}
             onClick={() => navigate(`/products/${product.slug || product._id}`)}
             averageRating={product.averageRating}
             numberOfReviews={product.numberOfReviews}
+            onQuickView={setQuickViewProduct}
+            fullProduct={product}
           />
         ))}
       </div>
+
+      <ProductQuickViewModal
+        product={quickViewProduct}
+        isOpen={!!quickViewProduct}
+        onClose={() => setQuickViewProduct(null)}
+      />
     </section>
   );
 };

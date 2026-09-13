@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import ProductCard from "../components/ProductCard";
-import ProductQuickViewModal from "../components/ProductQuickViewModal";
+import { useGetProductsByIdsQuery } from "../features/api/apiSlice";
+import ProductCard from "./ProductCard";
+import ProductQuickViewModal from "./ProductQuickViewModal";
 import type { ProductItem } from "../types/home";
 import { PLACEHOLDER } from "../types/home";
 
@@ -15,7 +16,22 @@ const RelatedProducts = ({ products }: RelatedProductsProps) => {
     null,
   );
 
-  if (!products || products.length === 0) return null;
+  const ids = useMemo(() => products.map((p) => p._id), [products]);
+
+  // Refetch full product data by IDs so `stock`, `variants`, `sku`, etc.
+  // are all available. The parent only passes partial objects from
+  // `product.relatedProducts` (name / price / images).
+  const { data } = useGetProductsByIdsQuery(ids, { skip: ids.length === 0 });
+
+  // Merge: prefer the fully-hydrated version, fall back to the partial.
+  const hydrated = useMemo<ProductItem[]>(() => {
+    if (!data?.products) return products;
+    const byId = new Map<string, ProductItem>();
+    data.products.forEach((p) => byId.set(p._id, p));
+    return products.map((p) => byId.get(p._id) ?? p);
+  }, [products, data]);
+
+  if (!hydrated || hydrated.length === 0) return null;
 
   return (
     <section className="mt-16" aria-labelledby="related-heading">
@@ -28,7 +44,7 @@ const RelatedProducts = ({ products }: RelatedProductsProps) => {
         </h2>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-        {products.slice(0, 4).map((product, i) => (
+        {hydrated.slice(0, 4).map((product, i) => (
           <ProductCard
             key={product._id}
             index={i}
@@ -39,7 +55,7 @@ const RelatedProducts = ({ products }: RelatedProductsProps) => {
             category={
               typeof product.category === "string"
                 ? product.category
-                : product.category?.name ?? "General"
+                : (product.category?.name ?? "General")
             }
             stock={product.stock}
             compareAtPrice={product.compareAtPrice}
