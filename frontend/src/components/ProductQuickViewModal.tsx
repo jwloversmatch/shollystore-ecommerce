@@ -14,6 +14,7 @@ import { getCloudinaryUrl } from "../utils/cloudinary";
 import { StarRating } from "./StarRating";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { PLACEHOLDER_IMAGE as PLACEHOLDER } from "../utils/placeholder";
+import { canShop, canUseWishlist } from "../utils/permissions";
 import {
   X,
   ShoppingCart,
@@ -39,6 +40,10 @@ const QuickViewModal = ({ product, isOpen, onClose }: QuickViewModalProps) => {
   const [addToWishlist] = useAddToWishlistMutation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
 
+  const shoppingAllowed = canShop(user);
+  const wishlistAllowed = canUseWishlist(user);
+  const isAdmin = user?.role === "admin";
+
   const [qty, setQty] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -61,11 +66,15 @@ const QuickViewModal = ({ product, isOpen, onClose }: QuickViewModalProps) => {
   const isOutOfStock = stock === 0;
   const isWishlisted = product ? wishlistIds.includes(product._id) : false;
 
-  // Escape key to close
   useFocusTrap(modalRef, isOpen, onClose);
 
   const handleAddToCart = () => {
-    if (!product || isOutOfStock) {
+    if (!product) return;
+    if (!shoppingAllowed) {
+      toast.error("Admins can't add items to cart. Use a customer account to test checkout.");
+      return;
+    }
+    if (isOutOfStock) {
       toast.error("Out of stock!");
       return;
     }
@@ -93,8 +102,8 @@ const QuickViewModal = ({ product, isOpen, onClose }: QuickViewModalProps) => {
 
   const handleWishlistToggle = async () => {
     if (!product) return;
-    if (!user) {
-      toast.error("Please login to add items to your wishlist");
+    if (!wishlistAllowed) {
+      toast.error("Admins can't use the wishlist.");
       return;
     }
     try {
@@ -264,48 +273,55 @@ const QuickViewModal = ({ product, isOpen, onClose }: QuickViewModalProps) => {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex items-center rounded-xl overflow-hidden border border-gray-200 dark:border-white/10">
+                {/* Purchase actions — hidden for admins */}
+                {!isAdmin ? (
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center rounded-xl overflow-hidden border border-gray-200 dark:border-white/10">
+                      <button
+                        onClick={() => setQty(Math.max(1, qty - 1))}
+                        disabled={qty <= 1}
+                        className="w-9 h-10 flex items-center justify-center text-gray-500 dark:text-gray-400 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/5"
+                        aria-label="Decrease quantity"
+                      >
+                        -
+                      </button>
+                      <span className="w-10 text-center text-sm font-bold">{qty}</span>
+                      <button
+                        onClick={() => setQty(Math.min(stock, qty + 1))}
+                        disabled={qty >= stock}
+                        className="w-9 h-10 flex items-center justify-center text-gray-500 dark:text-gray-400 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/5"
+                        aria-label="Increase quantity"
+                      >
+                        +
+                      </button>
+                    </div>
+
                     <button
-                      onClick={() => setQty(Math.max(1, qty - 1))}
-                      disabled={qty <= 1}
-                      className="w-9 h-10 flex items-center justify-center text-gray-500 dark:text-gray-400 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/5"
-                      aria-label="Decrease quantity"
+                      onClick={handleAddToCart}
+                      disabled={isOutOfStock}
+                      className={`flex-1 h-10 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all ${added ? "bg-emerald-500" : "bg-[#e8622a] hover:bg-[#c9511f]"} disabled:opacity-50`}
                     >
-                      -
+                      {added ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+                      {added ? "Added!" : "Add to Cart"}
                     </button>
-                    <span className="w-10 text-center text-sm font-bold">{qty}</span>
+
                     <button
-                      onClick={() => setQty(Math.min(stock, qty + 1))}
-                      disabled={qty >= stock}
-                      className="w-9 h-10 flex items-center justify-center text-gray-500 dark:text-gray-400 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/5"
-                      aria-label="Increase quantity"
+                      onClick={handleWishlistToggle}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
+                        isWishlisted
+                          ? "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-500"
+                          : "bg-gray-100 dark:bg-[#1F2123] border-gray-200 dark:border-white/10 text-gray-400"
+                      }`}
+                      aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
                     >
-                      +
+                      <Heart className="w-4 h-4" fill={isWishlisted ? "currentColor" : "none"} />
                     </button>
                   </div>
-
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={isOutOfStock}
-                    className={`flex-1 h-10 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all ${added ? "bg-emerald-500" : "bg-[#e8622a] hover:bg-[#c9511f]"} disabled:opacity-50`}
-                  >
-                    {added ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
-                    {added ? "Added!" : "Add to Cart"}
-                  </button>
-
-                  <button
-                    onClick={handleWishlistToggle}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
-                      isWishlisted
-                        ? "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-500"
-                        : "bg-gray-100 dark:bg-[#1F2123] border-gray-200 dark:border-white/10 text-gray-400"
-                    }`}
-                    aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-                  >
-                    <Heart className="w-4 h-4" fill={isWishlisted ? "currentColor" : "none"} />
-                  </button>
-                </div>
+                ) : (
+                  <p className="mb-4 text-xs text-gray-500 dark:text-gray-400 italic">
+                    You're viewing as admin — purchase actions are disabled.
+                  </p>
+                )}
 
                 <button
                   onClick={() => {

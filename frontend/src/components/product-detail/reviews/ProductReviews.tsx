@@ -22,6 +22,10 @@ interface ProductReviewsProps {
   productId: string;
   userId?: string;
   isLoggedIn: boolean;
+  /** Only customers may submit reviews. */
+  canReview?: boolean;
+  /** Set true when the current user is an admin — shows a friendly notice. */
+  isAdmin?: boolean;
   averageRating?: number;
   numberOfReviews?: number;
 }
@@ -30,9 +34,13 @@ const ProductReviews = ({
   productId,
   userId,
   isLoggedIn,
+  canReview,
+  isAdmin = false,
   averageRating,
   numberOfReviews,
 }: ProductReviewsProps) => {
+  const reviewsAllowed = canReview ?? (isLoggedIn && !isAdmin);
+
   const [addReview, { isLoading: addingReview }] = useAddReviewMutation();
   const [updateReview, { isLoading: updatingReview }] = useUpdateReviewMutation();
   const [deleteReview] = useDeleteReviewMutation();
@@ -100,8 +108,8 @@ const ProductReviews = ({
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isLoggedIn) {
-      toast.error("Please login to write a review");
+    if (!reviewsAllowed) {
+      toast.error("Only customer accounts can submit reviews.");
       return;
     }
     if (!reviewComment.trim()) {
@@ -224,6 +232,7 @@ const ProductReviews = ({
               const isOwner = !!userId && review.user._id === userId;
               const isEditing = editingReviewId === review._id;
               const canEdit =
+                reviewsAllowed &&
                 isOwner &&
                 currentTime - new Date(review.createdAt).getTime() < EDIT_WINDOW_MS;
               const canDelete = canEdit;
@@ -261,7 +270,8 @@ const ProductReviews = ({
           </p>
         )}
 
-        {isLoggedIn ? (
+        {/* Review submission area — role-gated */}
+        {reviewsAllowed ? (
           <ReviewForm
             formClassName="mt-8 space-y-4"
             commentInputId="review-comment"
@@ -280,6 +290,13 @@ const ProductReviews = ({
             submitLabel="Submit Review"
             submittingLabel="Submitting..."
           />
+        ) : isAdmin ? (
+          <div className="mt-6 p-4 rounded-xl bg-gray-100 dark:bg-white/[0.03] border border-gray-200 dark:border-white/[0.06]">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              You're viewing as admin. Reviews can only be submitted from a
+              customer account.
+            </p>
+          </div>
         ) : (
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-6">
             Please{" "}

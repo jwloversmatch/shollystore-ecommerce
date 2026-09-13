@@ -16,6 +16,7 @@ import type { RootState } from "../store";
 import type { IVariant, ProductItem } from "../types/home";
 import { StarRating } from "./StarRating";
 import { PLACEHOLDER_IMAGE } from "../utils/placeholder";
+import { canShop, canUseWishlist } from "../utils/permissions";
 
 interface ProductProps {
   _id: string;
@@ -34,7 +35,6 @@ interface ProductProps {
   onQuickView?: (product: ProductItem) => void;
   fullProduct?: ProductItem;
 }
-
 
 const ProductCard = ({
   _id,
@@ -62,6 +62,10 @@ const ProductCard = ({
   const user = useSelector((s: RootState) => s.auth.user);
   const [addToWishlist] = useAddToWishlistMutation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
+
+  const shoppingAllowed = canShop(user);
+  const wishlistAllowed = canUseWishlist(user);
+  const isAdmin = user?.role === "admin";
 
   const isOutOfStock = stock !== undefined && stock === 0;
   const accent = isOutOfStock ? "#ef4444" : "#e8622a";
@@ -103,6 +107,11 @@ const ProductCard = ({
   const handleAddToCart = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
+
+      if (!shoppingAllowed) {
+        toast.error("Admins can't add items to cart. Use a customer account to test checkout.");
+        return;
+      }
       if (isOutOfStock) {
         toast.error(t("product.outOfStockToast"));
         return;
@@ -114,14 +123,14 @@ const ProductCard = ({
       setAdded(true);
       setTimeout(() => setAdded(false), 1800);
     },
-    [dispatch, _id, name, image, price, stock, isOutOfStock, t],
+    [dispatch, _id, name, image, price, stock, isOutOfStock, shoppingAllowed, t],
   );
 
   const handleWishlistToggle = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (!user) {
-        toast.error(t("product.loginForWishlist"));
+      if (!wishlistAllowed) {
+        toast.error("Admins can't use the wishlist.");
         return;
       }
       try {
@@ -138,7 +147,7 @@ const ProductCard = ({
         toast.error(t("product.wishlistUpdateError"));
       }
     },
-    [dispatch, isWishlisted, _id, addToWishlist, removeFromWishlist, user, t],
+    [dispatch, isWishlisted, _id, addToWishlist, removeFromWishlist, wishlistAllowed, t],
   );
 
   const handleQuickView = (e: React.MouseEvent) => {
@@ -148,8 +157,6 @@ const ProductCard = ({
     }
   };
 
-  // When image fails, use the local fallback (getCloudinaryUrl returns it unchanged
-  // because it isn't a Cloudinary URL).
   const imgSrc = getCloudinaryUrl(imgError ? PLACEHOLDER_IMAGE : image, 400);
   const srcSet = !imgError
     ? `${getCloudinaryUrl(image, 400)} 400w, ${getCloudinaryUrl(image, 800)} 800w`
@@ -233,21 +240,24 @@ const ProductCard = ({
               </button>
             )}
 
-            <button
-              onClick={handleWishlistToggle}
-              className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-colors pointer-events-auto ${
-                isWishlisted
-                  ? "bg-red-50 dark:bg-red-500/20 text-red-500"
-                  : "bg-white/80 dark:bg-black/40 text-gray-400 hover:text-red-400"
-              }`}
-              aria-label={isWishlisted ? t("product.removeFromWishlist") : t("product.addToWishlist")}
-            >
-              <Heart
-                className="w-4 h-4"
-                fill={isWishlisted ? "currentColor" : "none"}
-                aria-hidden="true"
-              />
-            </button>
+            {/* Wishlist — hidden for admins */}
+            {!isAdmin && (
+              <button
+                onClick={handleWishlistToggle}
+                className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-colors pointer-events-auto ${
+                  isWishlisted
+                    ? "bg-red-50 dark:bg-red-500/20 text-red-500"
+                    : "bg-white/80 dark:bg-black/40 text-gray-400 hover:text-red-400"
+                }`}
+                aria-label={isWishlisted ? t("product.removeFromWishlist") : t("product.addToWishlist")}
+              >
+                <Heart
+                  className="w-4 h-4"
+                  fill={isWishlisted ? "currentColor" : "none"}
+                  aria-hidden="true"
+                />
+              </button>
+            )}
 
             {isOutOfStock && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center" aria-hidden="true">
@@ -344,77 +354,80 @@ const ProductCard = ({
                   </span>
                 </div>
 
-                <motion.button
-                  onClick={handleAddToCart}
-                  disabled={isOutOfStock}
-                  whileTap={{ scale: 0.9 }}
-                  className={`relative z-[2] pointer-events-auto flex items-center justify-center w-9 h-9 rounded-full transition-colors ${
-                    isOutOfStock
-                      ? "bg-gray-200 dark:bg-[#1e1e1e] text-gray-500 dark:text-gray-600 cursor-not-allowed"
-                      : added
-                        ? "bg-emerald-500 text-white"
-                        : "bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-white/20"
-                  }`}
-                  aria-label={
-                    isOutOfStock
-                      ? t("product.isOutOfStock", { name })
-                      : added
-                        ? t("product.addedToCartAria", { name })
-                        : t("product.addToCartAria", { name, price: priceDisplay.full })
-                  }
-                >
-                  <AnimatePresence>
-                    {added && (
-                      <motion.span
-                        key="ping"
-                        initial={{ scale: 1, opacity: 0.6 }}
-                        animate={{ scale: 1.9, opacity: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.6, ease: "easeOut" }}
-                        className="absolute inset-0 rounded-full bg-emerald-400"
-                        aria-hidden="true"
-                      />
-                    )}
-                  </AnimatePresence>
+                {/* Add to cart — hidden entirely for admins */}
+                {!isAdmin && (
+                  <motion.button
+                    onClick={handleAddToCart}
+                    disabled={isOutOfStock}
+                    whileTap={{ scale: 0.9 }}
+                    className={`relative z-[2] pointer-events-auto flex items-center justify-center w-9 h-9 rounded-full transition-colors ${
+                      isOutOfStock
+                        ? "bg-gray-200 dark:bg-[#1e1e1e] text-gray-500 dark:text-gray-600 cursor-not-allowed"
+                        : added
+                          ? "bg-emerald-500 text-white"
+                          : "bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-white hover:bg-gray-300 dark:hover:bg-white/20"
+                    }`}
+                    aria-label={
+                      isOutOfStock
+                        ? t("product.isOutOfStock", { name })
+                        : added
+                          ? t("product.addedToCartAria", { name })
+                          : t("product.addToCartAria", { name, price: priceDisplay.full })
+                    }
+                  >
+                    <AnimatePresence>
+                      {added && (
+                        <motion.span
+                          key="ping"
+                          initial={{ scale: 1, opacity: 0.6 }}
+                          animate={{ scale: 1.9, opacity: 0 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.6, ease: "easeOut" }}
+                          className="absolute inset-0 rounded-full bg-emerald-400"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </AnimatePresence>
 
-                  <AnimatePresence initial={false}>
-                    {isOutOfStock ? (
-                      <motion.span
-                        key="out"
-                        initial={{ opacity: 0, scale: 0.5 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.5 }}
-                        transition={{ duration: 0.15 }}
-                        className="text-xs font-bold"
-                        aria-hidden="true"
-                      >
-                        ✕
-                      </motion.span>
-                    ) : added ? (
-                      <motion.span
-                        key="added"
-                        initial={{ opacity: 0, scale: 0.4, rotate: -45 }}
-                        animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                        exit={{ opacity: 0, scale: 0.4 }}
-                        transition={{ type: "spring", stiffness: 500, damping: 22 }}
-                        aria-hidden="true"
-                      >
-                        <Check className="w-4 h-4" />
-                      </motion.span>
-                    ) : (
-                      <motion.span
-                        key="cart"
-                        initial={{ opacity: 0, scale: 0.5 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.5 }}
-                        transition={{ duration: 0.15 }}
-                        aria-hidden="true"
-                      >
-                        <ShoppingCart className="w-4 h-4" />
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </motion.button>
+                    <AnimatePresence initial={false}>
+                      {isOutOfStock ? (
+                        <motion.span
+                          key="out"
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.5 }}
+                          transition={{ duration: 0.15 }}
+                          className="text-xs font-bold"
+                          aria-hidden="true"
+                        >
+                          ✕
+                        </motion.span>
+                      ) : added ? (
+                        <motion.span
+                          key="added"
+                          initial={{ opacity: 0, scale: 0.4, rotate: -45 }}
+                          animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                          exit={{ opacity: 0, scale: 0.4 }}
+                          transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                          aria-hidden="true"
+                        >
+                          <Check className="w-4 h-4" />
+                        </motion.span>
+                      ) : (
+                        <motion.span
+                          key="cart"
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.5 }}
+                          transition={{ duration: 0.15 }}
+                          aria-hidden="true"
+                        >
+                          <ShoppingCart className="w-4 h-4" />
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+                )}
               </div>
             </div>
           </div>

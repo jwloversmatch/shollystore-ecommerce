@@ -18,6 +18,7 @@ import {
 } from "../features/api/apiSlice";
 import type { ProductItem } from "../types/home";
 import type { RootState } from "../store";
+import { canShop, canUseWishlist, canReview } from "../utils/permissions";
 
 import ProductDetailSkeleton from "../components/product-detail/ProductDetailSkeleton";
 import ProductNotFound from "../components/product-detail/ProductNotFound";
@@ -71,6 +72,12 @@ const ProductDetail = () => {
   const user = useSelector((s: RootState) => s.auth.user);
   const [addToWishlist] = useAddToWishlistMutation();
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
+
+  // Role-based permissions
+  const shoppingAllowed = canShop(user);
+  const wishlistAllowed = canUseWishlist(user);
+  const reviewsAllowed = canReview(user);
+  const isAdmin = user?.role === "admin";
 
   const { data: product, isLoading, isError } = useGetProductBySlugQuery(slug || "");
   const { data: categoryTree = [] } = useGetCategoryTreeQuery(undefined);
@@ -132,8 +139,8 @@ const ProductDetail = () => {
   // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleWishlistToggle = async () => {
     if (!product) return;
-    if (!user) {
-      toast.error("Please login to add items to your wishlist");
+    if (!wishlistAllowed) {
+      toast.error("Admins can't use the wishlist.");
       return;
     }
     try {
@@ -152,7 +159,14 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = () => {
-    if (!product || variant.isOutOfStock) {
+    if (!product) return;
+    if (!shoppingAllowed) {
+      toast.error(
+        "Admins can't add items to cart. Use a customer account to test checkout.",
+      );
+      return;
+    }
+    if (variant.isOutOfStock) {
       toast.error("Out of stock!");
       return;
     }
@@ -333,6 +347,7 @@ const ProductDetail = () => {
             added={added}
             onAddToCart={handleAddToCart}
             productName={product.name}
+            disabled={isAdmin}
           />
 
           <ProductMetaGrid items={metaItems} />
@@ -352,6 +367,8 @@ const ProductDetail = () => {
         productId={product._id}
         userId={user?._id}
         isLoggedIn={!!user}
+        canReview={reviewsAllowed}
+        isAdmin={isAdmin}
         averageRating={product.averageRating}
         numberOfReviews={product.numberOfReviews}
       />
@@ -369,6 +386,7 @@ const ProductDetail = () => {
         added={added}
         onAddToCart={handleAddToCart}
         productName={product.name}
+        disabled={isAdmin}
       />
     </main>
   );

@@ -13,6 +13,8 @@ interface DesktopPurchaseBarProps {
   added: boolean;
   onAddToCart: () => void;
   productName: string;
+  /** Admins can't purchase — render a notice instead of the CTA. */
+  disabled?: boolean;
 }
 
 const DesktopPurchaseBar = ({
@@ -26,7 +28,19 @@ const DesktopPurchaseBar = ({
   added,
   onAddToCart,
   productName,
+  disabled = false,
 }: DesktopPurchaseBarProps) => {
+  if (disabled) {
+    return (
+      <div className="hidden sm:block p-4 rounded-xl border bg-gray-50 dark:bg-white/[0.03] border-gray-200 dark:border-white/[0.06]">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          You're viewing as admin — purchase actions are disabled. Sign in as a
+          customer to test the checkout flow.
+        </p>
+      </div>
+    );
+  }
+
   if (isOutOfStock) {
     return (
       <div
