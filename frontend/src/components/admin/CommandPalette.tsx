@@ -17,6 +17,7 @@ import {
   ExternalLink,
   LogOut,
   Plus,
+  TrendingUp,
 } from "lucide-react";
 import { logout } from "../../features/auth/authSlice";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
@@ -43,6 +44,7 @@ const COMMANDS: Command[] = [
   { id: "reviews",    label: "Reviews",          path: "/admin/reviews",     icon: Star,            group: "Navigate" },
   { id: "settings",   label: "Settings",         path: "/admin/settings",    icon: Settings,        group: "Navigate" },
   { id: "legal",      label: "Legal Pages",      path: "/admin/legal",       icon: FileText,        group: "Navigate", keywords: ["privacy", "terms", "returns"] },
+  { id: "sales-report", label: "Sales Report", path: "/admin/reports/sales", icon: TrendingUp, group: "Navigate", keywords: ["revenue", "analytics", "earnings"] },
 
   { id: "new-product", label: "Add New Product", hint: "Opens products page", path: "/admin/products", icon: Plus,         group: "Actions" },
   { id: "view-store",  label: "View Store",      hint: "Opens storefront",    path: "/",               icon: ExternalLink, group: "Actions" },

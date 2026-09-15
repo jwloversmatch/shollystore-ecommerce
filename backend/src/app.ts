@@ -16,10 +16,8 @@ dotenv.config();
 
 const app: Application = express();
 
-// Trust proxy
 app.set("trust proxy", 1);
 
-// Security
 app.use(
   helmet({
     contentSecurityPolicy:
@@ -31,7 +29,6 @@ app.use(
 
 app.use(compression());
 
-// CORS
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.CLIENT_URL,

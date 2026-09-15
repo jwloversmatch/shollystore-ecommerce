@@ -42,11 +42,13 @@
     "openAdminMenu": "Open admin menu",
     "closeAdminMenu": "Close admin menu",
     "accountMenu": "Account menu",
+    "salesReport": "Sales Report",
     "groups": {
       "main": "Main",
       "catalog": "Catalog",
       "sales": "Sales",
-      "customers": "Customers"
+      "customers": "Customers",
+      "reports": "Reports"
     }
   },
   "footer": {

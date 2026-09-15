@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  TrendingUp,
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -39,14 +40,25 @@ interface NavGroup {
 const NAV_GROUPS: NavGroup[] = [
   {
     labelKey: "admin.groups.main",
-    items: [{ to: "/admin", labelKey: "admin.dashboard", icon: LayoutDashboard, end: true }],
+    items: [
+      {
+        to: "/admin",
+        labelKey: "admin.dashboard",
+        icon: LayoutDashboard,
+        end: true,
+      },
+    ],
   },
   {
     labelKey: "admin.groups.catalog",
     items: [
       { to: "/admin/products", labelKey: "admin.products", icon: Package },
       { to: "/admin/categories", labelKey: "admin.categories", icon: Tag },
-      { to: "/admin/hero-slides", labelKey: "admin.heroSlides", icon: ImageIcon },
+      {
+        to: "/admin/hero-slides",
+        labelKey: "admin.heroSlides",
+        icon: ImageIcon,
+      },
     ],
   },
   {
@@ -54,6 +66,16 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: "/admin/orders", labelKey: "admin.orders", icon: ShoppingBag },
       { to: "/admin/coupons", labelKey: "admin.coupons", icon: BadgePercent },
+    ],
+  },
+  {
+    labelKey: "admin.groups.reports",
+    items: [
+      {
+        to: "/admin/reports/sales",
+        labelKey: "admin.salesReport",
+        icon: TrendingUp,
+      },
     ],
   },
   {
@@ -85,16 +107,16 @@ const AdminSidebar = ({
 }: AdminSidebarProps) => {
   const { t } = useTranslation();
 
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(
-    () => {
-      if (typeof window === "undefined") return {};
-      try {
-        return JSON.parse(localStorage.getItem(GROUPS_STORAGE_KEY) || "{}");
-      } catch {
-        return {};
-      }
-    },
-  );
+  const [collapsedGroups, setCollapsedGroups] = useState<
+    Record<string, boolean>
+  >(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      return JSON.parse(localStorage.getItem(GROUPS_STORAGE_KEY) || "{}");
+    } catch {
+      return {};
+    }
+  });
 
   useEffect(() => {
     localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(collapsedGroups));
@@ -224,7 +246,10 @@ const AdminSidebar = ({
                           >
                             {({ isActive }) => (
                               <>
-                                <Icon className="w-5 h-5 shrink-0" aria-hidden="true" />
+                                <Icon
+                                  className="w-5 h-5 shrink-0"
+                                  aria-hidden="true"
+                                />
                                 <span
                                   className={`truncate ${collapsed ? "lg:hidden" : ""}`}
                                 >
@@ -271,7 +296,9 @@ const AdminSidebar = ({
                 {({ isActive }) => (
                   <>
                     <Icon className="w-5 h-5 shrink-0" aria-hidden="true" />
-                    <span className={`truncate ${collapsed ? "lg:hidden" : ""}`}>
+                    <span
+                      className={`truncate ${collapsed ? "lg:hidden" : ""}`}
+                    >
                       {t(item.labelKey)}
                     </span>
                     {isActive && (

@@ -7,7 +7,9 @@ interface QueueEmailPayload {
   text?: string;
 }
 
-export const enqueueEmail = async (payload: QueueEmailPayload): Promise<void> => {
+export const enqueueEmail = async (
+  payload: QueueEmailPayload,
+): Promise<void> => {
   try {
     await EmailQueue.create({
       to: payload.to,

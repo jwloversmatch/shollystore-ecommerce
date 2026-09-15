@@ -56,7 +56,7 @@ describe("Order API", () => {
     expect(res.body.order.shippingFee).toBe(2500);
     expect(res.body.order.totalPrice).toBe(product.price * 2 + 2500);
     expect(res.body.order.trackingNumber).toMatch(/^SHO-\d{4}-[A-Z0-9]{6}$/);
-    expect(res.body.trackingToken).toBeDefined(); // NEW
+    expect(res.body.trackingToken).toBeDefined();
   });
 
   it("should charge ₦4000 shipping for non-Lagos city in Nigeria", async () => {
@@ -243,7 +243,6 @@ describe("Order API", () => {
 
     const orderId = createRes.body.order._id;
 
-    // Simulate another user by changing global test user
     const otherUser = await createTestUser({ email: "other@example.com" });
     global.__TEST_USER__ = otherUser;
 

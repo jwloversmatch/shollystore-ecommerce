@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const MAX_RETRIES = 5;
 const RETRY_DELAY_MS = 5000;
@@ -15,12 +15,12 @@ const connectDB = async (retriesLeft = MAX_RETRIES): Promise<void> => {
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
 
-    mongoose.connection.on('disconnected', () => {
-      console.warn('MongoDB disconnected');
+    mongoose.connection.on("disconnected", () => {
+      console.warn("MongoDB disconnected");
     });
 
-    mongoose.connection.on('error', (err) => {
-      console.error('MongoDB connection error:', err.message);
+    mongoose.connection.on("error", (err) => {
+      console.error("MongoDB connection error:", err.message);
     });
   } catch (error) {
     if (retriesLeft > 0) {

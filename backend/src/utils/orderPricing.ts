@@ -1,9 +1,9 @@
-import mongoose from 'mongoose';
-import { Product, IProduct, IVariant } from '../models/Product';
-import { Coupon } from '../models/Coupon';
+import mongoose from "mongoose";
+import { Product, IProduct, IVariant } from "../models/Product";
+import { Coupon } from "../models/Coupon";
 
 export interface OrderItemInput {
-  product: string;          // ✅ changed from _id
+  product: string;
   name: string;
   qty: number;
   price: number;
@@ -32,7 +32,7 @@ export interface OrderPricing {
 
 const findVariant = (
   product: IProduct,
-  variantInput?: OrderItemInput['variant'],
+  variantInput?: OrderItemInput["variant"],
 ): IVariant | undefined => {
   if (!variantInput) return undefined;
   return product.variants?.find(
@@ -64,7 +64,7 @@ export const calculateOrderPricing = async (
   let subtotal = 0;
 
   for (const item of items) {
-    const product = await Product.findById(item.product);   // ✅ use product
+    const product = await Product.findById(item.product);
     if (!product || product.isActive === false) {
       throw new Error(`Product not found: ${item.product}`);
     }
@@ -101,11 +101,12 @@ export const calculateOrderPricing = async (
       coupon &&
       coupon.isActive &&
       (!coupon.expiresAt || new Date() <= coupon.expiresAt) &&
-      ((coupon.usageLimit ?? 0) === 0 || coupon.usedCount < (coupon.usageLimit ?? 0)) &&
+      ((coupon.usageLimit ?? 0) === 0 ||
+        coupon.usedCount < (coupon.usageLimit ?? 0)) &&
       subtotal >= (coupon.minOrderAmount || 0)
     ) {
       discount =
-        coupon.discountType === 'percentage'
+        coupon.discountType === "percentage"
           ? Math.round((subtotal * coupon.discountAmount) / 100)
           : coupon.discountAmount;
       appliedCoupon = coupon.code;

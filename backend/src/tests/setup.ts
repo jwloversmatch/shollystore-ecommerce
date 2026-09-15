@@ -1,10 +1,9 @@
 /// <reference types="jest" />
 
-import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import mongoose from "mongoose";
+import { MongoMemoryServer } from "mongodb-memory-server";
 
-// Mock external services so no real API calls/emails happen
-jest.mock('../services/email.service', () => ({
+jest.mock("../services/email.service", () => ({
   sendOrderConfirmation: jest.fn(),
   sendAdminOrderNotification: jest.fn(),
   sendVerificationEmail: jest.fn(),
@@ -14,34 +13,38 @@ jest.mock('../services/email.service', () => ({
   sendContactNotification: jest.fn(),
 }));
 
-jest.mock('../services/marketingEmail.service', () => ({
+jest.mock("../services/marketingEmail.service", () => ({
   sendWelcomeEmail: jest.fn(),
 }));
 
-jest.mock('../config/paystack', () => ({
+jest.mock("../config/paystack", () => ({
   paystack: {
     initializePayment: jest.fn().mockResolvedValue({
       status: true,
-      data: { authorization_url: 'https://checkout.paystack.com/mock', reference: 'ref123' },
+      data: {
+        authorization_url: "https://checkout.paystack.com/mock",
+        reference: "ref123",
+      },
     }),
-    verifyPayment: jest.fn().mockResolvedValue({ status: true, data: { status: 'success' } }),
+    verifyPayment: jest
+      .fn()
+      .mockResolvedValue({ status: true, data: { status: "success" } }),
     verifyWebhookSignature: jest.fn().mockReturnValue(true),
   },
   PaystackError: class PaystackError extends Error {},
   ValidationError: class ValidationError extends Error {},
 }));
 
-jest.mock('../middleware/rateLimiter', () => ({
+jest.mock("../middleware/rateLimiter", () => ({
   apiLimiter: (req: any, res: any, next: any) => next(),
   checkoutLimiter: (req: any, res: any, next: any) => next(),
 }));
 
-// Mock auth middleware to use a global test user
 declare global {
   var __TEST_USER__: any;
 }
 
-jest.mock('../middleware/auth', () => ({
+jest.mock("../middleware/auth", () => ({
   protect: (req: any, res: any, next: any) => {
     req.user = global.__TEST_USER__;
     next();

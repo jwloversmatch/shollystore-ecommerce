@@ -18,7 +18,6 @@ describe('Auth API', () => {
   });
 
   it('should verify email with token from email service', async () => {
-    // Mock implementation to capture token
     let verificationToken = '';
     (sendVerificationEmail as jest.Mock).mockImplementation((email, token) => {
       verificationToken = token;
@@ -42,7 +41,6 @@ describe('Auth API', () => {
   });
 
   it('should login with correct credentials', async () => {
-    // Create a verified user directly
     const { createTestUser } = require('./helpers');
     await createTestUser({ email: 'login@example.com', password: 'Password123', isVerified: true });
 

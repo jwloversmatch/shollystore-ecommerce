@@ -28,6 +28,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/admin/users": "Users",
   "/admin/settings": "Settings",
   "/admin/legal": "Legal Pages",
+  "/admin/reports/sales": "Reports · Sales",
   "/admin/settings/general": "Settings · General",
   "/admin/settings/payments": "Settings · Payments",
   "/admin/settings/notifications": "Settings · Notifications",

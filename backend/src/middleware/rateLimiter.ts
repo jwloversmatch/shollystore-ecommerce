@@ -1,5 +1,5 @@
-import rateLimit from 'express-rate-limit';
-import { Request } from 'express';
+import rateLimit from "express-rate-limit";
+import { Request } from "express";
 
 const jsonHandler = (message: string) => ({
   windowMs: 15 * 60 * 1000,
@@ -9,22 +9,23 @@ const jsonHandler = (message: string) => ({
   message: { success: false, message },
 });
 
-const cronAllowedIps = (process.env.CRON_ALLOWED_IPS || '')
-  .split(',')
+const cronAllowedIps = (process.env.CRON_ALLOWED_IPS || "")
+  .split(",")
   .map((ip) => ip.trim())
   .filter(Boolean);
 
-const cronSkipPaths = (process.env.CRON_SKIP_RATE_LIMIT_PATHS || '/api/health,/api/ping,/ping')
-  .split(',')
+const cronSkipPaths = (
+  process.env.CRON_SKIP_RATE_LIMIT_PATHS || "/api/health,/api/ping,/ping"
+)
+  .split(",")
   .map((p) => p.trim())
   .filter(Boolean);
 
-/** Skip rate limiting for webhooks, health checks, and cron job IPs/paths */
 export const shouldSkipRateLimit = (req: Request): boolean => {
-  const path = req.path || '';
-  const originalUrl = req.originalUrl || '';
+  const path = req.path || "";
+  const originalUrl = req.originalUrl || "";
 
-  if (path.includes('/webhook') || originalUrl.includes('/webhook')) {
+  if (path.includes("/webhook") || originalUrl.includes("/webhook")) {
     return true;
   }
 
@@ -32,8 +33,11 @@ export const shouldSkipRateLimit = (req: Request): boolean => {
     return true;
   }
 
-  const clientIp = req.ip || req.socket?.remoteAddress || '';
-  if (clientIp && cronAllowedIps.some((ip) => clientIp === ip || clientIp.endsWith(`:${ip}`))) {
+  const clientIp = req.ip || req.socket?.remoteAddress || "";
+  if (
+    clientIp &&
+    cronAllowedIps.some((ip) => clientIp === ip || clientIp.endsWith(`:${ip}`))
+  ) {
     return true;
   }
 
@@ -42,7 +46,7 @@ export const shouldSkipRateLimit = (req: Request): boolean => {
 
 /** General API rate limit */
 export const apiLimiter = rateLimit({
-  ...jsonHandler('Too many requests. Please try again later.'),
+  ...jsonHandler("Too many requests. Please try again later."),
   max: 500,
   skip: shouldSkipRateLimit,
 });
@@ -55,7 +59,10 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: false,
   skip: shouldSkipRateLimit,
-  message: { success: false, message: 'Too many authentication attempts. Try again in 15 minutes.' },
+  message: {
+    success: false,
+    message: "Too many authentication attempts. Try again in 15 minutes.",
+  },
 });
 
 /** Password reset — very strict */
@@ -65,7 +72,10 @@ export const passwordResetLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: shouldSkipRateLimit,
-  message: { success: false, message: 'Too many password reset requests. Try again later.' },
+  message: {
+    success: false,
+    message: "Too many password reset requests. Try again later.",
+  },
 });
 
 /** Checkout / order creation */
@@ -75,7 +85,10 @@ export const checkoutLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: shouldSkipRateLimit,
-  message: { success: false, message: 'Too many checkout attempts. Please wait before trying again.' },
+  message: {
+    success: false,
+    message: "Too many checkout attempts. Please wait before trying again.",
+  },
 });
 
 /** Coupon validation */
@@ -85,7 +98,7 @@ export const couponLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: shouldSkipRateLimit,
-  message: { success: false, message: 'Too many coupon validation attempts.' },
+  message: { success: false, message: "Too many coupon validation attempts." },
 });
 
 /** Review submissions */
@@ -96,18 +109,21 @@ export const reviewLimiter = rateLimit({
   legacyHeaders: false,
   skip: shouldSkipRateLimit,
   keyGenerator: (req) => (req as any).user?._id || req.ip,
-  message: { success: false, message: 'Too many review submissions. Please try again later.' },
+  message: {
+    success: false,
+    message: "Too many review submissions. Please try again later.",
+  },
 });
 
 /** Newsletter subscription — moderate */
 export const newsletterLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, 
-  max: 10, 
+  windowMs: 60 * 60 * 1000,
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   skip: shouldSkipRateLimit,
   message: {
     success: false,
-    message: 'Too many subscription attempts. Please try again later.',
+    message: "Too many subscription attempts. Please try again later.",
   },
 });

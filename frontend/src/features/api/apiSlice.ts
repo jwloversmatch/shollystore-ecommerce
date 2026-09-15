@@ -154,6 +154,35 @@ export interface TrackOrderResponse {
   };
 }
 
+// ─── Sales report type ─────────────────────────────────────────────────────
+export interface SalesReportOrder {
+  _id: string;
+  createdAt: string;
+  user?: { email?: string; name?: string } | null;
+  totalPrice: number;
+  status: string;
+  paymentMethod?: string;
+  paymentReference?: string | null;
+}
+
+export interface SalesReport {
+  success: boolean;
+  range: { from: string; to: string };
+  summary: {
+    grossRevenue: number;
+    netRevenue: number;
+    totalOrders: number;
+    paidOrders: number;
+    aov: number;
+    discountsGiven: number;
+    shippingCollected: number;
+  };
+  byPaymentMethod: { method: string; count: number; revenue: number }[];
+  byStatus: { status: string; count: number }[];
+  topProducts: { name: string; unitsSold: number; revenue: number }[];
+  orders: SalesReportOrder[];
+}
+
 // ─── Legal page types ──────────────────────────────────────────────────────
 export type LegalPageSlug = "privacy" | "terms" | "returns";
 
@@ -1011,6 +1040,12 @@ export const apiSlice = createApi({
         body,
       }),
     }),
+
+    getSalesReport: builder.query<SalesReport, { from: string; to: string }>({
+      query: ({ from, to }) =>
+        `/admin/orders/reports/sales?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+      providesTags: ["Order"],
+    }),
   }),
 });
 
@@ -1105,4 +1140,5 @@ export const {
   useSubscribeToNewsletterMutation,
   useUnsubscribeFromNewsletterMutation,
   useSendContactMessageMutation,
+  useGetSalesReportQuery,
 } = apiSlice;

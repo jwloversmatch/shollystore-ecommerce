@@ -16,7 +16,6 @@ const gracefulShutdown = async (
 
   console.log(`\n${signal} received. Shutting down gracefully...`);
 
-  // Stop accepting new connections
   server.close(async (err) => {
     if (err) {
       console.error("Error during server close:", err);

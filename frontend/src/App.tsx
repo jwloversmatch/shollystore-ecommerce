@@ -58,6 +58,7 @@ import {
   Unsubscribe,
   AdminLayout,
   SecuritySettings,
+  SalesReport
 } from "./routes/lazyPages";
 
 const ACCENT = "#e8622a";
@@ -154,6 +155,7 @@ function AppContent() {
                 <Route path="/admin/reviews" element={<Reviews />} />
                 <Route path="/admin/legal" element={<LegalPages />} />
                 <Route path="/admin/users" element={<UsersPage />} />
+                <Route path="/admin/reports/sales" element={<SalesReport />} />
 
                 {/* Settings — nested routes with a shared rail */}
                 <Route path="/admin/settings" element={<SettingsLayout />}>

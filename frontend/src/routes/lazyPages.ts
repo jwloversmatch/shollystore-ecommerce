@@ -24,6 +24,7 @@ export const Coupons = lazy(() => import("../pages/admin/Coupons"));
 export const Reviews = lazy(() => import("../pages/admin/reviews/ReviewsPage"));
 export const LegalPages = lazy(() => import("../pages/admin/LegalPages"));
 export const UsersPage = lazy(() => import("../pages/admin/users/UsersPage"));
+export const SalesReport = lazy(() => import("../pages/admin/reports/SalesReport"));
 
 // Admin settings (nested routes)
 export const SettingsLayout = lazy(() => import("../pages/admin/settings/SettingsLayout"));
@@ -32,6 +33,7 @@ export const PaymentsSettings = lazy(() => import("../pages/admin/settings/payme
 export const NotificationsSettings = lazy(() => import("../pages/admin/settings/notifications/NotificationsSettings"));
 export const ActivitySettings = lazy(() => import("../pages/admin/settings/activity/ActivitySettings"));
 export const SecuritySettings = lazy(() => import("../pages/admin/settings/security/SecuritySettings"));
+
 
 // Admin shell (sidebar + topbar)
 export const AdminLayout = lazy(() => import("../layouts/AdminLayout"));

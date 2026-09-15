@@ -1,8 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from "express";
 
-/** Strip MongoDB operator keys ($gt, $where, etc.) from user input to prevent NoSQL injection */
 const sanitize = (obj: unknown): void => {
-  if (!obj || typeof obj !== 'object') return;
+  if (!obj || typeof obj !== "object") return;
 
   if (Array.isArray(obj)) {
     for (const item of obj) {
@@ -12,7 +11,7 @@ const sanitize = (obj: unknown): void => {
   }
 
   for (const key of Object.keys(obj as Record<string, unknown>)) {
-    if (key.startsWith('$') || key.includes('.')) {
+    if (key.startsWith("$") || key.includes(".")) {
       delete (obj as Record<string, unknown>)[key];
       continue;
     }

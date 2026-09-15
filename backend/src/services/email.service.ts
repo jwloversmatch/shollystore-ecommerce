@@ -227,10 +227,6 @@ export const sendEmailChangeVerification = async (
 // ORDER EMAILS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/**
- * Order confirmation email (immediately after order creation)
- * Does NOT include tracking number.
- */
 export const sendOrderConfirmation = async (
   email: string,
   orderId: string,
@@ -303,10 +299,6 @@ export const sendOrderConfirmation = async (
   );
 };
 
-/**
- * Shipping confirmation email (when status becomes Shipped)
- * Includes tracking number and tracking link.
- */
 export const sendOrderShippedEmail = async (
   email: string,
   orderId: string,
@@ -764,7 +756,7 @@ export const sendNewsletterWelcomeEmail = async (email: string) => {
     email,
     "Welcome to Sholex Newsletter 🎉",
     html,
-    "Welcome to Sholex Newsletter! You'll receive exclusive deals and updates."
+    "Welcome to Sholex Newsletter! You'll receive exclusive deals and updates.",
   );
 };
 
@@ -784,6 +776,6 @@ export const sendNewsletterUnsubscribeEmail = async (email: string) => {
     email,
     "Unsubscribed from Sholex Newsletter",
     html,
-    "You have been unsubscribed from Sholex newsletter."
+    "You have been unsubscribed from Sholex newsletter.",
   );
 };

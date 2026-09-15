@@ -47,7 +47,6 @@ const sendBrevoEmail = async (
   htmlContent: string,
   textContent?: string,
 ): Promise<void> => {
-  // Loop through recipients sequentially; adjust concurrency if needed
   for (const email of to) {
     try {
       const result = await sendEmailViaBrevo(

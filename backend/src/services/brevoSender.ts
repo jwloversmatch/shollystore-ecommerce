@@ -45,7 +45,9 @@ export const sendEmailViaBrevo = async (
   });
 
   if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as BrevoErrorResponse;
+    const errorData = (await response
+      .json()
+      .catch(() => ({}))) as BrevoErrorResponse;
     throw new Error(
       errorData.message || `Brevo API returned status ${response.status}`,
     );

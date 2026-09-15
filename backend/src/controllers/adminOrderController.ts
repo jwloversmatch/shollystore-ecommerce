@@ -5,6 +5,7 @@ import { Order, IOrder } from "../models/Order";
 import { Product } from "../models/Product";
 import { User } from "../models/User";
 import { Coupon } from "../models/Coupon";
+import type { AuthRequest } from "../middleware/auth";
 import {
   sendAdminOrderNotification,
   sendOrderStatusUpdateEmail,
@@ -232,7 +233,7 @@ export const updateOrderStatus = async (
       phone?: string;
     } | null;
 
-    // ✅ Send cancellation email when status is Cancelled
+    // Send cancellation email when status is Cancelled
     if (status === "Cancelled" && populatedUser?.email) {
       sendOrderCancelledEmail(
         populatedUser.email,
@@ -570,5 +571,125 @@ export const exportOrdersCSV = async (
     res.send("\ufeff" + csv);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// ─── Sales Report (new) ───────────────────────────────────────────────────────
+// @desc    Aggregated sales report for a date range
+// @route   GET /api/admin/orders/reports/sales?from=...&to=...
+export const getSalesReport = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const from = req.query.from as string | undefined;
+    const to = req.query.to as string | undefined;
+
+    if (!from || !to) {
+      res
+        .status(400)
+        .json({ success: false, message: "from and to are required" });
+      return;
+    }
+
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+
+    if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+      res
+        .status(400)
+        .json({ success: false, message: "Invalid from or to date" });
+      return;
+    }
+
+    const orders = await Order.find({
+      createdAt: { $gte: fromDate, $lte: toDate },
+    }).populate("user", "email");
+
+    const paidStatuses = ["Paid", "Shipped", "Delivered"];
+    const paidOrders = orders.filter((o) => paidStatuses.includes(o.status));
+
+    const grossRevenue = paidOrders.reduce((s, o) => s + o.totalPrice, 0);
+    const discountsGiven = paidOrders.reduce((s, o) => s + (o.discount || 0), 0);
+    const shippingCollected = paidOrders.reduce(
+      (s, o) => s + (o.shippingFee || 0),
+      0,
+    );
+    const netRevenue = grossRevenue - discountsGiven;
+
+    const byMethodMap: Record<string, { count: number; revenue: number }> = {};
+    paidOrders.forEach((o) => {
+      const m = o.paymentMethod || "unknown";
+      if (!byMethodMap[m]) byMethodMap[m] = { count: 0, revenue: 0 };
+      byMethodMap[m].count += 1;
+      byMethodMap[m].revenue += o.totalPrice;
+    });
+    const byPaymentMethod = Object.entries(byMethodMap).map(([method, v]) => ({
+      method,
+      ...v,
+    }));
+
+    const byStatusMap: Record<string, number> = {};
+    orders.forEach((o) => {
+      byStatusMap[o.status] = (byStatusMap[o.status] || 0) + 1;
+    });
+    const byStatus = Object.entries(byStatusMap).map(([status, count]) => ({
+      status,
+      count,
+    }));
+
+    const productMap: Record<string, { unitsSold: number; revenue: number }> =
+      {};
+    paidOrders.forEach((o) => {
+      o.orderItems.forEach((item: any) => {
+        const name = item.name;
+        if (!productMap[name])
+          productMap[name] = { unitsSold: 0, revenue: 0 };
+        productMap[name].unitsSold += item.qty;
+        productMap[name].revenue += item.qty * item.price;
+      });
+    });
+    const topProducts = Object.entries(productMap)
+      .map(([name, v]) => ({ name, ...v }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
+
+    res.json({
+      success: true,
+      range: { from, to },
+      summary: {
+        grossRevenue,
+        netRevenue,
+        totalOrders: orders.length,
+        paidOrders: paidOrders.length,
+        aov: paidOrders.length
+          ? Math.round(grossRevenue / paidOrders.length)
+          : 0,
+        discountsGiven,
+        shippingCollected,
+      },
+      byPaymentMethod,
+      byStatus,
+      topProducts,
+      orders: orders.map((o) => {
+        // paymentReference isn't guaranteed to exist on IOrder —
+        // read it safely so this compiles whether or not the field is typed.
+        const paymentReference =
+          (o as unknown as { paymentReference?: string }).paymentReference ??
+          null;
+
+        return {
+          _id: o._id,
+          createdAt: o.createdAt,
+          user: o.user,
+          totalPrice: o.totalPrice,
+          status: o.status,
+          paymentMethod: o.paymentMethod,
+          paymentReference,
+        };
+      }),
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };

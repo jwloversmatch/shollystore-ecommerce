@@ -1,4 +1,4 @@
-declare module 'brevo' {
+declare module "brevo" {
   export class TransactionalEmailsApi {
     setApiKey(apiKey: string, value: string): void;
     sendTransacEmail(email: SendSmtpEmail): Promise<any>;

@@ -9,6 +9,7 @@ import {
   getAdminStats,
   getRevenueTrend,
   exportOrdersCSV,
+  getSalesReport
 } from '../controllers/adminOrderController';
 import { protect } from '../middleware/auth';
 import { isAdmin } from '../middleware/isAdmin';
@@ -33,5 +34,6 @@ router.route('/analytics').get(protect, isAdmin, getSalesAnalytics);
 router.route('/analytics/top-products').get(protect, isAdmin, getTopProducts);
 router.route('/analytics/customers').get(protect, isAdmin, getCustomerCount);
 router.route('/analytics/order-customers').get(protect, isAdmin, getUniqueOrderCustomers);
+router.get("/reports/sales", protect, isAdmin, getSalesReport);
 
 export default router;
