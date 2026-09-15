@@ -1,5 +1,5 @@
 // src/App.tsx
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -10,6 +10,9 @@ import {
 import { Toaster } from "react-hot-toast";
 import { HelmetProvider } from "react-helmet-async";
 import { motion, MotionConfig } from "framer-motion";
+
+import UpdatePrompt from "./components/UpdatePrompt";
+import { useServiceWorkerUpdate } from "./hooks/useServiceWorkerUpdate";
 
 import Navbar from "./components/Navbar";
 import AdminRoute from "./components/AdminRoute";
@@ -58,7 +61,7 @@ import {
   Unsubscribe,
   AdminLayout,
   SecuritySettings,
-  SalesReport
+  SalesReport,
 } from "./routes/lazyPages";
 
 const ACCENT = "#e8622a";
@@ -83,6 +86,8 @@ function AppContent() {
   const location = useLocation();
   const isFirstRender = useRef(true);
   const isAdminRoute = location.pathname.startsWith("/admin");
+  const { hasUpdate, applyUpdate } = useServiceWorkerUpdate();
+  const [updateDismissed, setUpdateDismissed] = useState(false);
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -186,6 +191,12 @@ function AppContent() {
           </Routes>
         </ErrorBoundary>
       </Suspense>
+
+      <UpdatePrompt
+        isOpen={hasUpdate && !updateDismissed}
+        onRefresh={applyUpdate}
+        onDismiss={() => setUpdateDismissed(true)}
+      />
 
       {showFooter && <Footer />}
     </>
