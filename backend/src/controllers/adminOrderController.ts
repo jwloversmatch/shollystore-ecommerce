@@ -610,7 +610,10 @@ export const getSalesReport = async (
     const paidOrders = orders.filter((o) => paidStatuses.includes(o.status));
 
     const grossRevenue = paidOrders.reduce((s, o) => s + o.totalPrice, 0);
-    const discountsGiven = paidOrders.reduce((s, o) => s + (o.discount || 0), 0);
+    const discountsGiven = paidOrders.reduce(
+      (s, o) => s + (o.discount || 0),
+      0,
+    );
     const shippingCollected = paidOrders.reduce(
       (s, o) => s + (o.shippingFee || 0),
       0,
@@ -643,8 +646,7 @@ export const getSalesReport = async (
     paidOrders.forEach((o) => {
       o.orderItems.forEach((item: any) => {
         const name = item.name;
-        if (!productMap[name])
-          productMap[name] = { unitsSold: 0, revenue: 0 };
+        if (!productMap[name]) productMap[name] = { unitsSold: 0, revenue: 0 };
         productMap[name].unitsSold += item.qty;
         productMap[name].revenue += item.qty * item.price;
       });

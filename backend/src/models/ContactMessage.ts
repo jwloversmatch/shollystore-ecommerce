@@ -18,10 +18,10 @@ const ContactMessageSchema = new Schema<IContactMessage>(
     message: { type: String, required: true },
     isRead: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const ContactMessage = mongoose.model<IContactMessage>(
   "ContactMessage",
-  ContactMessageSchema
+  ContactMessageSchema,
 );

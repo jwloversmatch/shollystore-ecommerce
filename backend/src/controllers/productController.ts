@@ -91,7 +91,7 @@ export const getProducts = async (
       const query = isAdminRequest
         ? baseQuery
         : baseQuery.select(
-            "name slug price images stock category averageRating numberOfReviews"
+            "name slug price images stock category averageRating numberOfReviews",
           );
 
       const [products, total] = await Promise.all([
@@ -146,7 +146,7 @@ export const getProducts = async (
           const query = isAdminRequest
             ? baseQuery
             : baseQuery.select(
-                "name slug price images stock category averageRating numberOfReviews"
+                "name slug price images stock category averageRating numberOfReviews",
               );
 
           const [products, total] = await Promise.all([
@@ -176,7 +176,7 @@ export const getProducts = async (
     const exactQuery = isAdminRequest
       ? baseExactQuery
       : baseExactQuery.select(
-          "name slug price images stock category averageRating numberOfReviews"
+          "name slug price images stock category averageRating numberOfReviews",
         );
 
     const [exactProducts, exactTotal] = await Promise.all([
@@ -305,7 +305,7 @@ export const getProducts = async (
     const fallbackQuery = isAdminRequest
       ? baseFallbackQuery
       : baseFallbackQuery.select(
-          "name slug price images stock category averageRating numberOfReviews"
+          "name slug price images stock category averageRating numberOfReviews",
         );
 
     const [products, total] = await Promise.all([

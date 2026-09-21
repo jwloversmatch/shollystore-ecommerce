@@ -41,7 +41,7 @@ const sanitizeImages = (images: unknown): string[] => {
 export const createReview = async (req: Request, res: Response) => {
   try {
     const productId = String(req.params.productId);
-    const { rating, comment, images } = req.body; 
+    const { rating, comment, images } = req.body;
     const userId = (req as any).user._id;
 
     if (!rating || rating < 1 || rating > 5) {
@@ -73,14 +73,14 @@ export const createReview = async (req: Request, res: Response) => {
         .json({ message: "You have already reviewed this product" });
     }
 
-    const cleanImages = sanitizeImages(images); 
+    const cleanImages = sanitizeImages(images);
 
     const review = await Review.create({
       product: productId,
       user: userId,
       rating,
       comment: cleanComment,
-      images: cleanImages, 
+      images: cleanImages,
     });
 
     await updateProductRatingStats(productId);
@@ -126,7 +126,7 @@ export const updateReview = async (req: Request, res: Response) => {
   try {
     const productId = String(req.params.productId);
     const reviewId = String(req.params.reviewId);
-    const { rating, comment, images } = req.body; 
+    const { rating, comment, images } = req.body;
     const userId = (req as any).user._id;
 
     const review = await Review.findOne({
@@ -173,7 +173,7 @@ export const updateReview = async (req: Request, res: Response) => {
     }
 
     if (images !== undefined) {
-      review.images = sanitizeImages(images); 
+      review.images = sanitizeImages(images);
     }
 
     await review.save();

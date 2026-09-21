@@ -34,7 +34,6 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    // Now accepts { user, token } from the new backend
     setCredentials: (
       state,
       action: PayloadAction<{ user: User; token?: string }>,

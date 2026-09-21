@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from "mongoose";
 
 export interface ISettingsChangeLog extends Document {
   adminEmail: string;
@@ -11,9 +11,12 @@ export interface ISettingsChangeLog extends Document {
 const SettingsChangeLogSchema: Schema = new Schema({
   adminEmail: { type: String, required: true },
   field: { type: String, required: true },
-  oldValue: { type: String, required: false, default: "none" }, 
+  oldValue: { type: String, required: false, default: "none" },
   newValue: { type: String, required: true },
   changedAt: { type: Date, default: Date.now },
 });
 
-export const SettingsChangeLog = mongoose.model<ISettingsChangeLog>('SettingsChangeLog', SettingsChangeLogSchema);
+export const SettingsChangeLog = mongoose.model<ISettingsChangeLog>(
+  "SettingsChangeLog",
+  SettingsChangeLogSchema,
+);

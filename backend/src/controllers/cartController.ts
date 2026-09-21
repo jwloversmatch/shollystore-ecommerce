@@ -7,7 +7,7 @@ import { sendAbandonedCartEmail } from "../services/email.service";
 // POST /api/cart
 export const saveCart = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const { items } = req.body as {
@@ -40,7 +40,7 @@ export const saveCart = async (
     const cart = await Cart.findOneAndUpdate(
       { user: req.user!._id },
       { items: validItems, emailSent: false },
-      { new: true, upsert: true, setDefaultsOnInsert: true }
+      { new: true, upsert: true, setDefaultsOnInsert: true },
     );
 
     res.json({ success: true, cart });
@@ -54,12 +54,12 @@ export const saveCart = async (
 // GET /api/cart
 export const getCart = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const cart = await Cart.findOne({ user: req.user!._id }).populate(
       "items.product",
-      "name slug price images"
+      "name slug price images",
     );
     res.json({ success: true, cart: cart || { items: [] } });
   } catch (error: unknown) {
@@ -72,7 +72,7 @@ export const getCart = async (
 // GET /api/cron/abandoned-cart – called by cron job
 export const processAbandonedCarts = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const secret = req.query.secret as string;
@@ -81,7 +81,7 @@ export const processAbandonedCarts = async (
       return;
     }
 
-    const cutoff = new Date(Date.now() - 3 * 60 * 60 * 1000); // 3 hours ago
+    const cutoff = new Date(Date.now() - 3 * 60 * 60 * 1000); 
     const carts = await Cart.find({
       updatedAt: { $lt: cutoff },
       emailSent: false,
@@ -106,7 +106,7 @@ export const processAbandonedCarts = async (
       } catch (error: unknown) {
         console.error(
           `Failed to send abandoned cart email for cart ${cart._id}:`,
-          error
+          error,
         );
       }
     }

@@ -72,10 +72,8 @@ export interface IOrder extends Document {
   isGift?: boolean;
   giftMessage?: string;
   customFields?: Map<string, any>;
-  // ─── NEW fields for token-based tracking ──────────────────────────────────
   trackingToken?: string;
   trackingTokenExpiresAt?: Date;
-  // ─── Cancellation fields ──────────────────────────────────────────────────
   cancellationReason?: string;
   cancelledAt?: Date;
   createdAt: Date;
@@ -193,7 +191,6 @@ const OrderSchema: Schema = new Schema(
   { timestamps: true },
 );
 
-// ---------- Indexes ----------
 OrderSchema.index({ user: 1, createdAt: -1 });
 OrderSchema.index({ guestEmail: 1 });
 OrderSchema.index({ status: 1, createdAt: -1 });

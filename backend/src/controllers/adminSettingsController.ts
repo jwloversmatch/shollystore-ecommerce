@@ -1,16 +1,19 @@
-import { Request, Response } from 'express';
-import { Settings } from '../models/Settings';
-import { SettingsChangeLog } from '../models/SettingsChangeLog';
-import { AuthRequest } from '../middleware/auth';
+import { Request, Response } from "express";
+import { Settings } from "../models/Settings";
+import { SettingsChangeLog } from "../models/SettingsChangeLog";
+import { AuthRequest } from "../middleware/auth";
 
 // Masks all but the last 4 digits — used only for audit log entries, since
 // those may be visible to more admins than actually need the full number.
 // The admin settings screen itself still shows full numbers for editing.
 const maskAccountNumber = (num: string): string =>
-  num.length > 4 ? `${'*'.repeat(num.length - 4)}${num.slice(-4)}` : num;
+  num.length > 4 ? `${"*".repeat(num.length - 4)}${num.slice(-4)}` : num;
 
 // @desc    Get public settings (unchanged)
-export const getSettings = async (req: Request, res: Response): Promise<void> => {
+export const getSettings = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     let settings = await Settings.findOne();
     if (!settings) {
@@ -26,7 +29,10 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
 // @desc    Update flat settings fields (homepage content, WhatsApp, landing mode)
 //          Bank accounts are managed separately below — see addBankAccount /
 //          updateBankAccount / deleteBankAccount / setDefaultBankAccount.
-export const updateSettings = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateSettings = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     let settings = await Settings.findOne();
     if (!settings) {
@@ -36,31 +42,41 @@ export const updateSettings = async (req: AuthRequest, res: Response): Promise<v
     const oldSettings = settings.toObject() as Record<string, any>;
 
     const fieldsToTrack = [
-      'whatsappNumber',
-      'heroTagline',
-      'heroTitle',
-      'heroDescription',
-      'specialOfferTitle',
-      'specialOfferText',
-      'landingMode',
+      "whatsappNumber",
+      "heroTagline",
+      "heroTitle",
+      "heroDescription",
+      "specialOfferTitle",
+      "specialOfferText",
+      "landingMode",
     ];
 
-    const updatedFields: { field: string; oldValue: string; newValue: string }[] = [];
+    const updatedFields: {
+      field: string;
+      oldValue: string;
+      newValue: string;
+    }[] = [];
 
     for (const field of fieldsToTrack) {
       if (req.body[field] === undefined) continue;
 
       let newValue: any = req.body[field];
 
-      if (field === 'landingMode') {
-        newValue = newValue === true || newValue === 'true' || newValue === 'on';
+      if (field === "landingMode") {
+        newValue =
+          newValue === true || newValue === "true" || newValue === "on";
       }
 
-      const oldValueStr = (oldSettings[field] != null) ? String(oldSettings[field]) : '';
+      const oldValueStr =
+        oldSettings[field] != null ? String(oldSettings[field]) : "";
       const newValueStr = String(newValue);
 
       if (newValueStr !== oldValueStr) {
-        updatedFields.push({ field, oldValue: oldValueStr, newValue: newValueStr });
+        updatedFields.push({
+          field,
+          oldValue: oldValueStr,
+          newValue: newValueStr,
+        });
         (settings as any)[field] = newValue;
       }
     }
@@ -68,7 +84,7 @@ export const updateSettings = async (req: AuthRequest, res: Response): Promise<v
     const updatedSettings = await settings.save();
 
     if (updatedFields.length > 0) {
-      const adminEmail = req.user?.email || 'unknown';
+      const adminEmail = req.user?.email || "unknown";
       const logs = updatedFields.map((change) => ({
         adminEmail,
         field: change.field,
@@ -88,12 +104,17 @@ export const updateSettings = async (req: AuthRequest, res: Response): Promise<v
 
 // @desc    Add a bank account
 // @route   POST /api/admin/settings/bank-accounts
-export const addBankAccount = async (req: AuthRequest, res: Response): Promise<void> => {
+export const addBankAccount = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const { label, bankName, accountName, accountNumber } = req.body;
 
     if (!bankName || !accountName || !accountNumber) {
-      res.status(400).json({ message: 'Bank name, account name, and account number are required' });
+      res.status(400).json({
+        message: "Bank name, account name, and account number are required",
+      });
       return;
     }
 
@@ -103,20 +124,20 @@ export const addBankAccount = async (req: AuthRequest, res: Response): Promise<v
     const isFirstAccount = settings.bankAccounts.length === 0;
 
     settings.bankAccounts.push({
-      label: label || '',
+      label: label || "",
       bankName,
       accountName,
       accountNumber,
-      isDefault: isFirstAccount, // first account added becomes default automatically
+      isDefault: isFirstAccount,
       isActive: true,
     } as any);
 
     await settings.save();
 
     await SettingsChangeLog.create({
-      adminEmail: req.user?.email || 'unknown',
-      field: 'bankAccounts',
-      oldValue: '',
+      adminEmail: req.user?.email || "unknown",
+      field: "bankAccounts",
+      oldValue: "",
       newValue: `Added ${bankName} ${maskAccountNumber(accountNumber)}`,
     });
 
@@ -128,19 +149,22 @@ export const addBankAccount = async (req: AuthRequest, res: Response): Promise<v
 
 // @desc    Update a bank account
 // @route   PUT /api/admin/settings/bank-accounts/:accountId
-export const updateBankAccount = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateBankAccount = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     // Fix: cast req.params.accountId to string
     const accountId = String(req.params.accountId);
     const settings = await Settings.findOne();
     if (!settings) {
-      res.status(404).json({ message: 'Settings not found' });
+      res.status(404).json({ message: "Settings not found" });
       return;
     }
 
     const account = settings.bankAccounts.id(accountId);
     if (!account) {
-      res.status(404).json({ message: 'Bank account not found' });
+      res.status(404).json({ message: "Bank account not found" });
       return;
     }
 
@@ -158,8 +182,8 @@ export const updateBankAccount = async (req: AuthRequest, res: Response): Promis
     const newSummary = `${account.bankName} ${maskAccountNumber(account.accountNumber)}`;
 
     await SettingsChangeLog.create({
-      adminEmail: req.user?.email || 'unknown',
-      field: 'bankAccounts',
+      adminEmail: req.user?.email || "unknown",
+      field: "bankAccounts",
       oldValue: oldSummary,
       newValue: newSummary,
     });
@@ -172,19 +196,22 @@ export const updateBankAccount = async (req: AuthRequest, res: Response): Promis
 
 // @desc    Delete a bank account
 // @route   DELETE /api/admin/settings/bank-accounts/:accountId
-export const deleteBankAccount = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteBankAccount = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     // Fix: cast req.params.accountId to string
     const accountId = String(req.params.accountId);
     const settings = await Settings.findOne();
     if (!settings) {
-      res.status(404).json({ message: 'Settings not found' });
+      res.status(404).json({ message: "Settings not found" });
       return;
     }
 
     const account = settings.bankAccounts.id(accountId);
     if (!account) {
-      res.status(404).json({ message: 'Bank account not found' });
+      res.status(404).json({ message: "Bank account not found" });
       return;
     }
 
@@ -197,17 +224,19 @@ export const deleteBankAccount = async (req: AuthRequest, res: Response): Promis
     // next active one — so bank_transfer checkout always has a default to
     // fall back on rather than silently going blank.
     if (wasDefault && settings.bankAccounts.length > 0) {
-      const next = settings.bankAccounts.find((a) => a.isActive) || settings.bankAccounts[0];
+      const next =
+        settings.bankAccounts.find((a) => a.isActive) ||
+        settings.bankAccounts[0];
       next.isDefault = true;
     }
 
     await settings.save();
 
     await SettingsChangeLog.create({
-      adminEmail: req.user?.email || 'unknown',
-      field: 'bankAccounts',
+      adminEmail: req.user?.email || "unknown",
+      field: "bankAccounts",
       oldValue: summary,
-      newValue: '(removed)',
+      newValue: "(removed)",
     });
 
     res.json(settings);
@@ -218,23 +247,27 @@ export const deleteBankAccount = async (req: AuthRequest, res: Response): Promis
 
 // @desc    Set a bank account as the default shown to customers at checkout
 // @route   PUT /api/admin/settings/bank-accounts/:accountId/default
-export const setDefaultBankAccount = async (req: AuthRequest, res: Response): Promise<void> => {
+export const setDefaultBankAccount = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
-    // Fix: cast req.params.accountId to string
     const accountId = String(req.params.accountId);
     const settings = await Settings.findOne();
     if (!settings) {
-      res.status(404).json({ message: 'Settings not found' });
+      res.status(404).json({ message: "Settings not found" });
       return;
     }
 
     const target = settings.bankAccounts.id(accountId);
     if (!target) {
-      res.status(404).json({ message: 'Bank account not found' });
+      res.status(404).json({ message: "Bank account not found" });
       return;
     }
     if (!target.isActive) {
-      res.status(400).json({ message: 'Cannot set an inactive account as default' });
+      res
+        .status(400)
+        .json({ message: "Cannot set an inactive account as default" });
       return;
     }
 
@@ -244,9 +277,9 @@ export const setDefaultBankAccount = async (req: AuthRequest, res: Response): Pr
     await settings.save();
 
     await SettingsChangeLog.create({
-      adminEmail: req.user?.email || 'unknown',
-      field: 'bankAccounts',
-      oldValue: '(previous default)',
+      adminEmail: req.user?.email || "unknown",
+      field: "bankAccounts",
+      oldValue: "(previous default)",
       newValue: `${target.bankName} ${maskAccountNumber(target.accountNumber)} set as default`,
     });
 
@@ -258,7 +291,10 @@ export const setDefaultBankAccount = async (req: AuthRequest, res: Response): Pr
 
 // @desc    Get last 20 settings changes
 // @route   GET /api/admin/settings/changes
-export const getSettingsChanges = async (req: Request, res: Response): Promise<void> => {
+export const getSettingsChanges = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const logs = await SettingsChangeLog.find()
       .sort({ changedAt: -1 })

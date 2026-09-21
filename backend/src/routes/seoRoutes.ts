@@ -1,23 +1,28 @@
-import { Request, Response } from 'express';
-import { Product } from '../models/Product';
-import { Category } from '../models/Category';
+import { Request, Response } from "express";
+import { Product } from "../models/Product";
+import { Category } from "../models/Category";
 
-const SITE_URL = process.env.CLIENT_URL || 'https://iresstore.vercel.app';
+const SITE_URL = process.env.CLIENT_URL || "https://iresstore.vercel.app";
 
 /** Dynamic XML sitemap — auto-updates with products and categories */
-export const getSitemap = async (_req: Request, res: Response): Promise<void> => {
+export const getSitemap = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const [products, categories] = await Promise.all([
-      Product.find({ isActive: { $ne: false } }).select('slug updatedAt').lean(),
-      Category.find().select('slug updatedAt').lean(),
+      Product.find({ isActive: { $ne: false } })
+        .select("slug updatedAt")
+        .lean(),
+      Category.find().select("slug updatedAt").lean(),
     ]);
 
     const staticPages = [
-      { loc: '/', priority: '1.0', changefreq: 'weekly' },
-      { loc: '/shop', priority: '0.9', changefreq: 'daily' },
+      { loc: "/", priority: "1.0", changefreq: "weekly" },
+      { loc: "/shop", priority: "0.9", changefreq: "daily" },
     ];
 
-    const now = new Date().toISOString().split('T')[0];
+    const now = new Date().toISOString().split("T")[0];
 
     const urls = [
       ...staticPages.map((p) => ({
@@ -28,15 +33,15 @@ export const getSitemap = async (_req: Request, res: Response): Promise<void> =>
       })),
       ...categories.map((c) => ({
         loc: `${SITE_URL}/shop?category=${c.slug}`,
-        lastmod: (c.updatedAt ?? new Date()).toISOString().split('T')[0],
-        changefreq: 'weekly',
-        priority: '0.7',
+        lastmod: (c.updatedAt ?? new Date()).toISOString().split("T")[0],
+        changefreq: "weekly",
+        priority: "0.7",
       })),
       ...products.map((p) => ({
         loc: `${SITE_URL}/products/${p.slug}`,
-        lastmod: (p.updatedAt ?? new Date()).toISOString().split('T')[0],
-        changefreq: 'weekly',
-        priority: '0.8',
+        lastmod: (p.updatedAt ?? new Date()).toISOString().split("T")[0],
+        changefreq: "weekly",
+        priority: "0.8",
       })),
     ];
 
@@ -51,14 +56,16 @@ ${urls
     <priority>${u.priority}</priority>
   </url>`,
   )
-  .join('\n')}
+  .join("\n")}
 </urlset>`;
 
-    res.set('Content-Type', 'application/xml');
-    res.set('Cache-Control', 'public, max-age=3600');
+    res.set("Content-Type", "application/xml");
+    res.set("Cache-Control", "public, max-age=3600");
     res.send(xml);
   } catch {
-    res.status(500).send('<?xml version="1.0"?><error>Sitemap generation failed</error>');
+    res
+      .status(500)
+      .send('<?xml version="1.0"?><error>Sitemap generation failed</error>');
   }
 };
 
@@ -75,7 +82,7 @@ Disallow: /api/
 
 Sitemap: ${SITE_URL}/sitemap.xml
 `;
-  res.set('Content-Type', 'text/plain');
-  res.set('Cache-Control', 'public, max-age=86400');
+  res.set("Content-Type", "text/plain");
+  res.set("Cache-Control", "public, max-age=86400");
   res.send(txt);
 };

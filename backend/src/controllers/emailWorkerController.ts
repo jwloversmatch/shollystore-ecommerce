@@ -30,7 +30,8 @@ export const processEmailQueue = async (req: Request, res: Response) => {
       sentCount++;
     } catch (error) {
       email.attempts += 1;
-      email.lastError = error instanceof Error ? error.message : "Unknown error";
+      email.lastError =
+        error instanceof Error ? error.message : "Unknown error";
       if (email.attempts >= email.maxAttempts) {
         email.status = "failed";
       }

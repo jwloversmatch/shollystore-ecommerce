@@ -18,13 +18,11 @@ const ReviewSchema = new Schema<IReview>(
     comment: { type: String, required: true, trim: true, maxlength: 500 },
     images: { type: [String], default: [] },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-// Prevent duplicate reviews by the same user for the same product
 ReviewSchema.index({ product: 1, user: 1 }, { unique: true });
 
-// Efficiently retrieve recent unique reviews per user
 ReviewSchema.index({ user: 1, createdAt: -1 });
 
 export const Review = mongoose.model<IReview>("Review", ReviewSchema);

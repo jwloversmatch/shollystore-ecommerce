@@ -8,10 +8,8 @@ import {
 
 const router = express.Router();
 
-router.route("/")
-  .get(protect, isAdmin, getAllReviewsAdmin);
+router.route("/").get(protect, isAdmin, getAllReviewsAdmin);
 
-router.route("/:reviewId")
-  .delete(protect, isAdmin, deleteReviewAdmin);
+router.route("/:reviewId").delete(protect, isAdmin, deleteReviewAdmin);
 
 export default router;

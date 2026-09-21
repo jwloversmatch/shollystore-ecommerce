@@ -1,21 +1,34 @@
-import express from 'express';
-import { protect, } from '../middleware/auth';
-import { isAdmin } from '../middleware/isAdmin';
-import { getCoupons, createCoupon, updateCoupon, deleteCoupon, validateCoupon } from '../controllers/couponController';
-import { validate } from '../middleware/validate';
-import { couponLimiter } from '../middleware/rateLimiter';
-import { validateCouponSchema } from '../validation/schemas';
+import express from "express";
+import { protect } from "../middleware/auth";
+import { isAdmin } from "../middleware/isAdmin";
+import {
+  getCoupons,
+  createCoupon,
+  updateCoupon,
+  deleteCoupon,
+  validateCoupon,
+} from "../controllers/couponController";
+import { validate } from "../middleware/validate";
+import { couponLimiter } from "../middleware/rateLimiter";
+import { validateCouponSchema } from "../validation/schemas";
 
 const router = express.Router();
 
-router.route('/')
+router
+  .route("/")
   .get(protect, isAdmin, getCoupons)
   .post(protect, isAdmin, createCoupon);
 
-router.route('/:id')
+router
+  .route("/:id")
   .put(protect, isAdmin, updateCoupon)
   .delete(protect, isAdmin, deleteCoupon);
 
-router.post('/validate', couponLimiter, validate(validateCouponSchema), validateCoupon);
+router.post(
+  "/validate",
+  couponLimiter,
+  validate(validateCouponSchema),
+  validateCoupon,
+);
 
 export default router;

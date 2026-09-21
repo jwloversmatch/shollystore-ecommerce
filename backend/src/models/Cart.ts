@@ -45,7 +45,7 @@ const CartSchema = new Schema<ICart>(
     ],
     emailSent: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 CartSchema.index({ updatedAt: 1, emailSent: 1 });

@@ -1,20 +1,20 @@
-import { Request, Response } from 'express';
-import { PushSubscriptionModel } from '../models/PushSubscription';
-import { broadcastPushNotification } from '../services/pushNotification.service';
+import { Request, Response } from "express";
+import { PushSubscriptionModel } from "../models/PushSubscription";
+import { broadcastPushNotification } from "../services/pushNotification.service";
 
 // POST /api/push/subscribe
 export const subscribe = async (req: Request, res: Response) => {
   try {
     const { endpoint, keys } = req.body;
     if (!endpoint || !keys?.p256dh || !keys?.auth) {
-      res.status(400).json({ message: 'Invalid subscription data' });
+      res.status(400).json({ message: "Invalid subscription data" });
       return;
     }
 
     await PushSubscriptionModel.findOneAndUpdate(
       { endpoint },
       { endpoint, keys },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
 
     res.json({ success: true });
@@ -43,10 +43,10 @@ export const sendNotification = async (req: Request, res: Response) => {
       body,
       data: { url },
       // icon and image you can set as static assets
-      icon: '/icons/icon-192x192.png',
-      image: '/og-default.jpg',
+      icon: "/icons/icon-192x192.png",
+      image: "/og-default.jpg",
     });
-    res.json({ success: true, message: 'Notification sent' });
+    res.json({ success: true, message: "Notification sent" });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

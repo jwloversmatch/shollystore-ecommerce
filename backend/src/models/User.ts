@@ -1,5 +1,5 @@
-import mongoose, { Document, Schema } from 'mongoose';
-import bcrypt from 'bcryptjs';
+import mongoose, { Document, Schema } from "mongoose";
+import bcrypt from "bcryptjs";
 
 // ---------- Address sub-document ----------
 export interface IAddress {
@@ -13,12 +13,12 @@ export interface IAddress {
 }
 
 const AddressSchema = new Schema({
-  label:      { type: String, default: 'Home' },
-  address:    { type: String, required: true },
-  city:       { type: String, required: true },
-  postalCode: { type: String, default: '' },
-  country:    { type: String, default: '' },
-  isDefault:  { type: Boolean, default: false },
+  label: { type: String, default: "Home" },
+  address: { type: String, required: true },
+  city: { type: String, required: true },
+  postalCode: { type: String, default: "" },
+  country: { type: String, default: "" },
+  isDefault: { type: Boolean, default: false },
 });
 
 // ---------- Refresh token sub-document ----------
@@ -29,7 +29,7 @@ export interface IRefreshToken {
 }
 
 const RefreshTokenSchema = new Schema({
-  token:     { type: String, required: true },
+  token: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
   expiresAt: { type: Date, required: true },
 });
@@ -37,11 +37,11 @@ const RefreshTokenSchema = new Schema({
 // ---------- User interface ----------
 export interface IUser extends Document {
   // ── Core ────────────────────────────────────────────
-  email:    string;
+  email: string;
   password: string;
-  name?:    string;
-  phone?:   string;
-  role:     'user' | 'admin';
+  name?: string;
+  phone?: string;
+  role: "user" | "admin";
   createdAt: Date;
 
   // ── Soft delete ─────────────────────────────────────
@@ -49,8 +49,8 @@ export interface IUser extends Document {
   deletedAt?: Date;
 
   // ── Email verification ───────────────────────────────
-  isVerified:           boolean;
-  verificationToken?:   string | null;
+  isVerified: boolean;
+  verificationToken?: string | null;
   verificationExpires?: Date | null;
 
   // ── Addresses ────────────────────────────────────────
@@ -60,21 +60,21 @@ export interface IUser extends Document {
   wishlist: mongoose.Types.ObjectId[];
 
   // ── Session management ───────────────────────────────
-  lastLogin?:    Date;
-  refreshTokens: IRefreshToken[];   
+  lastLogin?: Date;
+  refreshTokens: IRefreshToken[];
 
   // ── Login lockout ────────────────────────────────────
   loginAttempts: number;
-  lockUntil?:    Date;
+  lockUntil?: Date;
 
   // ── Password reset ───────────────────────────────────
-  resetPasswordToken?:   string;  
+  resetPasswordToken?: string;
   resetPasswordExpires?: Date;
 
   // ── Email change flow ────────────────────────────────
-  emailChangeToken?:   string;   
+  emailChangeToken?: string;
   emailChangeExpires?: Date;
-  emailChangePending?: string;   
+  emailChangePending?: string;
 
   // ── Methods ──────────────────────────────────────────
   matchPassword(enteredPassword: string): Promise<boolean>;
@@ -83,11 +83,11 @@ export interface IUser extends Document {
 // ---------- User schema ----------
 const UserSchema: Schema = new Schema({
   // ── Core ────────────────────────────────────────────
-  email:    { type: String, required: true, unique: true, lowercase: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true },
-  name:     { type: String, default: '' },
-  phone:    { type: String, default: '' },
-  role:     { type: String, enum: ['user', 'admin'], default: 'user' },
+  name: { type: String, default: "" },
+  phone: { type: String, default: "" },
+  role: { type: String, enum: ["user", "admin"], default: "user" },
   createdAt: { type: Date, default: Date.now },
 
   // ── Soft delete ─────────────────────────────────────
@@ -95,30 +95,33 @@ const UserSchema: Schema = new Schema({
   deletedAt: { type: Date },
 
   // ── Email verification ───────────────────────────────
-  isVerified:          { type: Boolean, default: false },
-  verificationToken:   { type: String, default: null },
+  isVerified: { type: Boolean, default: false },
+  verificationToken: { type: String, default: null },
   verificationExpires: { type: Date, default: null },
 
   // ── Addresses ────────────────────────────────────────
   addresses: { type: [AddressSchema], default: [] },
 
   // ── WishList ────────────────────────────────────────
-  wishlist: { type: [{ type: Schema.Types.ObjectId, ref: 'Product' }], default: [] },
+  wishlist: {
+    type: [{ type: Schema.Types.ObjectId, ref: "Product" }],
+    default: [],
+  },
 
   // ── Session management ───────────────────────────────
-  lastLogin:     { type: Date },
+  lastLogin: { type: Date },
   refreshTokens: { type: [RefreshTokenSchema], default: [] },
 
   // ── Login lockout ────────────────────────────────────
   loginAttempts: { type: Number, default: 0 },
-  lockUntil:     { type: Date },
+  lockUntil: { type: Date },
 
   // ── Password reset ───────────────────────────────────
-  resetPasswordToken:   { type: String },
+  resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
 
   // ── Email change ─────────────────────────────────────
-  emailChangeToken:   { type: String },
+  emailChangeToken: { type: String },
   emailChangeExpires: { type: Date },
   emailChangePending: { type: String },
 });
@@ -127,9 +130,8 @@ const UserSchema: Schema = new Schema({
 UserSchema.index({ role: 1 });
 UserSchema.index({ createdAt: -1 });
 
-// Token lookups — used on every auth request, keep them fast
-UserSchema.index({ 'refreshTokens.token': 1 });
-UserSchema.index({ 'refreshTokens.expiresAt': 1 });
+UserSchema.index({ "refreshTokens.token": 1 });
+UserSchema.index({ "refreshTokens.expiresAt": 1 });
 UserSchema.index({ resetPasswordToken: 1 });
 UserSchema.index({ emailChangeToken: 1 });
 UserSchema.index({ verificationToken: 1 });
@@ -138,8 +140,8 @@ UserSchema.index({ verificationToken: 1 });
 UserSchema.index({ isDeleted: 1 });
 
 // ---------- Pre-save: hash password ----------
-UserSchema.pre<IUser>('save', async function (this: IUser) {
-  if (!this.isModified('password')) return;
+UserSchema.pre<IUser>("save", async function (this: IUser) {
+  if (!this.isModified("password")) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
@@ -151,4 +153,4 @@ UserSchema.methods.matchPassword = async function (
   return bcrypt.compare(enteredPassword, this.password);
 };
 
-export const User = mongoose.model<IUser>('User', UserSchema);
+export const User = mongoose.model<IUser>("User", UserSchema);

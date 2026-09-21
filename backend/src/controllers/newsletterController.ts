@@ -7,7 +7,7 @@ import {
 
 export const subscribeToNewsletter = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const { email } = req.body;
 
@@ -68,7 +68,7 @@ export const subscribeToNewsletter = async (
 
 export const unsubscribeFromNewsletter = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const { email } = req.body;
 

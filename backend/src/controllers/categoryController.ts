@@ -1,41 +1,46 @@
-import { Request, Response } from 'express';
-import { Category } from '../models/Category';
-import { Product } from '../models/Product';
+import { Request, Response } from "express";
+import { Category } from "../models/Category";
+import { Product } from "../models/Product";
 
 // ─── Public: get all categories ───────────────────────────────
-export const getCategories = async (req: Request, res: Response): Promise<void> => {
+export const getCategories = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const filter: any = {};
 
     // Filter by parent (e.g., ?parent=hair to get its direct subcategories)
     // Filter by parent (e.g., ?parent=hair)
-if (req.query.parent !== undefined) {
-  const parentParam = req.query.parent;
+    if (req.query.parent !== undefined) {
+      const parentParam = req.query.parent;
 
-  // Treat "null" string explicitly as null
-  if (parentParam === 'null') {
-    filter.parent = null;
-  } else {
-    // Ensure it's a string (could be string[], but we take the first if array)
-    const parentValue = Array.isArray(parentParam) ? String(parentParam[0]) : String(parentParam);
+      // Treat "null" string explicitly as null
+      if (parentParam === "null") {
+        filter.parent = null;
+      } else {
+        // Ensure it's a string (could be string[], but we take the first if array)
+        const parentValue = Array.isArray(parentParam)
+          ? String(parentParam[0])
+          : String(parentParam);
 
-    // Check if it's an ObjectId or a slug
-    const isObjectId = /^[0-9a-fA-F]{24}$/.test(parentValue);
-    if (isObjectId) {
-      filter.parent = parentValue;
-    } else {
-      const parentCat = await Category.findOne({ slug: parentValue });
-      if (!parentCat) {
-        res.status(400).json({ message: 'Parent category not found' });
-        return;
+        // Check if it's an ObjectId or a slug
+        const isObjectId = /^[0-9a-fA-F]{24}$/.test(parentValue);
+        if (isObjectId) {
+          filter.parent = parentValue;
+        } else {
+          const parentCat = await Category.findOne({ slug: parentValue });
+          if (!parentCat) {
+            res.status(400).json({ message: "Parent category not found" });
+            return;
+          }
+          filter.parent = parentCat._id;
+        }
       }
-      filter.parent = parentCat._id;
     }
-  }
-}
 
     const categories = await Category.find(filter)
-      .populate('parent', 'name slug')
+      .populate("parent", "name slug")
       .sort({ name: 1 });
 
     res.json(categories);
@@ -45,7 +50,10 @@ if (req.query.parent !== undefined) {
 };
 
 // ─── Optional: Get category tree ──────────────────────────────
-export const getCategoryTree = async (_req: Request, res: Response): Promise<void> => {
+export const getCategoryTree = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const allCategories = await Category.find().lean();
 
@@ -74,22 +82,31 @@ export const getCategoryTree = async (_req: Request, res: Response): Promise<voi
 };
 
 // ─── Admin: create category ───────────────────────────────────
-export const createCategory = async (req: Request, res: Response): Promise<void> => {
+export const createCategory = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { name, parent } = req.body;
 
     if (!name) {
-      res.status(400).json({ message: 'Name is required' });
+      res.status(400).json({ message: "Name is required" });
       return;
     }
 
     // Auto-generate slug from name
-    let slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    let slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
     // Ensure uniqueness (append a counter if needed)
     let existing = await Category.findOne({ slug });
     let counter = 1;
     while (existing) {
-      slug = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${counter}`;
+      slug = `${name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")}-${counter}`;
       existing = await Category.findOne({ slug });
       counter++;
     }
@@ -98,7 +115,7 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
     if (parent) {
       const parentCat = await Category.findById(parent);
       if (!parentCat) {
-        res.status(400).json({ message: 'Parent category not found' });
+        res.status(400).json({ message: "Parent category not found" });
         return;
       }
     }
@@ -117,35 +134,40 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
 };
 
 // ─── Admin: update category ───────────────────────────────────
-export const updateCategory = async (req: Request, res: Response): Promise<void> => {
+export const updateCategory = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { id } = req.params;
     const { name, slug, parent } = req.body;
 
     const category = await Category.findById(id);
     if (!category) {
-      res.status(404).json({ message: 'Category not found' });
+      res.status(404).json({ message: "Category not found" });
       return;
     }
 
     // If updating parent, ensure no circular reference
     if (parent !== undefined) {
       if (parent === id) {
-        res.status(400).json({ message: 'A category cannot be its own parent' });
+        res
+          .status(400)
+          .json({ message: "A category cannot be its own parent" });
         return;
       }
       if (parent) {
         // Check that new parent is not a descendant of this category
         const parentCat = await Category.findById(parent);
         if (!parentCat) {
-          res.status(400).json({ message: 'Parent category not found' });
+          res.status(400).json({ message: "Parent category not found" });
           return;
         }
         // Avoid circular dependency: collect all ancestors of this new parent
         let ancestor = parentCat.parent;
         while (ancestor) {
           if (ancestor.toString() === id) {
-            res.status(400).json({ message: 'Circular reference detected' });
+            res.status(400).json({ message: "Circular reference detected" });
             return;
           }
           const next = await Category.findById(ancestor);
@@ -160,7 +182,7 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
       // Ensure slug uniqueness
       const existing = await Category.findOne({ slug, _id: { $ne: id } });
       if (existing) {
-        res.status(400).json({ message: 'Slug already in use' });
+        res.status(400).json({ message: "Slug already in use" });
         return;
       }
       category.slug = slug;
@@ -174,12 +196,15 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
 };
 
 // ─── Admin: delete category ───────────────────────────────────
-export const deleteCategory = async (req: Request, res: Response): Promise<void> => {
+export const deleteCategory = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { id } = req.params;
     const category = await Category.findById(id);
     if (!category) {
-      res.status(404).json({ message: 'Category not found' });
+      res.status(404).json({ message: "Category not found" });
       return;
     }
 
@@ -202,7 +227,7 @@ export const deleteCategory = async (req: Request, res: Response): Promise<void>
     }
 
     await category.deleteOne();
-    res.json({ message: 'Category deleted' });
+    res.json({ message: "Category deleted" });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

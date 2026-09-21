@@ -28,12 +28,12 @@ const EmailQueueSchema = new Schema<IEmailQueue>(
     maxAttempts: { type: Number, default: 3 },
     lastError: { type: String },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 EmailQueueSchema.index({ status: 1, attempts: 1, createdAt: 1 });
 
 export const EmailQueue = mongoose.model<IEmailQueue>(
   "EmailQueue",
-  EmailQueueSchema
+  EmailQueueSchema,
 );

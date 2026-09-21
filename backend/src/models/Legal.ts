@@ -5,7 +5,7 @@ export type LegalPageSlug = "privacy" | "terms" | "returns";
 export interface ILegalPage extends Document {
   slug: LegalPageSlug;
   title: string;
-  content: string; 
+  content: string;
   updatedBy?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -26,4 +26,7 @@ const LegalPageSchema: Schema = new Schema(
   { timestamps: true },
 );
 
-export const LegalPage = mongoose.model<ILegalPage>("LegalPage", LegalPageSchema);
+export const LegalPage = mongoose.model<ILegalPage>(
+  "LegalPage",
+  LegalPageSchema,
+);

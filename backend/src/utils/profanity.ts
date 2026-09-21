@@ -65,6 +65,10 @@ export const bannedWords = [
   "mad man",
   "craze",
   "waka pass",
+  "iya yin",
+  "olofo",
+  "ole",
+  "oloriburuku",
 ];
 
 // Build regex with word boundaries (handles multi-word phrases)

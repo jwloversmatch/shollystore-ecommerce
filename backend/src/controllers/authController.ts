@@ -1,35 +1,35 @@
-import { Request, Response } from 'express';
-import crypto from 'crypto';
-import { User, IUser } from '../models/User';
-import { Order } from '../models/Order'; 
-import { generateToken } from '../utils/generateToken';
+import { Request, Response } from "express";
+import crypto from "crypto";
+import { User, IUser } from "../models/User";
+import { Order } from "../models/Order";
+import { generateToken } from "../utils/generateToken";
 import {
   sendVerificationEmail,
   sendPasswordResetEmail,
   sendPasswordChangedEmail,
   sendEmailChangeVerification,
-} from '../services/email.service';
-import { sendWelcomeEmail } from '../services/marketingEmail.service';
-import { AuthRequest } from '../middleware/auth';
+} from "../services/email.service";
+import { sendWelcomeEmail } from "../services/marketingEmail.service";
+import { AuthRequest } from "../middleware/auth";
 
 // ─── Security constants ────────────────────────────────────────────────────
-const MAX_LOGIN_ATTEMPTS   = 5;
-const LOCK_DURATION_MS     = 15 * 60 * 1000;        
-const RESET_EXPIRY_MS      = 60 * 60 * 1000;        
-const EMAIL_CHANGE_EXPIRY  = 24 * 60 * 60 * 1000;  
-const VERIFICATION_EXPIRY  = 15 * 60 * 1000;         
-const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000; 
-const MAX_REFRESH_SESSIONS = 5;                      
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCK_DURATION_MS = 15 * 60 * 1000;
+const RESET_EXPIRY_MS = 60 * 60 * 1000;
+const EMAIL_CHANGE_EXPIRY = 24 * 60 * 60 * 1000;
+const VERIFICATION_EXPIRY = 15 * 60 * 1000;
+const REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000;
+const MAX_REFRESH_SESSIONS = 5;
 
 // ─── Private helpers ───────────────────────────────────────────────────────
 
 /** SHA-256 hash a token before persisting — never store raw tokens in the DB */
 const hashToken = (raw: string) =>
-  crypto.createHash('sha256').update(raw).digest('hex');
+  crypto.createHash("sha256").update(raw).digest("hex");
 
 /** Generate a cryptographically random token and its hash in one shot */
 const makeToken = () => {
-  const raw = crypto.randomBytes(32).toString('hex');
+  const raw = crypto.randomBytes(32).toString("hex");
   return { raw, hashed: hashToken(raw) };
 };
 
@@ -38,21 +38,21 @@ const linkGuestOrdersToUser = async (userId: any, email: string) => {
   try {
     await Order.updateMany(
       { user: null, guestEmail: email.toLowerCase() },
-      { $set: { user: userId, guestEmail: undefined } }
+      { $set: { user: userId, guestEmail: undefined } },
     );
   } catch (err) {
-    console.error('Failed to link guest orders:', err);
+    console.error("Failed to link guest orders:", err);
   }
 };
 
 /** Strip sensitive fields before sending user data to the client */
 const sanitizeUser = (user: IUser) => ({
-  _id:       user._id,
-  email:     user.email,
-  name:      user.name,
-  phone:     user.phone,
+  _id: user._id,
+  email: user.email,
+  name: user.name,
+  phone: user.phone,
   addresses: user.addresses,
-  role:      user.role,
+  role: user.role,
   isVerified: user.isVerified,
   lastLogin: user.lastLogin,
   createdAt: user.createdAt,
@@ -60,27 +60,32 @@ const sanitizeUser = (user: IUser) => ({
 
 /** Write a secure httpOnly refresh-token cookie */
 const setRefreshCookie = (res: Response, token: string) =>
-  res.cookie('refreshToken', token, {
+  res.cookie("refreshToken", token, {
     httpOnly: true,
-    secure:   process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge:   7 * 24 * 60 * 60 * 1000,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
 const clearRefreshCookie = (res: Response) =>
-  res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict' });
+  res.clearCookie("refreshToken", { httpOnly: true, sameSite: "strict" });
 
 // ═══════════════════════════════════════════════════════════════════════════
 // REGISTRATION & EMAIL VERIFICATION
 // ═══════════════════════════════════════════════════════════════════════════
 
 // POST /api/auth/register
-export const registerUser = async (req: Request, res: Response): Promise<void> => {
+export const registerUser = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { email, password, name, phone } = req.body;
 
     if (!email || !password) {
-      res.status(400).json({ success: false, message: 'Email and password are required.' });
+      res
+        .status(400)
+        .json({ success: false, message: "Email and password are required." });
       return;
     }
 
@@ -90,7 +95,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
       // Generic response — prevents email enumeration
       res.status(200).json({
         success: true,
-        message: 'If that email is new, a verification link has been sent.',
+        message: "If that email is new, a verification link has been sent.",
       });
       return;
     }
@@ -98,51 +103,60 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
     const { raw, hashed } = makeToken();
 
     const user = await User.create({
-      email:                normEmail,
+      email: normEmail,
       password,
-      name:                 name?.trim() || '',
-      phone:                phone?.trim() || '',
-      verificationToken:    hashed,
-      verificationExpires:  new Date(Date.now() + VERIFICATION_EXPIRY),
-      isVerified:           false,
+      name: name?.trim() || "",
+      phone: phone?.trim() || "",
+      verificationToken: hashed,
+      verificationExpires: new Date(Date.now() + VERIFICATION_EXPIRY),
+      isVerified: false,
     });
 
     // Send verification email only — welcome email now fires from verifyEmail,
     // once the address is actually confirmed.
     sendVerificationEmail(normEmail, raw).catch((err) =>
-      console.error('Failed to send verification email:', err),
+      console.error("Failed to send verification email:", err),
     );
 
     res.status(201).json({
       success: true,
-      message: 'Registration successful. Check your email to verify your account.',
+      message:
+        "Registration successful. Check your email to verify your account.",
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // GET /api/auth/verify-email?token=...
-export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
+export const verifyEmail = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const raw = req.query.token as string;
     if (!raw) {
-      res.status(400).json({ success: false, message: 'Verification token is missing.' });
+      res
+        .status(400)
+        .json({ success: false, message: "Verification token is missing." });
       return;
     }
 
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       verificationToken: hashToken(raw),
-      verificationExpires: { $gt: new Date() }
+      verificationExpires: { $gt: new Date() },
     });
-    
+
     if (!user) {
-      res.status(400).json({ success: false, message: 'Invalid or expired verification link.' });
+      res.status(400).json({
+        success: false,
+        message: "Invalid or expired verification link.",
+      });
       return;
     }
 
-    user.isVerified          = true;
-    user.verificationToken   = undefined;
+    user.isVerified = true;
+    user.verificationToken = undefined;
     user.verificationExpires = undefined;
     await user.save();
 
@@ -150,21 +164,21 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
     await linkGuestOrdersToUser(user._id, user.email);
 
     // Send the welcome email now that the address is confirmed
-    sendWelcomeEmail(
-      { email: user.email, name: user.name },
-      'WELCOME10'
-    ).catch((err) =>
-      console.error('Failed to send welcome email:', err),
+    sendWelcomeEmail({ email: user.email, name: user.name }, "WELCOME10").catch(
+      (err) => console.error("Failed to send welcome email:", err),
     );
 
-    res.json({ success: true, message: 'Email verified. You can now log in.' });
+    res.json({ success: true, message: "Email verified. You can now log in." });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // POST /api/auth/resend-verification
-export const resendVerificationEmail = async (req: Request, res: Response): Promise<void> => {
+export const resendVerificationEmail = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const normEmail = req.body.email?.trim().toLowerCase();
 
@@ -172,23 +186,27 @@ export const resendVerificationEmail = async (req: Request, res: Response): Prom
     const respond = () =>
       res.json({
         success: true,
-        message: 'If an unverified account exists for that email, a new link has been sent.',
+        message:
+          "If an unverified account exists for that email, a new link has been sent.",
       });
 
     const user = await User.findOne({ email: normEmail });
-    if (!user || user.isVerified) { respond(); return; }
+    if (!user || user.isVerified) {
+      respond();
+      return;
+    }
 
     const { raw, hashed } = makeToken();
-    user.verificationToken   = hashed;
+    user.verificationToken = hashed;
     user.verificationExpires = new Date(Date.now() + VERIFICATION_EXPIRY);
     await user.save();
     sendVerificationEmail(normEmail, raw).catch((err) =>
-      console.error('Failed to send verification email:', err),
+      console.error("Failed to send verification email:", err),
     );
 
     respond();
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -201,21 +219,23 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      res.status(400).json({ success: false, message: 'Email and password are required.' });
+      res
+        .status(400)
+        .json({ success: false, message: "Email and password are required." });
       return;
     }
 
     const normEmail = email.trim().toLowerCase();
-    const user = await User.findOne({ email: normEmail }).select(
-      '+password +loginAttempts +lockUntil +refreshTokens'
-    ) as IUser | null;
+    const user = (await User.findOne({ email: normEmail }).select(
+      "+password +loginAttempts +lockUntil +refreshTokens",
+    )) as IUser | null;
 
     // ── Lockout check ────────────────────────────────────────────────────
     if (user?.lockUntil && user.lockUntil > new Date()) {
       const mins = Math.ceil((user.lockUntil.getTime() - Date.now()) / 60_000);
       res.status(423).json({
         success: false,
-        message: `Too many failed attempts. Try again in ${mins} minute${mins > 1 ? 's' : ''}.`,
+        message: `Too many failed attempts. Try again in ${mins} minute${mins > 1 ? "s" : ""}.`,
       });
       return;
     }
@@ -225,12 +245,14 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       if (user) {
         user.loginAttempts = (user.loginAttempts || 0) + 1;
         if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
-          user.lockUntil     = new Date(Date.now() + LOCK_DURATION_MS);
+          user.lockUntil = new Date(Date.now() + LOCK_DURATION_MS);
           user.loginAttempts = 0;
         }
         await user.save();
       }
-      res.status(401).json({ success: false, message: 'Invalid email or password.' });
+      res
+        .status(401)
+        .json({ success: false, message: "Invalid email or password." });
       return;
     }
 
@@ -238,20 +260,20 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
     if (!user.isVerified) {
       res.status(403).json({
         success: false,
-        message: 'Please verify your email before logging in.',
+        message: "Please verify your email before logging in.",
       });
       return;
     }
 
     // ── Success: reset lockout, track last login ──────────────────────────
     user.loginAttempts = 0;
-    user.lockUntil     = undefined;
-    user.lastLogin     = new Date();
+    user.lockUntil = undefined;
+    user.lastLogin = new Date();
 
     // ── Clean up expired refresh tokens ───────────────────────────────────
     const now = new Date();
     user.refreshTokens = (user.refreshTokens || []).filter(
-      (t) => t.expiresAt && t.expiresAt > now
+      (t) => t.expiresAt && t.expiresAt > now,
     );
 
     // ── Issue refresh token, keep only the last N sessions ────────────────
@@ -261,8 +283,8 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       {
         token: refreshHashed,
         createdAt: now,
-        expiresAt: new Date(now.getTime() + REFRESH_TOKEN_EXPIRY)
-      }
+        expiresAt: new Date(now.getTime() + REFRESH_TOKEN_EXPIRY),
+      },
     ];
 
     await user.save();
@@ -273,102 +295,120 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
     setRefreshCookie(res, refreshRaw);
 
     res.json({
-      success:      true,
-      user:         sanitizeUser(user),
-      token:        generateToken(user._id.toString()),  
-      refreshToken: refreshRaw,                          
+      success: true,
+      user: sanitizeUser(user),
+      token: generateToken(user._id.toString()),
+      refreshToken: refreshRaw,
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // POST /api/auth/refresh  — exchange a valid refresh token for a new access token
-export const refreshAccessToken = async (req: Request, res: Response): Promise<void> => {
+export const refreshAccessToken = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     // Accept from httpOnly cookie (web) or request body (mobile)
-    const raw: string | undefined = req.cookies?.refreshToken || req.body?.refreshToken;
+    const raw: string | undefined =
+      req.cookies?.refreshToken || req.body?.refreshToken;
     if (!raw) {
-      res.status(401).json({ success: false, message: 'No refresh token provided.' });
+      res
+        .status(401)
+        .json({ success: false, message: "No refresh token provided." });
       return;
     }
 
     const hashed = hashToken(raw);
-    
+
     // Find user with non-expired token
-    const user = await User.findOne({
+    const user = (await User.findOne({
       refreshTokens: {
         $elemMatch: {
           token: hashed,
-          expiresAt: { $gt: new Date() }
-        }
-      }
-    }).select('+refreshTokens') as IUser | null;
+          expiresAt: { $gt: new Date() },
+        },
+      },
+    }).select("+refreshTokens")) as IUser | null;
 
     if (!user) {
-      res.status(401).json({ success: false, message: 'Invalid or expired refresh token.' });
+      res
+        .status(401)
+        .json({ success: false, message: "Invalid or expired refresh token." });
       return;
     }
 
     // ── Token rotation: old token out, new token in ────────────────────────
     const { raw: newRaw, hashed: newHashed } = makeToken();
     const now = new Date();
-    
+
     // Remove the used refresh token
     user.refreshTokens = (user.refreshTokens || []).filter(
-      (t) => t.token !== hashed
+      (t) => t.token !== hashed,
     );
-    
+
     // Clean up any other expired tokens
     user.refreshTokens = user.refreshTokens.filter(
-      (t) => t.expiresAt && t.expiresAt > now
+      (t) => t.expiresAt && t.expiresAt > now,
     );
-    
+
     // Add new refresh token with expiration
     user.refreshTokens.push({
       token: newHashed,
       createdAt: now,
-      expiresAt: new Date(now.getTime() + REFRESH_TOKEN_EXPIRY)
+      expiresAt: new Date(now.getTime() + REFRESH_TOKEN_EXPIRY),
     });
-    
+
     await user.save();
 
     setRefreshCookie(res, newRaw);
     res.json({
-      success:      true,
-      token:        generateToken(user._id.toString()),
+      success: true,
+      token: generateToken(user._id.toString()),
       refreshToken: newRaw,
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // POST /api/auth/logout
-export const logoutUser = async (req: AuthRequest, res: Response): Promise<void> => {
+export const logoutUser = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
-    const raw: string | undefined = req.cookies?.refreshToken || req.body?.refreshToken;
+    const raw: string | undefined =
+      req.cookies?.refreshToken || req.body?.refreshToken;
     if (raw && req.user) {
       await User.updateOne(
         { _id: req.user._id },
-        { $pull: { refreshTokens: { token: hashToken(raw) } } }
+        { $pull: { refreshTokens: { token: hashToken(raw) } } },
       );
     }
     clearRefreshCookie(res);
-    res.json({ success: true, message: 'Logged out.' });
+    res.json({ success: true, message: "Logged out." });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // POST /api/auth/logout-all  — revoke every active session for this account
-export const logoutAllDevices = async (req: AuthRequest, res: Response): Promise<void> => {
+export const logoutAllDevices = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
-    await User.updateOne({ _id: req.user!._id }, { $set: { refreshTokens: [] } });
+    await User.updateOne(
+      { _id: req.user!._id },
+      { $set: { refreshTokens: [] } },
+    );
     clearRefreshCookie(res);
-    res.json({ success: true, message: 'Logged out from all devices.' });
+    res.json({ success: true, message: "Logged out from all devices." });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -377,101 +417,135 @@ export const logoutAllDevices = async (req: AuthRequest, res: Response): Promise
 // ═══════════════════════════════════════════════════════════════════════════
 
 // POST /api/auth/forgot-password
-export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const respond = () =>
       res.json({
         success: true,
-        message: 'If an account with that email exists, a reset link has been sent.',
+        message:
+          "If an account with that email exists, a reset link has been sent.",
       });
 
-    const user = await User.findOne({ email: req.body.email?.trim().toLowerCase() });
-    if (!user) { respond(); return; }
+    const user = await User.findOne({
+      email: req.body.email?.trim().toLowerCase(),
+    });
+    if (!user) {
+      respond();
+      return;
+    }
 
     const { raw, hashed } = makeToken();
-    user.resetPasswordToken   = hashed;
+    user.resetPasswordToken = hashed;
     user.resetPasswordExpires = new Date(Date.now() + RESET_EXPIRY_MS);
     await user.save();
 
     sendPasswordResetEmail(user.email, raw).catch((err) =>
-      console.error('Failed to send password reset email:', err),
+      console.error("Failed to send password reset email:", err),
     );
     respond();
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // POST /api/auth/reset-password
-export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { token, password } = req.body;
     if (!token || !password) {
-      res.status(400).json({ success: false, message: 'Token and new password are required.' });
+      res.status(400).json({
+        success: false,
+        message: "Token and new password are required.",
+      });
       return;
     }
 
     const user = await User.findOne({
-      resetPasswordToken:   hashToken(token),
+      resetPasswordToken: hashToken(token),
       resetPasswordExpires: { $gt: new Date() },
     });
 
     if (!user) {
-      res.status(400).json({ success: false, message: 'Reset link is invalid or has expired.' });
+      res.status(400).json({
+        success: false,
+        message: "Reset link is invalid or has expired.",
+      });
       return;
     }
 
-    user.password             = password;     
-    user.resetPasswordToken   = undefined;
+    user.password = password;
+    user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
-    user.loginAttempts        = 0;          
-    user.lockUntil            = undefined;
-    user.refreshTokens        = [];         
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
+    user.refreshTokens = [];
 
     await user.save();
     sendPasswordChangedEmail(user.email, user.name).catch((err) =>
-      console.error('Failed to send password changed email:', err),
+      console.error("Failed to send password changed email:", err),
     );
     clearRefreshCookie(res);
 
-    res.json({ success: true, message: 'Password reset successfully. Please log in.' });
+    res.json({
+      success: true,
+      message: "Password reset successfully. Please log in.",
+    });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // PUT /api/auth/change-password  (authenticated — requires current password)
-export const changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
+export const changePassword = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword) {
-      res.status(400).json({ success: false, message: 'Current and new password are required.' });
+      res.status(400).json({
+        success: false,
+        message: "Current and new password are required.",
+      });
       return;
     }
 
-    const user = await User.findById(req.user!._id).select('+password') as IUser | null;
+    const user = (await User.findById(req.user!._id).select(
+      "+password",
+    )) as IUser | null;
     if (!user) {
-      res.status(404).json({ success: false, message: 'User not found.' });
+      res.status(404).json({ success: false, message: "User not found." });
       return;
     }
 
     if (!(await user.matchPassword(currentPassword))) {
-      res.status(401).json({ success: false, message: 'Current password is incorrect.' });
+      res
+        .status(401)
+        .json({ success: false, message: "Current password is incorrect." });
       return;
     }
 
-    user.password      = newPassword;
-    user.refreshTokens = [];   
+    user.password = newPassword;
+    user.refreshTokens = [];
     await user.save();
 
     sendPasswordChangedEmail(user.email, user.name).catch((err) =>
-      console.error('Failed to send password changed email:', err),
+      console.error("Failed to send password changed email:", err),
     );
     clearRefreshCookie(res);
 
-    res.json({ success: true, message: 'Password changed. Please log in again.' });
+    res.json({
+      success: true,
+      message: "Password changed. Please log in again.",
+    });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -484,147 +558,183 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const user = await User.findById(req.user!._id);
     if (!user) {
-      res.status(404).json({ success: false, message: 'User not found.' });
+      res.status(404).json({ success: false, message: "User not found." });
       return;
     }
     res.json({ success: true, user: sanitizeUser(user) });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // PUT /api/auth/profile
-export const updateProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateProfile = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const user = await User.findById(req.user!._id);
     if (!user) {
-      res.status(404).json({ success: false, message: 'User not found.' });
+      res.status(404).json({ success: false, message: "User not found." });
       return;
     }
 
-    if (req.body.name  !== undefined) user.name  = req.body.name.trim();
+    if (req.body.name !== undefined) user.name = req.body.name.trim();
     if (req.body.phone !== undefined) user.phone = req.body.phone.trim();
 
     const updated = await user.save();
     res.json({ success: true, user: sanitizeUser(updated) });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // POST /api/auth/change-email  — sends verification to the new address
-export const changeEmail = async (req: AuthRequest, res: Response): Promise<void> => {
+export const changeEmail = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const { newEmail, password } = req.body;
     const normNew = newEmail?.trim().toLowerCase();
 
     if (!normNew || !password) {
-      res.status(400).json({ success: false, message: 'New email and current password are required.' });
+      res.status(400).json({
+        success: false,
+        message: "New email and current password are required.",
+      });
       return;
     }
 
     if (await User.findOne({ email: normNew })) {
-      res.status(409).json({ success: false, message: 'That email is already in use.' });
+      res
+        .status(409)
+        .json({ success: false, message: "That email is already in use." });
       return;
     }
 
-    const user = await User.findById(req.user!._id).select('+password') as IUser | null;
+    const user = (await User.findById(req.user!._id).select(
+      "+password",
+    )) as IUser | null;
     if (!user) {
-      res.status(404).json({ success: false, message: 'User not found.' });
+      res.status(404).json({ success: false, message: "User not found." });
       return;
     }
 
     if (!(await user.matchPassword(password))) {
-      res.status(401).json({ success: false, message: 'Password is incorrect.' });
+      res
+        .status(401)
+        .json({ success: false, message: "Password is incorrect." });
       return;
     }
 
     const { raw, hashed } = makeToken();
-    user.emailChangeToken   = hashed;
+    user.emailChangeToken = hashed;
     user.emailChangeExpires = new Date(Date.now() + EMAIL_CHANGE_EXPIRY);
     user.emailChangePending = normNew;
     await user.save();
 
     sendEmailChangeVerification(normNew, raw).catch((err) =>
-      console.error('Failed to send email change verification:', err),
+      console.error("Failed to send email change verification:", err),
     );
 
-    res.json({ success: true, message: 'Verification sent to your new email address. Check your inbox.' });
+    res.json({
+      success: true,
+      message: "Verification sent to your new email address. Check your inbox.",
+    });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // GET /api/auth/verify-email-change?token=...
-export const verifyEmailChange = async (req: Request, res: Response): Promise<void> => {
+export const verifyEmailChange = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const raw = req.query.token as string;
     if (!raw) {
-      res.status(400).json({ success: false, message: 'Token is missing.' });
+      res.status(400).json({ success: false, message: "Token is missing." });
       return;
     }
 
     const user = await User.findOne({
-      emailChangeToken:   hashToken(raw),
+      emailChangeToken: hashToken(raw),
       emailChangeExpires: { $gt: new Date() },
     });
 
     if (!user || !user.emailChangePending) {
-      res.status(400).json({ success: false, message: 'Invalid or expired link.' });
+      res
+        .status(400)
+        .json({ success: false, message: "Invalid or expired link." });
       return;
     }
 
-    user.email              = user.emailChangePending;
-    user.emailChangeToken   = undefined;
+    user.email = user.emailChangePending;
+    user.emailChangeToken = undefined;
     user.emailChangeExpires = undefined;
     user.emailChangePending = undefined;
-    user.refreshTokens      = [];   
+    user.refreshTokens = [];
     await user.save();
 
     clearRefreshCookie(res);
-    res.json({ success: true, message: 'Email updated. Please log in with your new address.' });
+    res.json({
+      success: true,
+      message: "Email updated. Please log in with your new address.",
+    });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // DELETE /api/auth/account  — permanent, requires password confirmation
-export const deleteAccount = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteAccount = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const { password } = req.body;
     if (!password) {
-      res.status(400).json({ success: false, message: 'Password confirmation is required.' });
+      res.status(400).json({
+        success: false,
+        message: "Password confirmation is required.",
+      });
       return;
     }
 
-    const user = await User.findById(req.user!._id).select('+password') as IUser | null;
+    const user = (await User.findById(req.user!._id).select(
+      "+password",
+    )) as IUser | null;
     if (!user) {
-      res.status(404).json({ success: false, message: 'User not found.' });
+      res.status(404).json({ success: false, message: "User not found." });
       return;
     }
 
     if (!(await user.matchPassword(password))) {
-      res.status(401).json({ success: false, message: 'Password is incorrect.' });
+      res
+        .status(401)
+        .json({ success: false, message: "Password is incorrect." });
       return;
     }
 
     // ── Soft delete + anonymise ───────────────────────────────
     user.isDeleted = true;
     user.deletedAt = new Date();
-    user.name = 'Deleted User';
+    user.name = "Deleted User";
     user.email = `deleted_${user._id}@deleted.local`;
-    user.phone = '';
+    user.phone = "";
     user.addresses = [];
     user.refreshTokens = [];
-    user.password = crypto.randomBytes(32).toString('hex');
+    user.password = crypto.randomBytes(32).toString("hex");
     user.isVerified = false;
     await user.save();
 
     clearRefreshCookie(res);
-    res.json({ success: true, message: 'Account permanently deleted.' });
+    res.json({ success: true, message: "Account permanently deleted." });
     return;
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
     return;
   }
 };
@@ -634,21 +744,27 @@ export const deleteAccount = async (req: AuthRequest, res: Response): Promise<vo
 // ═══════════════════════════════════════════════════════════════════════════
 
 // GET /api/auth/addresses
-export const getAddresses = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getAddresses = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const user = await User.findById(req.user!._id);
     res.json({ success: true, addresses: user?.addresses || [] });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // POST /api/auth/addresses
-export const addAddress = async (req: AuthRequest, res: Response): Promise<void> => {
+export const addAddress = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const user = await User.findById(req.user!._id);
     if (!user) {
-      res.status(404).json({ success: false, message: 'User not found.' });
+      res.status(404).json({ success: false, message: "User not found." });
       return;
     }
 
@@ -656,27 +772,37 @@ export const addAddress = async (req: AuthRequest, res: Response): Promise<void>
 
     if (isDefault) user.addresses.forEach((a) => (a.isDefault = false));
 
-    user.addresses.push({ label, address, city, postalCode, country, isDefault: !!isDefault });
+    user.addresses.push({
+      label,
+      address,
+      city,
+      postalCode,
+      country,
+      isDefault: !!isDefault,
+    });
     await user.save();
 
     res.status(201).json({ success: true, addresses: user.addresses });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // PUT /api/auth/addresses/:id
-export const updateAddress = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateAddress = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const user = await User.findById(req.user!._id);
     if (!user) {
-      res.status(404).json({ success: false, message: 'User not found.' });
+      res.status(404).json({ success: false, message: "User not found." });
       return;
     }
 
     const addr = (user.addresses as any).id(req.params.id);
     if (!addr) {
-      res.status(404).json({ success: false, message: 'Address not found.' });
+      res.status(404).json({ success: false, message: "Address not found." });
       return;
     }
 
@@ -691,16 +817,19 @@ export const updateAddress = async (req: AuthRequest, res: Response): Promise<vo
 
     res.json({ success: true, addresses: user.addresses });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // DELETE /api/auth/addresses/:id
-export const deleteAddress = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteAddress = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const user = await User.findById(req.user!._id);
     if (!user) {
-      res.status(404).json({ success: false, message: 'User not found.' });
+      res.status(404).json({ success: false, message: "User not found." });
       return;
     }
 
@@ -709,22 +838,25 @@ export const deleteAddress = async (req: AuthRequest, res: Response): Promise<vo
 
     res.json({ success: true, addresses: user.addresses });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
 // PUT /api/auth/addresses/:id/default
-export const setDefaultAddress = async (req: AuthRequest, res: Response): Promise<void> => {
+export const setDefaultAddress = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const user = await User.findById(req.user!._id);
     if (!user) {
-      res.status(404).json({ success: false, message: 'User not found.' });
+      res.status(404).json({ success: false, message: "User not found." });
       return;
     }
 
     const addr = (user.addresses as any).id(req.params.id);
     if (!addr) {
-      res.status(404).json({ success: false, message: 'Address not found.' });
+      res.status(404).json({ success: false, message: "Address not found." });
       return;
     }
 
@@ -734,6 +866,6 @@ export const setDefaultAddress = async (req: AuthRequest, res: Response): Promis
 
     res.json({ success: true, addresses: user.addresses });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

@@ -1,11 +1,11 @@
-import express from 'express';
-import { Settings } from '../models/Settings';
+import express from "express";
+import { Settings } from "../models/Settings";
 
 const router = express.Router();
 
 // @desc    Get public settings (used by checkout, homepage, etc.)
 // @route   GET /api/settings/public
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     let settings = await Settings.findOne();
     if (!settings) {

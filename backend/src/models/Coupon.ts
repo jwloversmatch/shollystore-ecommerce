@@ -1,8 +1,8 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from "mongoose";
 
 export interface ICoupon extends Document {
   code: string;
-  discountType: 'percentage' | 'fixed';
+  discountType: "percentage" | "fixed";
   discountAmount: number;
   minOrderAmount?: number;
   isActive: boolean;
@@ -12,17 +12,23 @@ export interface ICoupon extends Document {
   createdAt: Date;
 }
 
-const CouponSchema: Schema = new Schema({
-  code: { type: String, required: true, unique: true, uppercase: true },
-  discountType: { type: String, enum: ['percentage', 'fixed'], required: true },
-  discountAmount: { type: Number, required: true },
-  minOrderAmount: { type: Number, default: 0 },
-  isActive: { type: Boolean, default: true },
-  expiresAt: { type: Date },
-  usageLimit: { type: Number, default: 0 },
-  usedCount: { type: Number, default: 0 },
-}, { timestamps: true });
+const CouponSchema: Schema = new Schema(
+  {
+    code: { type: String, required: true, unique: true, uppercase: true },
+    discountType: {
+      type: String,
+      enum: ["percentage", "fixed"],
+      required: true,
+    },
+    discountAmount: { type: Number, required: true },
+    minOrderAmount: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true },
+    expiresAt: { type: Date },
+    usageLimit: { type: Number, default: 0 },
+    usedCount: { type: Number, default: 0 },
+  },
+  { timestamps: true },
+);
 
-// ✅ REMOVED: CouponSchema.index({ code: 1 }); (Already handled by unique: true)
 
-export const Coupon = mongoose.model<ICoupon>('Coupon', CouponSchema);
+export const Coupon = mongoose.model<ICoupon>("Coupon", CouponSchema);

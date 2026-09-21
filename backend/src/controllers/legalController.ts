@@ -37,9 +37,6 @@ export const getLegalPage = async (
 
     let page = await LegalPage.findOne({ slug });
     if (!page) {
-      // First-ever request for this page — seed it with a placeholder so
-      // the public page never renders completely blank before an admin
-      // has visited the editor.
       page = await LegalPage.create({ slug, ...DEFAULTS[slug] });
     }
 

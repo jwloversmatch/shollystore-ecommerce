@@ -22,10 +22,10 @@ const newsletterSubscriberSchema = new Schema<INewsletterSubscriber>(
     },
     unsubscribedAt: Date,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model<INewsletterSubscriber>(
   "NewsletterSubscriber",
-  newsletterSubscriberSchema
+  newsletterSubscriberSchema,
 );
