@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { SITE_CONFIG, productUrl } from "../config/site";
+import { SITE, productUrl } from "../config/site";
 import { PLACEHOLDER } from "../types/home";
 import type { ProductItem } from "../types/home";
 import type { Breadcrumb } from "./useShopCatalog";
@@ -34,7 +34,7 @@ export function useShopSeo(
       params.set("category", selectedPath.join(","));
     }
     const query = params.toString();
-    return `${SITE_CONFIG.url}/shop${query ? `?${query}` : ""}`;
+    return `${SITE.url}/shop${query ? `?${query}` : ""}`;
   }, [selectedPath]);
 
   // ─── Structured data for collection & breadcrumbs ───────────────────────
@@ -44,8 +44,8 @@ export function useShopSeo(
       position: index + 1,
       name: crumb.name,
       item: crumb.id
-        ? `${SITE_CONFIG.url}/shop?category=${crumb.id}`
-        : `${SITE_CONFIG.url}/shop`,
+        ? `${SITE.url}/shop?category=${crumb.id}`
+        : `${SITE.url}/shop`,
     }));
 
     return {

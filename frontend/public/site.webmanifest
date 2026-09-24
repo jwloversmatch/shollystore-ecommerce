@@ -2,6 +2,7 @@
   "name": "Sholex",
   "short_name": "Sholex",
   "description": "Your one-stop multi-product store",
+  "id": "/?source=pwa",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0A0A0B",

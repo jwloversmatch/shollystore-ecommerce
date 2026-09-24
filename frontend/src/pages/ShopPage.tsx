@@ -12,10 +12,10 @@ import ProductGridSkeleton from "../components/shop/ProductGridSkeleton";
 import EmptyProductsState from "../components/shop/EmptyProductsState";
 import ProductGrid from "../components/shop/ProductGrid";
 import ShopPagination from "../components/shop/ShopPagination";
-import { SITE_CONFIG } from "../config/site";
+import { SITE } from "../config/site";
 import type { ProductItem } from "../types/home";
 
-const SHOP_OG_IMAGE = `${SITE_CONFIG.url}/shop-banner.jpg`;
+const SHOP_OG_IMAGE = `${SITE.url}/shop-banner.jpg`;
 
 const ShopPage = () => {
   const navigate = useNavigate();

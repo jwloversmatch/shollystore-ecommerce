@@ -1,39 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://sholex.vercel.app/</loc>
-    <lastmod>2026-07-28</lastmod>
+    <loc>https://www.sholexstore.com/</loc>
+    <lastmod>2026-09-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://sholex.vercel.app/products</loc>
-    <lastmod>2026-07-28</lastmod>
+    <loc>https://www.sholexstore.com/shop</loc>
+    <lastmod>2026-09-25</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://sholex.vercel.app/about</loc>
-    <lastmod>2026-07-28</lastmod>
+    <loc>https://www.sholexstore.com/about</loc>
+    <lastmod>2026-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://sholex.vercel.app/contact</loc>
-    <lastmod>2026-07-28</lastmod>
+    <loc>https://www.sholexstore.com/contact</loc>
+    <lastmod>2026-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://sholex.vercel.app/login</loc>
-    <lastmod>2026-07-28</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://www.sholexstore.com/privacy</loc>
+    <lastmod>2026-09-25</lastmod>
+    <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://sholex.vercel.app/register</loc>
-    <lastmod>2026-07-28</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://www.sholexstore.com/terms</loc>
+    <lastmod>2026-09-25</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.sholexstore.com/returns</loc>
+    <lastmod>2026-09-25</lastmod>
+    <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 </urlset>

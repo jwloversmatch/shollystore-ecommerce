@@ -10,6 +10,7 @@ import SEO from "../components/SEO";
 import StructuredData from "../components/StructuredData";
 import type { ProductItem, CategoryItem } from "../types/home";
 import { ACCENT } from "../types/home";
+import { SITE } from "../config/site";
 
 import HomeLoading from "./home/HomeLoading";
 import HomeHero from "./home/HomeHero";
@@ -19,11 +20,15 @@ const HomeMarquee = lazy(() => import("./home/HomeMarquee"));
 const HomeFeatures = lazy(() => import("./home/HomeFeatures"));
 const HomeSpecialOffer = lazy(() => import("./home/HomeSpecialOffer"));
 const HomeHowItWorks = lazy(() => import("./home/HomeHowItWorks"));
-const FeaturedProductsGrid = lazy(() => import("../components/FeaturedProductsGrid"));
+const FeaturedProductsGrid = lazy(
+  () => import("../components/FeaturedProductsGrid"),
+);
 const HomePromoBanners = lazy(() => import("./home/HomePromoBanners"));
 const HomeNewArrivals = lazy(() => import("./home/HomeNewArrivals"));
 const HomeTestimonials = lazy(() => import("./home/HomeTestimonials"));
-const ProductQuickViewModal = lazy(() => import("../components/ProductQuickViewModal"));
+const ProductQuickViewModal = lazy(
+  () => import("../components/ProductQuickViewModal"),
+);
 
 import { ArrowRight } from "lucide-react";
 
@@ -96,14 +101,14 @@ const Home = () => {
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Sholex",
-    url: "https://Sholex.vercel.app",
-    logo: "https://Sholex.vercel.app/logo.png",
+    name: SITE.name,
+    url: SITE.url,
+    logo: `${SITE.url}/logo.png`,
   };
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    url: "https://Sholex.vercel.app",
+    url: SITE.url,
   };
 
   if (isPageLoading) return <HomeLoading />;
@@ -119,7 +124,7 @@ const Home = () => {
       <SEO
         title={heroTitle.replace("|", "").trim()}
         description={heroDescription}
-        canonicalUrl="https://Sholex.vercel.app"
+        canonicalUrl={SITE.url}
       />
       <StructuredData data={organizationSchema} />
       <StructuredData data={websiteSchema} />

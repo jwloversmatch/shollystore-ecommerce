@@ -1,3 +1,15 @@
 User-agent: *
 Allow: /
-Sitemap: https://sholex.vercel.app/sitemap.xml
+
+Disallow: /admin/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /account
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /verify-email
+Disallow: /unsubscribe
+
+Sitemap: https://www.sholexstore.com/sitemap.xml

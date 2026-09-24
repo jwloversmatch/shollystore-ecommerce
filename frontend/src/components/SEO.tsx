@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { SITE_CONFIG } from "../config/site";
+import { SITE } from "../config/site";
 
 interface SEOProps {
   title: string;
@@ -29,12 +29,12 @@ const SEO = ({
   productAvailability,
   jsonLd,
 }: SEOProps) => {
-  const siteName = SITE_CONFIG.name;
+  const siteName = SITE.name;
   const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
 
   const toAbsoluteUrl = (url: string) => {
     if (url.startsWith("http")) return url;
-    return new URL(url, SITE_CONFIG.url).toString();
+    return new URL(url, SITE.url).toString();
   };
 
   const resolvedCanonical = canonicalUrl
@@ -43,7 +43,7 @@ const SEO = ({
 
   const resolvedOgImage = ogImage
     ? toAbsoluteUrl(ogImage)
-    : toAbsoluteUrl(SITE_CONFIG.ogImage);
+    : toAbsoluteUrl(SITE.ogImage);
 
   const trimmedDescription = description.slice(0, 160);
 
@@ -67,7 +67,7 @@ const SEO = ({
       <meta property="og:image:alt" content={title} />
       <meta property="og:type" content={ogType} />
       <meta property="og:site_name" content={siteName} />
-      <meta property="og:locale" content={SITE_CONFIG.locale} />
+      <meta property="og:locale" content={SITE.locale} />
       <meta property="og:url" content={resolvedCanonical} />
 
       {ogType === "product" && productPrice != null && (
@@ -91,9 +91,9 @@ const SEO = ({
       <meta name="twitter:description" content={trimmedDescription} />
       <meta name="twitter:image" content={resolvedOgImage} />
       <meta name="twitter:image:alt" content={title} />
-      <meta name="twitter:site" content={SITE_CONFIG.twitter} />
-      {SITE_CONFIG.twitterCreator && (
-        <meta name="twitter:creator" content={SITE_CONFIG.twitterCreator} />
+      <meta name="twitter:site" content={SITE.twitter} />
+      {SITE.twitterCreator && (
+        <meta name="twitter:creator" content={SITE.twitterCreator} />
       )}
 
       <meta name="author" content={siteName} />

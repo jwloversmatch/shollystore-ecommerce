@@ -1,4 +1,4 @@
-import { SITE_CONFIG, productUrl } from './site';
+import { SITE, productUrl } from './site';
 
 /** Build Product JSON-LD schema */
 export const buildProductSchema = (product: {
@@ -15,7 +15,7 @@ export const buildProductSchema = (product: {
   '@type': 'Product',
   name: product.name,
   description: product.description || product.name,
-  image: product.images?.length ? product.images : [SITE_CONFIG.ogImage],
+  image: product.images?.length ? product.images : [SITE.ogImage],
   url: productUrl(product.slug),
   offers: {
     '@type': 'Offer',
@@ -57,19 +57,19 @@ export const buildBreadcrumbSchema = (
 export const organizationSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: SITE_CONFIG.name,
-  url: SITE_CONFIG.url,
-  logo: `${SITE_CONFIG.url}/logo.png`,
-  description: SITE_CONFIG.description,
+  name: SITE.name,
+  url: SITE.url,
+  logo: `${SITE.url}/logo.png`,
+  description: SITE.description,
   sameAs: [
     // Improved: handle both handle and full URL
-    SITE_CONFIG.twitter.startsWith('http')
-      ? SITE_CONFIG.twitter
-      : `https://twitter.com/${SITE_CONFIG.twitter.replace('@', '')}`,
+    SITE.twitter.startsWith('http')
+      ? SITE.twitter
+      : `https://twitter.com/${SITE.twitter.replace('@', '')}`,
   ],
   contactPoint: {
     '@type': 'ContactPoint',
-    telephone: SITE_CONFIG.phone,
+    telephone: SITE.phone,
     contactType: 'customer service',
     areaServed: 'NG',
     availableLanguage: ['English'],
@@ -79,11 +79,11 @@ export const organizationSchema = {
 export const websiteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  name: SITE_CONFIG.name,
-  url: SITE_CONFIG.url,
+  name: SITE.name,
+  url: SITE.url,
   potentialAction: {
     '@type': 'SearchAction',
-    target: `${SITE_CONFIG.url}/shop?search={search_term_string}`, 
+    target: `${SITE.url}/shop?search={search_term_string}`, 
     'query-input': 'required name=search_term_string',
   },
 };
