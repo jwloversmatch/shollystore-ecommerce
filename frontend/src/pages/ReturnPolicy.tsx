@@ -3,6 +3,7 @@ import SEO from '../components/SEO';
 import { motion } from 'framer-motion';
 import { useGetLegalPageQuery } from '../features/api/apiSlice';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { SITE } from '../config/site';
 
 const ReturnPolicy = () => {
   const { data, isLoading, isError } = useGetLegalPageQuery('returns');
@@ -41,7 +42,7 @@ const ReturnPolicy = () => {
             ? `Read our ${page.title.toLowerCase()}.`
             : "Learn about Sholex's return and refund policy."
         }
-        canonicalUrl="https://sholex.vercel.app/returns"
+        canonicalUrl={`${SITE.url}/about`}
       />
 
       <main

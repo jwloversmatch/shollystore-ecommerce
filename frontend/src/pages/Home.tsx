@@ -7,7 +7,6 @@ import {
   useGetPublicSettingsQuery,
 } from "../features/api/apiSlice";
 import SEO from "../components/SEO";
-import StructuredData from "../components/StructuredData";
 import type { ProductItem, CategoryItem } from "../types/home";
 import { ACCENT } from "../types/home";
 import { SITE } from "../config/site";
@@ -98,19 +97,6 @@ const Home = () => {
     ? heroTitle.split("|").map((s: string) => s.trim())
     : [heroTitle, ""];
 
-  const organizationSchema = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: SITE.name,
-    url: SITE.url,
-    logo: `${SITE.url}/logo.png`,
-  };
-  const websiteSchema = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    url: SITE.url,
-  };
-
   if (isPageLoading) return <HomeLoading />;
 
   const categoryNames = categories.map((c: CategoryItem) => c.name);
@@ -126,8 +112,6 @@ const Home = () => {
         description={heroDescription}
         canonicalUrl={SITE.url}
       />
-      <StructuredData data={organizationSchema} />
-      <StructuredData data={websiteSchema} />
 
       {/* Ambient background orbs — CSS-only, no JS, no framer-motion */}
       <div

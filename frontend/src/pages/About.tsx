@@ -12,6 +12,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SITE } from '../config/site';
 
 const About = () => {
   const stats = [
@@ -70,7 +71,7 @@ const About = () => {
       <SEO
         title="About Us"
         description="Discover the story behind Sholex – your trusted destination for quality products, fast delivery, and exceptional customer service."
-        canonicalUrl="https://sholex.vercel.app/about"
+        canonicalUrl={`${SITE.url}/about`}
       />
 
       <main

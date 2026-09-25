@@ -3,6 +3,7 @@ import SEO from '../components/SEO';
 import { motion } from 'framer-motion';
 import { useGetLegalPageQuery } from '../features/api/apiSlice';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { SITE } from '../config/site';
 
 const PrivacyPolicy = () => {
   const { data, isLoading, isError } = useGetLegalPageQuery('privacy');
@@ -41,7 +42,7 @@ const PrivacyPolicy = () => {
             ? `Learn how Sholex collects, uses, and protects your personal information.`
             : 'Learn how Sholex collects, uses, and protects your personal information.'
         }
-        canonicalUrl="https://sholex.vercel.app/privacy"
+        canonicalUrl={`${SITE.url}/about`}
       />
 
       <main

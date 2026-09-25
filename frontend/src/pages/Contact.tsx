@@ -20,6 +20,7 @@ import {
   FaYoutube,
 } from 'react-icons/fa';
 import { useSendContactMessageMutation } from '../features/api/apiSlice';
+import { SITE } from '../config/site';
 
 const contactInfo = {
   address: 'Lagos, Nigeria',
@@ -97,7 +98,7 @@ const Contact = () => {
       <SEO
         title="Contact Us"
         description="Get in touch with Sholex. We're here to help with any questions, orders, or feedback."
-        canonicalUrl="https://sholex.vercel.app/contact"
+        canonicalUrl={`${SITE.url}/about`}
       />
 
       <main

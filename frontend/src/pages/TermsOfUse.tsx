@@ -3,6 +3,7 @@ import SEO from '../components/SEO';
 import { motion } from 'framer-motion';
 import { useGetLegalPageQuery } from '../features/api/apiSlice';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { SITE } from '../config/site';
 
 const TermsOfUse = () => {
   const { data, isLoading, isError } = useGetLegalPageQuery('terms');
@@ -41,7 +42,7 @@ const TermsOfUse = () => {
             ? `Read our ${page.title.toLowerCase()}.`
             : 'These terms govern your use of Sholex.'
         }
-        canonicalUrl="https://sholex.vercel.app/terms"
+        canonicalUrl={`${SITE.url}/about`}
       />
 
       <main
