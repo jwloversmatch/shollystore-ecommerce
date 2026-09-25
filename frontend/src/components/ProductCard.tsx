@@ -68,7 +68,12 @@ const ProductCard = ({
   const isAdmin = user?.role === "admin";
 
   const isOutOfStock = stock !== undefined && stock === 0;
-  const accent = isOutOfStock ? "#ef4444" : "#e8622a";
+
+  // Category accent stays brand orange regardless of stock status.
+  // (Previously changed to red on out-of-stock, which made the category
+  //  name look like an error message.)
+  const accent = "#e8622a";
+
   const hasSale =
     (compareAtPrice && compareAtPrice > price) ||
     (discountPercent && discountPercent > 0);
@@ -109,7 +114,9 @@ const ProductCard = ({
       e.stopPropagation();
 
       if (!shoppingAllowed) {
-        toast.error("Admins can't add items to cart. Use a customer account to test checkout.");
+        toast.error(
+          "Admins can't add items to cart. Use a customer account to test checkout.",
+        );
         return;
       }
       if (isOutOfStock) {
@@ -147,7 +154,15 @@ const ProductCard = ({
         toast.error(t("product.wishlistUpdateError"));
       }
     },
-    [dispatch, isWishlisted, _id, addToWishlist, removeFromWishlist, wishlistAllowed, t],
+    [
+      dispatch,
+      isWishlisted,
+      _id,
+      addToWishlist,
+      removeFromWishlist,
+      wishlistAllowed,
+      t,
+    ],
   );
 
   const handleQuickView = (e: React.MouseEvent) => {
@@ -201,7 +216,9 @@ const ProductCard = ({
         />
 
         <div className="relative z-[1] flex flex-col flex-1 pointer-events-none">
-          <div className="relative w-full h-48 bg-[#fafafa] dark:bg-[#2a2a2a] flex items-center justify-center p-4 overflow-hidden">
+          {/* Image container — fixed aspect ratio instead of fixed height,
+              so all cards align in the grid regardless of source image ratio. */}
+          <div className="relative w-full aspect-[4/5] bg-[#fafafa] dark:bg-[#2a2a2a] overflow-hidden">
             <img
               src={imgSrc}
               srcSet={srcSet}
@@ -211,9 +228,10 @@ const ProductCard = ({
               fetchPriority={isAboveFold ? "high" : "auto"}
               decoding="async"
               onError={() => setImgError(true)}
-              className="max-w-full max-h-full object-contain transition-transform duration-500 ease-out motion-safe:group-hover:scale-105 motion-safe:group-focus-within:scale-105"
+              className="w-full h-full object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-105 motion-safe:group-focus-within:scale-105"
             />
 
+            {/* Stock badge — top-left */}
             {stock !== undefined && (
               <div
                 className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
@@ -222,34 +240,43 @@ const ProductCard = ({
                     : "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
                 }`}
                 role="status"
-                aria-label={isOutOfStock ? t("product.soldOut") : t("product.itemsInStock", { count: stock })}
+                aria-label={
+                  isOutOfStock
+                    ? t("product.soldOut")
+                    : t("product.itemsInStock", { count: stock })
+                }
               >
-                {isOutOfStock ? t("product.soldOut") : t("product.itemsLeft", { count: stock })}
+                {isOutOfStock
+                  ? t("product.soldOut")
+                  : t("product.itemsLeft", { count: stock })}
               </div>
             )}
 
+            {/* Quick view — bottom-right, away from the stock badge */}
             {onQuickView && (
               <button
                 onClick={handleQuickView}
-                className={`absolute top-3 left-3 z-10 w-8 h-8 rounded-full flex items-center justify-center pointer-events-auto transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 ${
-                  isOutOfStock ? "bg-black/40 text-white" : "bg-white/80 dark:bg-black/40 text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                }`}
+                className="absolute bottom-3 right-3 z-10 w-10 h-10 rounded-full flex items-center justify-center pointer-events-auto transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 bg-white/90 dark:bg-black/60 text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white backdrop-blur-sm"
                 aria-label={t("product.quickView")}
               >
                 <Eye className="w-4 h-4" aria-hidden="true" />
               </button>
             )}
 
-            {/* Wishlist — hidden for admins */}
+            {/* Wishlist — top-right */}
             {!isAdmin && (
               <button
                 onClick={handleWishlistToggle}
-                className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-colors pointer-events-auto ${
+                className={`absolute top-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-colors pointer-events-auto backdrop-blur-sm ${
                   isWishlisted
                     ? "bg-red-50 dark:bg-red-500/20 text-red-500"
-                    : "bg-white/80 dark:bg-black/40 text-gray-400 hover:text-red-400"
+                    : "bg-white/90 dark:bg-black/60 text-gray-400 hover:text-red-400"
                 }`}
-                aria-label={isWishlisted ? t("product.removeFromWishlist") : t("product.addToWishlist")}
+                aria-label={
+                  isWishlisted
+                    ? t("product.removeFromWishlist")
+                    : t("product.addToWishlist")
+                }
               >
                 <Heart
                   className="w-4 h-4"
@@ -260,7 +287,10 @@ const ProductCard = ({
             )}
 
             {isOutOfStock && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center" aria-hidden="true">
+              <div
+                className="absolute inset-0 bg-black/50 flex items-center justify-center"
+                aria-hidden="true"
+              >
                 <span className="text-white font-bold text-sm bg-black/60 px-4 py-2 rounded-full">
                   {t("product.outOfStockOverlay")}
                 </span>
@@ -268,7 +298,7 @@ const ProductCard = ({
             )}
           </div>
 
-          <div className="flex flex-col flex-1 p-4">
+          <div className="flex flex-col flex-1 p-3 md:p-4">
             <span
               className="text-[10px] font-extrabold uppercase tracking-[0.2em] mb-1.5 truncate"
               style={{ color: accent }}
@@ -276,7 +306,9 @@ const ProductCard = ({
               {category}
             </span>
 
-            <h3 className="font-bold text-sm leading-snug truncate mb-1 text-gray-900 dark:text-white">
+            {/* Two-line clamp with min-height keeps every card the same
+                height whether the name is one line or two. */}
+            <h3 className="font-bold text-sm leading-snug line-clamp-2 min-h-[2.5rem] mb-1 text-gray-900 dark:text-white">
               {name}
             </h3>
 
@@ -290,7 +322,10 @@ const ProductCard = ({
             )}
 
             {variants && variants.length > 0 && (
-              <div className="flex items-center gap-1 mb-2 flex-nowrap overflow-hidden" aria-label={t("product.availableVariants")}>
+              <div
+                className="flex items-center gap-1 mb-2 flex-nowrap overflow-hidden"
+                aria-label={t("product.availableVariants")}
+              >
                 {variants.slice(0, 3).map((v, idx) => {
                   const label = v.size || v.color || v.sku;
                   if (!label) return null;
@@ -317,7 +352,9 @@ const ProductCard = ({
                   {compareAtPrice && compareAtPrice > price && (
                     <span
                       className="text-xs text-gray-500 line-through truncate min-w-0"
-                      aria-label={t("product.originalPrice", { price: compareAtPriceDisplay?.full ?? '' })}
+                      aria-label={t("product.originalPrice", {
+                        price: compareAtPriceDisplay?.full ?? "",
+                      })}
                     >
                       <span className="sm:hidden">
                         {compareAtPriceDisplay?.short}
@@ -330,7 +367,9 @@ const ProductCard = ({
                   {discountPercent && discountPercent > 0 && (
                     <span
                       className="shrink-0 px-1.5 py-0.5 text-[10px] font-extrabold rounded-full bg-red-500/20 text-red-500 border border-red-500/30"
-                      aria-label={t("product.discount", { percent: discountPercent })}
+                      aria-label={t("product.discount", {
+                        percent: discountPercent,
+                      })}
                     >
                       -{discountPercent}%
                     </span>
@@ -338,15 +377,17 @@ const ProductCard = ({
                 </div>
               )}
 
-              <div className="flex items-end justify-between gap-2">
+              <div className="flex items-center justify-between gap-2">
                 <div
-                  className="flex items-baseline gap-0.5"
+                  className="flex items-baseline gap-0.5 min-w-0"
                   aria-label={t("product.price", { price: priceDisplay.full })}
                 >
-                  <span className="text-gray-500 dark:text-gray-400 text-xs pb-0.5">₦</span>
-                  <span className="font-black text-xl leading-none text-gray-900 dark:text-white">
+                  <span className="text-gray-500 dark:text-gray-400 text-xs pb-0.5">
+                    ₦
+                  </span>
+                  <span className="font-black text-lg md:text-xl leading-none text-gray-900 dark:text-white truncate">
                     <span className="sm:hidden">
-                      {priceDisplay.short.replace('₦', '')}
+                      {priceDisplay.short.replace("₦", "")}
                     </span>
                     <span className="hidden sm:inline">
                       {price.toLocaleString()}
@@ -354,13 +395,13 @@ const ProductCard = ({
                   </span>
                 </div>
 
-                {/* Add to cart — hidden entirely for admins */}
+                {/* Add to cart — 44px touch target */}
                 {!isAdmin && (
                   <motion.button
                     onClick={handleAddToCart}
                     disabled={isOutOfStock}
                     whileTap={{ scale: 0.9 }}
-                    className={`relative z-[2] pointer-events-auto flex items-center justify-center w-9 h-9 rounded-full transition-colors ${
+                    className={`relative z-[2] pointer-events-auto flex items-center justify-center w-11 h-11 rounded-full shrink-0 transition-colors ${
                       isOutOfStock
                         ? "bg-gray-200 dark:bg-[#1e1e1e] text-gray-500 dark:text-gray-600 cursor-not-allowed"
                         : added
@@ -372,7 +413,10 @@ const ProductCard = ({
                         ? t("product.isOutOfStock", { name })
                         : added
                           ? t("product.addedToCartAria", { name })
-                          : t("product.addToCartAria", { name, price: priceDisplay.full })
+                          : t("product.addToCartAria", {
+                              name,
+                              price: priceDisplay.full,
+                            })
                     }
                   >
                     <AnimatePresence>
@@ -408,10 +452,14 @@ const ProductCard = ({
                           initial={{ opacity: 0, scale: 0.4, rotate: -45 }}
                           animate={{ opacity: 1, scale: 1, rotate: 0 }}
                           exit={{ opacity: 0, scale: 0.4 }}
-                          transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 22,
+                          }}
                           aria-hidden="true"
                         >
-                          <Check className="w-4 h-4" />
+                          <Check className="w-5 h-5" />
                         </motion.span>
                       ) : (
                         <motion.span
@@ -422,7 +470,7 @@ const ProductCard = ({
                           transition={{ duration: 0.15 }}
                           aria-hidden="true"
                         >
-                          <ShoppingCart className="w-4 h-4" />
+                          <ShoppingCart className="w-5 h-5" />
                         </motion.span>
                       )}
                     </AnimatePresence>

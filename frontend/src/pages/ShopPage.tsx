@@ -20,13 +20,16 @@ const SHOP_OG_IMAGE = `${SITE.url}/shop-banner.jpg`;
 const ShopPage = () => {
   const navigate = useNavigate();
   const catalog = useShopCatalog();
-  const { seoTitle, seoDescription, canonicalUrl, shopSchema } = useShopSeo(
-    catalog.currentNode,
-    catalog.debouncedSearch,
-    catalog.selectedPath,
-    catalog.products,
-    catalog.breadcrumbs,
-  );
+
+  const { seoTitle, seoDescription, canonicalUrl, shopSchema, shouldNoIndex } =
+    useShopSeo(
+      catalog.currentNode,
+      catalog.debouncedSearch,
+      catalog.selectedPath,
+      catalog.products,
+      catalog.breadcrumbs,
+      catalog.page,
+    );
 
   const handleProductClick = (product: ProductItem) =>
     navigate(`/products/${product.slug || product._id}`);
@@ -35,16 +38,14 @@ const ShopPage = () => {
     <main
       id="main-content"
       tabIndex={-1}
-      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0F1011] pb-28 md:pb-16 focus:outline-none"
-      style={{
-        paddingTop: "calc(96px + env(safe-area-inset-top, 0px))",
-        paddingBottom: "calc(64px + env(safe-area-inset-bottom, 0px))",
-      }}
+      className="min-h-screen bg-[#FCFAF5] dark:bg-[#0F1011] pb-28 md:pb-16 focus:outline-none
+        pt-[calc(72px+env(safe-area-inset-top,0px))] md:pt-24"
     >
       <SEO
         title={seoTitle}
         description={seoDescription}
         canonicalUrl={canonicalUrl}
+        noIndex={shouldNoIndex}
         ogImage={SHOP_OG_IMAGE}
         keywords={[catalog.currentNode?.name, "shop", "products", "buy online"]
           .filter(Boolean)
@@ -65,7 +66,7 @@ const ShopPage = () => {
       />
 
       {/* Page content */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pt-6">
         <ShopHeader
           categoryName={catalog.currentNode?.name ?? null}
           totalProducts={catalog.pagination.total}
@@ -117,9 +118,9 @@ const ShopPage = () => {
               products={catalog.products}
               onProductClick={handleProductClick}
               onQuickView={catalog.setQuickViewProduct}
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6"
               motionKey={`${catalog.page}-${catalog.categoryId || "all"}-${catalog.debouncedSearch}-${catalog.sortBy}`}
-              transitionDuration={0.35}
+              transitionDuration={0.25}
               ariaLabel="Product list"
             />
 
