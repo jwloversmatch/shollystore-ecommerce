@@ -1,7 +1,10 @@
 import { ChevronLeft, ChevronRight, Phone, Eye, Ticket } from "lucide-react";
 import type { OrderItem } from "./OrdersPage";
 
-const PAYMENT_LABELS: Record<string, string> = { paystack: "Paystack", bank_transfer: "Bank Transfer", whatsapp: "WhatsApp" };
+const PAYMENT_LABELS: Record<string, string> = {
+  paystack: "Paystack",
+  bank_transfer: "Bank Transfer",
+};
 const ALL_STATUSES = ["Pending", "Paid", "Shipped", "Delivered", "Cancelled"];
 const STATUS_FLOW: Record<string, string[]> = { Pending: ["Pending","Paid","Cancelled"], Paid: ["Paid","Shipped"], Shipped: ["Shipped","Delivered"], Delivered: ["Delivered"], Cancelled: ["Cancelled"] };
 

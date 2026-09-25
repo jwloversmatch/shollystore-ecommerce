@@ -16,10 +16,11 @@ import OrderStats from "./OrderStats";
 import OrderFilters from "./OrderFilters";
 import OrdersTable from "./OrdersTable";
 import OrderDetailModal from "./OrderDetailModal";
-import CancellationModal from "./CancellationModal"; 
+import CancellationModal from "./CancellationModal";
 
 export interface OrderItem {
   _id: string;
+  orderRef?: string;
   user: { email: string; name?: string; phone?: string };
   name?: string;
   phone?: string;
@@ -64,7 +65,7 @@ const OrdersPage = () => {
   });
   const [updateStatus] = useUpdateOrderStatusMutation();
   const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
-  const [cancelTarget, setCancelTarget] = useState<OrderItem | null>(null);  
+  const [cancelTarget, setCancelTarget] = useState<OrderItem | null>(null);
   const orderModalRef = useRef<HTMLDivElement>(null);
 
   const cardBg = isDark ? "#141414" : "rgba(255,255,255,0.8)";
@@ -88,16 +89,17 @@ const OrdersPage = () => {
     setCancelTarget(order);
   };
 
-  const confirmCancellation = async (reason: string) => {
-    if (!cancelTarget) return;
-    await updateStatus({
-      id: cancelTarget._id,
-      status: "Cancelled",
-      cancellationReason: reason,
-    }).unwrap();
-    refetch();
-    setCancelTarget(null);
-  };
+ const confirmCancellation = async (reason: string, note?: string) => {
+  if (!cancelTarget) return;
+  await updateStatus({
+    id: cancelTarget._id,
+    status: "Cancelled",
+    cancellationReason: reason,
+    cancellationNote: note || undefined,
+  }).unwrap();
+  refetch();
+  setCancelTarget(null);
+};
 
   const handleClearFilters = () => {
     setStatusFilter("All");
@@ -247,7 +249,7 @@ const OrdersPage = () => {
         onPageChange={setPage}
         onStatusChange={handleStatusChange}
         onViewOrder={setSelectedOrder}
-        onCancelOrder={handleCancelOrder}  
+        onCancelOrder={handleCancelOrder}
         isDark={isDark}
       />
 
@@ -263,12 +265,16 @@ const OrdersPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Cancellation modal */}
-      <CancellationModal
-        isOpen={!!cancelTarget}
-        onClose={() => setCancelTarget(null)}
-        onConfirm={confirmCancellation}
-      />
+      {/* Cancellation modal — conditionally rendered with key for fresh state */}
+      {cancelTarget && (
+        <CancellationModal
+          key={cancelTarget._id}
+          isOpen={true}
+          onClose={() => setCancelTarget(null)}
+          onConfirm={confirmCancellation}
+          orderRef={cancelTarget.orderRef}
+        />
+      )}
     </div>
   );
 };

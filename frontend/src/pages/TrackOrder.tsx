@@ -237,7 +237,7 @@ const TrackOrder = () => {
                     onChange={(e) => setTrackingCode(e.target.value)}
                     required
                     className="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#17181A] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white outline-none focus:border-[#e8622a]/60 focus:ring-2 focus:ring-[#e8622a]/12"
-                    placeholder="e.g., SHO-2026-AB12CD"
+                    placeholder="e.g., SHX-2026-00042"
                   />
                 </div>
 
@@ -490,33 +490,24 @@ const TrackOrder = () => {
                 </p>
               </div>
 
-              {/* Payment instructions */}
-              {order.paymentDetails && (
-                <div className="mt-6 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
-                  <p className="font-bold text-emerald-600 dark:text-emerald-400 mb-2 flex items-center gap-2">
-                    <CreditCard className="w-4 h-4" /> Payment Instructions
-                  </p>
-                  {order.paymentMethod === "bank_transfer" && (
-                    <>
-                      <p className="text-sm">
-                        Bank: {order.paymentDetails.bankName}
-                      </p>
-                      <p className="text-sm">
-                        Account Name: {order.paymentDetails.accountName}
-                      </p>
-                      <p className="text-sm font-mono">
-                        Account Number: {order.paymentDetails.accountNumber}
-                      </p>
-                    </>
-                  )}
-                  {order.paymentMethod === "whatsapp" && (
-                    <p className="text-sm">
-                      Please chat with us on WhatsApp at{" "}
-                      {order.paymentDetails.whatsappNumber} to complete payment.
+              {/* Payment instructions — bank transfer only */}
+              {order.paymentDetails &&
+                order.paymentMethod === "bank_transfer" && (
+                  <div className="mt-6 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
+                    <p className="font-bold text-emerald-600 dark:text-emerald-400 mb-2 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4" /> Payment Instructions
                     </p>
-                  )}
-                </div>
-              )}
+                    <p className="text-sm">
+                      Bank: {order.paymentDetails.bankName}
+                    </p>
+                    <p className="text-sm">
+                      Account Name: {order.paymentDetails.accountName}
+                    </p>
+                    <p className="text-sm font-mono">
+                      Account Number: {order.paymentDetails.accountNumber}
+                    </p>
+                  </div>
+                )}
             </motion.div>
           )}
         </AnimatePresence>

@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import { FaFacebook, FaInstagram, FaTwitter, FaYoutube } from "react-icons/fa";
 import PaystackLogo from "../components/PaystackLogo";
-import WhatsAppLogo from "../components/WhatsAppLogo";
 import { useSubscribeToNewsletterMutation } from "../features/api/apiSlice";
 import { useTranslation } from "react-i18next";
+import { SITE } from "../config/site";
 
 const footerVariants = {
   hidden: { opacity: 0 },
@@ -50,20 +50,36 @@ const socialIconSpring = {
   },
 };
 
-const BRAND_NAME = "Sholex";
+const BRAND_NAME = SITE.name;
 
 const contactInfo = {
   address: "Lagos, Nigeria",
   phone: "+2349012345678",
   phoneDisplay: "+234 901 234 5678",
-  email: "hello@Sholex.com",
+  email: SITE.email,
 };
 
 const socialLinks = [
-  { platform: "Facebook", url: "https://facebook.com/Sholex", icon: FaFacebook },
-  { platform: "Instagram", url: "https://instagram.com/Sholex", icon: FaInstagram },
-  { platform: "Twitter", url: "https://twitter.com/Sholex", icon: FaTwitter },
-  { platform: "YouTube", url: "https://youtube.com/@Sholex", icon: FaYoutube },
+  {
+    platform: "Facebook",
+    url: "https://facebook.com/sholexstore",
+    icon: FaFacebook,
+  },
+  {
+    platform: "Instagram",
+    url: "https://instagram.com/sholexstore",
+    icon: FaInstagram,
+  },
+  {
+    platform: "Twitter",
+    url: "https://twitter.com/sholexstore",
+    icon: FaTwitter,
+  },
+  {
+    platform: "YouTube",
+    url: "https://youtube.com/@sholexstore",
+    icon: FaYoutube,
+  },
 ];
 
 const quickLinks = [
@@ -146,7 +162,7 @@ const Footer = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 pt-10 pb-6 md:pt-12 md:pb-6">
-        {/* Hidden heading for accessibility — establishes the footer's h2 landmark */}
+        {/* Hidden heading for accessibility */}
         <h2 className="sr-only">Footer</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
@@ -157,7 +173,7 @@ const Footer = () => {
               className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
               aria-label={`${BRAND_NAME} - Home`}
             >
-              Sholex
+              {BRAND_NAME}
             </Link>
             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
               {t("footer.brandDescription")}
@@ -230,7 +246,7 @@ const Footer = () => {
                 <Mail size={18} className="text-[#e8622a]" aria-hidden="true" />
                 <a
                   href={`mailto:${contactInfo.email}`}
-                  className="hover:text-[#e8622a] transition-colors"
+                  className="hover:text-[#e8622a] transition-colors break-all"
                   aria-label={`Email us at ${contactInfo.email}`}
                 >
                   {contactInfo.email}
@@ -340,14 +356,8 @@ const Footer = () => {
 
             {/* Bank Transfer */}
             <span className="flex items-center gap-2 px-4 py-2 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-white/20">
-              <Building2 className="w-4 h-4" />
+              <Building2 className="w-4 h-4" aria-hidden="true" />
               {t("footer.payment.bankTransfer")}
-            </span>
-
-            {/* WhatsApp Pay */}
-            <span className="flex items-center gap-2 px-4 py-2 text-xs font-medium bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-white/20">
-              <WhatsAppLogo className="w-4 h-4 text-[#25D366]" />
-              {t("footer.payment.whatsappPay")}
             </span>
           </div>
         </motion.div>

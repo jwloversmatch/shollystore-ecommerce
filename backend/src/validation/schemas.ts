@@ -99,9 +99,7 @@ export const createOrderSchema = z.object({
     postalCode: z.string().max(20).optional(),
     country: z.string().max(100).optional(),
   }),
-  paymentMethod: z
-    .enum(["paystack", "bank_transfer", "whatsapp"])
-    .default("paystack"),
+  paymentMethod: z.enum(["paystack", "bank_transfer"]).default("paystack"),
   couponCode: z.string().max(50).optional(),
   notes: z.string().max(1000).optional(),
   isGift: z.boolean().optional().default(false),

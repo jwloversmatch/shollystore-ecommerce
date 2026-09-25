@@ -18,6 +18,35 @@ import { sendError } from "../utils/apiResponse";
 import { calculateShippingFee } from "../utils/shipping";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Generate a stable, human-readable order reference: SHX-2026-00042 */
+const generateOrderRef = async (): Promise<string> => {
+  const year = new Date().getFullYear();
+  const startOfYear = new Date(year, 0, 1);
+
+  const count = await Order.countDocuments({
+    createdAt: { $gte: startOfYear },
+  });
+
+  const sequence = String(count + 1).padStart(5, "0");
+  return `SHX-${year}-${sequence}`;
+};
+
+/** Build a prefilled WhatsApp deep link for sending a bank transfer receipt */
+const buildWhatsAppReceiptUrl = (
+  orderRef: string,
+  whatsappNumber?: string | null,
+): string | undefined => {
+  if (!whatsappNumber) return undefined;
+  const digits = whatsappNumber.replace(/\D/g, "");
+  if (!digits) return undefined;
+
+  const message = encodeURIComponent(
+    `Hi, I just placed order ${orderRef}. Here's my transfer receipt:`,
+  );
+  return `https://wa.me/${digits}?text=${message}`;
+};
+
 const generateTrackingNumber = (): string => {
   const year = new Date().getFullYear();
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -37,6 +66,7 @@ const generateTrackingToken = (): { raw: string; hashed: string } => {
 const sanitizeOrderForTracking = (order: IOrder, includeEmail = false) => {
   return {
     _id: order._id,
+    orderRef: order.orderRef,
     trackingNumber: order.trackingNumber,
     status: order.status,
     totalPrice: order.totalPrice,
@@ -54,9 +84,7 @@ const sanitizeOrderForTracking = (order: IOrder, includeEmail = false) => {
     },
     paymentMethod: order.paymentMethod,
     paymentDetails:
-      order.status === "Pending" &&
-      (order.paymentMethod === "bank_transfer" ||
-        order.paymentMethod === "whatsapp")
+      order.status === "Pending" && order.paymentMethod === "bank_transfer"
         ? order.paymentDetails
         : undefined,
     shippingFee: order.shippingFee,
@@ -83,6 +111,24 @@ export const createOrder = async (
       guestEmail,
     } = req.body;
 
+    // Reject the deprecated whatsapp payment method with a clear error
+    if (paymentMethod === "whatsapp") {
+      res.status(400).json({
+        success: false,
+        message:
+          "WhatsApp is not a payment method. Please choose Paystack or Bank Transfer.",
+      });
+      return;
+    }
+
+    if (!["paystack", "bank_transfer"].includes(paymentMethod)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid payment method",
+      });
+      return;
+    }
+
     const isGuest = !req.user;
     const customerEmail = isGuest ? guestEmail : req.user!.email;
     if (!customerEmail) {
@@ -108,12 +154,16 @@ export const createOrder = async (
 
     const { subtotal, discount, taxAmount, totalPrice } = pricing;
 
+    // Generate a unique courier tracking number (assigned now, used when shipped)
     let trackingNumber = generateTrackingNumber();
     let existingOrder = await Order.findOne({ trackingNumber });
     while (existingOrder) {
       trackingNumber = generateTrackingNumber();
       existingOrder = await Order.findOne({ trackingNumber });
     }
+
+    // Generate the human-readable order reference
+    const orderRef = await generateOrderRef();
 
     const { raw: rawToken, hashed: hashedToken } = generateTrackingToken();
 
@@ -137,6 +187,7 @@ export const createOrder = async (
 
     const settings = await Settings.findOne();
 
+    // Build payment details for bank transfer only
     let paymentDetails;
     if (paymentMethod === "bank_transfer") {
       const defaultAccount =
@@ -153,13 +204,6 @@ export const createOrder = async (
           process.env.BANK_ACCOUNT_NUMBER ||
           "",
       };
-    } else if (paymentMethod === "whatsapp") {
-      paymentDetails = {
-        whatsappNumber:
-          settings?.whatsappNumber || process.env.WHATSAPP_NUMBER || "",
-      };
-    } else {
-      paymentDetails = undefined;
     }
 
     const orderData = {
@@ -168,6 +212,7 @@ export const createOrder = async (
       name: req.user?.name || req.body.name || "",
       phone: req.user?.phone || req.body.phone || "",
       email: customerEmail,
+      orderRef,
       trackingNumber,
       orderItems: sanitizedOrderItems,
       shippingAddress: sanitizedShippingAddress,
@@ -195,10 +240,10 @@ export const createOrder = async (
       0,
     );
 
-    // Send order confirmation email WITHOUT tracking details
+    // Fire notifications (no tracking details yet)
     sendOrderConfirmation(
       customerEmail,
-      createdOrder.trackingNumber || createdOrder._id.toString(),
+      createdOrder.orderRef,
       totalPrice,
       req.user?.name || req.body.name || "",
       discount,
@@ -212,6 +257,15 @@ export const createOrder = async (
     sendAdminOrderNotification(createdOrder, "created").catch((err) =>
       console.error("Failed to send admin order notification:", err),
     );
+
+    // Build the prefilled WhatsApp URL for bank transfer
+    const whatsappUrl =
+      paymentMethod === "bank_transfer"
+        ? buildWhatsAppReceiptUrl(
+            createdOrder.orderRef,
+            settings?.whatsappNumber || process.env.WHATSAPP_NUMBER,
+          )
+        : undefined;
 
     if (paymentMethod === "paystack") {
       try {
@@ -230,31 +284,48 @@ export const createOrder = async (
           return;
         }
 
+        // Save Paystack reference so the webhook can match
+        createdOrder.paystackReference = paymentData.data.reference;
+        await createdOrder.save();
+
         res.status(201).json({
           success: true,
           order: {
-            ...createdOrder.toObject(),
+            _id: createdOrder._id,
+            orderRef: createdOrder.orderRef,
+            status: createdOrder.status,
+            totalPrice: createdOrder.totalPrice,
+            paymentMethod: createdOrder.paymentMethod,
             trackingNumber: createdOrder.trackingNumber,
+            createdAt: createdOrder.createdAt,
           },
           trackingToken: rawToken,
           paymentUrl: paymentData.data.authorization_url,
           reference: paymentData.data.reference,
         });
+        return;
       } catch (paystackError) {
         await Order.findByIdAndDelete(createdOrder._id);
         throw paystackError;
       }
-    } else {
-      res.status(201).json({
-        success: true,
-        order: {
-          ...createdOrder.toObject(),
-          trackingNumber: createdOrder.trackingNumber,
-        },
-        trackingToken: rawToken,
-        paymentMethod,
-      });
     }
+
+    // Bank transfer response
+    res.status(201).json({
+      success: true,
+      order: {
+        _id: createdOrder._id,
+        orderRef: createdOrder.orderRef,
+        status: createdOrder.status,
+        totalPrice: createdOrder.totalPrice,
+        paymentMethod: createdOrder.paymentMethod,
+        trackingNumber: createdOrder.trackingNumber,
+        createdAt: createdOrder.createdAt,
+      },
+      trackingToken: rawToken,
+      whatsappUrl,
+      paymentDetails: createdOrder.paymentDetails,
+    });
   } catch (error: any) {
     if (error instanceof ValidationError) {
       res.status(400).json({ success: false, message: error.message });
@@ -267,6 +338,7 @@ export const createOrder = async (
       });
       return;
     }
+    console.error("Create order error:", error);
     sendError(res, 500, "Internal server error");
   }
 };
@@ -365,7 +437,7 @@ export const paystackWebhook = async (
       };
       order.paymentEventId = eventId;
       order.paymentEventType = event.event;
-
+      order.paymentConfirmedAt = new Date();
       await order.save();
 
       if (order.couponCode) {
@@ -380,15 +452,13 @@ export const paystackWebhook = async (
       );
 
       const customerEmail = order.email || order.guestEmail || "";
-      const customerName = order.name || "";
-
       if (customerEmail) {
         sendOrderStatusUpdateEmail(
           customerEmail,
-          order.trackingNumber || order._id.toString(),
+          order.orderRef,
           "Paid",
           order.totalPrice,
-          customerName,
+          order.name || "",
           order.discount || 0,
           order.couponCode as string,
         ).catch((emailError) => {
@@ -454,7 +524,6 @@ export const getMyOrders = async (
   }
 };
 
-// ─── Tracking: authenticated by order ID ─────────────────────────────────────
 export const trackMyOrder = async (
   req: AuthRequest,
   res: Response,
@@ -468,7 +537,6 @@ export const trackMyOrder = async (
       return;
     }
 
-    // ✅ Trackable: Paid, Shipped, Delivered
     if (!["Paid", "Shipped", "Delivered"].includes(order.status)) {
       res.status(404).json({
         success: false,
@@ -486,7 +554,6 @@ export const trackMyOrder = async (
   }
 };
 
-// ─── Tracking: token-based (public) ──────────────────────────────────────────
 export const trackByToken = async (
   req: Request,
   res: Response,
@@ -507,7 +574,6 @@ export const trackByToken = async (
       return;
     }
 
-    // ✅ Trackable: Paid, Shipped, Delivered
     if (!["Paid", "Shipped", "Delivered"].includes(order.status)) {
       res.status(404).json({
         success: false,
@@ -525,7 +591,6 @@ export const trackByToken = async (
   }
 };
 
-// ─── Manual tracking: guest (POST) ───────────────────────────────────────────
 export const trackOrderManual = async (
   req: Request,
   res: Response,
@@ -549,9 +614,15 @@ export const trackOrderManual = async (
           $or: [
             { _id: new mongoose.Types.ObjectId(cleanOrderId) },
             { trackingNumber: cleanOrderId },
+            { orderRef: cleanOrderId },
           ],
         }
-      : { trackingNumber: cleanOrderId };
+      : {
+          $or: [
+            { trackingNumber: cleanOrderId },
+            { orderRef: cleanOrderId },
+          ],
+        };
 
     const order = await Order.findOne({
       $and: [
@@ -567,7 +638,6 @@ export const trackOrderManual = async (
       return;
     }
 
-    // ✅ Trackable: Paid, Shipped, Delivered
     if (!["Paid", "Shipped", "Delivered"].includes(order.status)) {
       res.status(404).json({
         success: false,
@@ -585,7 +655,6 @@ export const trackOrderManual = async (
   }
 };
 
-// ─── Manual tracking: logged-in user by tracking code (POST) ─────────────────
 export const trackMyOrderByCode = async (
   req: AuthRequest,
   res: Response,
@@ -600,9 +669,11 @@ export const trackMyOrderByCode = async (
       return;
     }
 
+    const code = String(trackingCode).trim();
+
     const order = await Order.findOne({
       user: req.user!._id,
-      trackingNumber: String(trackingCode).trim(),
+      $or: [{ trackingNumber: code }, { orderRef: code }],
     });
 
     if (!order) {
@@ -610,7 +681,6 @@ export const trackMyOrderByCode = async (
       return;
     }
 
-    // ✅ Trackable: Paid, Shipped, Delivered
     if (!["Paid", "Shipped", "Delivered"].includes(order.status)) {
       res.status(404).json({
         success: false,

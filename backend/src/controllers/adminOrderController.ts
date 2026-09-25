@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import crypto from "crypto";
-import { Order, IOrder } from "../models/Order";
+import { Order, IOrder, CANCEL_REASONS, type CancelReason } from "../models/Order";
 import { Product } from "../models/Product";
 import { User } from "../models/User";
 import { Coupon } from "../models/Coupon";
@@ -164,13 +164,14 @@ export const getAllOrders = async (
   }
 };
 
+// ─── Update Order Status (with audit trail, optimistic lock, and reason enum) ─
 export const updateOrderStatus = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const { status, cancellationReason } = req.body;
+    const { status, cancellationReason, cancellationNote } = req.body;
 
     const order = (await Order.findById(id).populate(
       "user",
@@ -181,13 +182,32 @@ export const updateOrderStatus = async (
       return;
     }
 
-    // Validate cancellation reason if status is Cancelled
-    if (status === "Cancelled" && !cancellationReason) {
-      res.status(400).json({ message: "Cancellation reason is required" });
+    // Guard: don't allow changes to already-final states
+    if (
+      ["Delivered", "Cancelled"].includes(order.status) &&
+      status !== order.status
+    ) {
+      res.status(409).json({
+        message: `Order is already ${order.status} and cannot be changed.`,
+      });
       return;
     }
 
-    // Reduce stock only if moving from Pending to a non-Cancelled status
+    // Validate cancellation reason against the enum
+    if (status === "Cancelled") {
+      if (!cancellationReason) {
+        res.status(400).json({ message: "Cancellation reason is required" });
+        return;
+      }
+      if (!CANCEL_REASONS.includes(cancellationReason as CancelReason)) {
+        res.status(400).json({
+          message: `Invalid cancellation reason. Must be one of: ${CANCEL_REASONS.join(", ")}`,
+        });
+        return;
+      }
+    }
+
+    // Reduce stock when transitioning out of Pending for the first time
     if (
       order.status === "Pending" &&
       status !== "Pending" &&
@@ -196,11 +216,19 @@ export const updateOrderStatus = async (
       await reduceStockForOrder(order);
     }
 
-    const updateData: any = { status };
+    const updateData: Record<string, unknown> = { status };
 
     if (status === "Cancelled") {
       updateData.cancellationReason = cancellationReason;
+      updateData.cancellationNote = cancellationNote || undefined;
       updateData.cancelledAt = new Date();
+      updateData.cancelledBy = req.user?._id ?? null;
+    }
+
+    // Audit trail: record who confirmed payment and when
+    if (status === "Paid" && order.status !== "Paid") {
+      updateData.paymentConfirmedBy = req.user?._id ?? null;
+      updateData.paymentConfirmedAt = new Date();
     }
 
     if (status === "Shipped") {
@@ -212,8 +240,21 @@ export const updateOrderStatus = async (
       (order as any)._trackingTokenRaw = rawToken;
     }
 
-    await Order.updateOne({ _id: order._id }, { $set: updateData });
+    // Optimistic lock — only update if the status hasn't changed since we read it
+    const result = await Order.updateOne(
+      { _id: order._id, status: order.status },
+      { $set: updateData },
+    );
 
+    if (result.modifiedCount === 0) {
+      res.status(409).json({
+        message:
+          "This order was already updated by someone else. Refresh and try again.",
+      });
+      return;
+    }
+
+    // Coupon usage tracking on Pending → Paid
     if (status === "Paid" && order.status !== "Paid" && order.couponCode) {
       await Coupon.updateOne(
         { code: order.couponCode.toUpperCase() },
@@ -233,13 +274,19 @@ export const updateOrderStatus = async (
       phone?: string;
     } | null;
 
-    // Send cancellation email when status is Cancelled
-    if (status === "Cancelled" && populatedUser?.email) {
+    // Fall back to guest email / stored email if no populated user
+    const customerEmail =
+      populatedUser?.email || order.email || order.guestEmail || "";
+    const customerName = populatedUser?.name || order.name || "";
+    const orderIdentifier = order.orderRef || order._id.toString();
+
+    // Send cancellation email
+    if (status === "Cancelled" && customerEmail) {
       sendOrderCancelledEmail(
-        populatedUser.email,
-        order._id.toString(),
+        customerEmail,
+        orderIdentifier,
         cancellationReason || "No reason provided",
-        populatedUser.name,
+        customerName,
         order.totalPrice,
         order.discount || 0,
         order.couponCode,
@@ -248,32 +295,28 @@ export const updateOrderStatus = async (
       );
     }
 
-    if (status === "Shipped" && populatedUser?.email) {
+    if (status === "Shipped" && customerEmail) {
       sendOrderShippedEmail(
-        populatedUser.email,
-        (order._id as mongoose.Types.ObjectId).toString(),
-        order.trackingNumber ||
-          (order._id as mongoose.Types.ObjectId).toString(),
+        customerEmail,
+        orderIdentifier,
+        order.trackingNumber || orderIdentifier,
         (order as any)._trackingTokenRaw,
-        populatedUser.name,
+        customerName,
         order.totalPrice,
         order.discount || 0,
         order.couponCode,
       ).catch((err) => console.error("Failed to send shipping email:", err));
-    } else if (
-      ["Shipped", "Delivered"].includes(status) &&
-      populatedUser?.email
-    ) {
+    } else if (["Paid", "Delivered"].includes(status) && customerEmail) {
       const originalSubtotal = order.orderItems.reduce(
         (sum, item) => sum + item.price * item.qty,
         0,
       );
       sendOrderStatusUpdateEmail(
-        populatedUser.email,
-        (order._id as mongoose.Types.ObjectId).toString(),
+        customerEmail,
+        orderIdentifier,
         status,
         order.totalPrice,
-        populatedUser.name,
+        customerName,
         order.discount || 0,
         order.couponCode,
         originalSubtotal,
@@ -360,7 +403,6 @@ export const getTopProducts = async (
 ): Promise<void> => {
   try {
     const topProducts = await Order.aggregate([
-      // Include all sales that are not pending or cancelled
       { $match: { status: { $nin: ["Pending", "Cancelled"] } } },
       { $unwind: "$orderItems" },
       {
@@ -424,7 +466,7 @@ export const getUniqueOrderCustomers = async (
   }
 };
 
-// ─── Revenue Trend (new) ──────────────────────────────────────────────────────
+// ─── Revenue Trend ────────────────────────────────────────────────────────────
 // @desc    Get daily revenue trend for chart
 // @route   GET /api/admin/orders/analytics/revenue-trend?days=30
 export const getRevenueTrend = async (
@@ -478,7 +520,7 @@ export const getRevenueTrend = async (
   }
 };
 
-// ─── Export Orders CSV (new) ──────────────────────────────────────────────────
+// ─── Export Orders CSV ────────────────────────────────────────────────────────
 // @desc    Export filtered orders as CSV
 // @route   GET /api/admin/orders/export
 export const exportOrdersCSV = async (
@@ -519,8 +561,8 @@ export const exportOrdersCSV = async (
       .sort({ createdAt: -1 })
       .lean();
 
-    // CSV headers
     const headers = [
+      "Order Ref",
       "Order ID",
       "Customer Name",
       "Email",
@@ -535,7 +577,6 @@ export const exportOrdersCSV = async (
       "Discount (₦)",
     ].join(",");
 
-    // CSV rows
     const rows = orders
       .map((order: any) => {
         const items = order.orderItems
@@ -545,10 +586,11 @@ export const exportOrdersCSV = async (
           ? `${order.shippingAddress.address}, ${order.shippingAddress.city}`
           : "N/A";
         return [
+          `"${order.orderRef || "N/A"}"`,
           order._id.toString(),
-          `"${order.user?.name || "N/A"}"`,
-          `"${order.user?.email || "N/A"}"`,
-          `"${order.user?.phone || "N/A"}"`,
+          `"${order.user?.name || order.name || "N/A"}"`,
+          `"${order.user?.email || order.email || order.guestEmail || "N/A"}"`,
+          `"${order.user?.phone || order.phone || "N/A"}"`,
           `"${formatAmount(order.totalPrice)}"`,
           `"${order.status}"`,
           `"${formatPaymentMethod(order.paymentMethod)}"`,
@@ -574,7 +616,7 @@ export const exportOrdersCSV = async (
   }
 };
 
-// ─── Sales Report (new) ───────────────────────────────────────────────────────
+// ─── Sales Report ─────────────────────────────────────────────────────────────
 // @desc    Aggregated sales report for a date range
 // @route   GET /api/admin/orders/reports/sales?from=...&to=...
 export const getSalesReport = async (
@@ -674,14 +716,13 @@ export const getSalesReport = async (
       byStatus,
       topProducts,
       orders: orders.map((o) => {
-        // paymentReference isn't guaranteed to exist on IOrder —
-        // read it safely so this compiles whether or not the field is typed.
         const paymentReference =
           (o as unknown as { paymentReference?: string }).paymentReference ??
           null;
 
         return {
           _id: o._id,
+          orderRef: o.orderRef,
           createdAt: o.createdAt,
           user: o.user,
           totalPrice: o.totalPrice,

@@ -46,6 +46,7 @@ const ACCENT = "#e8622a";
 
 export interface OrderItem {
   _id: string;
+  orderRef?: string;
   user: { email: string };
   totalPrice: number;
   status: string;
@@ -60,7 +61,7 @@ const DashboardPage = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [trendDays, setTrendDays] = useState(30);
-  const [cancelTarget, setCancelTarget] = useState<OrderItem | null>(null); // ✅ new
+  const [cancelTarget, setCancelTarget] = useState<OrderItem | null>(null);
 
   const {
     data: statsData,
@@ -141,26 +142,22 @@ const DashboardPage = () => {
     }
   };
 
-  // ✅ Handle cancel from recent orders table
+  // Handle cancel from recent orders table
   const handleCancelOrder = (order: OrderItem) => {
     setCancelTarget(order);
   };
 
-  const confirmCancellation = async (reason: string) => {
-    if (!cancelTarget) return;
-    try {
-      await updateStatus({
-        id: cancelTarget._id,
-        status: "Cancelled",
-        cancellationReason: reason,
-      }).unwrap();
-      refetchStats();
-    } catch (err) {
-      console.error("Cancellation failed", err);
-    } finally {
-      setCancelTarget(null);
-    }
-  };
+ const confirmCancellation = async (reason: string, note?: string) => {
+  if (!cancelTarget) return;
+  await updateStatus({
+    id: cancelTarget._id,
+    status: "Cancelled",
+    cancellationReason: reason,
+    cancellationNote: note || undefined,
+  }).unwrap();
+  refetchStats();
+  setCancelTarget(null);
+};
 
   const handleStockUpdate = async (id: string, cur: number, delta: number) => {
     try {
@@ -221,12 +218,17 @@ const DashboardPage = () => {
         cancelText="Cancel"
         type="danger"
       />
-      {/* ✅ Cancellation modal */}
-      <CancellationModal
-        isOpen={!!cancelTarget}
-        onClose={() => setCancelTarget(null)}
-        onConfirm={confirmCancellation}
-      />
+
+      {/* Cancellation modal — conditionally rendered with key for fresh state */}
+      {cancelTarget && (
+        <CancellationModal
+          key={cancelTarget._id}
+          isOpen={true}
+          onClose={() => setCancelTarget(null)}
+          onConfirm={confirmCancellation}
+          orderRef={cancelTarget.orderRef}
+        />
+      )}
 
       {/* Header */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -419,7 +421,7 @@ const DashboardPage = () => {
         orders={(stats.orders || []).slice(0, 5)}
         onStatusChange={handleStatusChange}
         onViewAll={() => navigate("/admin/orders")}
-        onCancelOrder={handleCancelOrder} // ✅ pass new handler
+        onCancelOrder={handleCancelOrder}
         isDark={isDark}
       />
 

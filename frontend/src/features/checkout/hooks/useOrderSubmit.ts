@@ -11,11 +11,19 @@ import {
 } from "../../cart/cartSlice";
 import type { User } from "../../auth/authSlice";
 import type {
+  BankDetails,
   CheckoutFormData,
+  CreateOrderResponse,
   IAddress,
   OrderResponse,
   PaymentMethodId,
 } from "../types";
+
+export interface SubmittedOrder extends OrderResponse {
+  whatsappUrl?: string;
+  paymentDetails?: BankDetails;
+  trackingToken?: string;
+}
 
 interface Params {
   cart: CartState;
@@ -44,8 +52,7 @@ export const useOrderSubmit = ({
 }: Params) => {
   const dispatch = useDispatch();
   const [createOrder, { isLoading }] = useCreateOrderMutation();
-  const [orderSuccess, setOrderSuccess] = useState(false);
-  const [orderData, setOrderData] = useState<OrderResponse | null>(null);
+  const [order, setOrder] = useState<SubmittedOrder | null>(null);
 
   const submit = async (data: CheckoutFormData) => {
     if (!user && isRehydrated && !guestEmail.trim()) {
@@ -76,7 +83,6 @@ export const useOrderSubmit = ({
           qty: item.qty,
           price: item.price,
           image: item.image,
-          stock: item.stock,
         })),
         shippingAddress: finalShippingAddress,
         paymentMethod,
@@ -90,18 +96,25 @@ export const useOrderSubmit = ({
             }),
       };
 
-      const result = await createOrder(orderPayload).unwrap();
+      const result: CreateOrderResponse =
+        await createOrder(orderPayload).unwrap();
       dispatch(clearCart());
 
+      // Paystack → redirect to hosted checkout; we never see the success state
       if (paymentMethod === "paystack") {
+        if (!result.paymentUrl) {
+          toast.error("Payment gateway did not return a URL. Please try again.");
+          return;
+        }
         window.location.assign(result.paymentUrl);
         return;
       }
 
-      setOrderSuccess(true);
-      setOrderData({
-        _id: result.order._id,
-        trackingNumber: result.order.trackingNumber,
+      // Bank transfer → capture the order and show the pending view
+      setOrder({
+        ...result.order,
+        whatsappUrl: result.whatsappUrl,
+        paymentDetails: result.paymentDetails,
         trackingToken: result.trackingToken,
       });
 
@@ -116,5 +129,5 @@ export const useOrderSubmit = ({
     }
   };
 
-  return { submit, isLoading, orderSuccess, orderData };
+  return { submit, isLoading, order };
 };

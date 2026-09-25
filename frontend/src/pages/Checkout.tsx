@@ -24,7 +24,8 @@ import SavedAddressSection from "../features/checkout/components/SavedAddressSec
 import NewAddressSection from "../features/checkout/components/NewAddressSection";
 import PaymentMethodSection from "../features/checkout/components/PaymentMethodSection";
 import OrderSummaryAside from "../features/checkout/components/OrderSummaryAside";
-import OrderSuccessView from "../features/checkout/components/OrderSuccessView";
+import OrderPendingTransferView from "../features/checkout/components/OrderPendingTransferView";
+import OrderConfirmedView from "../features/checkout/components/OrderConfirmedView";
 import EmptyCartView from "../features/checkout/components/EmptyCartView";
 import CheckoutLoadingView from "../features/checkout/components/CheckoutLoadingView";
 import { useOrderSubmit } from "../features/checkout/hooks/useOrderSubmit";
@@ -79,7 +80,7 @@ const Checkout = () => {
     (addr) => addr._id === selectedAddressId,
   );
 
-  const { submit, isLoading, orderSuccess, orderData } = useOrderSubmit({
+  const { submit, isLoading, order } = useOrderSubmit({
     cart,
     user,
     guestEmail,
@@ -94,7 +95,9 @@ const Checkout = () => {
 
   const watchedCity = useWatch({ control, name: "city" }) || "";
   const city =
-    selectedSavedAddress && !isNewAddress ? selectedSavedAddress.city : watchedCity;
+    selectedSavedAddress && !isNewAddress
+      ? selectedSavedAddress.city
+      : watchedCity;
   const shippingFee = calculateShippingFee(city);
 
   const totalPrice = cart.cartItems.reduce(
@@ -121,18 +124,35 @@ const Checkout = () => {
 
   if (!isRehydrated) return <CheckoutLoadingView />;
 
-  if (orderSuccess) {
+  // ─── Post-submit views ─────────────────────────────────────────────────────
+  if (order) {
+    // Paid (would only happen if Paystack redirected back and we re-fetched —
+    // not wired yet, but harmless to keep the branch for future use)
+    if (order.status === "Paid") {
+      return (
+        <OrderConfirmedView
+          order={order}
+          showCreateAccountModal={showCreateAccountModal}
+          guestEmail={guestEmail}
+          isCreating={isRegistering}
+          onCloseModal={() => setShowCreateAccountModal(false)}
+          onCreateAccount={handleCreateAccount}
+          onContinueShopping={() => navigate("/shop")}
+        />
+      );
+    }
+
+    // Pending (bank transfer — the state we actually reach today)
     return (
-      <OrderSuccessView
-        orderData={orderData}
-        paymentMethod={paymentMethod}
+      <OrderPendingTransferView
+        order={order}
         publicSettings={publicSettings as SettingsData | undefined}
         showCreateAccountModal={showCreateAccountModal}
         guestEmail={guestEmail}
         isCreating={isRegistering}
         onCloseModal={() => setShowCreateAccountModal(false)}
         onCreateAccount={handleCreateAccount}
-        onContinueShopping={() => navigate("/")}
+        onContinueShopping={() => navigate("/shop")}
       />
     );
   }

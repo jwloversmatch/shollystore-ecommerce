@@ -7,6 +7,11 @@ import type {
   BankAccount,
 } from "../../pages/admin/settings/settingsSchema";
 
+import type {
+  CreateOrderResponse,
+  PaymentMethodId,
+} from "../../features/checkout/types";
+
 // ─── Response types ───────────────────────────────────────────────────────────
 interface VerifyPaymentResponse {
   status: boolean;
@@ -284,7 +289,30 @@ export const apiSlice = createApi({
     }),
 
     // ─── Orders (public) ────────────────────────────────────────────────────
-    createOrder: builder.mutation({
+    createOrder: builder.mutation<
+      CreateOrderResponse,
+      {
+        orderItems: {
+          product: string;
+          name: string;
+          qty: number;
+          price: number;
+          image?: string;
+          variant?: { sku?: string; color?: string; size?: string };
+        }[];
+        shippingAddress: {
+          address: string;
+          city: string;
+          postalCode?: string;
+          country?: string;
+        };
+        paymentMethod: PaymentMethodId;
+        couponCode?: string;
+        guestEmail?: string;
+        name?: string;
+        phone?: string;
+      }
+    >({
       query: (orderData) => ({
         url: "/orders",
         method: "POST",
@@ -332,14 +360,22 @@ export const apiSlice = createApi({
       providesTags: ["Order"],
     }),
 
-    updateOrderStatus: builder.mutation({
-      query: ({ id, ...body }) => ({
-        url: `/admin/orders/${id}/status`,
-        method: "PUT",
-        body,
-      }),
-      invalidatesTags: ["Order", "Product"],
-    }),
+    updateOrderStatus: builder.mutation<
+  { success: boolean; order: unknown },
+  {
+    id: string;
+    status: string;
+    cancellationReason?: string;
+    cancellationNote?: string;
+  }
+>({
+  query: ({ id, ...body }) => ({
+    url: `/admin/orders/${id}/status`,
+    method: "PUT",
+    body,
+  }),
+  invalidatesTags: ["Order", "Product"],
+}),
 
     // ─── Revenue Trend ───────────────────────────────────────────────────────
     getRevenueTrend: builder.query<

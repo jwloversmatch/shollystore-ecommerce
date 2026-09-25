@@ -1,8 +1,11 @@
 import { Search } from "lucide-react";
 
 const STATUS_OPTIONS = ["All", "Pending", "Paid", "Shipped", "Delivered", "Cancelled"];
-const PAYMENT_OPTIONS = ["All", "paystack", "bank_transfer", "whatsapp"];
-const PAYMENT_LABELS: Record<string, string> = { paystack: "Paystack", bank_transfer: "Bank Transfer", whatsapp: "WhatsApp" };
+const PAYMENT_OPTIONS = ["All", "paystack", "bank_transfer"];
+const PAYMENT_LABELS: Record<string, string> = {
+  paystack: "Paystack",
+  bank_transfer: "Bank Transfer",
+};
 
 interface OrderFiltersProps {
   statusFilter: string; setStatusFilter: (v: string) => void;

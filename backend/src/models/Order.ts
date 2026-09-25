@@ -30,6 +30,18 @@ export interface IShippingInfo {
   carrier?: string;
 }
 
+// ─── Structured cancellation reasons ───────────────────────────────────────────
+export const CANCEL_REASONS = [
+  "payment_not_received",
+  "payment_amount_mismatch",
+  "customer_requested",
+  "item_out_of_stock",
+  "suspected_fraud",
+  "other",
+] as const;
+
+export type CancelReason = (typeof CANCEL_REASONS)[number];
+
 // ─── Main Order interface ──────────────────────────────────────────────────────
 export interface IOrder extends Document {
   user: mongoose.Types.ObjectId | null;
@@ -37,7 +49,13 @@ export interface IOrder extends Document {
   name?: string;
   phone?: string;
   email?: string;
+
+  /** Human-readable order reference, e.g. SHX-2026-00042 */
+  orderRef: string;
+
+  /** Courier tracking number — assigned when the order ships */
   trackingNumber?: string;
+
   orderItems: IOrderItem[];
   shippingAddress: {
     address: string;
@@ -54,16 +72,24 @@ export interface IOrder extends Document {
   shippingFee?: number;
   status: "Pending" | "Paid" | "Shipped" | "Delivered" | "Cancelled";
   paymentResult?: { id: string; status: string; update_time: string };
-  paymentMethod?: "paystack" | "bank_transfer" | "whatsapp";
+  paymentMethod?: "paystack" | "bank_transfer";
   paymentDetails?: {
     accountNumber?: string;
     bankName?: string;
     accountName?: string;
     whatsappNumber?: string;
   };
+
+  // Webhook idempotency & failure tracking
   paymentEventId?: string;
   paymentEventType?: string;
   paymentFailReason?: string;
+  paystackReference?: string;
+
+  // Audit trail — who confirmed payment, when
+  paymentConfirmedBy?: mongoose.Types.ObjectId | null;
+  paymentConfirmedAt?: Date | null;
+
   couponCode?: string;
   discount?: number;
   shippingInfo?: IShippingInfo;
@@ -74,8 +100,14 @@ export interface IOrder extends Document {
   customFields?: Map<string, any>;
   trackingToken?: string;
   trackingTokenExpiresAt?: Date;
-  cancellationReason?: string;
+
+  // Cancellation audit
+  cancellationReason?: CancelReason | string;
+  /** Optional internal note alongside the structured reason — not shown to customer */
+  cancellationNote?: string;
   cancelledAt?: Date;
+  cancelledBy?: mongoose.Types.ObjectId | null;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -126,6 +158,15 @@ const OrderSchema: Schema = new Schema(
     name: { type: String },
     phone: { type: String },
     email: { type: String },
+
+    // ─── Human-readable reference ────────────────────────────────────────
+    orderRef: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+
     trackingNumber: { type: String, unique: true, sparse: true },
 
     orderItems: { type: [OrderItemSchema], required: true },
@@ -153,7 +194,7 @@ const OrderSchema: Schema = new Schema(
     paymentResult: { id: String, status: String, update_time: String },
     paymentMethod: {
       type: String,
-      enum: ["paystack", "bank_transfer", "whatsapp"],
+      enum: ["paystack", "bank_transfer"],
     },
     paymentDetails: {
       accountNumber: String,
@@ -162,10 +203,19 @@ const OrderSchema: Schema = new Schema(
       whatsappNumber: String,
     },
 
-    // ─── NEW fields for webhook idempotency & failure tracking ───────────
+    // ─── Webhook idempotency & failure tracking ──────────────────────────
     paymentEventId: { type: String },
     paymentEventType: { type: String },
     paymentFailReason: { type: String },
+    paystackReference: { type: String, index: true, sparse: true },
+
+    // ─── Payment confirmation audit trail ────────────────────────────────
+    paymentConfirmedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    paymentConfirmedAt: { type: Date, default: null },
 
     couponCode: { type: String },
     discount: { type: Number, default: 0 },
@@ -180,13 +230,19 @@ const OrderSchema: Schema = new Schema(
 
     customFields: { type: Map, of: Schema.Types.Mixed },
 
-    // ─── Token-based tracking fields ─────────────────────────────────────
+    // ─── Token-based tracking ────────────────────────────────────────────
     trackingToken: { type: String, index: true },
     trackingTokenExpiresAt: { type: Date },
 
-    // ─── Cancellation fields ─────────────────────────────────────────────
+    // ─── Cancellation audit ──────────────────────────────────────────────
     cancellationReason: { type: String },
+    cancellationNote: { type: String },
     cancelledAt: { type: Date },
+    cancelledBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   { timestamps: true },
 );
@@ -199,5 +255,6 @@ OrderSchema.index({ "orderItems.product": 1 });
 OrderSchema.index({ paymentMethod: 1 });
 OrderSchema.index({ paymentEventId: 1 });
 OrderSchema.index({ trackingToken: 1 });
+OrderSchema.index({ orderRef: 1 });
 
 export const Order = mongoose.model<IOrder>("Order", OrderSchema);
