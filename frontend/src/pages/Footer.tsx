@@ -54,8 +54,8 @@ const BRAND_NAME = SITE.name;
 
 const contactInfo = {
   address: "Lagos, Nigeria",
-  phone: "+2349012345678",
-  phoneDisplay: "+234 901 234 5678",
+  phone: "+2348109767466",
+  phoneDisplay: "+234 810 976 7466",
   email: SITE.email,
 };
 

@@ -10,7 +10,7 @@ export const SITE = {
   twitterCreator: import.meta.env.VITE_TWITTER_CREATOR || "@sholexstore",
   ogImage: `${import.meta.env.VITE_SITE_URL || "https://www.sholexstore.com"}/og-default.jpg`,
   locale: "en_NG",
-  phone: import.meta.env.VITE_CONTACT_PHONE || "+234-000-000-0000",
+  phone: import.meta.env.VITE_CONTACT_PHONE || "+234-810-976-7466",
   email: import.meta.env.VITE_CONTACT_EMAIL || "support@sholexstore.com",
 } as const;
 
