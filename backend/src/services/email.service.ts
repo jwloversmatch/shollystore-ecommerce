@@ -15,7 +15,24 @@ type SendEmailResult = {
   simulated?: boolean;
 };
 
-// ─── Core sender (now enqueues instead of sending directly) ─────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface PaymentDetailsForEmail {
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
+}
+
+// ─── Structured cancellation reasons ──────────────────────────────────────────
+const CANCEL_REASON_LABELS: Record<string, string> = {
+  payment_not_received: "We didn't receive your payment within the required time.",
+  payment_amount_mismatch: "The transfer amount didn't match the order total.",
+  customer_requested: "Cancelled at your request.",
+  item_out_of_stock: "One or more items are out of stock.",
+  suspected_fraud: "Cancelled for security reasons.",
+  other: "Cancelled by our team.",
+};
+
+// ─── Core sender (enqueues instead of sending directly) ──────────────────────
 const sendEmail = async (
   to: string,
   subject: string,
@@ -90,7 +107,7 @@ const layout = ({
       </div>
       ${body}
       <div class="ftr">
-        &copy; ${new Date().getFullYear()} Sholex. All rights reserved.<br>
+        &copy; ${new Date().getFullYear()} Sholex Store. All rights reserved.<br>
         <a href="${CLIENT_URL}">Visit our store</a>
       </div>
     </div>
@@ -99,7 +116,7 @@ const layout = ({
 </html>`;
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// AUTH EMAILS (Unchanged)
+// AUTH EMAILS
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const sendVerificationEmail = async (
@@ -229,14 +246,14 @@ export const sendEmailChangeVerification = async (
 
 export const sendOrderConfirmation = async (
   email: string,
-  orderId: string,
+  orderRef: string,
   total: number,
   name?: string,
   discount?: number,
   couponCode?: string,
   subtotal?: number,
   paymentMethod?: string,
-  paymentDetails?: any,
+  paymentDetails?: PaymentDetailsForEmail,
   shippingFee?: number,
 ) => {
   const greeting = name
@@ -260,17 +277,19 @@ export const sendOrderConfirmation = async (
         : `<p style="margin:8px 0;color:#4a5568;"><strong>Shipping</strong> ₦${shippingFee.toLocaleString()}</p>`;
   }
 
+  // Bank transfer instructions only. WhatsApp is not a payment method.
   let paymentSection = "";
   if (paymentMethod === "bank_transfer" && paymentDetails) {
     paymentSection = `
-      <div style="margin:20px 0;padding:16px;background:#f9fafb;border-radius:12px;">
-        <p><strong>Bank Name:</strong> ${paymentDetails.bankName || "N/A"}</p>
-        <p><strong>Account Name:</strong> ${paymentDetails.accountName || "N/A"}</p>
-        <p><strong>Account Number:</strong> <span style="font-family:monospace;">${paymentDetails.accountNumber || "N/A"}</span></p>
+      <div style="margin:20px 0;padding:16px;background:#ecfdf5;border-radius:12px;border-left:4px solid #10b981;">
+        <p style="margin:0 0 8px 0;font-weight:700;color:#065f46;">Complete your bank transfer</p>
+        <p style="margin:4px 0;"><strong>Bank:</strong> ${paymentDetails.bankName || "N/A"}</p>
+        <p style="margin:4px 0;"><strong>Account Name:</strong> ${paymentDetails.accountName || "N/A"}</p>
+        <p style="margin:4px 0;"><strong>Account Number:</strong> <span style="font-family:monospace;">${paymentDetails.accountNumber || "N/A"}</span></p>
+        <p style="margin:12px 0 0 0;font-size:13px;color:#065f46;">
+          Use your order reference <strong>${orderRef}</strong> as the transfer narration, then send us the receipt on WhatsApp to confirm.
+        </p>
       </div>`;
-  } else if (paymentMethod === "whatsapp" && paymentDetails) {
-    paymentSection = `
-      <p style="margin:16px 0;"><strong>Please complete payment via WhatsApp:</strong> ${paymentDetails.whatsappNumber || "N/A"}</p>`;
   }
 
   const html = layout({
@@ -280,7 +299,7 @@ export const sendOrderConfirmation = async (
         <h2>${greeting}</h2>
         <p>Thank you for your purchase! We're preparing your order and will ship it soon.</p>
         <div class="box">
-          <p><strong>Order #</strong> ${orderId}</p>
+          <p><strong>Order Reference</strong> ${orderRef}</p>
           ${subtotalLine}
           ${discountLine}
           ${shippingFeeLine}
@@ -293,15 +312,15 @@ export const sendOrderConfirmation = async (
 
   return sendEmail(
     email,
-    "Order Confirmation – Sholex",
+    `Order ${orderRef} Confirmed – Sholex`,
     html,
-    `Order #${orderId} confirmed. Total: ₦${total.toLocaleString()}. Thank you!`,
+    `Order ${orderRef} confirmed. Total: ₦${total.toLocaleString()}. Thank you!`,
   );
 };
 
 export const sendOrderShippedEmail = async (
   email: string,
-  orderId: string,
+  orderRef: string,
   trackingNumber: string,
   trackingToken?: string,
   name?: string,
@@ -323,7 +342,7 @@ export const sendOrderShippedEmail = async (
 
   const trackUrl = trackingToken
     ? `${CLIENT_URL}/track-order?token=${encodeURIComponent(trackingToken)}`
-    : `${CLIENT_URL}/track-order?orderId=${encodeURIComponent(orderId)}`;
+    : `${CLIENT_URL}/track-order?orderId=${encodeURIComponent(orderRef)}`;
 
   const html = layout({
     headerBg: "#60a5fa",
@@ -331,7 +350,7 @@ export const sendOrderShippedEmail = async (
     body: `
       <div class="body" style="text-align:center;">
         <h2>${greeting}</h2>
-        <p>Great news! Your order <strong>#${orderId}</strong> is on its way.</p>
+        <p>Great news! Your order <strong>${orderRef}</strong> is on its way.</p>
         <div class="box" style="text-align:left; margin:20px 0;">
           <p><strong>Tracking Number:</strong> <span style="font-family:monospace;">${trackingNumber}</span></p>
           ${discountLine}
@@ -344,15 +363,15 @@ export const sendOrderShippedEmail = async (
 
   return sendEmail(
     email,
-    "Your Order Has Been Shipped – Sholex",
+    `Order ${orderRef} Has Been Shipped – Sholex`,
     html,
-    `Your Sholex order #${orderId} has shipped! Tracking number: ${trackingNumber}`,
+    `Your Sholex order ${orderRef} has shipped! Tracking number: ${trackingNumber}`,
   );
 };
 
 export const sendOrderDeliveredEmail = async (
   email: string,
-  orderId: string,
+  orderRef: string,
   name?: string,
   total?: number,
   discount?: number,
@@ -376,7 +395,7 @@ export const sendOrderDeliveredEmail = async (
     body: `
       <div class="body" style="text-align:center;">
         <h2>${greeting}</h2>
-        <p>Your order <strong>#${orderId}</strong> has been successfully delivered.</p>
+        <p>Your order <strong>${orderRef}</strong> has been successfully delivered.</p>
         ${discountLine}
         ${totalLine}
         <p>We hope you enjoy your purchase! 🛍️</p>
@@ -385,15 +404,15 @@ export const sendOrderDeliveredEmail = async (
 
   return sendEmail(
     email,
-    "Order Delivered – Sholex",
+    `Order ${orderRef} Delivered – Sholex`,
     html,
-    `Your Sholex order #${orderId} has been delivered. Enjoy! 🛍️`,
+    `Your Sholex order ${orderRef} has been delivered. Enjoy! 🛍️`,
   );
 };
 
 export const sendOrderStatusUpdateEmail = async (
   email: string,
-  orderId: string,
+  orderRef: string,
   status: string,
   total: number,
   name?: string,
@@ -402,6 +421,9 @@ export const sendOrderStatusUpdateEmail = async (
   subtotal?: number,
 ) => {
   const statusLabels: Record<string, string> = {
+    Paid: name
+      ? `Hi ${name}, we've received your payment! ✅`
+      : `We've received your payment! ✅`,
     Shipped: name
       ? `Hi ${name}, your order has been shipped! 🚚`
       : `Your order has been shipped! 🚚`,
@@ -411,7 +433,12 @@ export const sendOrderStatusUpdateEmail = async (
   };
   const heading = statusLabels[status] || `Your order status is now ${status}`;
 
-  const badgeColor = status === "Shipped" ? "#3b82f6" : "#34d399";
+  const badgeColor: Record<string, string> = {
+    Paid: "#10b981",
+    Shipped: "#3b82f6",
+    Delivered: "#34d399",
+  };
+  const badge = badgeColor[status] || "#6b7280";
 
   const discountLine =
     discount && couponCode
@@ -427,9 +454,9 @@ export const sendOrderStatusUpdateEmail = async (
     body: `
       <div class="body">
         <h2>${heading}</h2>
-        <p>Your order <strong>#${orderId}</strong> has been updated to:</p>
+        <p>Your order <strong>${orderRef}</strong> has been updated to:</p>
         <div style="text-align:center;margin:16px 0;">
-          <span style="display:inline-block;padding:8px 20px;border-radius:50px;font-weight:700;font-size:14px;background:${badgeColor};color:#fff;">${status}</span>
+          <span style="display:inline-block;padding:8px 20px;border-radius:50px;font-weight:700;font-size:14px;background:${badge};color:#fff;">${status}</span>
         </div>
         <div class="box">
           ${subtotalLine}
@@ -439,21 +466,23 @@ export const sendOrderStatusUpdateEmail = async (
         ${
           status === "Delivered"
             ? `<p>Your order has been delivered. Thank you for shopping with us! 🛍️</p>`
-            : `<p>We'll keep you updated on your order's progress.</p>`
+            : status === "Paid"
+              ? `<p>We're preparing your order now. You'll receive a shipping notification soon.</p>`
+              : `<p>We'll keep you updated on your order's progress.</p>`
         }
       </div>`,
   });
 
   return sendEmail(
     email,
-    `Order #${orderId} – Status Updated to ${status}`,
+    `Order ${orderRef} – Status Updated to ${status}`,
     html,
-    `Your Sholex order #${orderId} is now ${status}. Total: ₦${total.toLocaleString()}.`,
+    `Your Sholex order ${orderRef} is now ${status}. Total: ₦${total.toLocaleString()}.`,
   );
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ADMIN NOTIFICATION (Unchanged)
+// ADMIN NOTIFICATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const sendAdminOrderNotification = async (
@@ -466,6 +495,8 @@ export const sendAdminOrderNotification = async (
     console.warn("⚠️ ADMIN_EMAIL not set. Admin notification skipped.");
     return;
   }
+
+  const orderRef = order.orderRef || order._id?.toString() || "N/A";
 
   let userEmail = order.email || order.guestEmail || "N/A";
   let userName = order.name || "";
@@ -500,23 +531,26 @@ export const sendAdminOrderNotification = async (
 
   const subject =
     action === "created"
-      ? `🛒 New Order #${order._id} Placed`
-      : `🔄 Order #${order._id} → ${newStatus || order.status}`;
+      ? `🛒 New Order ${orderRef} Placed`
+      : `🔄 Order ${orderRef} → ${newStatus || order.status}`;
 
   const statusColor: Record<string, string> = {
-    Paid: "green",
-    Pending: "orange",
-    Shipped: "blue",
-    Delivered: "green",
+    Pending: "#f59e0b",
+    Paid: "#10b981",
+    Shipped: "#3b82f6",
+    Delivered: "#10b981",
+    Cancelled: "#ef4444",
   };
 
   const couponLine = order.couponCode
     ? `<p><strong>Coupon:</strong> ${order.couponCode} (&minus;₦${(order.discount || 0).toLocaleString()})</p>`
     : "";
 
+  const adminUrl = `${CLIENT_URL}/admin/orders`;
+
   const html = `
     <h2>${subject}</h2>
-    <p><strong>Order #:</strong> ${order._id}</p>
+    <p><strong>Order Ref:</strong> ${orderRef}</p>
     <p><strong>Customer:</strong> ${customerLabel}</p>
     <p><strong>Total:</strong> ₦${order.totalPrice.toLocaleString()}</p>
     ${couponLine}
@@ -526,7 +560,7 @@ export const sendAdminOrderNotification = async (
     <h3>Items:</h3>
     <p>${itemsList}</p>
     <hr/>
-    <p style="color:gray;font-size:13px;">Manage this order in the admin dashboard.</p>`;
+    <p><a href="${adminUrl}" style="color:#e8622a;font-weight:600;">Open admin dashboard →</a></p>`;
 
   return sendEmail(adminEmail, subject, html);
 };
@@ -694,7 +728,7 @@ export const sendAbandonedCartEmail = async (
 
 export const sendOrderCancelledEmail = async (
   email: string,
-  orderId: string,
+  orderRef: string,
   cancellationReason: string,
   name?: string,
   total?: number,
@@ -705,8 +739,13 @@ export const sendOrderCancelledEmail = async (
     ? `Hi <strong>${name}</strong>, your order has been cancelled`
     : `Your Order Has Been Cancelled`;
 
-  const reasonLine = cancellationReason
-    ? `<p><strong>Reason:</strong> ${cancellationReason}</p>`
+  // Map the structured reason code to a customer-friendly message.
+  // Falls back to the raw value if it's not a known code.
+  const reasonLabel =
+    CANCEL_REASON_LABELS[cancellationReason] || cancellationReason;
+
+  const reasonLine = reasonLabel
+    ? `<p><strong>Reason:</strong> ${reasonLabel}</p>`
     : "";
 
   const discountLine =
@@ -723,7 +762,7 @@ export const sendOrderCancelledEmail = async (
     body: `
       <div class="body" style="text-align:center;">
         <h2>${greeting}</h2>
-        <p>We're sorry to inform you that your order <strong>#${orderId}</strong> has been cancelled.</p>
+        <p>We're sorry to inform you that your order <strong>${orderRef}</strong> has been cancelled.</p>
         <div class="box" style="text-align:left; margin:20px 0;">
           ${reasonLine}
           ${discountLine}
@@ -735,9 +774,9 @@ export const sendOrderCancelledEmail = async (
 
   return sendEmail(
     email,
-    "Order Cancelled – Sholex",
+    `Order ${orderRef} Cancelled – Sholex`,
     html,
-    `Your Sholex order #${orderId} has been cancelled. Reason: ${cancellationReason || "N/A"}`,
+    `Your Sholex order ${orderRef} has been cancelled. Reason: ${reasonLabel || "N/A"}`,
   );
 };
 
