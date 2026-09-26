@@ -1,10 +1,13 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+export type SenderType = "noreply" | "orders" | "updates" | "support";
+
 export interface IEmailQueue extends Document {
   to: string;
   subject: string;
   html: string;
   text?: string;
+  sender: SenderType;
   status: "pending" | "sent" | "failed";
   attempts: number;
   maxAttempts: number;
@@ -19,6 +22,12 @@ const EmailQueueSchema = new Schema<IEmailQueue>(
     subject: { type: String, required: true },
     html: { type: String, required: true },
     text: { type: String },
+    sender: {
+      type: String,
+      enum: ["noreply", "orders", "updates", "support"],
+      default: "noreply",
+      index: true,
+    },
     status: {
       type: String,
       enum: ["pending", "sent", "failed"],

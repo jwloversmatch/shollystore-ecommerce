@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { EmailQueue } from "../models/EmailQueue";
-import { sendEmailViaBrevo } from "../services/brevoSender";
+import { sendEmailViaBrevo, type SenderType } from "../services/brevoSender";
 
 const BATCH_SIZE = 20;
 
@@ -23,7 +23,13 @@ export const processEmailQueue = async (req: Request, res: Response) => {
 
   for (const email of pendingEmails) {
     try {
-      await sendEmailViaBrevo(email.to, email.subject, email.html, email.text);
+      await sendEmailViaBrevo(
+        email.to,
+        email.subject,
+        email.html,
+        email.text,
+        (email.sender as SenderType) || "noreply",
+      );
       email.status = "sent";
       email.lastError = undefined;
       await email.save();

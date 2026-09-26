@@ -1,10 +1,12 @@
 import dotenv from "dotenv";
 import path from "path";
 import { enqueueEmail } from "./emailQueue.service";
+import type { SenderType } from "./brevoSender";
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
-const CLIENT_URL = process.env.CLIENT_URL;
+const CLIENT_URL =
+  process.env.CLIENT_URL || "https://www.sholexstore.com";
 const STORE_LOGO_URL =
   process.env.STORE_LOGO_URL || `${CLIENT_URL}/icons/sholex-180.png`;
 
@@ -24,7 +26,8 @@ interface PaymentDetailsForEmail {
 
 // ─── Structured cancellation reasons ──────────────────────────────────────────
 const CANCEL_REASON_LABELS: Record<string, string> = {
-  payment_not_received: "We didn't receive your payment within the required time.",
+  payment_not_received:
+    "We didn't receive your payment within the required time.",
   payment_amount_mismatch: "The transfer amount didn't match the order total.",
   customer_requested: "Cancelled at your request.",
   item_out_of_stock: "One or more items are out of stock.",
@@ -32,28 +35,24 @@ const CANCEL_REASON_LABELS: Record<string, string> = {
   other: "Cancelled by our team.",
 };
 
-// ─── Core sender (enqueues instead of sending directly) ──────────────────────
+// ─── Core sender (enqueues with sender type) ─────────────────────────────────
 const sendEmail = async (
   to: string,
   subject: string,
   htmlContent: string,
-  textContent?: string,
+  textContent: string | undefined,
+  senderType: SenderType,
 ): Promise<SendEmailResult> => {
   await enqueueEmail({
     to,
     subject,
     html: htmlContent,
     text: textContent,
+    sender: senderType,
   });
 
   return { success: true, simulated: true };
 };
-
-const stripHtml = (html: string): string =>
-  html
-    .replace(/<[^>]*>/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
 
 // ─── Shared layout wrapper ────────────────────────────────────────────────────
 interface LayoutOptions {
@@ -116,7 +115,7 @@ const layout = ({
 </html>`;
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// AUTH EMAILS
+// AUTH EMAILS  →  sender: "noreply"
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const sendVerificationEmail = async (
@@ -147,6 +146,7 @@ export const sendVerificationEmail = async (
     "Welcome to Sholex – Verify Your Email",
     html,
     `Welcome to Sholex! Verify your email: ${url}`,
+    "noreply",
   );
 };
 
@@ -174,6 +174,7 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
     "Password Reset Request – Sholex",
     html,
     `Reset your Sholex password (expires in 1 hour): ${url}`,
+    "noreply",
   );
 };
 
@@ -206,6 +207,7 @@ export const sendPasswordChangedEmail = async (
     "Your Password Has Been Changed – Sholex",
     html,
     `Your Sholex password was changed. If you didn't do this, reset your password immediately at ${CLIENT_URL}/forgot-password`,
+    "noreply",
   );
 };
 
@@ -237,11 +239,12 @@ export const sendEmailChangeVerification = async (
     "Confirm Your New Email Address – Sholex",
     html,
     `Confirm your new Sholex email address (expires in 24 hours): ${url}`,
+    "noreply",
   );
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ORDER EMAILS
+// ORDER EMAILS  →  sender: "orders"
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const sendOrderConfirmation = async (
@@ -277,7 +280,6 @@ export const sendOrderConfirmation = async (
         : `<p style="margin:8px 0;color:#4a5568;"><strong>Shipping</strong> ₦${shippingFee.toLocaleString()}</p>`;
   }
 
-  // Bank transfer instructions only. WhatsApp is not a payment method.
   let paymentSection = "";
   if (paymentMethod === "bank_transfer" && paymentDetails) {
     paymentSection = `
@@ -315,6 +317,7 @@ export const sendOrderConfirmation = async (
     `Order ${orderRef} Confirmed – Sholex`,
     html,
     `Order ${orderRef} confirmed. Total: ₦${total.toLocaleString()}. Thank you!`,
+    "orders",
   );
 };
 
@@ -366,6 +369,7 @@ export const sendOrderShippedEmail = async (
     `Order ${orderRef} Has Been Shipped – Sholex`,
     html,
     `Your Sholex order ${orderRef} has shipped! Tracking number: ${trackingNumber}`,
+    "orders",
   );
 };
 
@@ -407,6 +411,7 @@ export const sendOrderDeliveredEmail = async (
     `Order ${orderRef} Delivered – Sholex`,
     html,
     `Your Sholex order ${orderRef} has been delivered. Enjoy! 🛍️`,
+    "orders",
   );
 };
 
@@ -478,11 +483,159 @@ export const sendOrderStatusUpdateEmail = async (
     `Order ${orderRef} – Status Updated to ${status}`,
     html,
     `Your Sholex order ${orderRef} is now ${status}. Total: ₦${total.toLocaleString()}.`,
+    "orders",
+  );
+};
+
+export const sendOrderCancelledEmail = async (
+  email: string,
+  orderRef: string,
+  cancellationReason: string,
+  name?: string,
+  total?: number,
+  discount?: number,
+  couponCode?: string,
+) => {
+  const greeting = name
+    ? `Hi <strong>${name}</strong>, your order has been cancelled`
+    : `Your Order Has Been Cancelled`;
+
+  const reasonLabel =
+    CANCEL_REASON_LABELS[cancellationReason] || cancellationReason;
+
+  const reasonLine = reasonLabel
+    ? `<p><strong>Reason:</strong> ${reasonLabel}</p>`
+    : "";
+
+  const discountLine =
+    discount && couponCode
+      ? `<p style="margin:4px 0;"><strong>Discount (${couponCode})</strong> &minus; ₦${discount.toLocaleString()}</p>`
+      : "";
+  const totalLine = total
+    ? `<p><strong>Total:</strong> ₦${total.toLocaleString()}</p>`
+    : "";
+
+  const html = layout({
+    headerBg: "#fee2e2",
+    headerText: "#ffffff",
+    body: `
+      <div class="body" style="text-align:center;">
+        <h2>${greeting}</h2>
+        <p>We're sorry to inform you that your order <strong>${orderRef}</strong> has been cancelled.</p>
+        <div class="box" style="text-align:left; margin:20px 0;">
+          ${reasonLine}
+          ${discountLine}
+          ${totalLine}
+        </div>
+        <p>If you have any questions or need further assistance, please contact our support team.</p>
+      </div>`,
+  });
+
+  return sendEmail(
+    email,
+    `Order ${orderRef} Cancelled – Sholex`,
+    html,
+    `Your Sholex order ${orderRef} has been cancelled. Reason: ${reasonLabel || "N/A"}`,
+    "orders",
   );
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ADMIN NOTIFICATION
+// MARKETING EMAILS  →  sender: "updates"
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const sendAbandonedCartEmail = async (
+  email: string,
+  name: string | undefined,
+  cart: any,
+) => {
+  interface AbandonedCartItem {
+    qty: number;
+    price: number;
+    product?: {
+      name?: string;
+      price?: number;
+    };
+  }
+
+  const cartItems = (cart.items as AbandonedCartItem[]) || [];
+
+  const itemsHtml = cartItems
+    .map((item) => {
+      const productName = item.product?.name || "Product";
+      const total = (item.price * item.qty).toLocaleString();
+      return `<p style="margin:6px 0;">• ${item.qty}× ${productName} – ₦${total}</p>`;
+    })
+    .join("");
+
+  const checkoutUrl = `${CLIENT_URL}/checkout`;
+
+  const html = layout({
+    headerBg: "#fef3c7",
+    body: `
+      <div class="body" style="text-align:center;">
+        <h2>You left something behind 🛒</h2>
+        <p>Hi ${name || "there"}, we noticed you added items to your cart but didn't complete your order.</p>
+        <div class="box" style="text-align:left; margin:20px 0;">
+          ${itemsHtml}
+        </div>
+        <a href="${checkoutUrl}" class="btn" style="background:#e8622a;color:#fff;box-shadow:0 4px 12px rgba(232,98,42,.3);">Complete Your Purchase</a>
+        <p style="margin-top:24px;font-size:14px;color:#718096;">Your cart is saved for a limited time. Prices and availability may change.</p>
+      </div>`,
+  });
+
+  return sendEmail(
+    email,
+    "Don't forget about your cart 🛒",
+    html,
+    `Hi ${name || "there"}, you left items in your cart. Complete your purchase now: ${checkoutUrl}`,
+    "updates",
+  );
+};
+
+export const sendNewsletterWelcomeEmail = async (email: string) => {
+  const html = layout({
+    headerBg: "#dff2e6",
+    body: `
+      <div class="body" style="text-align:center;">
+        <h2>Welcome to the Sholex Newsletter! 🎉</h2>
+        <p>You're now subscribed to receive exclusive deals, new arrivals, and discounts.</p>
+        <p>We'll keep you updated with the best offers.</p>
+      </div>`,
+  });
+
+  return sendEmail(
+    email,
+    "Welcome to Sholex Newsletter 🎉",
+    html,
+    "Welcome to Sholex Newsletter! You'll receive exclusive deals and updates.",
+    "updates",
+  );
+};
+
+export const sendNewsletterUnsubscribeEmail = async (email: string) => {
+  const html = layout({
+    headerBg: "#fef3c7",
+    body: `
+      <div class="body" style="text-align:center;">
+        <h2>You've Been Unsubscribed 👋</h2>
+        <p>We're sorry to see you go! You will no longer receive marketing emails from Sholex.</p>
+        <p>If this was a mistake, you can subscribe again anytime from our website.</p>
+        <a href="${CLIENT_URL}/" class="btn" style="background:#e8622a;color:#fff;box-shadow:0 4px 12px rgba(232,98,42,.3);">Return to Store</a>
+      </div>`,
+  });
+
+  return sendEmail(
+    email,
+    "Unsubscribed from Sholex Newsletter",
+    html,
+    "You have been unsubscribed from Sholex newsletter.",
+    "updates",
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ADMIN NOTIFICATIONS  →  sender: "orders"
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const sendAdminOrderNotification = async (
@@ -562,10 +715,8 @@ export const sendAdminOrderNotification = async (
     <hr/>
     <p><a href="${adminUrl}" style="color:#e8622a;font-weight:600;">Open admin dashboard →</a></p>`;
 
-  return sendEmail(adminEmail, subject, html);
+  return sendEmail(adminEmail, subject, html, undefined, "orders");
 };
-
-// ─── LOW STOCK ADMIN NOTIFICATION ───────────────────────────────────────────────
 
 export const sendLowStockAdminEmail = async (product: {
   name: string;
@@ -601,6 +752,7 @@ export const sendLowStockAdminEmail = async (product: {
     `🔻 Low Stock Alert: ${product.name}`,
     html,
     `Low stock alert for ${product.name}. Current stock: ${product.stock}. Threshold: ${product.lowStockThreshold}.`,
+    "orders",
   );
 };
 
@@ -636,8 +788,13 @@ export const sendOutOfStockAdminEmail = async (product: {
     `🚫 Out of Stock: ${product.name}`,
     html,
     `Out of stock alert for ${product.name}. Current stock: 0.`,
+    "orders",
   );
 };
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONTACT NOTIFICATION  →  sender: "support"
+// ═══════════════════════════════════════════════════════════════════════════════
 
 export const sendContactNotification = async (contact: {
   name: string;
@@ -675,146 +832,6 @@ export const sendContactNotification = async (contact: {
     `📩 New Contact: ${contact.subject || "No Subject"} from ${contact.name}`,
     html,
     `New contact message from ${contact.name} (${contact.email}): ${contact.message}`,
-  );
-};
-
-export const sendAbandonedCartEmail = async (
-  email: string,
-  name: string | undefined,
-  cart: any,
-) => {
-  interface AbandonedCartItem {
-    qty: number;
-    price: number;
-    product?: {
-      name?: string;
-      price?: number;
-    };
-  }
-
-  const cartItems = (cart.items as AbandonedCartItem[]) || [];
-
-  const itemsHtml = cartItems
-    .map((item) => {
-      const productName = item.product?.name || "Product";
-      const total = (item.price * item.qty).toLocaleString();
-      return `<p style="margin:6px 0;">• ${item.qty}× ${productName} – ₦${total}</p>`;
-    })
-    .join("");
-
-  const checkoutUrl = `${CLIENT_URL}/checkout`;
-
-  const html = layout({
-    headerBg: "#fef3c7",
-    body: `
-      <div class="body" style="text-align:center;">
-        <h2>You left something behind 🛒</h2>
-        <p>Hi ${name || "there"}, we noticed you added items to your cart but didn't complete your order.</p>
-        <div class="box" style="text-align:left; margin:20px 0;">
-          ${itemsHtml}
-        </div>
-        <a href="${checkoutUrl}" class="btn" style="background:#e8622a;color:#fff;box-shadow:0 4px 12px rgba(232,98,42,.3);">Complete Your Purchase</a>
-        <p style="margin-top:24px;font-size:14px;color:#718096;">Your cart is saved for a limited time. Prices and availability may change.</p>
-      </div>`,
-  });
-
-  return sendEmail(
-    email,
-    "Don't forget about your cart 🛒",
-    html,
-    `Hi ${name || "there"}, you left items in your cart. Complete your purchase now: ${checkoutUrl}`,
-  );
-};
-
-export const sendOrderCancelledEmail = async (
-  email: string,
-  orderRef: string,
-  cancellationReason: string,
-  name?: string,
-  total?: number,
-  discount?: number,
-  couponCode?: string,
-) => {
-  const greeting = name
-    ? `Hi <strong>${name}</strong>, your order has been cancelled`
-    : `Your Order Has Been Cancelled`;
-
-  // Map the structured reason code to a customer-friendly message.
-  // Falls back to the raw value if it's not a known code.
-  const reasonLabel =
-    CANCEL_REASON_LABELS[cancellationReason] || cancellationReason;
-
-  const reasonLine = reasonLabel
-    ? `<p><strong>Reason:</strong> ${reasonLabel}</p>`
-    : "";
-
-  const discountLine =
-    discount && couponCode
-      ? `<p style="margin:4px 0;"><strong>Discount (${couponCode})</strong> &minus; ₦${discount.toLocaleString()}</p>`
-      : "";
-  const totalLine = total
-    ? `<p><strong>Total:</strong> ₦${total.toLocaleString()}</p>`
-    : "";
-
-  const html = layout({
-    headerBg: "#fee2e2",
-    headerText: "#ffffff",
-    body: `
-      <div class="body" style="text-align:center;">
-        <h2>${greeting}</h2>
-        <p>We're sorry to inform you that your order <strong>${orderRef}</strong> has been cancelled.</p>
-        <div class="box" style="text-align:left; margin:20px 0;">
-          ${reasonLine}
-          ${discountLine}
-          ${totalLine}
-        </div>
-        <p>If you have any questions or need further assistance, please contact our support team.</p>
-      </div>`,
-  });
-
-  return sendEmail(
-    email,
-    `Order ${orderRef} Cancelled – Sholex`,
-    html,
-    `Your Sholex order ${orderRef} has been cancelled. Reason: ${reasonLabel || "N/A"}`,
-  );
-};
-
-export const sendNewsletterWelcomeEmail = async (email: string) => {
-  const html = layout({
-    headerBg: "#dff2e6",
-    body: `
-      <div class="body" style="text-align:center;">
-        <h2>Welcome to the Sholex Newsletter! 🎉</h2>
-        <p>You're now subscribed to receive exclusive deals, new arrivals, and discounts.</p>
-        <p>We'll keep you updated with the best offers.</p>
-      </div>`,
-  });
-
-  return sendEmail(
-    email,
-    "Welcome to Sholex Newsletter 🎉",
-    html,
-    "Welcome to Sholex Newsletter! You'll receive exclusive deals and updates.",
-  );
-};
-
-export const sendNewsletterUnsubscribeEmail = async (email: string) => {
-  const html = layout({
-    headerBg: "#fef3c7",
-    body: `
-      <div class="body" style="text-align:center;">
-        <h2>You've Been Unsubscribed 👋</h2>
-        <p>We're sorry to see you go! You will no longer receive marketing emails from Sholex.</p>
-        <p>If this was a mistake, you can subscribe again anytime from our website.</p>
-        <a href="${CLIENT_URL}/" class="btn" style="background:#e8622a;color:#fff;box-shadow:0 4px 12px rgba(232,98,42,.3);">Return to Store</a>
-      </div>`,
-  });
-
-  return sendEmail(
-    email,
-    "Unsubscribed from Sholex Newsletter",
-    html,
-    "You have been unsubscribed from Sholex newsletter.",
+    "support",
   );
 };

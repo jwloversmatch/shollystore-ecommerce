@@ -1,17 +1,17 @@
 import { EmailQueue } from "../models/EmailQueue";
-import { sendEmailViaBrevo } from "./brevoSender";
+import { sendEmailViaBrevo, type SenderType } from "./brevoSender";
 
 interface QueueEmailPayload {
   to: string;
   subject: string;
   html: string;
   text?: string;
+  sender?: SenderType;
 }
 
 /**
  * Process a single queue record inline — no HTTP, no waiting for the cron.
- * Used as a fast path so transactional emails (password reset, verification,
- * order confirmation) arrive within seconds instead of minutes.
+ * Used as a fast path so transactional emails arrive within seconds.
  *
  * On failure: leaves the record as "pending" with an incremented attempt
  * counter, so the cron endpoint can retry it on its next run.
@@ -21,7 +21,13 @@ const processOneImmediately = async (id: string): Promise<void> => {
     const email = await EmailQueue.findById(id);
     if (!email || email.status !== "pending") return;
 
-    await sendEmailViaBrevo(email.to, email.subject, email.html, email.text);
+    await sendEmailViaBrevo(
+      email.to,
+      email.subject,
+      email.html,
+      email.text,
+      (email.sender as SenderType) || "noreply",
+    );
 
     email.status = "sent";
     email.lastError = undefined;
@@ -69,6 +75,7 @@ export const enqueueEmail = async (
       subject: payload.subject,
       html: payload.html,
       text: payload.text,
+      sender: payload.sender || "noreply",
       status: "pending",
       attempts: 0,
       maxAttempts: 3,
