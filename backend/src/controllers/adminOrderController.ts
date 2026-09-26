@@ -326,15 +326,82 @@ export const updateOrderStatus = async (
       );
     }
 
-    // ─── Push notification (fire-and-forget) ────────────────────────────
-    // Only users with an active push subscription receive this. Guests
-    // and users who never enabled notifications are silently skipped.
-    // Never blocks the API response, never throws.
+    // ─── Push notification (fire-and-forget) ─────────────────────────────
+    // Only customers who opted in and have an active subscription on a
+    // device receive this. Guests and non-subscribers are silently skipped.
+    // Never blocks the API response; never throws.
     notifyOrderStatusViaPush(order, status).catch((err) =>
       console.error("Failed to send order push notification:", err),
     );
 
     res.json({ success: true, order });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getSalesAnalytics = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const totalStats = await Order.aggregate([
+      { $match: { status: { $nin: ["Pending", "Cancelled"] } } },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$totalPrice" },
+          totalOrders: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const categorySales = await Order.aggregate([
+      { $match: { status: { $nin: ["Pending", "Cancelled"] } } },
+      { $unwind: "$orderItems" },
+      {
+        $lookup: {
+          from: "products",
+          localField: "orderItems.product",
+          foreignField: "_id",
+          as: "productInfo",
+        },
+      },
+      { $unwind: "$productInfo" },
+      {
+        $group: {
+          _id: "$productInfo.category",
+          totalSales: { $sum: "$orderItems.qty" },
+          revenue: {
+            $sum: { $multiply: ["$orderItems.qty", "$orderItems.price"] },
+          },
+        },
+      },
+      { $sort: { revenue: -1 } },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "_id",
+          foreignField: "_id",
+          as: "categoryInfo",
+        },
+      },
+      { $unwind: "$categoryInfo" },
+      {
+        $project: {
+          _id: "$categoryInfo.name",
+          totalSales: 1,
+          revenue: 1,
+        },
+      },
+    ]);
+    
+
+    res.json({
+      totalRevenue: totalStats[0]?.totalRevenue || 0,
+      totalOrders: totalStats[0]?.totalOrders || 0,
+      categorySales,
+    });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
