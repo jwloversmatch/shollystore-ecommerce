@@ -162,6 +162,7 @@ export interface TrackOrderResponse {
 // ─── Sales report type ─────────────────────────────────────────────────────
 export interface SalesReportOrder {
   _id: string;
+  orderRef?: string;
   createdAt: string;
   user?: { email?: string; name?: string } | null;
   totalPrice: number;

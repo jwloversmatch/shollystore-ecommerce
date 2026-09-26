@@ -46,7 +46,10 @@ const SalesReport = () => {
     };
     switch (range) {
       case "today":
-        return { from: startOfDay(now).toISOString(), to: endOfDay.toISOString() };
+        return {
+          from: startOfDay(now).toISOString(),
+          to: endOfDay.toISOString(),
+        };
       case "yesterday": {
         const y = new Date(now);
         y.setDate(y.getDate() - 1);
@@ -57,17 +60,26 @@ const SalesReport = () => {
       case "7d": {
         const d = new Date(now);
         d.setDate(d.getDate() - 7);
-        return { from: startOfDay(d).toISOString(), to: endOfDay.toISOString() };
+        return {
+          from: startOfDay(d).toISOString(),
+          to: endOfDay.toISOString(),
+        };
       }
       case "30d": {
         const d = new Date(now);
         d.setDate(d.getDate() - 30);
-        return { from: startOfDay(d).toISOString(), to: endOfDay.toISOString() };
+        return {
+          from: startOfDay(d).toISOString(),
+          to: endOfDay.toISOString(),
+        };
       }
       case "90d": {
         const d = new Date(now);
         d.setDate(d.getDate() - 90);
-        return { from: startOfDay(d).toISOString(), to: endOfDay.toISOString() };
+        return {
+          from: startOfDay(d).toISOString(),
+          to: endOfDay.toISOString(),
+        };
       }
       case "custom":
         return {
@@ -89,9 +101,17 @@ const SalesReport = () => {
       return;
     }
     const rows = [
-      ["Order ID", "Date", "Customer", "Amount", "Status", "Payment Method", "Reference"],
+      [
+        "Order Reference",
+        "Date",
+        "Customer",
+        "Amount",
+        "Status",
+        "Payment Method",
+        "Reference",
+      ],
       ...data.orders.map((o) => [
-        o._id,
+        o.orderRef || o._id,
         new Date(o.createdAt).toISOString(),
         o.user?.email || "Guest",
         o.totalPrice,
@@ -174,7 +194,7 @@ const SalesReport = () => {
           </button>
         ))}
         {range === "custom" && (
-          <div className="flex items-center gap-2 ml-2">
+          <div className="flex items-center gap-2 ml-2 flex-wrap">
             <input
               type="date"
               value={customFrom}
@@ -264,7 +284,7 @@ const SalesReport = () => {
                         className="border-t border-gray-100 dark:border-white/[0.06]"
                       >
                         <td className="py-2.5 capitalize text-gray-900 dark:text-[#E7E9EA]">
-                          {row.method.replace("_", " ")}
+                          {row.method.replace(/_/g, " ")}
                         </td>
                         <td className="py-2.5 text-right text-gray-700 dark:text-gray-300">
                           {row.count}
@@ -319,7 +339,7 @@ const SalesReport = () => {
                       key={p.name}
                       className="border-t border-gray-100 dark:border-white/[0.06]"
                     >
-                      <td className="py-2.5 text-gray-900 dark:text-[#E7E9EA] truncate max-w-[200px]">
+                      <td className="py-2.5 pr-3 text-gray-900 dark:text-[#E7E9EA] truncate max-w-[200px]">
                         {p.name}
                       </td>
                       <td className="py-2.5 text-right text-gray-700 dark:text-gray-300">
@@ -335,22 +355,28 @@ const SalesReport = () => {
             </Section>
           )}
 
-          {/* Order list */}
+          {/* Order list — FIXED LAYOUT */}
           {data.orders.length > 0 && (
             <Section
               title={`Orders (${data.orders.length})`}
               icon={<Calendar className="w-4 h-4" />}
             >
-              <div className="overflow-x-auto -mx-6 px-6">
-                <table className="w-full text-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs min-w-[560px]">
                   <thead>
                     <tr className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400 dark:text-gray-500">
-                      <th className="text-left py-2">Order</th>
-                      <th className="text-left py-2">Date</th>
-                      <th className="text-left py-2">Customer</th>
-                      <th className="text-right py-2">Amount</th>
-                      <th className="text-left py-2">Payment</th>
-                      <th className="text-left py-2">Reference</th>
+                      <th className="text-left py-2 pr-3">Order</th>
+                      <th className="text-left py-2 pr-3 hidden sm:table-cell">
+                        Date
+                      </th>
+                      <th className="text-left py-2 pr-3">Customer</th>
+                      <th className="text-right py-2 pr-3">Amount</th>
+                      <th className="text-left py-2 pr-3 hidden md:table-cell">
+                        Payment
+                      </th>
+                      <th className="text-left py-2 hidden lg:table-cell">
+                        Reference
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -359,26 +385,26 @@ const SalesReport = () => {
                         key={o._id}
                         className="border-t border-gray-100 dark:border-white/[0.06]"
                       >
-                        <td className="py-2.5 font-mono text-gray-900 dark:text-[#E7E9EA]">
-                          #{o._id.slice(-8)}
+                        <td className="py-2.5 pr-3 font-mono text-gray-900 dark:text-[#E7E9EA] whitespace-nowrap">
+                          {o.orderRef || `#${o._id.slice(-8)}`}
                         </td>
-                        <td className="py-2.5 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        <td className="py-2.5 pr-3 text-gray-500 dark:text-gray-400 whitespace-nowrap hidden sm:table-cell">
                           {new Date(o.createdAt).toLocaleDateString("en-NG", {
                             day: "numeric",
                             month: "short",
                             year: "numeric",
                           })}
                         </td>
-                        <td className="py-2.5 text-gray-700 dark:text-gray-300 truncate max-w-[160px]">
+                        <td className="py-2.5 pr-3 text-gray-700 dark:text-gray-300 truncate max-w-[180px]">
                           {o.user?.email || "Guest"}
                         </td>
-                        <td className="py-2.5 text-right font-bold text-gray-900 dark:text-[#E7E9EA]">
+                        <td className="py-2.5 pr-3 text-right font-bold text-gray-900 dark:text-[#E7E9EA] whitespace-nowrap">
                           {fmtNaira(o.totalPrice)}
                         </td>
-                        <td className="py-2.5 capitalize text-gray-700 dark:text-gray-300">
-                          {o.paymentMethod?.replace("_", " ") || "—"}
+                        <td className="py-2.5 pr-3 capitalize text-gray-700 dark:text-gray-300 hidden md:table-cell">
+                          {o.paymentMethod?.replace(/_/g, " ") || "—"}
                         </td>
-                        <td className="py-2.5 font-mono text-gray-500 dark:text-gray-400 text-[10px]">
+                        <td className="py-2.5 font-mono text-gray-500 dark:text-gray-400 text-[10px] hidden lg:table-cell">
                           {o.paymentReference || "—"}
                         </td>
                       </tr>
