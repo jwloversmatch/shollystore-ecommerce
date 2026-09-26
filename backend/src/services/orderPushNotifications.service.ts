@@ -49,24 +49,49 @@ const buildPayload = (
 };
 
 /**
+ * Safely extract a user ID from order.user.
+ *
+ * order.user can be one of three things:
+ *  1. null / undefined     → guest order, no notification target
+ *  2. ObjectId             → registered user, no populate
+ *  3. Populated user doc   → { _id, email, name, phone } (object)
+ *
+ * Returns a plain string suitable for a Mongoose `{ userId }` query.
+ */
+const extractUserId = (user: unknown): string | null => {
+  if (!user) return null;
+
+  // Case 1: raw ObjectId or string
+  if (typeof user === "string") return user;
+
+  // Case 2: populated object → use its _id
+  if (typeof user === "object" && user !== null) {
+    const maybeId = (user as { _id?: unknown })._id;
+    if (maybeId) return String(maybeId);
+  }
+
+  // Case 3: ObjectId instance — String() gives the hex id
+  try {
+    return String(user);
+  } catch {
+    return null;
+  }
+};
+
+/**
  * Fire-and-forget push notification for order status changes.
- * Matches subscriptions by the order's user._id (guests have no subscription).
- * Never throws.
+ * Never throws. Silently no-ops for guests and non-subscribers.
  */
 export const notifyOrderStatusViaPush = async (
   order: IOrder,
   newStatus: string,
 ): Promise<void> => {
   try {
-    if (!order.user) return;
+    const userId = extractUserId(order.user);
+    if (!userId) return;
 
     const payload = buildPayload(order, newStatus);
     if (!payload) return;
-
-    const userId =
-      typeof order.user === "string"
-        ? order.user
-        : order.user.toString();
 
     const result = await sendPushToUser(userId, payload);
 
