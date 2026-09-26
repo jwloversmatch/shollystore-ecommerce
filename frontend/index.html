@@ -211,5 +211,78 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!--
+      ═══════════════════════════════════════════════════════════════════════
+      SERVICE WORKER RESET  —  SAFE TO KEEP PERMANENTLY
+
+      Purpose: one-time cleanup for clients stuck on a stale service worker
+      that didn't detect updates (before `registration.update()` was added
+      to the update hook in `useServiceWorkerUpdate.ts`).
+
+      How it works:
+      • Compares a version string stored in localStorage against the current
+        value below. If they match, does nothing — working SW is untouched.
+      • If they don't match, unregisters any existing SW, clears caches, and
+        reloads once. Then stores the current version so it never runs again
+        on this device.
+      • Safe to leave in production. No reload loops, no touching a healthy SW.
+
+      To force another reset in the future: bump CURRENT_VERSION below.
+      ═══════════════════════════════════════════════════════════════════════
+    -->
+    <script>
+      (function () {
+        if (!("serviceWorker" in navigator)) return;
+
+        var STORAGE_KEY = "sholex-sw-version";
+        var CURRENT_VERSION = "2026-09-26-a";
+
+        // Skip if this device has already run this reset version.
+        try {
+          if (localStorage.getItem(STORAGE_KEY) === CURRENT_VERSION) return;
+        } catch (e) {
+          return; // storage unavailable (private mode etc.) — skip silently
+        }
+
+        navigator.serviceWorker
+          .getRegistrations()
+          .then(function (regs) {
+            // No service worker installed — mark as done and exit.
+            if (!regs || regs.length === 0) {
+              try {
+                localStorage.setItem(STORAGE_KEY, CURRENT_VERSION);
+              } catch (e) {}
+              return;
+            }
+
+            // Unregister all existing registrations, clear caches, reload once.
+            return Promise.all(
+              regs.map(function (r) {
+                return r.unregister();
+              }),
+            )
+              .then(function () {
+                return caches.keys();
+              })
+              .then(function (keys) {
+                return Promise.all(
+                  keys.map(function (k) {
+                    return caches.delete(k);
+                  }),
+                );
+              })
+              .then(function () {
+                try {
+                  localStorage.setItem(STORAGE_KEY, CURRENT_VERSION);
+                } catch (e) {}
+                window.location.reload();
+              });
+          })
+          .catch(function (err) {
+            console.warn("[sw-reset] failed:", err);
+          });
+      })();
+    </script>
   </body>
 </html>

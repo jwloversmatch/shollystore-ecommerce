@@ -15,11 +15,11 @@ export const useServiceWorkerUpdate = () => {
       try {
         const registration = await navigator.serviceWorker.register("/sw.js", {
           scope: "/",
+          updateViaCache: "none",
         });
         if (cancelled) return;
         registrationRef.current = registration;
 
-        // A worker is already waiting (update happened in a previous session)
         if (registration.waiting) {
           setWaitingWorker(registration.waiting);
         }
@@ -37,28 +37,40 @@ export const useServiceWorkerUpdate = () => {
           });
         });
 
-        // Reload once the new worker takes over
         let refreshing = false;
         navigator.serviceWorker.addEventListener("controllerchange", () => {
           if (refreshing) return;
           refreshing = true;
           window.location.reload();
         });
+
+        // Force an update check immediately on mount
+        registration.update().catch((err) => {
+          console.warn("[SW] Update check failed:", err);
+        });
       } catch (err) {
         console.error("SW registration failed:", err);
       }
     };
 
-    // Register only after the page has loaded so it doesn't compete with
-    // critical resources on slow networks.
     if (document.readyState === "complete") {
       register();
     } else {
       window.addEventListener("load", register, { once: true });
     }
 
+    // Also check when the PWA resumes from background
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        registrationRef.current?.update().catch(() => {});
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
