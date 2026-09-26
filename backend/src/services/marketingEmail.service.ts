@@ -1,19 +1,16 @@
 // backend/src/services/marketingEmail.service.ts
 import { User } from "../models/User";
 import { Settings } from "../models/Settings";
-import { sendEmailViaBrevo } from "./brevoSender";
+import { sendEmailViaBrevo, type SenderType } from "./brevoSender";
 
-const SENDER_EMAIL =
-  process.env.MARKETING_SENDER_EMAIL ||
-  process.env.BREVO_SENDER_EMAIL ||
-  "store@sholex.com";
-const SENDER_NAME =
-  process.env.MARKETING_SENDER_NAME ||
-  process.env.BREVO_SENDER_NAME ||
-  "sholex";
-const CLIENT_URL = process.env.CLIENT_URL || "https://sholex.vercel.app";
+const CLIENT_URL =
+  process.env.CLIENT_URL || "https://www.sholexstore.com";
 const STORE_LOGO_URL =
   process.env.STORE_LOGO_URL || `${CLIENT_URL}/icons/sholex-180.png`;
+
+// All emails from this file are marketing/onboarding.
+// They always send from updates@sholexstore.com.
+const MARKETING_SENDER: SenderType = "updates";
 
 // ---------- Shared logo image for all marketing emails ----------
 const LOGO_IMG = `<img src="${STORE_LOGO_URL}" alt="sholex" style="width:28px; height:28px; object-fit:contain; vertical-align:middle; margin-right:8px;" />`;
@@ -54,6 +51,7 @@ const sendBrevoEmail = async (
         subject,
         htmlContent,
         textContent,
+        MARKETING_SENDER,
       );
       console.log(
         `✅ Marketing email sent to ${email}: ${result.messageId || "simulated"}`,
