@@ -18,7 +18,7 @@ webpush.setVapidDetails(
   VAPID_PRIVATE_KEY,
 );
 
-interface NotificationPayload {
+export interface NotificationPayload {
   title: string;
   body: string;
   icon?: string;
@@ -37,34 +37,63 @@ export const sendPushNotification = async (
     return { success: true };
   } catch (error: any) {
     if (error.statusCode === 410 || error.statusCode === 404) {
-      // Subscription is dead — clean it up
       await PushSubscriptionModel.deleteOne({
         endpoint: subscription.endpoint,
       });
       return { success: false, expired: true };
     }
-
     console.error("Push notification error:", error);
     return { success: false };
   }
 };
 
+export interface PushResult {
+  sent: number;
+  failed: number;
+  expired: number;
+}
+
+/**
+ * Send a push to every device a specific user has subscribed.
+ * Matches subscriptions by `userId` (the field on PushSubscriptionModel).
+ */
+export const sendPushToUser = async (
+  userId: string,
+  payload: NotificationPayload,
+): Promise<PushResult> => {
+  const subscriptions = await PushSubscriptionModel.find({ userId });
+
+  const result: PushResult = { sent: 0, failed: 0, expired: 0 };
+  if (subscriptions.length === 0) return result;
+
+  for (const sub of subscriptions) {
+    const r = await sendPushNotification(
+      {
+        endpoint: sub.endpoint,
+        keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth },
+      },
+      payload,
+    );
+
+    if (r.success) result.sent++;
+    else if (r.expired) result.expired++;
+    else result.failed++;
+  }
+
+  return result;
+};
+
 export const broadcastPushNotification = async (
   payload: NotificationPayload,
-): Promise<{ sent: number; failed: number; expired: number }> => {
+): Promise<PushResult> => {
   const subscriptions = await PushSubscriptionModel.find({});
 
-  let sent = 0;
-  let failed = 0;
-  let expired = 0;
+  const result: PushResult = { sent: 0, failed: 0, expired: 0 };
 
-  // Fire in parallel batches so a slow push service doesn't block the rest.
-  // Sequential loop would take N × ~300ms for N subscribers.
   const CONCURRENCY = 20;
   for (let i = 0; i < subscriptions.length; i += CONCURRENCY) {
     const batch = subscriptions.slice(i, i + CONCURRENCY);
-
-    const results = await Promise.all(
+    const batchResults = await Promise.all(
       batch.map((sub) =>
         sendPushNotification(
           {
@@ -75,13 +104,12 @@ export const broadcastPushNotification = async (
         ),
       ),
     );
-
-    for (const r of results) {
-      if (r.success) sent++;
-      else if (r.expired) expired++;
-      else failed++;
+    for (const r of batchResults) {
+      if (r.success) result.sent++;
+      else if (r.expired) result.expired++;
+      else result.failed++;
     }
   }
 
-  return { sent, failed, expired };
+  return result;
 };
