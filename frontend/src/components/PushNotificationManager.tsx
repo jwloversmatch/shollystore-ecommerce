@@ -5,7 +5,8 @@ import { Bell, BellOff, Loader2 } from "lucide-react";
 import { RootState } from "../store";
 
 const ACCENT = "#e8622a";
-const API_BASE = import.meta.env.VITE_API_URL || "https://api.sholexstore.com";
+const API_BASE =
+  import.meta.env.VITE_API_URL || "https://api.sholexstore.com/api";
 
 const urlBase64ToUint8Array = (base64String: string) => {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -44,12 +45,6 @@ const PushNotificationManager = () => {
       return;
     }
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.error("No auth token — user must be logged in to subscribe");
-      return;
-    }
-
     setLoading(true);
     try {
       const perm = await Notification.requestPermission();
@@ -61,18 +56,27 @@ const PushNotificationManager = () => {
       }
 
       const reg = await navigator.serviceWorker.getRegistration();
-      if (!reg) return;
+      if (!reg) {
+        console.warn("No service worker registration — try reloading the page");
+        setLoading(false);
+        return;
+      }
 
       const subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
 
+      // Include the auth token when the user is logged in, so the backend
+      // can link this subscription to their account for per-user pushes
+      // (order status updates). Guests still get broadcast updates.
+      const token = localStorage.getItem("token");
+
       const res = await fetch(`${API_BASE}/push/subscribe`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // ← REQUIRED
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(subscription.toJSON()),
       });
@@ -91,12 +95,6 @@ const PushNotificationManager = () => {
   };
 
   const handleUnsubscribe = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.error("No auth token");
-      return;
-    }
-
     setLoading(true);
     try {
       const reg = await navigator.serviceWorker.getRegistration();
@@ -106,17 +104,21 @@ const PushNotificationManager = () => {
         const endpoint = subscription.endpoint;
         await subscription.unsubscribe();
 
+        const token = localStorage.getItem("token");
+
         const res = await fetch(`${API_BASE}/push/unsubscribe`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // ← REQUIRED
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({ endpoint }),
         });
 
         if (!res.ok) {
-          console.warn("Unsubscribe request failed — browser unsubscribed but DB record may remain");
+          console.warn(
+            "Unsubscribe request failed — browser unsubscribed but DB record may remain",
+          );
         }
 
         setSubscribed(false);
