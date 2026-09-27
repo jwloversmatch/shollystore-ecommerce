@@ -362,21 +362,21 @@ export const apiSlice = createApi({
     }),
 
     updateOrderStatus: builder.mutation<
-  { success: boolean; order: unknown },
-  {
-    id: string;
-    status: string;
-    cancellationReason?: string;
-    cancellationNote?: string;
-  }
->({
-  query: ({ id, ...body }) => ({
-    url: `/admin/orders/${id}/status`,
-    method: "PUT",
-    body,
-  }),
-  invalidatesTags: ["Order", "Product"],
-}),
+      { success: boolean; order: unknown },
+      {
+        id: string;
+        status: string;
+        cancellationReason?: string;
+        cancellationNote?: string;
+      }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/admin/orders/${id}/status`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Order", "Product"],
+    }),
 
     // ─── Revenue Trend ───────────────────────────────────────────────────────
     getRevenueTrend: builder.query<
@@ -787,6 +787,31 @@ export const apiSlice = createApi({
     }),
 
     // ─── Push Notifications ─────────────────────────────────────────────────
+    subscribePush: builder.mutation<
+      { success: boolean },
+      {
+        endpoint: string;
+        keys: { p256dh: string; auth: string };
+        expirationTime?: number | null;
+      }
+    >({
+      query: (subscription) => ({
+        url: "/push/subscribe",
+        method: "POST",
+        body: subscription,
+      }),
+    }),
+
+    unsubscribePush: builder.mutation<
+      { success: boolean },
+      { endpoint: string }
+    >({
+      query: (body) => ({
+        url: "/push/unsubscribe",
+        method: "POST",
+        body,
+      }),
+    }),
     sendPushNotification: builder.mutation<
       { success: boolean; message: string },
       { title: string; body: string; url?: string }
@@ -1178,4 +1203,6 @@ export const {
   useUnsubscribeFromNewsletterMutation,
   useSendContactMessageMutation,
   useGetSalesReportQuery,
+  useSubscribePushMutation,
+  useUnsubscribePushMutation,
 } = apiSlice;
