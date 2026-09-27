@@ -4,14 +4,11 @@ import { motion } from "framer-motion";
 import AdminSidebar from "../components/admin/AdminSidebar";
 import AdminTopbar from "../components/admin/AdminTopbar";
 import CommandPalette from "../components/admin/CommandPalette";
-import UpdatePrompt from "../components/UpdatePrompt";
-import { useServiceWorkerUpdate } from "../hooks/useServiceWorkerUpdate";
 
 const STORAGE_KEY = "sholex:admin:sidebar-collapsed";
 
 const AdminLayout = () => {
   const location = useLocation();
-  const { hasUpdate, applyUpdate } = useServiceWorkerUpdate();
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -20,7 +17,6 @@ const AdminLayout = () => {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [updateDismissed, setUpdateDismissed] = useState(false);
 
   // Reset drawer on route change (React's official pattern)
   const [prevPathname, setPrevPathname] = useState(location.pathname);
@@ -104,12 +100,6 @@ const AdminLayout = () => {
           </Suspense>
         </main>
       </div>
-
-      <UpdatePrompt
-        isOpen={hasUpdate && !updateDismissed}
-        onRefresh={applyUpdate}
-        onDismiss={() => setUpdateDismissed(true)}
-      />
 
       <CommandPalette
         isOpen={paletteOpen}
