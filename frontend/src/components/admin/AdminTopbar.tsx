@@ -92,12 +92,15 @@ const AdminTopbar = ({
 
   return (
     <header
-      className={`fixed top-0 right-0 z-30 h-16 flex items-center gap-3 px-4
+      className={`fixed top-0 right-0 z-30 flex items-center gap-3 px-4
         bg-white/90 dark:bg-[#0F0F10]/90 backdrop-blur-xl
         border-b border-gray-200 dark:border-white/[0.08]
         transition-[left] duration-200 ease-out
         left-0 ${sidebarCollapsed ? "lg:left-[72px]" : "lg:left-[260px]"}`}
-      style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      style={{
+        paddingTop: "env(safe-area-inset-top, 0px)",
+        height: "calc(64px + env(safe-area-inset-top, 0px))",
+      }}
     >
       {/* Mobile hamburger */}
       <button
@@ -228,7 +231,7 @@ const AdminTopbar = ({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.96 }}
                 transition={{ duration: 0.15 }}
-                className="absolute right-0 mt-2 w-64 rounded-2xl shadow-xl border overflow-hidden
+                className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-2xl shadow-xl border overflow-hidden
                   bg-white dark:bg-[#17181A]
                   border-gray-200 dark:border-white/[0.08]"
                 role="menu"

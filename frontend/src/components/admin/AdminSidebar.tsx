@@ -152,7 +152,7 @@ const AdminSidebar = ({
       </AnimatePresence>
 
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen flex flex-col
+        className={`fixed top-0 left-0 z-50 h-[100dvh] flex flex-col
           border-r border-gray-200 dark:border-white/[0.08]
           bg-white dark:bg-[#0F0F10]
           transition-[width,transform] duration-200 ease-out
@@ -163,8 +163,12 @@ const AdminSidebar = ({
       >
         {/* Header */}
         <div
-          className={`flex items-center h-16 shrink-0 border-b border-gray-200 dark:border-white/[0.08] px-4
+          className={`flex items-center shrink-0 border-b border-gray-200 dark:border-white/[0.08] px-4
             ${collapsed ? "lg:justify-center lg:px-2" : "justify-between"}`}
+          style={{
+            paddingTop: "env(safe-area-inset-top, 0px)",
+            height: "calc(64px + env(safe-area-inset-top, 0px))",
+          }}
         >
           <Link
             to="/admin"
@@ -198,7 +202,10 @@ const AdminSidebar = ({
         </div>
 
         {/* Nav body */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-2 space-y-4">
+        <nav
+          className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-2 space-y-4"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
           {NAV_GROUPS.map((group) => {
             const isGroupCollapsed = collapsedGroups[group.labelKey] ?? false;
             return (
@@ -282,7 +289,12 @@ const AdminSidebar = ({
         </nav>
 
         {/* Bottom section */}
-        <div className="shrink-0 border-t border-gray-200 dark:border-white/[0.08] py-3 px-2 space-y-1">
+        <div
+          className="shrink-0 border-t border-gray-200 dark:border-white/[0.08] pt-3 px-2 space-y-1"
+          style={{
+            paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
+          }}
+        >
           {SETTINGS_ITEMS.map((item) => {
             const Icon = item.icon;
             return (
