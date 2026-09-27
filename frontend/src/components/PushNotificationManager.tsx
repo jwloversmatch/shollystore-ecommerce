@@ -3,12 +3,10 @@ import { useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import { Bell, BellOff, Loader2 } from "lucide-react";
 import { RootState } from "../store";
-import {
-  useSubscribePushMutation,
-  useUnsubscribePushMutation,
-} from "../features/api/apiSlice";
 
 const ACCENT = "#e8622a";
+const API_BASE =
+  import.meta.env.VITE_API_URL || "https://api.sholexstore.com/api";
 
 const urlBase64ToUint8Array = (base64String: string) => {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -19,8 +17,6 @@ const urlBase64ToUint8Array = (base64String: string) => {
 
 const PushNotificationManager = () => {
   const { user } = useSelector((s: RootState) => s.auth);
-  const [subscribePush] = useSubscribePushMutation();
-  const [unsubscribePush] = useUnsubscribePushMutation();
 
   const [permission, setPermission] = useState<NotificationPermission>(() =>
     "Notification" in window ? Notification.permission : "default",
@@ -53,36 +49,42 @@ const PushNotificationManager = () => {
     try {
       const perm = await Notification.requestPermission();
       setPermission(perm);
-      if (perm !== "granted") return;
 
-      const reg = await navigator.serviceWorker.getRegistration();
-      if (!reg) {
-        console.warn("No service worker registration");
+      if (perm !== "granted") {
+        setLoading(false);
         return;
       }
 
-            const subscription = await reg.pushManager.subscribe({
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (!reg) {
+        console.warn("No service worker registration — try reloading the page");
+        setLoading(false);
+        return;
+      }
+
+      const subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
 
-      const json = subscription.toJSON();
+      // Include the auth token when the user is logged in, so the backend
+      // can link this subscription to their account for per-user pushes
+      // (order status updates). Guests still get broadcast updates.
+      const token = localStorage.getItem("token");
 
-      // PushSubscriptionJSON has optional fields; the API wants them required.
-      // Guard so we never send `undefined` as `endpoint`.
-      if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
-        throw new Error("Subscription is missing required fields");
-      }
-
-      // RTK Query automatically attaches the auth header via baseQuery.
-      await subscribePush({
-        endpoint: json.endpoint,
-        keys: {
-          p256dh: json.keys.p256dh,
-          auth: json.keys.auth,
+      const res = await fetch(`${API_BASE}/push/subscribe`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        expirationTime: json.expirationTime ?? null,
-      }).unwrap();
+        body: JSON.stringify(subscription.toJSON()),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.message || `Subscribe failed: ${res.status}`);
+      }
 
       setSubscribed(true);
     } catch (error) {
@@ -97,18 +99,30 @@ const PushNotificationManager = () => {
     try {
       const reg = await navigator.serviceWorker.getRegistration();
       const subscription = await reg?.pushManager.getSubscription();
-      if (!subscription) return;
 
-      const endpoint = subscription.endpoint;
-      await subscription.unsubscribe();
+      if (subscription) {
+        const endpoint = subscription.endpoint;
+        await subscription.unsubscribe();
 
-      try {
-        await unsubscribePush({ endpoint }).unwrap();
-      } catch {
-        console.warn("Server unsubscribe failed — DB record may remain");
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(`${API_BASE}/push/unsubscribe`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ endpoint }),
+        });
+
+        if (!res.ok) {
+          console.warn(
+            "Unsubscribe request failed — browser unsubscribed but DB record may remain",
+          );
+        }
+
+        setSubscribed(false);
       }
-
-      setSubscribed(false);
     } catch (error) {
       console.error("Failed to unsubscribe:", error);
     } finally {
@@ -124,7 +138,9 @@ const PushNotificationManager = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
       className="rounded-2xl border p-6 md:p-7 bg-white dark:bg-[#17181A] border-gray-200 dark:border-white/[0.07]"
-      style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.3)" }}
+      style={{
+        boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+      }}
     >
       <div className="flex items-center gap-3 mb-4">
         <div
