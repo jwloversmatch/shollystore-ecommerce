@@ -5,7 +5,7 @@ import { Bell, BellOff, Loader2 } from "lucide-react";
 import { RootState } from "../store";
 
 const ACCENT = "#e8622a";
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api"; // ✅ added
+const API_BASE = import.meta.env.VITE_API_URL || "https://api.sholexstore.com";
 
 const urlBase64ToUint8Array = (base64String: string) => {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -44,6 +44,12 @@ const PushNotificationManager = () => {
       return;
     }
 
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("No auth token — user must be logged in to subscribe");
+      return;
+    }
+
     setLoading(true);
     try {
       const perm = await Notification.requestPermission();
@@ -62,12 +68,19 @@ const PushNotificationManager = () => {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
 
-      // ✅ Correct URL
-      await fetch(`${API_BASE}/push/subscribe`, {
+      const res = await fetch(`${API_BASE}/push/subscribe`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // ← REQUIRED
+        },
         body: JSON.stringify(subscription.toJSON()),
       });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.message || `Subscribe failed: ${res.status}`);
+      }
 
       setSubscribed(true);
     } catch (error) {
@@ -78,18 +91,34 @@ const PushNotificationManager = () => {
   };
 
   const handleUnsubscribe = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("No auth token");
+      return;
+    }
+
     setLoading(true);
     try {
       const reg = await navigator.serviceWorker.getRegistration();
       const subscription = await reg?.pushManager.getSubscription();
+
       if (subscription) {
+        const endpoint = subscription.endpoint;
         await subscription.unsubscribe();
-        // ✅ Correct URL
-        await fetch(`${API_BASE}/push/unsubscribe`, {
+
+        const res = await fetch(`${API_BASE}/push/unsubscribe`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ endpoint: subscription.endpoint }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // ← REQUIRED
+          },
+          body: JSON.stringify({ endpoint }),
         });
+
+        if (!res.ok) {
+          console.warn("Unsubscribe request failed — browser unsubscribed but DB record may remain");
+        }
+
         setSubscribed(false);
       }
     } catch (error) {
@@ -111,7 +140,6 @@ const PushNotificationManager = () => {
         boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
       }}
     >
-      {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <div
           className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -131,7 +159,6 @@ const PushNotificationManager = () => {
         </div>
       </div>
 
-      {/* Status & action */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <span
@@ -170,7 +197,6 @@ const PushNotificationManager = () => {
         </button>
       </div>
 
-      {/* Extra hint when denied */}
       {permission === "denied" && (
         <p className="mt-3 text-xs text-red-600 dark:text-red-400">
           Notifications are blocked in your browser. Enable them in your device
