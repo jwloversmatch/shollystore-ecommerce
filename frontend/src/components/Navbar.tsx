@@ -14,6 +14,7 @@ import {
   Heart,
   Truck,
   ShoppingBag,
+  Package,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
@@ -23,7 +24,6 @@ import { useTranslation } from "react-i18next";
 const ACCENT = "#e8622a";
 const BRAND_NAME = "SHOLEX";
 
-// Custom staircase/fries icon
 const StairsIcon = ({ className = "" }: { className?: string }) => (
   <svg
     viewBox="0 0 24 24"
@@ -41,14 +41,23 @@ const StairsIcon = ({ className = "" }: { className?: string }) => (
   </svg>
 );
 
-const CUSTOMER_LINKS = [
+// ─── Primary nav links — differ for guests vs. logged-in customers ──────
+const CUSTOMER_LINKS_GUEST = [
   { to: "/shop", labelKey: "nav.shop" },
   { to: "/track-order", labelKey: "nav.trackOrder" },
   { to: "/about", labelKey: "nav.about" },
   { to: "/contact", labelKey: "nav.contact" },
 ];
 
-const MOBILE_SECONDARY_LINKS = [
+const CUSTOMER_LINKS_AUTH = [
+  { to: "/shop", labelKey: "nav.shop" },
+  { to: "/account?tab=orders", labelKey: "nav.myOrders" },
+  { to: "/about", labelKey: "nav.about" },
+  { to: "/contact", labelKey: "nav.contact" },
+];
+
+// ─── Secondary (hamburger) links ────────────────────────────────────────
+const MOBILE_SECONDARY_LINKS_GUEST = [
   { to: "/about", labelKey: "nav.about" },
   { to: "/contact", labelKey: "nav.contact" },
   { to: "/privacy", labelKey: "nav.privacy" },
@@ -56,7 +65,18 @@ const MOBILE_SECONDARY_LINKS = [
   { to: "/returns", labelKey: "nav.returns" },
 ];
 
-// ─── Bottom-nav button ────────────────────────────────────────────────────────
+const MOBILE_SECONDARY_LINKS_AUTH = [
+  // Kept for logged-in users in case they need to track a guest order
+  // they received a code for, or someone else's order.
+  { to: "/track-order", labelKey: "nav.trackOrder" },
+  { to: "/about", labelKey: "nav.about" },
+  { to: "/contact", labelKey: "nav.contact" },
+  { to: "/privacy", labelKey: "nav.privacy" },
+  { to: "/terms", labelKey: "nav.terms" },
+  { to: "/returns", labelKey: "nav.returns" },
+];
+
+// ─── Bottom-nav button ──────────────────────────────────────────────────
 interface NavBtnProps {
   to: string;
   icon: React.ReactNode;
@@ -112,7 +132,7 @@ const NavBtn: React.FC<NavBtnProps> = ({ to, icon, label, active, badge }) => {
   );
 };
 
-// ─── User dropdown menu ───────────────────────────────────────────────────────
+// ─── User dropdown menu ─────────────────────────────────────────────────
 const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -176,7 +196,6 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
             role="menu"
             aria-label="User menu"
           >
-            {/* Admin Dashboard link (admins only) */}
             {user?.role === "admin" && (
               <Link
                 to="/admin"
@@ -199,6 +218,15 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
                 >
                   <User className="w-4 h-4" aria-hidden="true" />
                   {t("userMenu.account")}
+                </Link>
+                <Link
+                  to="/account?tab=orders"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                  role="menuitem"
+                >
+                  <Package className="w-4 h-4" aria-hidden="true" />
+                  {t("nav.myOrders")}
                 </Link>
                 <Link
                   to="/account?tab=wishlist"
@@ -235,7 +263,7 @@ const UserMenu = ({ mobile = false }: { mobile?: boolean }) => {
   );
 };
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Main component ────────────────────────────────────────────────────
 const Navbar = () => {
   const { t, i18n } = useTranslation();
   const { user } = useSelector((s: RootState) => s.auth);
@@ -250,8 +278,22 @@ const Navbar = () => {
   const totalQty = cartItems.reduce((acc, i) => acc + i.qty, 0);
   const wishlistCount = wishlistIds.length;
   const showCart = !user || user.role === "user";
+
   const isWishlistActive =
     pathname === "/account" && search.includes("tab=wishlist");
+  const isOrdersActive =
+    pathname === "/account" && !search.includes("tab=wishlist");
+
+  const isCustomer = !user || user.role === "user";
+  const isAuthCustomer = user?.role === "user";
+
+  const customerLinks = isAuthCustomer
+    ? CUSTOMER_LINKS_AUTH
+    : CUSTOMER_LINKS_GUEST;
+
+  const mobileSecondaryLinks = isAuthCustomer
+    ? MOBILE_SECONDARY_LINKS_AUTH
+    : MOBILE_SECONDARY_LINKS_GUEST;
 
   useEffect(() => {
     if (
@@ -268,9 +310,11 @@ const Navbar = () => {
 
   const isActive = (path: string) => {
     if (path === "/") return pathname === "/";
+    // Special-case the account tabs
+    if (path.startsWith("/account?tab=orders")) return isOrdersActive;
+    if (path.startsWith("/account?tab=wishlist")) return isWishlistActive;
     return pathname.startsWith(path);
   };
-
 
   const desktopLinkCls = (path: string) =>
     `flex items-center gap-1.5 text-sm font-bold transition-colors duration-150 ${
@@ -305,10 +349,10 @@ const Navbar = () => {
         aria-label="Main navigation"
       >
         <div
-          className="absolute inset-0 
-          bg-[#FCFAF5]/95 dark:bg-[#121314]/95 
-          backdrop-blur-xl 
-          border-b border-gray-200 dark:border-white/[0.08] 
+          className="absolute inset-0
+          bg-[#FCFAF5]/95 dark:bg-[#121314]/95
+          backdrop-blur-xl
+          border-b border-gray-200 dark:border-white/[0.08]
           shadow-sm dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
         />
         <div className="relative max-w-7xl mx-auto px-6 flex justify-between items-center py-4">
@@ -327,9 +371,9 @@ const Navbar = () => {
               <span>{BRAND_NAME}</span>
             </Link>
 
-            {(!user || user.role === "user") && (
+            {isCustomer && (
               <div className="flex items-center gap-6">
-                {CUSTOMER_LINKS.map((link) => (
+                {customerLinks.map((link) => (
                   <Link
                     key={link.to}
                     to={link.to}
@@ -347,7 +391,6 @@ const Navbar = () => {
           <div className="flex items-center gap-4 shrink-0">
             <ThemeToggle />
 
-            {/* Language Switcher */}
             <select
               value={i18n.language}
               onChange={(e) => changeLanguage(e.target.value)}
@@ -392,24 +435,7 @@ const Navbar = () => {
               </Link>
             )}
 
-            {(!user || user.role === "user") && (
-              <Link
-                to="/track-order"
-                className="relative p-1"
-                aria-label={t("nav.trackOrder")}
-              >
-                <Truck
-                  className={`w-5 h-5 transition-colors ${
-                    isActive("/track-order")
-                      ? "text-[#e8622a]"
-                      : "text-gray-600 dark:text-gray-500 hover:text-black dark:hover:text-white"
-                  }`}
-                  aria-hidden="true"
-                />
-              </Link>
-            )}
-
-            {user?.role === "user" && (
+            {isAuthCustomer && (
               <Link
                 to="/account?tab=wishlist"
                 className="relative p-1"
@@ -497,7 +523,7 @@ const Navbar = () => {
                   <option value="en">EN</option>
                   <option value="pcm">PCM</option>
                 </select>
-                {(!user || user.role === "user") && (
+                {isCustomer && (
                   <button
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                     className="p-2 rounded-xl transition-colors"
@@ -529,7 +555,7 @@ const Navbar = () => {
                 style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
               >
                 <div className="px-5 py-4 space-y-1">
-                  {MOBILE_SECONDARY_LINKS.map((link) => (
+                  {mobileSecondaryLinks.map((link) => (
                     <Link
                       key={link.to}
                       to={link.to}
@@ -560,7 +586,7 @@ const Navbar = () => {
                 active={pathname === "/"}
               />
 
-              {(!user || user.role === "user") && (
+              {isCustomer && (
                 <NavBtn
                   to="/shop"
                   icon={<ShoppingBag className="w-5 h-5" />}
@@ -579,7 +605,17 @@ const Navbar = () => {
                 />
               )}
 
-              {(!user || user.role === "user") && (
+              {/* Logged-in customers → My Orders. Guests → Track Order. */}
+              {isAuthCustomer && (
+                <NavBtn
+                  to="/account?tab=orders"
+                  icon={<Package className="w-5 h-5" />}
+                  label={t("nav.myOrders")}
+                  active={isOrdersActive}
+                />
+              )}
+
+              {!user && (
                 <NavBtn
                   to="/track-order"
                   icon={<Truck className="w-5 h-5" />}
@@ -588,7 +624,7 @@ const Navbar = () => {
                 />
               )}
 
-              {user?.role === "user" && (
+              {isAuthCustomer && (
                 <div className="flex flex-col items-center justify-center">
                   <UserMenu mobile />
                 </div>

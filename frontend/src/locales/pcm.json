@@ -14,7 +14,8 @@
     "terms": "Terms of Service",
     "returns": "Return Policy",
     "coupons": "Coupons",
-    "language": "Pick your language"
+    "language": "Pick your language",
+    "myOrders": "My Orders"
   },
   "userMenu": {
     "account": "Account",
