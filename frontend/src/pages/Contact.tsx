@@ -23,10 +23,10 @@ import { useSendContactMessageMutation } from '../features/api/apiSlice';
 import { SITE } from '../config/site';
 
 const contactInfo = {
-  address: 'Lagos, Nigeria',
-  phone: '+2349012345678',
-  phoneDisplay: '+234 901 234 5678',
-  email: 'hello@sholex.com',
+  address: 'Awori Lagos, Nigeria',
+  phone: '+2348109767466',
+  phoneDisplay: '+234 810 976 7466',
+  email: 'support@sholex.com',
 };
 
 const socialLinks = [
