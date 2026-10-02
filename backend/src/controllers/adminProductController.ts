@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import csv from "csvtojson";
 import { Product } from "../models/Product";
 import { Category } from "../models/Category";
+import { Review } from "../models/Review"; 
 import {
   getAllUserEmails,
   sendNewArrivalEmail,
@@ -12,13 +13,11 @@ const resolveCategoryId = async (input: string): Promise<string | null> => {
   const trimmed = input?.trim();
   if (!trimmed) return null;
 
-  // If it's an ObjectId
   if (/^[0-9a-fA-F]{24}$/.test(trimmed)) {
     const cat = await Category.findById(trimmed);
     return cat ? cat._id.toString() : null;
   }
 
-  // Otherwise treat as name or slug
   const cat = await Category.findOne({
     $or: [
       { name: { $regex: new RegExp(`^${trimmed}$`, "i") } },
@@ -99,6 +98,9 @@ export const updateProduct = async (
   }
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// DELETE PRODUCT — with cascade delete of its reviews
+// ═══════════════════════════════════════════════════════════════════════════
 export const deleteProduct = async (
   req: Request,
   res: Response,
@@ -109,8 +111,12 @@ export const deleteProduct = async (
       res.status(404).json({ message: "Product not found" });
       return;
     }
+
+    await Review.deleteMany({ product: product._id });
+
     await product.deleteOne();
-    res.json({ message: "Product removed" });
+
+    res.json({ message: "Product and its reviews removed" });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -153,7 +159,6 @@ export const bulkImportProducts = async (
           );
         }
 
-        // Resolve category if provided
         let categoryId: string | null = null;
         if (row.category) {
           categoryId = await resolveCategoryId(row.category);
@@ -162,7 +167,6 @@ export const bulkImportProducts = async (
           }
         }
 
-        // Build the data object only with fields that are provided and non-empty
         const updateData: any = {};
         if (row.name?.trim()) updateData.name = row.name.trim();
         if (row.description?.trim())
@@ -202,7 +206,6 @@ export const bulkImportProducts = async (
           updateData.isActive = row.isActive.toLowerCase() === "true";
         }
 
-        // Determine slug from row or generate from name (only for new products)
         let slug = row.slug?.trim();
         if (!slug && row.name?.trim()) {
           slug = row.name
@@ -211,7 +214,6 @@ export const bulkImportProducts = async (
             .replace(/^-|-$/g, "");
         }
 
-        // Try to find existing product by slug or SKU
         let existingProduct = null;
         if (slug) {
           existingProduct = await Product.findOne({ slug });
@@ -221,12 +223,10 @@ export const bulkImportProducts = async (
         }
 
         if (existingProduct) {
-          // Update existing product (only provided fields)
           Object.assign(existingProduct, updateData);
           await existingProduct.save();
           results.updated++;
         } else {
-          // Create new product
           if (!updateData.name || !updateData.price || !updateData.category) {
             throw new Error(
               "Name, price, and category are required for new products",
@@ -235,7 +235,6 @@ export const bulkImportProducts = async (
           if (!slug) {
             throw new Error("Slug is required (could not be generated)");
           }
-          // Check slug uniqueness again before creation
           const slugExists = await Product.findOne({ slug });
           if (slugExists) {
             throw new Error(`Product with slug '${slug}' already exists`);

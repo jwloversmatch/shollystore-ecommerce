@@ -112,8 +112,13 @@ export const getProductReviews = async (req: Request, res: Response) => {
       Review.countDocuments({ product: productId }),
     ]);
 
+    // Drop reviews whose user has been deleted — matches the count above
+    // by removing them, but for pagination consistency we keep the count
+    // as-is (total reflects DB reality, not filtered reality).
+    const validReviews = reviews.filter((r) => r.user !== null);
+
     res.json({
-      reviews,
+      reviews: validReviews,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   } catch (error: any) {
@@ -263,8 +268,14 @@ export const getAllReviewsAdmin = async (req: Request, res: Response) => {
       Review.countDocuments(filter),
     ]);
 
+    // Skip reviews whose user or product has been deleted.
+    // (Better than a crashed admin dashboard.)
+    const validReviews = reviews.filter(
+      (r) => r.user !== null && r.product !== null,
+    );
+
     res.json({
-      reviews,
+      reviews: validReviews,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   } catch (error: any) {
@@ -281,7 +292,10 @@ export const deleteReviewAdmin = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Review not found" });
     }
 
-    await updateProductRatingStats(review.product.toString());
+    // Only recalculate stats if the review had a valid product reference.
+    if (review.product) {
+      await updateProductRatingStats(review.product.toString());
+    }
     res.json({ message: "Review deleted" });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -311,7 +325,13 @@ export const getFeaturedReviews = async (req: Request, res: Response) => {
       { path: "user", select: "name avatar" },
     ]);
 
-    res.json({ reviews: populatedReviews });
+    // Filter out reviews whose user or product was deleted.
+    // Without this, the frontend receives nulls and crashes on `.name`.
+    const validReviews = populatedReviews.filter(
+      (r) => r.user !== null && r.product !== null,
+    );
+
+    res.json({ reviews: validReviews });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

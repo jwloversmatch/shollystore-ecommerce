@@ -8,7 +8,13 @@ const HomeTestimonials = () => {
 
   if (isLoading || isError || !data?.reviews?.length) return null;
 
-  const reviews = data.reviews;
+  // Filter out reviews whose user or product has been deleted.
+  // Without this, a stale reference crashes the entire app.
+  const reviews = data.reviews.filter(
+    (review) => review?.user?.name && review?.product?.name,
+  );
+
+  if (reviews.length === 0) return null;
 
   return (
     <section className="relative py-16 md:py-20 bg-gradient-to-b from-[#FCFAF5] to-[#f7f5f0] dark:from-[#0A0A0B] dark:to-[#141414]">
@@ -28,52 +34,63 @@ const HomeTestimonials = () => {
 
         {/* Testimonial cards */}
         <div className="grid md:grid-cols-3 gap-6">
-          {reviews.map((review, idx) => (
-            <motion.div
-              key={review._id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.45, delay: idx * 0.1 }}
-              className="relative rounded-2xl p-6 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/[0.08] shadow-md dark:shadow-[0_8px_24px_rgba(0,0,0,0.35)] hover:shadow-lg transition-shadow"
-            >
-              <Quote
-                className="w-8 h-8 text-[#e8622a] opacity-20 absolute top-5 right-5"
-                aria-hidden="true"
-              />
+          {reviews.map((review, idx) => {
+            const userName = review.user?.name ?? "Anonymous";
+            const userAvatar = review.user?.avatar;
+            const productName = review.product?.name ?? "";
 
-              <div className="flex items-center gap-3 mb-3">
-                {review.user.avatar ? (
-                  <img
-                    src={review.user.avatar}
-                    alt={review.user.name}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-[#e8622a]/20"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-[#e8622a]/10 flex items-center justify-center text-[#e8622a] font-bold text-lg">
-                    {review.user.name.charAt(0)}
+            return (
+              <motion.div
+                key={review._id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.45, delay: idx * 0.1 }}
+                className="relative rounded-2xl p-6 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/[0.08] shadow-md dark:shadow-[0_8px_24px_rgba(0,0,0,0.35)] hover:shadow-lg transition-shadow"
+              >
+                <Quote
+                  className="w-8 h-8 text-[#e8622a] opacity-20 absolute top-5 right-5"
+                  aria-hidden="true"
+                />
+
+                <div className="flex items-center gap-3 mb-3">
+                  {userAvatar ? (
+                    <img
+                      src={userAvatar}
+                      alt={userName}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-[#e8622a]/20"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-[#e8622a]/10 flex items-center justify-center text-[#e8622a] font-bold text-lg">
+                      {userName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-bold text-gray-900 dark:text-white leading-tight">
+                      {userName}
+                    </h3>
+                    <StarRating rating={review.rating} size={14} />
+                  </div>
+                </div>
+
+                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-4">
+                  "{review.comment}"
+                </p>
+
+                {productName && (
+                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/[0.08]">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                      {productName}
+                    </p>
                   </div>
                 )}
-                <div>
-                  <h3 className="font-bold text-gray-900 dark:text-white leading-tight">
-                    {review.user.name}
-                  </h3>
-                  <StarRating rating={review.rating} size={14} />
-                </div>
-              </div>
-
-              <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-4">
-                “{review.comment}”
-              </p>
-
-              <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/[0.08]">
-                <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
-                  {review.product.name}
-                </p>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>
