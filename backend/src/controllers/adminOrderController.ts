@@ -14,6 +14,11 @@ import {
 } from "../services/email.service";
 import { notifyOrderStatusViaPush } from "../services/orderPushNotifications.service";
 
+// ─── Escape regex metacharacters so user input is treated literally ──────────
+// Prevents ReDoS attacks via crafted search strings like "(.*.*.*.*.*)+"
+const escapeRegex = (str: string): string =>
+  str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const reduceStockForOrder = async (order: IOrder) => {
   for (const item of order.orderItems) {
     const product = await Product.findById(item.product);
@@ -77,6 +82,35 @@ const generateTrackingToken = (): { raw: string; hashed: string } => {
 };
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Build a MongoDB filter from the search query string.
+ * Matches against: order reference, tracking number, registered email,
+ * guest email, or the owning user's email.
+ *
+ * Shared between getAllOrders and exportOrdersCSV so search behaves
+ * identically on both endpoints.
+ */
+const buildSearchOrConditions = async (rawSearch: string) => {
+  const searchRegex = new RegExp(escapeRegex(rawSearch.trim()), "i");
+
+  // Find users whose email matches so we can also match by user ref.
+  const users = await User.find({ email: searchRegex }).select("_id");
+  const userIds = users.map((u) => u._id);
+
+  const conditions: Record<string, unknown>[] = [
+    { orderRef: searchRegex },
+    { trackingNumber: searchRegex },
+    { email: searchRegex },
+    { guestEmail: searchRegex },
+  ];
+
+  if (userIds.length > 0) {
+    conditions.push({ user: { $in: userIds } });
+  }
+
+  return conditions;
+};
+
 // @desc    Get admin dashboard stats
 // @route   GET /api/admin/orders
 export const getAdminStats = async (
@@ -124,10 +158,8 @@ export const getAllOrders = async (
       filter.paymentMethod = req.query.paymentMethod;
     }
     if (req.query.search) {
-      const searchRegex = new RegExp(req.query.search as string, "i");
-      const users = await User.find({ email: searchRegex }).select("_id");
-      const userIds = users.map((u) => u._id);
-      filter.user = { $in: userIds };
+      // Search by orderRef, trackingNumber, email, guestEmail, or user email.
+      filter.$or = await buildSearchOrConditions(String(req.query.search));
     }
     if (req.query.startDate || req.query.endDate) {
       filter.createdAt = {};
@@ -395,7 +427,6 @@ export const getSalesAnalytics = async (
         },
       },
     ]);
-    
 
     res.json({
       totalRevenue: totalStats[0]?.totalRevenue || 0,
@@ -547,10 +578,8 @@ export const exportOrdersCSV = async (
       filter.paymentMethod = req.query.paymentMethod;
     }
     if (req.query.search) {
-      const searchRegex = new RegExp(req.query.search as string, "i");
-      const users = await User.find({ email: searchRegex }).select("_id");
-      const userIds = users.map((u) => u._id);
-      filter.user = { $in: userIds };
+      // Same search behavior as getAllOrders — by ref, tracking, or email.
+      filter.$or = await buildSearchOrConditions(String(req.query.search));
     }
     if (req.query.startDate || req.query.endDate) {
       filter.createdAt = {};
