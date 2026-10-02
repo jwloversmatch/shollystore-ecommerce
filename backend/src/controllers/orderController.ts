@@ -381,8 +381,14 @@ export const paystackWebhook = async (
       return;
     }
 
-    const alreadyProcessed = await Order.findOne({ paymentEventId: eventId });
-    if (alreadyProcessed) {
+    // Atomic claim — only one request can win
+    const claimed = await Order.findOneAndUpdate(
+      { _id: orderId, paymentEventId: { $ne: eventId } },
+      { $set: { paymentEventId: eventId } },
+      { new: true },
+    );
+
+    if (!claimed) {
       res.status(200).send("Webhook already processed");
       return;
     }
@@ -618,10 +624,7 @@ export const trackOrderManual = async (
           ],
         }
       : {
-          $or: [
-            { trackingNumber: cleanOrderId },
-            { orderRef: cleanOrderId },
-          ],
+          $or: [{ trackingNumber: cleanOrderId }, { orderRef: cleanOrderId }],
         };
 
     const order = await Order.findOne({

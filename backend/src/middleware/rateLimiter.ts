@@ -127,3 +127,38 @@ export const newsletterLimiter = rateLimit({
     message: "Too many subscription attempts. Please try again later.",
   },
 });
+
+
+/**
+ * Order tracking — public endpoints that accept a tracking number and email.
+ * Attackers can enumerate order refs (which are sequential), so this is strict.
+ * skipSuccessfulRequests means a legitimate customer tracking their own
+ * order once doesn't burn the quota — only failures count.
+ */
+export const trackLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  skip: shouldSkipRateLimit,
+  message: {
+    success: false,
+    message: "Too many tracking attempts. Please try again later.",
+  },
+});
+
+/**
+ * Paystack webhook — Paystack may legitimately burst during promotions,
+ * so the cap is higher. Only failed requests (bad signature, malformed
+ * payload) count against the limit; real webhooks return 200 and pass through.
+ */
+export const webhookLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  skip: shouldSkipRateLimit,
+  message: { success: false, message: "Too many webhook requests" },
+});
