@@ -273,8 +273,18 @@ export const apiSlice = createApi({
         if (params?.page) searchParams.append("page", String(params.page));
         if (params?.limit) searchParams.append("limit", String(params.limit));
         else searchParams.append("limit", "12");
+
         const qs = searchParams.toString();
-        return `/products${qs ? `?${qs}` : ""}`;
+        const url = `/products${qs ? `?${qs}` : ""}`;
+
+        const isAdminRequest = (params?.limit ?? 12) > 100;
+
+        return {
+          url,
+          ...(isAdminRequest
+            ? { cache: "no-store" as RequestCache }
+            : {}),
+        };
       },
       providesTags: ["Product"],
     }),
