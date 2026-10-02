@@ -1,7 +1,12 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import crypto from "crypto";
-import { Order, IOrder, CANCEL_REASONS, type CancelReason } from "../models/Order";
+import {
+  Order,
+  IOrder,
+  CANCEL_REASONS,
+  type CancelReason,
+} from "../models/Order";
 import { Product } from "../models/Product";
 import { User } from "../models/User";
 import { Coupon } from "../models/Coupon";
@@ -43,7 +48,9 @@ const reduceStockForOrder = async (order: IOrder) => {
       if (!variant) continue;
 
       // ─── Atomic decrement for variant AND parent product ──────────────
-      if (variant._id) {
+      const variantId = (variant as { _id?: mongoose.Types.ObjectId })._id;
+
+      if (variantId) {
         await Product.updateOne(
           { _id: product._id },
           {
@@ -52,7 +59,7 @@ const reduceStockForOrder = async (order: IOrder) => {
               stock: -item.qty,
             },
           },
-          { arrayFilters: [{ "v._id": variant._id }] },
+          { arrayFilters: [{ "v._id": variantId }] },
         );
       } else {
         const match: Record<string, unknown> = {};
