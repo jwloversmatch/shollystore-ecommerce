@@ -112,8 +112,10 @@ const decrementStockForItem = async (
     );
     if (!variant) return false;
 
-    // Atomic decrement for variant stock AND parent product stock.
-    if (variant._id) {
+    // Mongoose auto-adds _id to subdocuments, but IVariant doesn't declare it.
+    const variantId = (variant as { _id?: mongoose.Types.ObjectId })._id;
+
+    if (variantId) {
       await Product.updateOne(
         { _id: product._id },
         {
@@ -122,10 +124,9 @@ const decrementStockForItem = async (
             stock: -qty,
           },
         },
-        { arrayFilters: [{ "v._id": variant._id }] },
+        { arrayFilters: [{ "v._id": variantId }] },
       );
     } else {
-      // Fallback for variants without _id — match by identifying fields
       const match: Record<string, unknown> = {};
       if (variant.sku) match["variants.sku"] = variant.sku;
       if (variant.color) match["variants.color"] = variant.color;
@@ -153,7 +154,6 @@ const decrementStockForItem = async (
       { arrayFilters: [{ "v.stock": { $lt: 0 } }] },
     );
   } else {
-    // Base product stock only.
     await Product.updateOne(
       { _id: product._id },
       { $inc: { stock: -qty } },
@@ -164,7 +164,6 @@ const decrementStockForItem = async (
     );
   }
 
-  // Re-fetch and fire low-stock notification if applicable
   const updated = await Product.findById(product._id);
   if (updated) {
     await updated.checkLowStockAndNotify();
@@ -618,9 +617,10 @@ export const verifyPayment = async (
     res.json(result);
   } catch (error) {
     if (error instanceof PaystackError) {
-      return res
+      res
         .status(502)
         .json({ success: false, message: "Payment verification failed." });
+      return;
     }
     res.status(500).json({ success: false, message: "Internal server error" });
   }
