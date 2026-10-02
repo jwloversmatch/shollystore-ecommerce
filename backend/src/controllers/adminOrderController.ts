@@ -15,10 +15,17 @@ import {
 import { notifyOrderStatusViaPush } from "../services/orderPushNotifications.service";
 
 // ─── Escape regex metacharacters so user input is treated literally ──────────
-// Prevents ReDoS attacks via crafted search strings like "(.*.*.*.*.*)+"
 const escapeRegex = (str: string): string =>
   str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+/**
+ * Reduce stock for every item in an order.
+ *
+ * Uses atomic $inc operations rather than read-modify-write, so two
+ * parallel orders for the same item can't both read the same starting
+ * stock and both save the same decremented value. Negative results are
+ * clamped back to 0 afterward as a safety net against oversell.
+ */
 const reduceStockForOrder = async (order: IOrder) => {
   for (const item of order.orderItems) {
     const product = await Product.findById(item.product);
@@ -33,18 +40,63 @@ const reduceStockForOrder = async (order: IOrder) => {
           v.sku === item.variant?.sku ||
           (v.color === item.variant?.color && v.size === item.variant?.size),
       );
-      if (variant) {
-        if (variant.stock !== undefined) {
-          variant.stock = Math.max(0, variant.stock - item.qty);
-        }
-        product.stock = Math.max(0, product.stock - item.qty);
-        await product.save();
-        await product.checkLowStockAndNotify();
+      if (!variant) continue;
+
+      // ─── Atomic decrement for variant AND parent product ──────────────
+      if (variant._id) {
+        await Product.updateOne(
+          { _id: product._id },
+          {
+            $inc: {
+              "variants.$[v].stock": -item.qty,
+              stock: -item.qty,
+            },
+          },
+          { arrayFilters: [{ "v._id": variant._id }] },
+        );
+      } else {
+        const match: Record<string, unknown> = {};
+        if (variant.sku) match["variants.sku"] = variant.sku;
+        if (variant.color) match["variants.color"] = variant.color;
+        if (variant.size) match["variants.size"] = variant.size;
+
+        await Product.updateOne(
+          { _id: product._id, ...match },
+          {
+            $inc: {
+              "variants.$.stock": -item.qty,
+              stock: -item.qty,
+            },
+          },
+        );
       }
+
+      // Clamp any negative values back to 0.
+      await Product.updateOne(
+        { _id: product._id, stock: { $lt: 0 } },
+        { $set: { stock: 0 } },
+      );
+      await Product.updateOne(
+        { _id: product._id, "variants.stock": { $lt: 0 } },
+        { $set: { "variants.$[v].stock": 0 } },
+        { arrayFilters: [{ "v.stock": { $lt: 0 } }] },
+      );
     } else {
-      product.stock = Math.max(0, product.stock - item.qty);
-      await product.save();
-      await product.checkLowStockAndNotify();
+      // ─── Atomic decrement for base product stock ──────────────────────
+      await Product.updateOne(
+        { _id: product._id },
+        { $inc: { stock: -item.qty } },
+      );
+      await Product.updateOne(
+        { _id: product._id, stock: { $lt: 0 } },
+        { $set: { stock: 0 } },
+      );
+    }
+
+    // Re-fetch and fire low-stock notification if applicable
+    const updated = await Product.findById(product._id);
+    if (updated) {
+      await updated.checkLowStockAndNotify();
     }
   }
 };
@@ -86,14 +138,10 @@ const generateTrackingToken = (): { raw: string; hashed: string } => {
  * Build a MongoDB filter from the search query string.
  * Matches against: order reference, tracking number, registered email,
  * guest email, or the owning user's email.
- *
- * Shared between getAllOrders and exportOrdersCSV so search behaves
- * identically on both endpoints.
  */
 const buildSearchOrConditions = async (rawSearch: string) => {
   const searchRegex = new RegExp(escapeRegex(rawSearch.trim()), "i");
 
-  // Find users whose email matches so we can also match by user ref.
   const users = await User.find({ email: searchRegex }).select("_id");
   const userIds = users.map((u) => u._id);
 
@@ -123,7 +171,6 @@ export const getAdminStats = async (
       .sort({ createdAt: -1 })
       .limit(5);
 
-    // Exclude both Pending AND Cancelled from revenue
     const revenueResult = await Order.aggregate([
       { $match: { status: { $nin: ["Pending", "Cancelled"] } } },
       { $group: { _id: null, total: { $sum: "$totalPrice" } } },
@@ -158,7 +205,6 @@ export const getAllOrders = async (
       filter.paymentMethod = req.query.paymentMethod;
     }
     if (req.query.search) {
-      // Search by orderRef, trackingNumber, email, guestEmail, or user email.
       filter.$or = await buildSearchOrConditions(String(req.query.search));
     }
     if (req.query.startDate || req.query.endDate) {
@@ -197,7 +243,7 @@ export const getAllOrders = async (
   }
 };
 
-// ─── Update Order Status (with audit trail, optimistic lock, and reason enum) ─
+// ─── Update Order Status ─────────────────────────────────────────────────────
 export const updateOrderStatus = async (
   req: AuthRequest,
   res: Response,
@@ -215,7 +261,6 @@ export const updateOrderStatus = async (
       return;
     }
 
-    // Guard: don't allow changes to already-final states
     if (
       ["Delivered", "Cancelled"].includes(order.status) &&
       status !== order.status
@@ -226,7 +271,6 @@ export const updateOrderStatus = async (
       return;
     }
 
-    // Validate cancellation reason against the enum
     if (status === "Cancelled") {
       if (!cancellationReason) {
         res.status(400).json({ message: "Cancellation reason is required" });
@@ -240,7 +284,6 @@ export const updateOrderStatus = async (
       }
     }
 
-    // Reduce stock when transitioning out of Pending for the first time
     if (
       order.status === "Pending" &&
       status !== "Pending" &&
@@ -258,7 +301,6 @@ export const updateOrderStatus = async (
       updateData.cancelledBy = req.user?._id ?? null;
     }
 
-    // Audit trail: record who confirmed payment and when
     if (status === "Paid" && order.status !== "Paid") {
       updateData.paymentConfirmedBy = req.user?._id ?? null;
       updateData.paymentConfirmedAt = new Date();
@@ -273,7 +315,6 @@ export const updateOrderStatus = async (
       (order as any)._trackingTokenRaw = rawToken;
     }
 
-    // Optimistic lock — only update if the status hasn't changed since we read it
     const result = await Order.updateOne(
       { _id: order._id, status: order.status },
       { $set: updateData },
@@ -287,7 +328,6 @@ export const updateOrderStatus = async (
       return;
     }
 
-    // Coupon usage tracking on Pending → Paid
     if (status === "Paid" && order.status !== "Paid" && order.couponCode) {
       await Coupon.updateOne(
         { code: order.couponCode.toUpperCase() },
@@ -307,13 +347,11 @@ export const updateOrderStatus = async (
       phone?: string;
     } | null;
 
-    // Fall back to guest email / stored email if no populated user
     const customerEmail =
       populatedUser?.email || order.email || order.guestEmail || "";
     const customerName = populatedUser?.name || order.name || "";
     const orderIdentifier = order.orderRef || order._id.toString();
 
-    // Send cancellation email
     if (status === "Cancelled" && customerEmail) {
       sendOrderCancelledEmail(
         customerEmail,
@@ -358,10 +396,6 @@ export const updateOrderStatus = async (
       );
     }
 
-    // ─── Push notification (fire-and-forget) ─────────────────────────────
-    // Only customers who opted in and have an active subscription on a
-    // device receive this. Guests and non-subscribers are silently skipped.
-    // Never blocks the API response; never throws.
     notifyOrderStatusViaPush(order, status).catch((err) =>
       console.error("Failed to send order push notification:", err),
     );
@@ -507,9 +541,6 @@ export const getUniqueOrderCustomers = async (
   }
 };
 
-// ─── Revenue Trend ────────────────────────────────────────────────────────────
-// @desc    Get daily revenue trend for chart
-// @route   GET /api/admin/orders/analytics/revenue-trend?days=30
 export const getRevenueTrend = async (
   req: Request,
   res: Response,
@@ -561,9 +592,6 @@ export const getRevenueTrend = async (
   }
 };
 
-// ─── Export Orders CSV ────────────────────────────────────────────────────────
-// @desc    Export filtered orders as CSV
-// @route   GET /api/admin/orders/export
 export const exportOrdersCSV = async (
   req: Request,
   res: Response,
@@ -578,7 +606,6 @@ export const exportOrdersCSV = async (
       filter.paymentMethod = req.query.paymentMethod;
     }
     if (req.query.search) {
-      // Same search behavior as getAllOrders — by ref, tracking, or email.
       filter.$or = await buildSearchOrConditions(String(req.query.search));
     }
     if (req.query.startDate || req.query.endDate) {
@@ -655,9 +682,6 @@ export const exportOrdersCSV = async (
   }
 };
 
-// ─── Sales Report ─────────────────────────────────────────────────────────────
-// @desc    Aggregated sales report for a date range
-// @route   GET /api/admin/orders/reports/sales?from=...&to=...
 export const getSalesReport = async (
   req: AuthRequest,
   res: Response,

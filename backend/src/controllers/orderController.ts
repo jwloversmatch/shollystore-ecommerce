@@ -23,12 +23,9 @@ import { calculateShippingFee } from "../utils/shipping";
  * Generate a stable, human-readable order reference: SHX-2026-K7M3Q9
  *
  * Random 6-character suffix (not sequential) so order volume can't be
- * inferred by placing two orders and comparing. Uses a charset that
- * omits 0/O, 1/I/L so customers can read the ref over the phone or
- * write it on a bank transfer slip without ambiguity.
- *
- * ~1 billion combinations per year — collision probability is essentially
- * zero, but the loop retries just in case.
+ * inferred by placing two orders and comparing. Uses a charset that omits
+ * 0/O, 1/I/L so customers can read the ref over the phone or write it
+ * on a bank transfer slip without ambiguity.
  */
 const generateOrderRef = async (): Promise<string> => {
   const year = new Date().getFullYear();
@@ -46,8 +43,6 @@ const generateOrderRef = async (): Promise<string> => {
     if (!exists) return ref;
   }
 
-  // Fallback — only reachable if 5 consecutive collisions occur,
-  // which is astronomically unlikely at any realistic order volume.
   return `SHX-${year}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
 };
 
@@ -80,6 +75,102 @@ const generateTrackingToken = (): { raw: string; hashed: string } => {
   const raw = crypto.randomBytes(32).toString("hex");
   const hashed = crypto.createHash("sha256").update(raw).digest("hex");
   return { raw, hashed };
+};
+
+// ─── Atomic stock decrement (shared logic) ────────────────────────────────
+/**
+ * Decrement stock for a single order item atomically.
+ *
+ * Uses $inc rather than read-modify-write to prevent the race condition
+ * where two parallel orders both read stock=1 and both save stock=0.
+ * After the decrement, negative values are clamped back to 0 as a
+ * safety net against oversell.
+ *
+ * Returns true if any stock was changed (used to decide whether to
+ * run low-stock notification checks).
+ */
+const decrementStockForItem = async (
+  productId: mongoose.Types.ObjectId,
+  qty: number,
+  variantInput?: { sku?: string; color?: string; size?: string },
+): Promise<boolean> => {
+  const product = await Product.findById(productId);
+  if (!product) return false;
+
+  const hasVariant =
+    variantInput &&
+    (variantInput.sku || variantInput.color || variantInput.size);
+
+  if (hasVariant) {
+    const variant = product.variants?.find(
+      (v) =>
+        (variantInput.sku && v.sku === variantInput.sku) ||
+        (variantInput.color &&
+          variantInput.size &&
+          v.color === variantInput.color &&
+          v.size === variantInput.size),
+    );
+    if (!variant) return false;
+
+    // Atomic decrement for variant stock AND parent product stock.
+    if (variant._id) {
+      await Product.updateOne(
+        { _id: product._id },
+        {
+          $inc: {
+            "variants.$[v].stock": -qty,
+            stock: -qty,
+          },
+        },
+        { arrayFilters: [{ "v._id": variant._id }] },
+      );
+    } else {
+      // Fallback for variants without _id — match by identifying fields
+      const match: Record<string, unknown> = {};
+      if (variant.sku) match["variants.sku"] = variant.sku;
+      if (variant.color) match["variants.color"] = variant.color;
+      if (variant.size) match["variants.size"] = variant.size;
+
+      await Product.updateOne(
+        { _id: product._id, ...match },
+        {
+          $inc: {
+            "variants.$.stock": -qty,
+            stock: -qty,
+          },
+        },
+      );
+    }
+
+    // Clamp any negative values back to 0.
+    await Product.updateOne(
+      { _id: product._id, stock: { $lt: 0 } },
+      { $set: { stock: 0 } },
+    );
+    await Product.updateOne(
+      { _id: product._id, "variants.stock": { $lt: 0 } },
+      { $set: { "variants.$[v].stock": 0 } },
+      { arrayFilters: [{ "v.stock": { $lt: 0 } }] },
+    );
+  } else {
+    // Base product stock only.
+    await Product.updateOne(
+      { _id: product._id },
+      { $inc: { stock: -qty } },
+    );
+    await Product.updateOne(
+      { _id: product._id, stock: { $lt: 0 } },
+      { $set: { stock: 0 } },
+    );
+  }
+
+  // Re-fetch and fire low-stock notification if applicable
+  const updated = await Product.findById(product._id);
+  if (updated) {
+    await updated.checkLowStockAndNotify();
+  }
+
+  return true;
 };
 
 const sanitizeOrderForTracking = (order: IOrder, includeEmail = false) => {
@@ -130,7 +221,6 @@ export const createOrder = async (
       guestEmail,
     } = req.body;
 
-    // Reject the deprecated whatsapp payment method with a clear error
     if (paymentMethod === "whatsapp") {
       res.status(400).json({
         success: false,
@@ -173,7 +263,6 @@ export const createOrder = async (
 
     const { subtotal, discount, taxAmount, totalPrice } = pricing;
 
-    // Generate a unique courier tracking number (assigned now, used when shipped)
     let trackingNumber = generateTrackingNumber();
     let existingOrder = await Order.findOne({ trackingNumber });
     while (existingOrder) {
@@ -181,7 +270,6 @@ export const createOrder = async (
       existingOrder = await Order.findOne({ trackingNumber });
     }
 
-    // Generate the human-readable order reference
     const orderRef = await generateOrderRef();
 
     const { raw: rawToken, hashed: hashedToken } = generateTrackingToken();
@@ -206,7 +294,6 @@ export const createOrder = async (
 
     const settings = await Settings.findOne();
 
-    // Build payment details for bank transfer only
     let paymentDetails;
     if (paymentMethod === "bank_transfer") {
       const defaultAccount =
@@ -259,7 +346,6 @@ export const createOrder = async (
       0,
     );
 
-    // Fire notifications (no tracking details yet)
     sendOrderConfirmation(
       customerEmail,
       createdOrder.orderRef,
@@ -277,7 +363,6 @@ export const createOrder = async (
       console.error("Failed to send admin order notification:", err),
     );
 
-    // Build the prefilled WhatsApp URL for bank transfer
     const whatsappUrl =
       paymentMethod === "bank_transfer"
         ? buildWhatsAppReceiptUrl(
@@ -303,7 +388,6 @@ export const createOrder = async (
           return;
         }
 
-        // Save Paystack reference so the webhook can match
         createdOrder.paystackReference = paymentData.data.reference;
         await createdOrder.save();
 
@@ -329,7 +413,6 @@ export const createOrder = async (
       }
     }
 
-    // Bank transfer response
     res.status(201).json({
       success: true,
       order: {
@@ -412,11 +495,11 @@ export const paystackWebhook = async (
       return;
     }
 
-    // ─── Atomic dedup claim ───────────────────────────────────────────────
+    // ─── Atomic dedup claim ──────────────────────────────────────────────
     // findOneAndUpdate with a filter on paymentEventId === eventId ensures
-    // that only ONE concurrent webhook request can claim this event. If
-    // Paystack retries while the first is still processing, the second
-    // request finds paymentEventId already set and short-circuits.
+    // only ONE concurrent webhook request can claim this event. Paystack
+    // retries if it doesn't get a fast 200, so a slow first request can
+    // otherwise race with a retry and double-deduct stock.
     const claimed = await Order.findOneAndUpdate(
       { _id: order._id, paymentEventId: { $ne: eventId } },
       { $set: { paymentEventId: eventId } },
@@ -431,30 +514,11 @@ export const paystackWebhook = async (
     if (event.event === "charge.success") {
       if (order.status === "Pending") {
         for (const item of order.orderItems) {
-          const product = await Product.findById(item.product);
-          if (!product) continue;
-
-          if (
-            item.variant &&
-            (item.variant.sku || item.variant.color || item.variant.size)
-          ) {
-            const variant = product.variants?.find(
-              (v) =>
-                v.sku === item.variant?.sku ||
-                (v.color === item.variant?.color &&
-                  v.size === item.variant?.size),
-            );
-            if (variant) {
-              if (variant.stock !== undefined) {
-                variant.stock = Math.max(0, variant.stock - item.qty);
-              }
-              product.stock = Math.max(0, product.stock - item.qty);
-              await product.save();
-            }
-          } else {
-            product.stock = Math.max(0, product.stock - item.qty);
-            await product.save();
-          }
+          await decrementStockForItem(
+            item.product,
+            item.qty,
+            item.variant,
+          );
         }
       }
 
@@ -520,10 +584,36 @@ export const paystackWebhook = async (
   }
 };
 
-// ─── Other exports ────────────────────────────────────────────────────────────
-export const verifyPayment = async (req: Request, res: Response) => {
+// ─── Verify payment — with ownership check ────────────────────────────────
+export const verifyPayment = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const reference = req.params.reference as string;
+
+    // Ownership check: the reference must belong to an order the requester
+    // can see. If the order is attached to a user, that user must be the
+    // requester. Guest orders (user: null) can be verified by anyone with
+    // the reference, since there's no account to scope against.
+    const order = await Order.findOne({ paystackReference: reference }).select(
+      "user",
+    );
+
+    if (!order) {
+      res.status(404).json({ success: false, message: "Payment not found" });
+      return;
+    }
+
+    if (
+      order.user &&
+      req.user &&
+      order.user.toString() !== req.user._id.toString()
+    ) {
+      res.status(403).json({ success: false, message: "Not authorized" });
+      return;
+    }
+
     const result = await paystack.verifyPayment(reference);
     res.json(result);
   } catch (error) {
