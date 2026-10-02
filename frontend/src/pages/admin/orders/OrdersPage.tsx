@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useFocusTrap } from "../../../hooks/useFocusTrap";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
@@ -54,12 +54,49 @@ const OrdersPage = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+
+  // ─── Debounced search value ────────────────────────────────────────────
+  // Two things happen in this timeout callback, both after 300ms of no typing:
+  //   1. `debouncedSearch` commits, which triggers the API query
+  //   2. `page` resets to 1 — so searching from page 2+ finds the match
+  // Both setState calls are inside the setTimeout, not in the effect body
+  // itself, which is what the react-hooks/set-state-in-effect rule requires.
+  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [searchTerm]);
+
+  // ─── Wrapped setters that reset pagination on filter change ────────────
+  // These are just events — clicking a dropdown or picking a date.
+  // setPage(1) in the same handler is the React-recommended pattern;
+  // no effect needed. (`searchTerm` is handled above because of the debounce.)
+  const changeStatusFilter = (v: string) => {
+    setStatusFilter(v);
+    setPage(1);
+  };
+  const changePaymentFilter = (v: string) => {
+    setPaymentFilter(v);
+    setPage(1);
+  };
+  const changeStartDate = (v: string) => {
+    setStartDate(v);
+    setPage(1);
+  };
+  const changeEndDate = (v: string) => {
+    setEndDate(v);
+    setPage(1);
+  };
+
   const { data, isLoading, refetch } = useGetAllOrdersQuery({
     page,
     limit,
     status: statusFilter,
     paymentMethod: paymentFilter,
-    search: searchTerm,
+    search: debouncedSearch,
     startDate,
     endDate,
   });
@@ -89,17 +126,17 @@ const OrdersPage = () => {
     setCancelTarget(order);
   };
 
- const confirmCancellation = async (reason: string, note?: string) => {
-  if (!cancelTarget) return;
-  await updateStatus({
-    id: cancelTarget._id,
-    status: "Cancelled",
-    cancellationReason: reason,
-    cancellationNote: note || undefined,
-  }).unwrap();
-  refetch();
-  setCancelTarget(null);
-};
+  const confirmCancellation = async (reason: string, note?: string) => {
+    if (!cancelTarget) return;
+    await updateStatus({
+      id: cancelTarget._id,
+      status: "Cancelled",
+      cancellationReason: reason,
+      cancellationNote: note || undefined,
+    }).unwrap();
+    refetch();
+    setCancelTarget(null);
+  };
 
   const handleClearFilters = () => {
     setStatusFilter("All");
@@ -117,7 +154,7 @@ const OrdersPage = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const url = `${import.meta.env.VITE_API_URL}/admin/orders/export?status=${statusFilter}&paymentMethod=${paymentFilter}&search=${searchTerm}&startDate=${startDate}&endDate=${endDate}`;
+    const url = `${import.meta.env.VITE_API_URL}/admin/orders/export?status=${statusFilter}&paymentMethod=${paymentFilter}&search=${encodeURIComponent(debouncedSearch)}&startDate=${startDate}&endDate=${endDate}`;
 
     try {
       const res = await fetch(url, {
@@ -227,15 +264,15 @@ const OrdersPage = () => {
         {showFilters && (
           <OrderFilters
             statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
+            setStatusFilter={changeStatusFilter}
             paymentFilter={paymentFilter}
-            setPaymentFilter={setPaymentFilter}
+            setPaymentFilter={changePaymentFilter}
             searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
+            setSearchTerm={changeSearchTerm}
             startDate={startDate}
-            setStartDate={setStartDate}
+            setStartDate={changeStartDate}
             endDate={endDate}
-            setEndDate={setEndDate}
+            setEndDate={changeEndDate}
             onClear={handleClearFilters}
             isDark={isDark}
           />
@@ -265,7 +302,6 @@ const OrdersPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Cancellation modal — conditionally rendered with key for fresh state */}
       {cancelTarget && (
         <CancellationModal
           key={cancelTarget._id}
