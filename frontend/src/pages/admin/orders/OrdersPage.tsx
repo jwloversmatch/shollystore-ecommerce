@@ -268,7 +268,7 @@ const OrdersPage = () => {
             paymentFilter={paymentFilter}
             setPaymentFilter={changePaymentFilter}
             searchTerm={searchTerm}
-            setSearchTerm={changeSearchTerm}
+            setSearchTerm={setSearchTerm}
             startDate={startDate}
             setStartDate={changeStartDate}
             endDate={endDate}
