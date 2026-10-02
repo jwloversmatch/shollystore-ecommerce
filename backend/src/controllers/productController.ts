@@ -26,9 +26,20 @@ export const getProducts = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  setShortCacheHeaders(res);
-
   try {
+    // Determine admin status BEFORE setting cache headers.
+    // Admin views (limit > 100) must bypass browser HTTP caching, otherwise
+    // the browser serves a stale 60-second-old response and the table
+    // doesn't reflect create/update/delete mutations instantly.
+    const limit = parseInt(req.query.limit as string) || 12;
+    const isAdminRequest = limit > 100;
+
+    if (isAdminRequest) {
+      res.set("Cache-Control", "private, no-cache, no-store, must-revalidate");
+    } else {
+      setShortCacheHeaders(res);
+    }
+
     const filter: any = {};
 
     // Category filtering
@@ -65,11 +76,7 @@ export const getProducts = async (
     }
 
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 12;
     const skip = (page - 1) * limit;
-
-    // Check if this is an admin request (large limit) to return full documents
-    const isAdminRequest = limit > 100;
 
     const searchParam = req.query.search
       ? (Array.isArray(req.query.search)
