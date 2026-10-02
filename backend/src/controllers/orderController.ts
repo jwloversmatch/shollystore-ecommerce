@@ -19,17 +19,36 @@ import { calculateShippingFee } from "../utils/shipping";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
-/** Generate a stable, human-readable order reference: SHX-2026-00042 */
+/**
+ * Generate a stable, human-readable order reference: SHX-2026-K7M3Q9
+ *
+ * Random 6-character suffix (not sequential) so order volume can't be
+ * inferred by placing two orders and comparing. Uses a charset that
+ * omits 0/O, 1/I/L so customers can read the ref over the phone or
+ * write it on a bank transfer slip without ambiguity.
+ *
+ * ~1 billion combinations per year — collision probability is essentially
+ * zero, but the loop retries just in case.
+ */
 const generateOrderRef = async (): Promise<string> => {
   const year = new Date().getFullYear();
-  const startOfYear = new Date(year, 0, 1);
+  const CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const LENGTH = 6;
 
-  const count = await Order.countDocuments({
-    createdAt: { $gte: startOfYear },
-  });
+  for (let attempt = 0; attempt < 5; attempt++) {
+    let suffix = "";
+    for (let i = 0; i < LENGTH; i++) {
+      suffix += CHARS.charAt(Math.floor(Math.random() * CHARS.length));
+    }
 
-  const sequence = String(count + 1).padStart(5, "0");
-  return `SHX-${year}-${sequence}`;
+    const ref = `SHX-${year}-${suffix}`;
+    const exists = await Order.exists({ orderRef: ref });
+    if (!exists) return ref;
+  }
+
+  // Fallback — only reachable if 5 consecutive collisions occur,
+  // which is astronomically unlikely at any realistic order volume.
+  return `SHX-${year}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
 };
 
 /** Build a prefilled WhatsApp deep link for sending a bank transfer receipt */
@@ -381,18 +400,6 @@ export const paystackWebhook = async (
       return;
     }
 
-    // Atomic claim — only one request can win
-    const claimed = await Order.findOneAndUpdate(
-      { _id: orderId, paymentEventId: { $ne: eventId } },
-      { $set: { paymentEventId: eventId } },
-      { new: true },
-    );
-
-    if (!claimed) {
-      res.status(200).send("Webhook already processed");
-      return;
-    }
-
     const orderId = event.data?.metadata?.order_id;
     if (!orderId) {
       res.status(400).send("Order ID missing");
@@ -402,6 +409,22 @@ export const paystackWebhook = async (
     const order = await Order.findById(orderId);
     if (!order) {
       res.status(404).send("Order not found");
+      return;
+    }
+
+    // ─── Atomic dedup claim ───────────────────────────────────────────────
+    // findOneAndUpdate with a filter on paymentEventId === eventId ensures
+    // that only ONE concurrent webhook request can claim this event. If
+    // Paystack retries while the first is still processing, the second
+    // request finds paymentEventId already set and short-circuits.
+    const claimed = await Order.findOneAndUpdate(
+      { _id: order._id, paymentEventId: { $ne: eventId } },
+      { $set: { paymentEventId: eventId } },
+      { new: true },
+    );
+
+    if (!claimed) {
+      res.status(200).send("Webhook already processed");
       return;
     }
 
@@ -441,7 +464,6 @@ export const paystackWebhook = async (
         status: event.data.status,
         update_time: event.data.paid_at,
       };
-      order.paymentEventId = eventId;
       order.paymentEventType = event.event;
       order.paymentConfirmedAt = new Date();
       await order.save();
@@ -477,7 +499,6 @@ export const paystackWebhook = async (
     }
 
     if (event.event === "charge.failed") {
-      order.paymentEventId = eventId;
       order.paymentEventType = event.event;
       order.paymentFailReason = event.data.gateway_response || "Payment failed";
       await order.save();
@@ -490,7 +511,6 @@ export const paystackWebhook = async (
       return;
     }
 
-    order.paymentEventId = eventId;
     order.paymentEventType = event.event;
     await order.save();
     res.status(200).send("Webhook received");
@@ -624,7 +644,10 @@ export const trackOrderManual = async (
           ],
         }
       : {
-          $or: [{ trackingNumber: cleanOrderId }, { orderRef: cleanOrderId }],
+          $or: [
+            { trackingNumber: cleanOrderId },
+            { orderRef: cleanOrderId },
+          ],
         };
 
     const order = await Order.findOne({
